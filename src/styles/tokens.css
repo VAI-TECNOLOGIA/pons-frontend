@@ -1,0 +1,265 @@
+/* ============================================================
+   Grupo Pons Imobiliário — Design Tokens (light + dark)
+   Versão: 2.0  ·  Última atualização: 2026-05-22
+   ============================================================ */
+
+:root {
+  /* ---------- BRAND CORE (invariável) ---------- */
+  --pons-navy: #263654;
+  --pons-blue: #1258CA;
+  --pons-accent-red: #C70A1A;
+  --pons-success: #88C559;
+
+  /* ---------- NAVY SCALE ---------- */
+  --navy-50:  #F4F6FA;
+  --navy-100: #E2E7F0;
+  --navy-200: #B8C2D6;
+  --navy-300: #8493B4;
+  --navy-500: #3D5278;
+  --navy-700: #263654;
+  --navy-900: #13192A;
+
+  /* ---------- BLUE SCALE ---------- */
+  --blue-50:  #E8F0FC;
+  --blue-100: #C4D8F7;
+  --blue-300: #5D8FE0;
+  --blue-500: #1258CA;
+  --blue-600: #0E47A8;
+  --blue-700: #0A3580;
+
+  /* ---------- GRAY SCALE (tema claro) ---------- */
+  --gray-0:   #FFFFFF;
+  --gray-50:  #FAFBFC;
+  --gray-100: #F1F3F5;
+  --gray-200: #E4E7EB;
+  --gray-300: #CBD2D9;
+  --gray-500: #79797C;
+  --gray-700: #3E4C59;
+  --gray-900: #292A2D;
+
+  /* ---------- SEMANTIC (cores fixas) ---------- */
+  --color-success:    #88C559;
+  --color-warning:    #F2B544;
+  --color-danger:     #C70A1A;
+  --color-info:       #1258CA;
+
+  /* ---------- TYPOGRAPHY ---------- */
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:  'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  --font-body:  'Roboto', var(--font-sans);
+
+  --fs-caption:    12px;
+  --fs-body-sm:    13px;
+  --fs-body-md:    14px;
+  --fs-body-lg:    16px;
+  --fs-heading-sm: 16px;
+  --fs-heading-md: 20px;
+  --fs-heading-lg: 24px;
+  --fs-display-md: 28px;
+  --fs-display-lg: 32px;
+  --fs-display-xl: 42px;
+
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700; --fw-extrabold: 800;
+  --lh-tight: 1.15; --lh-snug: 1.25; --lh-normal: 1.5; --lh-relaxed: 1.6;
+
+  --space-0: 0; --space-1: 4px; --space-2: 8px; --space-3: 12px;
+  --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-8: 48px;
+  --space-10: 64px; --space-12: 96px;
+
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-full: 9999px;
+
+  --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --z-base: 1; --z-dropdown: 100; --z-sticky: 200; --z-fixed: 300;
+  --z-modal-backdrop: 400; --z-modal: 500; --z-popover: 600; --z-tooltip: 700; --z-toast: 800;
+
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 64px;
+  --max-content-width: 1440px;
+
+  /* ===========================================================
+     TEMA CLARO (padrão)
+     =========================================================== */
+  --bg-app:           var(--gray-50);
+  --bg-card:          var(--gray-0);
+  --bg-card-hover:    var(--gray-50);
+  --bg-sidebar:       var(--navy-700);
+  --bg-sidebar-hover: var(--navy-900);
+  --bg-overlay:       rgba(38, 54, 84, 0.6);
+
+  --text-primary:    var(--gray-900);
+  --text-secondary:  var(--gray-500);
+  --text-disabled:   var(--gray-300);
+  --text-on-dark:    var(--gray-0);
+  --text-on-brand:   var(--gray-0);
+  --text-link:       var(--blue-500);
+  --text-link-hover: var(--blue-700);
+
+  --border-light:  var(--gray-200);
+  --border-medium: var(--gray-300);
+  --border-strong: var(--navy-200);
+  --border-focus:  var(--blue-500);
+
+  --color-success-bg: #F0F9E6;
+  --color-warning-bg: #FEF5E0;
+  --color-danger-bg:  #FCE8EA;
+  --color-info-bg:    #E8F0FC;
+
+  /* Texto sobre alert-bg (suficientemente escuro pra ler no fundo claro) */
+  --color-success-fg: #4D7A26;
+  --color-warning-fg: #8A6914;
+  --color-danger-fg:  #8B0712;
+  --color-info-fg:    #0A3580;
+
+  /* Borda lateral / accent pra cards de alerta */
+  --color-success-border: #88C559;
+  --color-warning-border: #F2B544;
+  --color-danger-border:  #C70A1A;
+  --color-info-border:    #1258CA;
+
+  /* Money — claro tem verde forte / vermelho escuro */
+  --money-positive: #4D7A26;
+  --money-negative: #C70A1A;
+  --money-pending:  #B25D00;
+
+  /* Origem de tráfego — chips/badges */
+  --src-meta-bg:      #E8F0FC;
+  --src-meta-fg:      #1258CA;
+  --src-instagram-bg: #FFF1E0;
+  --src-instagram-fg: #B25D00;
+  --src-site-bg:      #F0F9E6;
+  --src-site-fg:      #4D7A26;
+  --src-manual-bg:    var(--gray-100);
+  --src-manual-fg:    var(--gray-700);
+
+  --shadow-xs:   0 1px 2px rgba(38, 54, 84, 0.04);
+  --shadow-sm:   0 1px 3px rgba(38, 54, 84, 0.06);
+  --shadow-md:   0 4px 12px rgba(38, 54, 84, 0.08);
+  --shadow-lg:   0 8px 24px rgba(38, 54, 84, 0.12);
+  --shadow-xl:   0 16px 40px rgba(38, 54, 84, 0.16);
+  --shadow-focus: 0 0 0 3px rgba(18, 88, 202, 0.15);
+
+  --field-bg: var(--gray-0);
+  --table-row-hover: var(--gray-50);
+
+  color-scheme: light;
+}
+
+/* ===========================================================
+   TEMA ESCURO
+   =========================================================== */
+[data-theme="dark"] {
+  --bg-app:           #0B1020;
+  --bg-card:          #131A2E;
+  --bg-card-hover:    #1A2340;
+  --bg-sidebar:       #0A0E1C;
+  --bg-sidebar-hover: #14192C;
+  --bg-overlay:       rgba(5, 8, 16, 0.75);
+
+  --text-primary:    #E6EAF2;
+  --text-secondary:  #8893A8;
+  --text-disabled:   #4A5468;
+  --text-link:       #5D8FE0;
+  --text-link-hover: #88B0F0;
+
+  --border-light:  rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.14);
+  --border-strong: rgba(255, 255, 255, 0.22);
+
+  --color-success-bg: rgba(136, 197, 89, 0.16);
+  --color-warning-bg: rgba(242, 181, 68, 0.16);
+  --color-danger-bg:  rgba(199, 10, 26, 0.18);
+  --color-info-bg:    rgba(18, 88, 202, 0.18);
+
+  /* No dark, texto sobre alert-bg precisa ser claro (não escuro como no light) */
+  --color-success-fg: #B3D88E;
+  --color-warning-fg: #F7CC7B;
+  --color-danger-fg:  #FFA6A6;
+  --color-info-fg:    #9DBDF0;
+
+  --color-success-border: rgba(136, 197, 89, 0.6);
+  --color-warning-border: rgba(242, 181, 68, 0.6);
+  --color-danger-border:  rgba(255, 130, 130, 0.6);
+  --color-info-border:    rgba(93, 143, 224, 0.6);
+
+  --money-positive: #B3D88E;
+  --money-negative: #FF8A8A;
+  --money-pending:  #F7CC7B;
+
+  --src-meta-bg:      rgba(18, 88, 202, 0.18);
+  --src-meta-fg:      #9DBDF0;
+  --src-instagram-bg: rgba(242, 181, 68, 0.16);
+  --src-instagram-fg: #F7CC7B;
+  --src-site-bg:      rgba(136, 197, 89, 0.16);
+  --src-site-fg:      #B3D88E;
+  --src-manual-bg:    var(--bg-card-hover);
+  --src-manual-fg:    var(--text-secondary);
+
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg:   0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-xl:   0 16px 40px rgba(0, 0, 0, 0.7);
+
+  --field-bg: #1A2340;
+  --table-row-hover: var(--bg-card-hover);
+
+  /* Tons de cinza remapeados pra superfícies dark — fazem `components.css` herdar */
+  --gray-50:  #131A2E;
+  --gray-100: #1A2340;
+  --gray-200: rgba(255, 255, 255, 0.08);
+  --gray-300: rgba(255, 255, 255, 0.16);
+  --gray-700: #C3CADB;
+  --gray-900: #E6EAF2;
+
+  --blue-50:  rgba(18, 88, 202, 0.18);
+  --blue-100: rgba(18, 88, 202, 0.28);
+  --blue-700: #88B0F0;
+
+  /* Navy também precisa virar superfície escura com texto claro */
+  --navy-50:  rgba(255, 255, 255, 0.06);
+  --navy-100: rgba(255, 255, 255, 0.10);
+  --pons-navy: #C7D2EB;
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   Reset + base
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--text-primary);
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+body {
+  margin: 0;
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-normal);
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.numeric, .money, td.numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.overline {
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}

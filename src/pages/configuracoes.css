@@ -1,0 +1,134 @@
+/* ============================================================
+   Configurações — sidebar lateral + content
+   ============================================================ */
+
+.cfg-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.cfg-nav {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 12px 8px;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+.cfg-nav__group {
+  margin-bottom: 16px;
+}
+.cfg-nav__group:last-child { margin-bottom: 0; }
+
+.cfg-nav__group-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 6px 12px 4px;
+}
+
+.cfg-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  transition: background var(--transition-base), border-color var(--transition-base);
+  font-family: inherit;
+}
+.cfg-nav__item:hover {
+  background: var(--bg-card-hover);
+}
+.cfg-nav__item--active {
+  background: var(--blue-50);
+  border-color: var(--blue-100);
+}
+.cfg-nav__item--active .cfg-nav__label {
+  color: var(--pons-blue);
+}
+
+[data-theme="dark"] .cfg-nav__item--active {
+  background: rgba(18, 88, 202, 0.18);
+  border-color: rgba(18, 88, 202, 0.4);
+}
+
+.cfg-nav__icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+}
+.cfg-nav__item--active .cfg-nav__icon {
+  background: var(--pons-blue);
+  color: #fff;
+}
+
+.cfg-nav__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.cfg-nav__label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.cfg-nav__sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+.cfg-content {
+  min-width: 0;
+}
+
+.cfg-content__head {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+.cfg-content__title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+.cfg-content__sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Mobile: empilha (drawer dropdown via select nativo) */
+@media (max-width: 900px) {
+  .cfg-layout { grid-template-columns: 1fr; }
+  .cfg-nav {
+    position: static;
+    max-height: none;
+    padding: 8px;
+  }
+  .cfg-nav__group { margin-bottom: 8px; }
+  .cfg-nav__group-title { padding: 4px 10px 2px; }
+}

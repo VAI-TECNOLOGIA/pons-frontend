@@ -1,0 +1,208 @@
+import { useState, useEffect } from 'react';
+import { Topbar, PageHeader } from '../components/PageHeader';
+import { Modal } from '../components/Modal';
+import { Api } from '../lib/api';
+import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { useToast } from '../lib/toast';
+import { useKanbanDnd } from '../lib/useKanbanDnd';
+
+const COLS: Record<string, { titulo: string; klass: string }> = {
+  A_FAZER: { titulo: 'A Fazer', klass: '' },
+  EM_ANDAMENTO: { titulo: 'Em Andamento', klass: 'kanban__col--accent' },
+  EM_REVISAO: { titulo: 'Em Revisão', klass: '' },
+  CONCLUIDO: { titulo: 'Concluído', klass: 'kanban__col--success' },
+};
+
+export default function Tarefas() {
+  const [open, setOpen] = useState(false);
+  const { data, loading, error, reload } = useApi<any[]>(() => Api.tarefas());
+  const { data: users } = useApi<any[]>(() => Api.users());
+  const [tarefas, setTarefas] = useState<any[]>([]);
+  const toast = useToast();
+  useEffect(() => { if (data) setTarefas(data); }, [data]);
+
+  const moveStatus = async (id: number, status: string) => {
+    const prev = tarefas;
+    setTarefas((cur) => cur.map((t) => (t.id === id ? { ...t, status } : t)));
+    try {
+      await Api.tarefaUpdate(id, { status });
+    } catch (err: any) {
+      // Reverte em caso de erro
+      setTarefas(prev);
+      toast.error('Erro ao mover: ' + (err.message || 'falha'));
+    }
+  };
+
+  const dnd = useKanbanDnd(moveStatus);
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    try {
+      await Api.tarefaCreate({
+        titulo: String(fd.get('titulo') || ''),
+        descricao: fd.get('descricao') ? String(fd.get('descricao')) : undefined,
+        area: String(fd.get('area') || 'GERAL'),
+        prioridade: String(fd.get('prioridade') || 'NORMAL'),
+        responsavelId: fd.get('responsavelId') ? Number(fd.get('responsavelId')) : null,
+        prazo: fd.get('prazo') ? String(fd.get('prazo')) : null,
+      });
+      toast.success('Tarefa criada');
+      setOpen(false);
+      reload();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'falha'));
+    }
+  };
+
+  if (loading) return <Shell onNew={() => setOpen(true)}><LoadingBlock /></Shell>;
+  if (error) return <Shell onNew={() => setOpen(true)}><ErrorBlock error={error} /></Shell>;
+
+  const priorityBadge = (p: string) =>
+    p === 'URGENTE' ? (
+      <span className="badge badge--cancelled" style={{ fontSize: 9, padding: '2px 6px' }}>URGENTE</span>
+    ) : p === 'ALTA' ? (
+      <span className="badge badge--analysis" style={{ fontSize: 9, padding: '2px 6px' }}>ALTA</span>
+    ) : null;
+
+  return (
+    <>
+      <Topbar
+        title="Tarefas"
+        right={<button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>+ Nova Tarefa</button>}
+      />
+      <div className="main__content">
+        <PageHeader
+          breadcrumb="Gestão · Tarefas"
+          title="Quadro de Tarefas"
+          subtitle="Distribua trabalho · acompanhe progresso · clique no status para mover"
+        />
+
+        <div className="kanban">
+          {Object.entries(COLS).map(([key, col]) => {
+            const items = tarefas.filter((t) => t.status === key);
+            const isDropTarget = dnd.hoverCol === key;
+            return (
+              <div
+                className={`kanban__col ${col.klass} ${isDropTarget ? 'kanban__col--drop-target' : ''}`}
+                key={key}
+                onDragOver={dnd.onDragOver(key)}
+                onDragLeave={dnd.onDragLeave(key)}
+                onDrop={dnd.onDrop(key)}
+              >
+                <div className="kanban__col-header">
+                  <span className="kanban__col-title">{col.titulo}</span>
+                  <span className="kanban__col-count">{items.length}</span>
+                </div>
+                <div className="kanban__cards">
+                  {items.length === 0 && isDropTarget && (
+                    <div className="kanban__cards--empty-hint">Soltar aqui</div>
+                  )}
+                  {items.map((t: any) => (
+                    <div
+                      className={'kanban-card ' + (dnd.draggingId === t.id ? 'kanban-card--dragging' : '')}
+                      key={t.id}
+                      draggable
+                      onDragStart={dnd.onDragStart(t.id)}
+                      onDragEnd={dnd.onDragEnd}
+                    >
+                      <div className="kanban-card__header">
+                        <div>
+                          <div className="kanban-card__title">{t.titulo}</div>
+                          <div className="kanban-card__meta">
+                            {t.area}
+                            {t.prazo && ' · até ' + new Date(t.prazo).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                        {priorityBadge(t.prioridade)}
+                      </div>
+                      <div className="kanban-card__footer">
+                        <span className="text-xs text-secondary">
+                          {t.responsavel?.nome || t.atribuidoA || '—'}
+                        </span>
+                        <select
+                          value={t.status}
+                          onChange={(e) => moveStatus(t.id, e.target.value)}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          style={{ fontSize: 11, padding: '2px 6px', border: '1px solid var(--border-light)', borderRadius: 4 }}
+                        >
+                          {Object.entries(COLS).map(([s, c]) => (
+                            <option value={s} key={s}>{c.titulo}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <Modal open={open} onClose={() => setOpen(false)} title="Nova Tarefa" subtitle="Atribua a um responsável e defina prazo">
+        <form onSubmit={submit}>
+          <div className="form-grid">
+            <div className="field field--span-2">
+              <label className="field__label">Título <span className="field__required">*</span></label>
+              <input name="titulo" className="field__input" required />
+            </div>
+            <div className="field field--span-2">
+              <label className="field__label">Descrição</label>
+              <textarea name="descricao" className="field__textarea" rows={2} />
+            </div>
+            <div className="field">
+              <label className="field__label">Área</label>
+              <select name="area" className="field__select" defaultValue="MARKETING">
+                <option value="MARKETING">Marketing</option>
+                <option value="ADM">ADM</option>
+                <option value="FINANCEIRO">Financeiro</option>
+                <option value="JURIDICO">Jurídico</option>
+                <option value="COMERCIAL">Comercial</option>
+                <option value="GERAL">Geral</option>
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Prioridade</label>
+              <select name="prioridade" className="field__select" defaultValue="NORMAL">
+                <option value="BAIXA">Baixa</option>
+                <option value="NORMAL">Normal</option>
+                <option value="ALTA">Alta</option>
+                <option value="URGENTE">Urgente</option>
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Responsável</label>
+              <select name="responsavelId" className="field__select" defaultValue="">
+                <option value="">— Sem atribuir —</option>
+                {(users || []).map((u: any) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Prazo</label>
+              <input name="prazo" type="date" className="field__input" />
+            </div>
+          </div>
+          <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+            <button type="button" className="btn btn--secondary" onClick={() => setOpen(false)}>Cancelar</button>
+            <button type="submit" className="btn btn--primary">Criar</button>
+          </div>
+        </form>
+      </Modal>
+    </>
+  );
+}
+
+function Shell({ children, onNew }: { children: React.ReactNode; onNew?: () => void }) {
+  return (
+    <>
+      <Topbar title="Tarefas" right={<button className="btn btn--primary btn--sm" onClick={onNew}>+ Nova Tarefa</button>} />
+      <div className="main__content">
+        <PageHeader breadcrumb="Gestão · Tarefas" title="Quadro de Tarefas" />
+        {children}
+      </div>
+    </>
+  );
+}

@@ -1,0 +1,13 @@
+.period { display: inline-flex; gap: 4px; background: var(--gray-100); padding: 4px; border-radius: 10px; }
+.period button { border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-secondary); padding: 7px 14px; border-radius: 7px; cursor: pointer; transition: all var(--transition-base); }
+.period button.is-active { background: #fff; color: var(--pons-blue); box-shadow: var(--shadow-sm); }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 20px 24px; }
+.chart-card__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.chart-card__title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.chart-box { position: relative; height: 280px; }
+.chart-box--sm { height: 240px; }
+.kpi__value small { font-size: 15px; font-weight: 700; color: var(--text-secondary); }
+.sec-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin: 32px 0 14px; display: flex; align-items: center; gap: 8px; }
+.sec-title::before { content: ''; width: 4px; height: 16px; background: var(--pons-blue); border-radius: 2px; }
+.mini-bar { height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; }
+.mini-bar > i { display: block; height: 100%; border-radius: 3px; }

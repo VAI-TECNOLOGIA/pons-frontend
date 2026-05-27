@@ -1,0 +1,62 @@
+/* ============================================================
+   Agenda Executiva — respeita tema claro/escuro
+   ============================================================ */
+
+.google-cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.06), rgba(52, 168, 83, 0.04));
+  border: 1px solid var(--border-light);
+  border-left: 3px solid #4285F4;
+}
+
+[data-theme="dark"] .google-cta {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.12), rgba(52, 168, 83, 0.08));
+}
+
+.google-cta__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="dark"] .google-cta__icon {
+  background: rgba(255, 255, 255, 0.92);
+}
+.google-cta__icon img { width: 28px; height: 28px; }
+
+.google-cta__body {
+  flex: 1;
+  min-width: 0;
+}
+.google-cta__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.google-cta__sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .google-cta {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .google-cta__body { flex-basis: calc(100% - 60px); }
+  .google-cta__title { font-size: 13px; }
+  .google-cta__sub { font-size: 11px; }
+  .google-cta > .btn { width: 100%; }
+}

@@ -1,0 +1,52 @@
+/* Gate — porta de acesso VAI. CSS extraído de gate.html original. */
+:root { --vai: #F26A21; --vai2: #FF8C42; }
+
+body:has(.gate) {
+  display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; color: #fff;
+  background:
+    radial-gradient(800px 500px at 15% 0%, rgba(242,106,33,0.20), transparent 55%),
+    radial-gradient(800px 500px at 85% 100%, rgba(255,140,66,0.16), transparent 55%),
+    linear-gradient(160deg, #07060A 0%, #14100C 60%, #08060A 100%);
+  overflow: hidden;
+}
+
+body:has(.gate)::before,
+body:has(.gate)::after {
+  content: ''; position: fixed; left: -20%; width: 140%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(242,106,33,.6), transparent);
+  animation: streak 3s linear infinite;
+}
+body:has(.gate)::before { top: 26%; }
+body:has(.gate)::after { top: 74%; animation-delay: 1.5s; background: linear-gradient(90deg, transparent, rgba(255,140,66,.45), transparent); }
+@keyframes streak {
+  0% { transform: translateX(-25%); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateX(25%); opacity: 0; }
+}
+
+.gate { width: 100%; max-width: 420px; text-align: center; position: relative; z-index: 1; margin: auto; padding: 24px; color: #fff; }
+
+.vai-logo { margin-bottom: 6px; }
+.vai-img { height: 160px; width: auto; display: block; margin: 0 auto 2px; }
+.vai-sub { font-size: 13px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-left: 0.5em; }
+
+.gate__card { margin-top: 38px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 34px 30px; backdrop-filter: blur(12px); box-shadow: 0 24px 60px rgba(0,0,0,0.4); }
+.gate__eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--vai); }
+.gate__title { font-size: 19px; font-weight: 800; margin: 8px 0 4px; }
+.gate__hint { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5; margin-bottom: 22px; }
+.gate__input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); border-radius: 12px; padding: 16px; color: #fff; font-family: inherit; font-size: 18px; font-weight: 700; letter-spacing: 0.22em; text-align: center; text-transform: uppercase; outline: none; transition: border-color .15s, box-shadow .15s; }
+.gate__input::placeholder { letter-spacing: 0.1em; font-weight: 500; color: rgba(255,255,255,0.3); text-transform: none; }
+.gate__input:focus { border-color: var(--vai); box-shadow: 0 0 0 4px rgba(24,224,200,0.18); }
+.gate__btn { width: 100%; margin-top: 16px; border: none; border-radius: 12px; padding: 16px; font-family: inherit; font-size: 15px; font-weight: 800; color: #04121A; cursor: pointer;
+  background: linear-gradient(100deg, var(--vai), var(--vai2)); transition: transform .15s, filter .15s, box-shadow .15s; box-shadow: 0 8px 24px rgba(24,224,200,0.3); }
+.gate__btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 12px 30px rgba(24,224,200,0.4); }
+.gate__btn:disabled { opacity: .6; cursor: default; transform: none; }
+.gate__err { color: #FF8A8A; font-size: 13px; font-weight: 600; margin-top: 14px; min-height: 18px; }
+.gate--shake { animation: shake .4s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.gate__foot { margin-top: 28px; font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; }
+.gate__lock { display: inline-flex; align-items: center; gap: 6px; }

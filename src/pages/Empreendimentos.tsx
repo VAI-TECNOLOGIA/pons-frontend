@@ -1,0 +1,669 @@
+import { useEffect, useRef, useState } from 'react';
+import { Topbar, PageHeader } from '../components/PageHeader';
+import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
+import { formatCurrencyShort } from '../lib/format';
+import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
+import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
+
+type Construtora = { id: number; nome: string };
+type Foto = { id: number; url: string; ordem: number };
+type Empreendimento = {
+  id: number;
+  nome: string;
+  slug: string;
+  cidade: string;
+  estado: string;
+  status: 'PRE_LANCAMENTO' | 'OBRA' | 'ENTREGUE' | string;
+  unidadesTotal: number;
+  unidadesVendidas: number;
+  valorInicial: number | null;
+  descricao?: string | null;
+  imagemUrl?: string | null;
+  fotos: Foto[];
+  construtora: { id: number; nome: string };
+  vendasCount?: number;
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  PRE_LANCAMENTO: 'PRÉ-LANÇAMENTO',
+  OBRA: 'EM OBRA',
+  ENTREGUE: 'ENTREGUE',
+};
+
+export default function Empreendimentos() {
+  const { data: emps, loading, error, reload } = useApi<Empreendimento[]>(() => Api.empreendimentos());
+  const { data: construtoras } = useApi<Construtora[]>(() => Api.construtoras());
+  const [showNew, setShowNew] = useState(false);
+  const [gallery, setGallery] = useState<Empreendimento | null>(null);
+
+  const userRole = Auth.user?.role || '';
+  const canEdit = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'].includes(userRole);
+
+  if (loading) return <Shell canEdit={canEdit}><LoadingBlock /></Shell>;
+  if (error) return <Shell canEdit={canEdit}><ErrorBlock error={error} /></Shell>;
+  if (!emps) return null;
+
+  const vendidas = emps.reduce((s, e) => s + (e.unidadesVendidas || 0), 0);
+  const totalConstrutoras = new Set(emps.map((e) => e.construtora?.nome).filter(Boolean)).size;
+
+  return (
+    <>
+      <Topbar
+        title="Empreendimentos"
+        right={
+          canEdit ? (
+            <button className="btn btn--primary btn--sm" onClick={() => setShowNew(true)}>
+              <Icon name="plus" size={14} /> Cadastrar empreendimento
+            </button>
+          ) : undefined
+        }
+      />
+      <div className="main__content">
+        <PageHeader
+          breadcrumb="Gestão · Empreendimentos"
+          title={`${emps.length} empreendimentos · ${totalConstrutoras} construtoras`}
+          subtitle={`${vendidas} unidades vendidas`}
+        />
+
+        <div className="grid-3">
+          {emps.map((e) => {
+            const pct = e.unidadesTotal ? Math.round((e.unidadesVendidas / e.unidadesTotal) * 100) : 0;
+            const cover = e.imagemUrl || e.fotos[0]?.url;
+            const coverStyle: React.CSSProperties = cover
+              ? { backgroundImage: `url(${cover})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : {
+                  background: 'linear-gradient(135deg,#263654,#1258CA)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 800,
+                  fontSize: 20,
+                };
+            return (
+              <div className="property-card" key={e.id}>
+                <div
+                  className="property-card__cover"
+                  style={{ ...coverStyle, cursor: canEdit ? 'pointer' : 'default', position: 'relative' }}
+                  onClick={() => canEdit && setGallery(e)}
+                  title={canEdit ? 'Clique pra gerenciar fotos' : undefined}
+                >
+                  {!cover && e.nome.toUpperCase()}
+                  <span className="badge badge--launch property-card__tag">
+                    {STATUS_LABEL[e.status] || e.status}
+                  </span>
+                  {canEdit && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 8,
+                        right: 8,
+                        background: 'rgba(0,0,0,0.55)',
+                        color: '#fff',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '4px 8px',
+                        borderRadius: 999,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <Icon name="pencil" size={11} /> {e.fotos.length}/8 fotos
+                    </div>
+                  )}
+                </div>
+                <div className="property-card__body">
+                  <h3 className="property-card__title">{e.nome}</h3>
+                  <div className="property-card__location">
+                    {e.cidade}/{e.estado} · {e.construtora?.nome || '—'}
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div className="flex-between text-sm mb-2">
+                      <span className="text-secondary">
+                        Vendidas: {e.unidadesVendidas} de {e.unidadesTotal}
+                      </span>
+                      <span className="font-semibold">{pct}%</span>
+                    </div>
+                    <div className="progress">
+                      <div className="progress__fill" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                  <div className="property-card__stats">
+                    <div className="property-card__stat">
+                      <div className="property-card__stat-value">{e.unidadesTotal ?? 0}</div>
+                      <div className="property-card__stat-label">total</div>
+                    </div>
+                    <div className="property-card__stat">
+                      <div className="property-card__stat-value">{e.vendasCount ?? e.unidadesVendidas ?? 0}</div>
+                      <div className="property-card__stat-label">contratos</div>
+                    </div>
+                    <div className="property-card__stat">
+                      <div className="property-card__stat-value">{formatCurrencyShort(e.valorInicial || 0)}</div>
+                      <div className="property-card__stat-label">a partir</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {showNew && construtoras && (
+        <NovoEmpreendimentoModal
+          construtoras={construtoras}
+          onClose={() => setShowNew(false)}
+          onCreated={() => {
+            setShowNew(false);
+            reload();
+          }}
+        />
+      )}
+
+      {gallery && (
+        <GaleriaFotosModal
+          empreendimento={gallery}
+          onClose={() => setGallery(null)}
+          onChanged={() => {
+            reload();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function Shell({ children, canEdit }: { children: React.ReactNode; canEdit?: boolean }) {
+  return (
+    <>
+      <Topbar
+        title="Empreendimentos"
+        right={
+          canEdit ? (
+            <button className="btn btn--primary btn--sm" disabled>
+              <Icon name="plus" size={14} /> Cadastrar empreendimento
+            </button>
+          ) : undefined
+        }
+      />
+      <div className="main__content">
+        <PageHeader breadcrumb="Gestão · Empreendimentos" title="Empreendimentos" />
+        {children}
+      </div>
+    </>
+  );
+}
+
+// ── Modal: novo empreendimento ────────────────────────────────────────
+function NovoEmpreendimentoModal({
+  construtoras,
+  onClose,
+  onCreated,
+}: {
+  construtoras: Construtora[];
+  onClose: () => void;
+  onCreated: (e: Empreendimento) => void;
+}) {
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const inputFileRef = useRef<HTMLInputElement>(null);
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      nome: String(fd.get('nome') || '').trim(),
+      construtoraId: Number(fd.get('construtoraId') || 0),
+      cidade: String(fd.get('cidade') || '').trim(),
+      estado: String(fd.get('estado') || 'SC').toUpperCase(),
+      status: String(fd.get('status') || 'PRE_LANCAMENTO'),
+      unidadesTotal: Number(fd.get('unidadesTotal') || 0),
+      unidadesVendidas: Number(fd.get('unidadesVendidas') || 0),
+      valorInicial: fd.get('valorInicial') ? Number(fd.get('valorInicial')) : null,
+      descricao: (fd.get('descricao') ? String(fd.get('descricao')) : null) || null,
+    };
+    if (!payload.nome || !payload.construtoraId || !payload.cidade) {
+      toast.error('Nome, construtora e cidade são obrigatórios.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const created: any = await Api.empreendimentoCreate(payload);
+      // Upload das fotos selecionadas (se houver) — usa endpoint dedicado
+      if (pendingFiles.length) {
+        const form = new FormData();
+        for (const f of pendingFiles.slice(0, 8)) form.append('files', f);
+        const r = await fetch(`/api/empreendimentos/${created.id}/fotos`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${Auth.token}` },
+          body: form,
+        });
+        if (!r.ok) {
+          toast.info('Empreendimento criado, mas algumas fotos falharam ao enviar.');
+        }
+      }
+      toast.success('Empreendimento cadastrado.');
+      onCreated(created);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Novo empreendimento"
+      subtitle="Cadastre o produto que entra no portfólio e use as fotos pro material de venda."
+      size="lg"
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose} disabled={saving}>Cancelar</button>
+          <button form="form-novo-emp" className="btn btn--primary" disabled={saving}>
+            {saving ? 'Salvando…' : 'Cadastrar empreendimento'}
+          </button>
+        </>
+      }
+    >
+      <form id="form-novo-emp" onSubmit={submit}>
+        <div className="form-grid">
+          <div className="field field--span-2">
+            <label className="field__label">Nome do empreendimento *</label>
+            <input name="nome" className="field__input" required placeholder="Ex: Park View Itapema" />
+          </div>
+          <div className="field">
+            <label className="field__label">Construtora *</label>
+            <select name="construtoraId" className="field__select" required defaultValue="">
+              <option value="" disabled>Selecione…</option>
+              {construtoras.map((c) => (
+                <option key={c.id} value={c.id}>{c.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label className="field__label">Status</label>
+            <select name="status" className="field__select" defaultValue="PRE_LANCAMENTO">
+              <option value="PRE_LANCAMENTO">Pré-lançamento</option>
+              <option value="OBRA">Em obra</option>
+              <option value="ENTREGUE">Entregue</option>
+            </select>
+          </div>
+          <div className="field">
+            <label className="field__label">Cidade *</label>
+            <input name="cidade" className="field__input" required placeholder="Ex: Itapema" />
+          </div>
+          <div className="field">
+            <label className="field__label">UF</label>
+            <input name="estado" className="field__input" defaultValue="SC" maxLength={2} />
+          </div>
+          <div className="field">
+            <label className="field__label">Unidades totais</label>
+            <input name="unidadesTotal" className="field__input" type="number" min={0} defaultValue={0} />
+          </div>
+          <div className="field">
+            <label className="field__label">Unidades vendidas</label>
+            <input name="unidadesVendidas" className="field__input" type="number" min={0} defaultValue={0} />
+          </div>
+          <div className="field field--span-2">
+            <label className="field__label">Valor inicial (R$)</label>
+            <input
+              name="valorInicial"
+              className="field__input"
+              type="number"
+              min={0}
+              step={1000}
+              placeholder="Ex: 580000"
+            />
+          </div>
+          <div className="field field--span-2">
+            <label className="field__label">Descrição</label>
+            <textarea
+              name="descricao"
+              className="field__textarea"
+              rows={3}
+              placeholder="Resumo, diferenciais, plantas..."
+            />
+          </div>
+        </div>
+
+        <hr style={{ margin: '20px 0', borderColor: 'var(--border-light)' }} />
+
+        <div>
+          <label className="field__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Fotos do empreendimento (até 8)</span>
+            <span className="text-xs text-secondary">{pendingFiles.length}/8 selecionadas</span>
+          </label>
+          <input
+            id="emp-novo-file"
+            ref={inputFileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []).slice(0, 8 - pendingFiles.length);
+              setPendingFiles((cur) => [...cur, ...files].slice(0, 8));
+              if (inputFileRef.current) inputFileRef.current.value = '';
+            }}
+          />
+          <label
+            htmlFor="emp-novo-file"
+            className="btn btn--secondary btn--sm"
+            style={{
+              display: 'inline-flex',
+              cursor: pendingFiles.length >= 8 ? 'not-allowed' : 'pointer',
+              opacity: pendingFiles.length >= 8 ? 0.5 : 1,
+              pointerEvents: pendingFiles.length >= 8 ? 'none' : 'auto',
+            }}
+          >
+            <Icon name="plus" size={14} /> Adicionar fotos
+          </label>
+          {pendingFiles.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12 }}>
+              {pendingFiles.map((f, i) => (
+                <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '4/3', background: 'var(--bg-card-hover)' }}>
+                  <img src={URL.createObjectURL(f)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button
+                    type="button"
+                    onClick={() => setPendingFiles((cur) => cur.filter((_, idx) => idx !== i))}
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.65)',
+                      color: '#fff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    title="Remover"
+                  >
+                    <Icon name="x" size={11} />
+                  </button>
+                  {i === 0 && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        bottom: 4,
+                        left: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: 'var(--pons-blue)',
+                        color: '#fff',
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      CAPA
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="field__hint">A primeira foto vira a capa automaticamente. Você pode trocar depois.</div>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ── Modal: galeria + gerenciar fotos de um empreendimento existente ──
+function GaleriaFotosModal({
+  empreendimento,
+  onClose,
+  onChanged,
+}: {
+  empreendimento: Empreendimento;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [emp, setEmp] = useState<Empreendimento>(empreendimento);
+  const [busy, setBusy] = useState(false);
+  const inputFileRef = useRef<HTMLInputElement>(null);
+
+  const refetch = async () => {
+    try {
+      const fresh: any = await Api.empreendimento(emp.id);
+      setEmp({ ...fresh, construtora: fresh.construtora, fotos: fresh.fotos || [] });
+    } catch {}
+  };
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fotos = emp.fotos || [];
+  const slotsLivres = 8 - fotos.length;
+
+  const handleUpload = async (files: FileList | File[]) => {
+    const list = Array.from(files).slice(0, slotsLivres);
+    if (!list.length) return;
+    setBusy(true);
+    try {
+      const form = new FormData();
+      for (const f of list) form.append('files', f);
+      const r = await fetch(`/api/empreendimentos/${emp.id}/fotos`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${Auth.token}` },
+        body: form,
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.message || 'upload_failed');
+      toast.success(`${data.fotos?.length || 0} foto(s) enviada(s).`);
+      await refetch();
+      onChanged();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteFoto = async (foto: Foto) => {
+    const ok = await confirm({
+      title: 'Remover foto?',
+      message: 'A foto será apagada permanentemente do R2 e do empreendimento.',
+      confirmText: 'Remover',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await Api.empreendimentoFotoDelete(emp.id, foto.id);
+      toast.success('Foto removida.');
+      await refetch();
+      onChanged();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const setCapa = async (foto: Foto) => {
+    setBusy(true);
+    try {
+      await Api.empreendimentoFotoCapa(emp.id, foto.id);
+      toast.success('Capa atualizada.');
+      await refetch();
+      onChanged();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Fotos · ${emp.nome}`}
+      subtitle={`${fotos.length}/8 fotos cadastradas`}
+      size="lg"
+      footer={
+        <>
+          <button className="btn btn--primary" onClick={onClose}>Fechar</button>
+        </>
+      }
+    >
+      {/* input file invisível mas acessível por label htmlFor (funciona dentro de <dialog>) */}
+      <input
+        id="emp-galeria-file"
+        ref={inputFileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+        onChange={(e) => {
+          if (e.target.files) handleUpload(e.target.files);
+          if (inputFileRef.current) inputFileRef.current.value = '';
+        }}
+      />
+      {fotos.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
+          Nenhuma foto ainda.
+          <br />
+          <label
+            htmlFor="emp-galeria-file"
+            className="btn btn--primary btn--sm"
+            style={{ marginTop: 12, display: 'inline-flex', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1 }}
+          >
+            <Icon name="plus" size={14} /> Carregar fotos
+          </label>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            {fotos.map((f) => {
+              const isCapa = emp.imagemUrl === f.url;
+              return (
+                <div
+                  key={f.id}
+                  style={{
+                    position: 'relative',
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    aspectRatio: '4/3',
+                    background: 'var(--bg-card-hover)',
+                    border: isCapa ? '2px solid var(--pons-blue)' : '1px solid var(--border-light)',
+                  }}
+                >
+                  <img src={f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {isCapa && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 4,
+                        left: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: 'var(--pons-blue)',
+                        color: '#fff',
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      CAPA
+                    </span>
+                  )}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      justifyContent: 'space-between',
+                      padding: 6,
+                      background: 'linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.55) 100%)',
+                      opacity: 0,
+                      transition: 'opacity 150ms',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
+                  >
+                    {!isCapa ? (
+                      <button
+                        onClick={() => setCapa(f)}
+                        disabled={busy}
+                        style={{
+                          background: 'rgba(255,255,255,0.92)',
+                          color: 'var(--pons-blue)',
+                          border: 'none',
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Definir capa
+                      </button>
+                    ) : <span />}
+                    <button
+                      onClick={() => deleteFoto(f)}
+                      disabled={busy}
+                      style={{
+                        background: 'rgba(199, 10, 26, 0.92)',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '4px 8px',
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Icon name="trash" size={11} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {slotsLivres > 0 && (
+              <label
+                htmlFor="emp-galeria-file"
+                style={{
+                  borderRadius: 10,
+                  border: '2px dashed var(--border-light)',
+                  background: 'var(--bg-card-hover)',
+                  color: 'var(--text-secondary)',
+                  aspectRatio: '4/3',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  cursor: busy ? 'not-allowed' : 'pointer',
+                  fontSize: 12,
+                  opacity: busy ? 0.6 : 1,
+                  pointerEvents: busy ? 'none' : 'auto',
+                }}
+              >
+                <Icon name="plus" size={20} />
+                Carregar ({slotsLivres} {slotsLivres === 1 ? 'slot' : 'slots'} livres)
+              </label>
+            )}
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
