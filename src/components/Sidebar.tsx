@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Auth, formatRole, type Role } from '../lib/auth';
+import { useUser } from '../lib/userContext';
 import { Icon } from './Icon';
 
 const COMERCIAL: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'];
@@ -45,7 +46,10 @@ const ALL_ITEMS: NavItem[] = [
 
 export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   const navigate = useNavigate();
-  const user = Auth.user;
+  const { user: ctxUser, setUser } = useUser();
+  // Prefere o user do contexto (atualiza ao trocar login).
+  // Fallback Auth.user pra caso de race em montagem inicial.
+  const user = ctxUser || Auth.user;
   if (!user) return null;
 
   const items = ALL_ITEMS.filter((it) => !it.roles || it.roles.includes(user.role));
@@ -55,7 +59,7 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   });
 
   const handleLogout = () => {
-    Auth.clear();
+    setUser(null); // limpa localStorage + state React em uma chamada
     navigate('/login');
   };
 

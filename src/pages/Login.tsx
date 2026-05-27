@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Auth } from '../lib/auth';
 import { Api, ApiError } from '../lib/api';
+import { useUser } from '../lib/userContext';
 
 import './login.css';
 
@@ -14,6 +15,7 @@ const DEMO_OPTIONS = [
 
 export default function Login() {
  const navigate = useNavigate();
+ const { setUser } = useUser();
  const [email, setEmail] = useState('');
  const [password, setPassword] = useState('');
  const [error, setError] = useState('');
@@ -39,7 +41,11 @@ export default function Login() {
  setBusy(true);
  try {
  const { token, user } = await Api.login(email.trim(), password);
+ // Persist no localStorage E atualiza o React state global (UserContext)
+ // — sem o segundo, a Topbar/avatar continua mostrando o user anterior
+ // até o próximo reload do browser.
  Auth.set(token, user);
+ setUser(user);
  navigate('/dashboard', { replace: true });
  } catch (err) {
  const msg =
