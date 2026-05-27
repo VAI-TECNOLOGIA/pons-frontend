@@ -15,18 +15,14 @@ const COLS = [
 ];
 
 export default function Pipeline() {
+ // Hooks DEVEM vir antes de qualquer return condicional (Rules of Hooks).
+ // Errado antes: useToast/useKanbanDnd vinham depois do "if (loading) return ...",
+ // disparando React #310 quando o estado loading mudava.
  const { data, loading, error } = useApi<any[]>(() => Api.leads());
  const [leads, setLeads] = useState<any[]>([]);
+ const toast = useToast();
  useEffect(() => { if (data) setLeads(data); }, [data]);
 
- if (loading) return <Shell><LoadingBlock /></Shell>;
- if (error) return <Shell><ErrorBlock error={error} /></Shell>;
-
- const ativos = leads.filter((l: any) => l.status !== 'PERDIDO');
- const fechados = leads.filter((l: any) => l.status === 'FECHADO').length;
- const conv = ativos.length ? Math.round((fechados / ativos.length) * 100) : 0;
-
- const toast = useToast();
  const moveLead = async (id: number, status: string) => {
  const prev = leads;
  setLeads((cur) => cur.map((l) => (l.id === id ? { ...l, status } : l)));
@@ -39,6 +35,13 @@ export default function Pipeline() {
  };
 
  const dnd = useKanbanDnd(moveLead);
+
+ if (loading) return <Shell><LoadingBlock /></Shell>;
+ if (error) return <Shell><ErrorBlock error={error} /></Shell>;
+
+ const ativos = leads.filter((l: any) => l.status !== 'PERDIDO');
+ const fechados = leads.filter((l: any) => l.status === 'FECHADO').length;
+ const conv = ativos.length ? Math.round((fechados / ativos.length) * 100) : 0;
 
  return (
  <>
