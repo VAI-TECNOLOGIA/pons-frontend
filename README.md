@@ -33,4 +33,4 @@ Vercel auto-deploy a cada push em `main`. Rewrite + SPA fallback em `vercel.json
 
 ## Backend
 
-Backend está em outro repo: [pons-backend](https://github.com/Bellodev5/pons-backend).
+Backend está em outro repo: [pons-backend](https://github.com/VAI-TECNOLOGIA/pons-backend).
