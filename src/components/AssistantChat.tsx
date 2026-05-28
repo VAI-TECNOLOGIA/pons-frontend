@@ -157,9 +157,7 @@ export function AssistantChat() {
                     (iaStatus?.configurado ? '' : ' assistant__status-dot--demo')
                   }
                 />
-                {iaStatus?.configurado
-                  ? `${(iaStatus.provider || '').toUpperCase()} · ${iaStatus.model || 'pronto'}`
-                  : 'Modo demo (sem chave de IA)'}
+                {iaStatus?.configurado ? 'Pronto' : 'Modo demo (sem chave de IA)'}
               </div>
             </div>
             {msgs.length > 0 && (
@@ -194,7 +192,7 @@ export function AssistantChat() {
                     className="assistant__suggestion assistant__suggestion--more"
                     onClick={() => setShowSuggestions(true)}
                   >
-                    <Icon name="sparkles" size={12} /> Ver mais sugestões…
+                    <Icon name="lightbulb" size={12} /> Ver mais sugestões…
                   </button>
                 </div>
               </>
@@ -241,7 +239,7 @@ export function AssistantChat() {
               aria-label="Sugestões"
               type="button"
             >
-              <Icon name="sparkles" size={16} />
+              <Icon name="lightbulb" size={16} />
             </button>
             <textarea
               ref={inputRef}
