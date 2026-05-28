@@ -81,7 +81,7 @@ export default function Avisos() {
 
         <div className="mural">
           {avisos.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>
               Nenhum aviso publicado ainda.
             </div>
           ) : (

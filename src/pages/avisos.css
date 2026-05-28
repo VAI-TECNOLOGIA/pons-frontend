@@ -1,6 +1,12 @@
-.mural { columns: 2; column-gap: 20px; }
-@media (max-width: 900px) { .mural { columns: 1; } }
-.aviso { break-inside: avoid; margin-bottom: 20px; border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border-light); background: var(--bg-card); position: relative; }
+/* Grid responsivo — antes era CSS multi-column (`columns: 2`) que dividia 1
+   card em duas colunas visuais e desenhava um "fantasma" cortado quando havia
+   só 1 item (caso do empty state). Grid CSS é mais previsível e responsivo. */
+.mural {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.aviso { border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border-light); background: var(--bg-card); position: relative; }
 .aviso--CAMPANHA { background: var(--color-warning-bg); border-color: var(--color-warning-border); }
 .aviso--URGENTE  { background: var(--color-danger-bg);  border-color: var(--color-danger-border);  }
 .aviso--EVENTO   { background: var(--color-info-bg);    border-color: var(--color-info-border);    }
