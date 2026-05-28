@@ -145,66 +145,42 @@ export function HelpHeader({
 }
 
 // ── Google Calendar ────────────────────────────────────────────────────
-function GoogleGuide({ apiBase }: { apiBase: string }) {
-  const callback = `${apiBase}/integracoes/google/callback`;
+function GoogleGuide({ apiBase: _apiBase }: { apiBase: string }) {
   return (
     <div>
       <HelpHeader
         logo="/assets/calendar-icon.png"
         fallbackIcon={<GoogleCalendarIcon size={22} />}
         title="Google Calendar"
-        lead="Eventos criados no Pons aparecem no Calendar do usuário. Compromissos criados no Google são puxados quando o usuário sincroniza."
+        lead="Eventos criados no Pons aparecem na sua agenda Google. Compromissos criados no Google são puxados quando você sincroniza."
       />
 
-      <Step n={1} title="Abra o Google Cloud Console">
-        Acesse{' '}
-        <a href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noopener">
-          console.cloud.google.com/auth/clients
-        </a>{' '}
-        logado com a conta que vai ser dona da integração.
+      <Step n={1} title="Clique em Conectar Google">
+        No topo desta página, no card <strong>Google Calendar</strong>, clique{' '}
+        <strong>Conectar Google</strong>. Abre uma janela do Google.
       </Step>
 
-      <Step n={2} title="Crie um projeto (se ainda não tem)">
-        Topo da página → seletor de projeto → <strong>Novo Projeto</strong>. Nome sugerido:{' '}
-        <Code>Pons CRM</Code>.
+      <Step n={2} title="Escolha sua conta Google">
+        Entre com a conta Google onde você quer que os eventos apareçam. Geralmente é a mesma
+        do email corporativo.
       </Step>
 
-      <Step n={3} title="Configure a tela de consentimento OAuth">
-        Menu lateral → <strong>Branding</strong>. Tipo de usuário: <strong>Externo</strong>.
-        Preencha nome do app, email de suporte e contato. Não precisa enviar pra verificação —
-        funciona em modo "Em testes".
+      <Step n={3} title="Autorize o acesso à agenda">
+        O Google pergunta se o Pons pode gerenciar seus eventos. Clique <strong>Continuar</strong>
+        → <strong>Permitir</strong>. A janela fecha sozinha.
       </Step>
 
-      <Step n={4} title="Adicione você como Test User">
-        Em <strong>Público</strong> → <strong>Add users</strong> → adicione o email Google que
-        vai usar o Pons (ex.: <Code>paulo@grupopons.com.br</Code>). Sem isso, o login dá "Acesso
-        bloqueado".
+      <Step n={4} title="Pronto">
+        O card fica verde com sua conta vinculada. A partir daqui, cada evento criado na aba
+        <em> Agenda</em> sincroniza pro seu Google automaticamente. Se precisar trocar de
+        conta, clica em <strong>Desconectar</strong> e refaz.
       </Step>
 
-      <Step n={5} title="Crie o OAuth Client">
-        Menu <strong>Clientes</strong> → <strong>+ Criar credenciais</strong> →{' '}
-        <strong>ID do cliente OAuth 2.0</strong>. Tipo de aplicativo:{' '}
-        <strong>Aplicativo da Web</strong>.
-      </Step>
-
-      <Step n={6} title="Adicione esta Authorized Redirect URI">
-        <CopyCode value={callback} />
-        <div className="help-warn">
-          Tem que ser <em>exatamente</em> essa URL — Google é literal com domínio, path e barras.
-        </div>
-      </Step>
-
-      <Step n={7} title="Baixe o JSON e cole as creds aqui">
-        Após criar, o Google mostra um modal com Client ID + Client Secret. Clique em{' '}
-        <strong>Baixar o JSON</strong> antes de fechar (o secret só aparece uma vez). Cole
-        Client ID e Client Secret nos campos <em>Outras integrações externas → Google Calendar</em>{' '}
-        nesta página e salve.
-      </Step>
-
-      <Step n={8} title="Conecte sua conta">
-        Volte no topo desta página, no card <em>Google Calendar</em> → clique{' '}
-        <strong>Conectar Google</strong>. Abre o consentimento, autoriza, fecha. Pronto.
-      </Step>
+      <div className="help-warn" style={{ marginTop: 12 }}>
+        <strong>Acesso bloqueado?</strong> O Pons é um app em modo de teste no Google. Se
+        aparecer "Acesso bloqueado: o app não concluiu o processo de verificação", peça pra
+        equipe VAI te adicionar como <em>test user</em> no Google Cloud Console (~30s).
+      </div>
     </div>
   );
 }

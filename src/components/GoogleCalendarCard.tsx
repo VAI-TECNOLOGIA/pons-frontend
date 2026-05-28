@@ -97,10 +97,8 @@ export function GoogleCalendarCard({ onChange }: { onChange?: () => void }) {
         </h3>
         {status?.conectado ? (
           <span className="badge badge--signed">Conectado</span>
-        ) : status?.hasConfig ? (
-          <span className="badge badge--analysis">Configurado · não conectado</span>
         ) : (
-          <span className="badge badge--neutral">Sem configuração</span>
+          <span className="badge badge--analysis">Não conectado</span>
         )}
       </div>
 
@@ -111,13 +109,10 @@ export function GoogleCalendarCard({ onChange }: { onChange?: () => void }) {
             <br />
             Calendário: <code>{status.calendarId || 'primary'}</code>
           </div>
-        ) : status?.hasConfig ? (
-          <div className="field__hint" style={{ marginBottom: 12 }}>
-            Client ID + Secret salvos. Clique em <strong>Conectar</strong> pra autorizar com sua conta Google.
-          </div>
         ) : (
           <div className="field__hint" style={{ marginBottom: 12 }}>
-            Configure Client ID e Client Secret abaixo, depois retorne aqui pra conectar.
+            Clique em <strong>Conectar Google</strong> e autorize com sua conta Google.
+            Seus compromissos vão sincronizar nos dois sentidos.
           </div>
         )}
 
@@ -136,8 +131,8 @@ export function GoogleCalendarCard({ onChange }: { onChange?: () => void }) {
               type="button"
               className="btn btn--primary btn--sm"
               onClick={conectar}
-              disabled={busy || !status?.hasConfig}
-              title={!status?.hasConfig ? 'Preencha Client ID + Secret primeiro' : 'Autorizar Google Calendar'}
+              disabled={busy}
+              title="Autorizar Google Calendar"
             >
               <GoogleCalendarIcon size={14} /> {busy ? 'Aguardando…' : 'Conectar Google'}
             </button>

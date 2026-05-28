@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
-import { GoogleCalendarIcon } from '../components/GoogleCalendarIcon';
 import { GoogleCalendarCard } from '../components/GoogleCalendarCard';
 import { IntegracoesHelp } from '../components/IntegracoesHelp';
 import { IAHelp } from '../components/IAHelp';
@@ -404,10 +403,10 @@ function PanelIntegracoes() {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
  const payload: Record<string, string> = {};
+ // google.clientId/Secret não estão mais aqui — modelo SaaS, creds no backend.
  [
    'webhook.token', 'meta.token',
    'sicredi.clientId', 'sicredi.clientSecret',
-   'google.clientId', 'google.clientSecret', 'google.calendarId',
  ].forEach((key) => {
  const v = fd.get(key);
  if (v != null) payload[key] = String(v);
@@ -449,25 +448,6 @@ function PanelIntegracoes() {
  <div className="field">
  <label className="field__label">Sicredi Client Secret</label>
  <input name="sicredi.clientSecret" className="field__input" type="password" placeholder="••••••••" defaultValue={s?.['sicredi.clientSecret'] || ''} />
- </div>
- <div className="field field--span-2">
- <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
- <GoogleCalendarIcon size={14} /> Google Calendar OAuth — Client ID
- </label>
- <input name="google.clientId" className="field__input" placeholder="xxxxxxxx.apps.googleusercontent.com" defaultValue={s?.['google.clientId'] || ''} />
- <div className="field__hint">
- Crie um OAuth Client em <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" style={{ color: 'var(--pons-blue)' }}>Google Cloud Console → Credentials</a>.
- Authorized redirect URI: <code>{`${typeof window !== 'undefined' ? window.location.origin : ''}/api/integracoes/google/callback`}</code>
- </div>
- </div>
- <div className="field">
- <label className="field__label">Google Client Secret</label>
- <input name="google.clientSecret" className="field__input" type="password" placeholder="GOCSPX-..." defaultValue={s?.['google.clientSecret'] || ''} />
- </div>
- <div className="field">
- <label className="field__label">Calendar ID</label>
- <input name="google.calendarId" className="field__input" placeholder="primary" defaultValue={s?.['google.calendarId'] || 'primary'} />
- <div className="field__hint">Use "primary" pra calendário principal, ou ID específico.</div>
  </div>
  </div>
  <button type="submit" className="btn btn--primary" style={{ marginTop: 16 }}>
