@@ -53,7 +53,6 @@ export default function PainelTV() {
 
   return (
     <div className="tv">
-      <div className="tv__checker" />
       <header className="tvh">
         <div className="tvh__brand">
           <img src="/assets/logo_white.png" alt="Grupo Pons" />
@@ -194,16 +193,29 @@ export default function PainelTV() {
                 <line
                   x1="100"
                   y1="110"
-                  x2={100 + Math.cos((gaugeAngle * Math.PI) / 180) * 70}
-                  y2={110 + Math.sin((gaugeAngle * Math.PI) / 180) * 70}
+                  x2={100 + Math.cos((gaugeAngle * Math.PI) / 180) * 55}
+                  y2={110 + Math.sin((gaugeAngle * Math.PI) / 180) * 55}
                   stroke={gaugeColor}
                   strokeWidth="3"
                   strokeLinecap="round"
                   style={{ transition: 'all 1s ease' }}
                 />
-                <circle cx="100" cy="110" r="6" fill={gaugeColor} />
+                <circle cx="100" cy="110" r="5" fill={gaugeColor} />
+                {/* Porcentagem dentro do SVG, no centro-baixo do arco onde o ponteiro
+                    não alcança. Mantém alinhamento perfeito em qualquer tamanho. */}
+                <text
+                  x="100"
+                  y="128"
+                  textAnchor="middle"
+                  fontSize="22"
+                  fontWeight="900"
+                  fontStyle="italic"
+                  fill={gaugeColor}
+                  style={{ filter: 'drop-shadow(0 0 8px currentColor)' }}
+                >
+                  {pct}%
+                </text>
               </svg>
-              <div className="gauge__v" style={{ color: gaugeColor }}>{pct}%</div>
               <div className="gauge__l">{a.noRitmo ? 'NO RITMO' : 'ABAIXO DO RITMO'}</div>
               <div className="gauge__sub">{formatCurrencyShort(a.realizadoMes)} de {formatCurrencyShort(a.metaCasa)}</div>
             </div>
@@ -227,13 +239,6 @@ export default function PainelTV() {
         </div>
       </div>
 
-      <div className="tvf">
-        <div className="tvf__left">
-          <Icon name="flagCheckered" size={14} />
-          vai-sistema.com · Painel TV
-        </div>
-        <div className="tvf__right">Atualizado às {now.toLocaleTimeString('pt-BR')}</div>
-      </div>
     </div>
   );
 }
