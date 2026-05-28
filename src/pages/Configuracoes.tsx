@@ -631,10 +631,10 @@ function VaiIntegrationCard({ settings, onSaved }: { settings: Record<string, st
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
- const keys = [
-   'vai.apiBaseUrl', 'vai.loginEmail', 'vai.loginPassword', 'vai.channelId',
-   'vai.webhookSecret', 'vai.flowSecret', 'vai.flowSecretShort',
- ];
+ // Modelo SaaS: cliente só preenche login do painel VAI.
+ // API base URL, channel ID, webhook/flow secrets ficam no backend (env vars
+ // gerenciadas por VAI Tecnologia no Railway por instalação).
+ const keys = ['vai.loginEmail', 'vai.loginPassword'];
  const payload: Record<string, string> = {};
  for (const k of keys) {
  const v = fd.get(k);
@@ -653,9 +653,6 @@ function VaiIntegrationCard({ settings, onSaved }: { settings: Record<string, st
  setSaving(false);
  }
  };
-
- const webhookUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/vai` : '';
- const flowUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/vai-flow` : '';
 
  return (
  <form className="card" onSubmit={submit}>
@@ -691,15 +688,6 @@ function VaiIntegrationCard({ settings, onSaved }: { settings: Record<string, st
  </div>
 
  <div className="form-grid">
- <div className="field field--span-2">
- <label className="field__label">API Base URL</label>
- <input
- name="vai.apiBaseUrl"
- className="field__input"
- placeholder="https://api.vaicrm.com.br"
- defaultValue={settings['vai.apiBaseUrl'] || 'https://api.vaicrm.com.br'}
- />
- </div>
  <div className="field">
  <label className="field__label">Email do painel VAI</label>
  <input
@@ -719,53 +707,6 @@ function VaiIntegrationCard({ settings, onSaved }: { settings: Record<string, st
  placeholder="••••••••"
  defaultValue={settings['vai.loginPassword'] || ''}
  />
- </div>
- <div className="field">
- <label className="field__label">Channel ID (opcional)</label>
- <input
- name="vai.channelId"
- className="field__input"
- placeholder="auto-descobrir"
- defaultValue={settings['vai.channelId'] || ''}
- />
- <div className="field__hint">Se vazio, descobre via /channels/type/whatsapp.</div>
- </div>
- <div className="field">
- <label className="field__label">Webhook Secret (HMAC)</label>
- <input
- name="vai.webhookSecret"
- className="field__input"
- placeholder="hex 32 chars"
- defaultValue={settings['vai.webhookSecret'] || ''}
- />
- <div className="field__hint">Usado pra validar HMAC SHA-256 do header <code>x-vai-signature</code>.</div>
- </div>
- <div className="field">
- <label className="field__label">Flow Secret (longo)</label>
- <input
- name="vai.flowSecret"
- className="field__input"
- placeholder="usado no header x-flow-secret"
- defaultValue={settings['vai.flowSecret'] || ''}
- />
- </div>
- <div className="field">
- <label className="field__label">Flow Secret curto (≤14 chars)</label>
- <input
- name="vai.flowSecretShort"
- className="field__input"
- placeholder="cabe em URL de 50 chars"
- defaultValue={settings['vai.flowSecretShort'] || ''}
- />
- </div>
- </div>
-
- <div className="card" style={{ marginTop: 16, background: 'var(--blue-50)', borderColor: 'var(--blue-100)' }}>
- <h4 className="card__title mb-2" style={{ color: 'var(--blue-700)' }}>URLs pra configurar no painel VAI</h4>
- <div style={{ fontSize: 12, color: 'var(--blue-700)', lineHeight: 1.8 }}>
- <div><strong>Webhook canônico (HMAC):</strong> <code>{webhookUrl}</code> · header <code>x-vai-signature</code></div>
- <div><strong>Flow Visual:</strong> <code>{flowUrl}</code> · header <code>x-flow-secret</code> ou <code>?secret=…</code></div>
- <div><strong>Alias curto:</strong> <code>{typeof window !== 'undefined' ? `${window.location.origin}/api/wf/x?s=…` : ''}</code></div>
  </div>
  </div>
 

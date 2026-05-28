@@ -251,49 +251,50 @@ function MetaGuide({ apiBase }: { apiBase: string }) {
 }
 
 // ── VAI CRM ─────────────────────────────────────────────────────────────
-function VaiGuide({ apiBase }: { apiBase: string }) {
-  const webhook = `${apiBase}/webhooks/vai`;
-  const flow = `${apiBase}/webhooks/vai-flow`;
+function VaiGuide({ apiBase: _apiBase }: { apiBase: string }) {
   return (
     <div>
       <HelpHeader
         logo="/assets/vaicrm-icon.png"
         fallbackIcon={<Icon name="bot" size={22} />}
         title="VAI CRM"
-        lead="Opcional. Use se a sua operação roda chatbots/flows pelo VAI. Se você só usa Meta direto, pode pular essa integração."
+        lead="Conecta seu número WhatsApp Business ao Atendimento via VAI. Mensagens recebidas e enviadas pelo Pons trafegam pelo seu canal VAI."
       />
 
-      <Step n={1} title="Acesse o painel VAI">
-        Abra <a href="https://app.vaicrm.com.br" target="_blank" rel="noopener">app.vaicrm.com.br</a>{' '}
-        com a conta da operação.
+      <Step n={1} title="Tenha conta ativa no painel VAI">
+        Acesse <a href="https://app.vaicrm.com.br" target="_blank" rel="noopener">app.vaicrm.com.br</a>{' '}
+        com o login da sua operação. Se ainda não tem conta, fale com a VAI Tecnologia pra
+        provisionar (canal WhatsApp + usuário de API).
       </Step>
 
-      <Step n={2} title="Pegue suas credenciais de API">
-        Em <em>Configurações → API</em>: anote o email/senha que vai ser usado pelo Pons (recomendo
-        criar um usuário de serviço dedicado).
-      </Step>
-
-      <Step n={3} title="Identifique o Channel ID (canal WhatsApp)">
-        Em <em>Canais</em>, copie o ID do canal WhatsApp que será usado. Cole no campo
-        Channel ID, ou deixe vazio que o Pons descobre via API.
-      </Step>
-
-      <Step n={4} title="Configure os webhooks">
-        Em <em>Configurações → Webhooks</em> aponte:
+      <Step n={2} title="Preencha email e senha aqui">
+        Volte no card <em>WhatsApp via VAI CRM</em> nesta página → preencha:
         <ul>
           <li>
-            <strong>Mensagens</strong>: <CopyCode value={webhook} />
+            <strong>Email do painel VAI</strong>
           </li>
           <li>
-            <strong>Flows</strong> (se usar): <CopyCode value={flow} />
+            <strong>Senha do painel VAI</strong>
           </li>
         </ul>
-        Configure também o <em>Webhook Secret</em> — deve ser o mesmo nas duas pontas.
+        Recomendamos criar um usuário de serviço dedicado pro Pons (não use seu login pessoal).
       </Step>
 
-      <Step n={5} title="Cole creds no Pons">
-        Volte aqui em Configurações → Integrações → VAI, preencha tudo e salve.
+      <Step n={3} title="Salve e teste a conexão">
+        Clique <strong>Salvar credenciais VAI</strong>. Em seguida, <strong>Testar conexão</strong>.
+        Se aparecer "VAI respondeu — login OK", está pronto.
       </Step>
+
+      <Step n={4} title="Pronto">
+        Mensagens recebidas no número WhatsApp do canal VAI já vão chegar no Atendimento. As
+        respostas enviadas pelo Pons saem pelo canal automaticamente.
+      </Step>
+
+      <div className="help-warn" style={{ marginTop: 16 }}>
+        <strong>O resto fica com a VAI Tecnologia:</strong> URLs de webhook, Channel ID,
+        secret HMAC, secret de Flows — tudo isso é configurado por nós no backend (variáveis
+        de ambiente) ao provisionar sua conta. Você não precisa mexer no painel VAI.
+      </div>
     </div>
   );
 }
