@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
 import { Icon } from './Icon';
-import { Step, Code, CopyCode, HelpHeader } from './IntegracoesHelp';
+import { Step, Code, HelpHeader } from './IntegracoesHelp';
 
 import './integracoes-help.css';
 
-type Section = 'anthropic' | 'openai' | 'modelos' | 'prompt';
+type Section = 'setup' | 'modelos' | 'prompt';
 
 /**
- * Help dialog dedicado à IA: como configurar Anthropic/OpenAI,
- * tabelas comparativas de modelos (custo, latência, contexto, recomendação)
- * e dicas pro prompt do SDR.
+ * Help dialog dedicado à IA. Sistema usa exclusivamente Claude (Anthropic).
+ * Cobre: setup da conta + API key, comparativo de modelos Claude com custo
+ * estimado, e esqueleto de prompt do SDR.
  */
 export function IAHelp() {
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<Section>('anthropic');
+  const [active, setActive] = useState<Section>('setup');
 
   return (
     <>
@@ -22,7 +22,7 @@ export function IAHelp() {
         type="button"
         className="btn btn--ghost btn--sm"
         onClick={() => setOpen(true)}
-        title="Guia da IA — provedores, modelos e custos"
+        title="Guia da IA — Claude, modelos e prompt"
       >
         <Icon name="doc" size={14} /> Como conectar
       </button>
@@ -30,15 +30,13 @@ export function IAHelp() {
       <Modal open={open} onClose={() => setOpen(false)} title="Guia da IA" size="lg">
         <div className="integracoes-help">
           <div className="integracoes-help__tabs">
-            <Tab id="anthropic" label="Anthropic (Claude)" current={active} onPick={setActive} />
-            <Tab id="openai" label="OpenAI (GPT)" current={active} onPick={setActive} />
+            <Tab id="setup" label="Setup Claude" current={active} onPick={setActive} />
             <Tab id="modelos" label="Comparar modelos" current={active} onPick={setActive} />
             <Tab id="prompt" label="Dicas de prompt" current={active} onPick={setActive} />
           </div>
 
           <div className="integracoes-help__body">
-            {active === 'anthropic' && <AnthropicGuide />}
-            {active === 'openai' && <OpenAIGuide />}
+            {active === 'setup' && <SetupClaude />}
             {active === 'modelos' && <ModelosComparativo />}
             {active === 'prompt' && <PromptDicas />}
           </div>
@@ -70,15 +68,15 @@ function Tab({
   );
 }
 
-// ─────────── Anthropic ──────────────────────────────────────────────────
-function AnthropicGuide() {
+// ─────────── Setup ──────────────────────────────────────────────────────
+function SetupClaude() {
   return (
     <div>
       <HelpHeader
-        logo="/assets/anthropic.png"
+        logo="/assets/claude-icon.png"
         fallbackIcon={<Icon name="bot" size={22} />}
-        title="Anthropic — Claude (recomendado)"
-        lead="Família de modelos Claude. Recomendamos pra atendimento por: melhor controle de tom, instruction-following forte e Haiku 4.5 entregando qualidade alta com latência baixa e custo competitivo."
+        title="Claude (Anthropic)"
+        lead="Modelo de IA que cuida do atendimento automático na aba Atendimento. Responde leads novos enquanto o corretor não assume e qualifica VIPs."
       />
 
       <Step n={1} title="Crie conta + adicione billing">
@@ -92,80 +90,36 @@ function AnthropicGuide() {
 
       <Step n={2} title="Gere uma API Key">
         Menu lateral → <strong>API Keys</strong> → <strong>Create Key</strong>. Nome:{' '}
-        <Code>pons-sdr-ia</Code>. <em>Copie agora</em> — a key só aparece uma vez.
+        <Code>pons-sdr-ia</Code>. <em>Copie agora</em> — a key só aparece uma vez (formato{' '}
+        <Code>sk-ant-api03-...</Code>).
       </Step>
 
       <Step n={3} title="Cole no Pons">
-        Volte aqui em <strong>Configurações → IA & Atendimento</strong>:
+        Volte aqui em <strong>Configurações → IA & Atendimento</strong> e preencha:
         <ul>
           <li>
-            <strong>Provider:</strong> <Code>anthropic</Code>
-          </li>
-          <li>
-            <strong>API Key:</strong> cole a chave (formato <Code>sk-ant-api03-...</Code>)
+            <strong>API Key:</strong> cole a chave que você gerou
           </li>
           <li>
             <strong>Modelo:</strong> <Code>claude-haiku-4-5-20251001</Code> (recomendado pra
-            começar)
+            começar — ver aba "Comparar modelos" pra trocar)
           </li>
         </ul>
-        Salve e confirme com sua senha.
+        Clique <strong>Salvar</strong> e confirme com sua senha.
       </Step>
 
       <Step n={4} title="Teste no Atendimento">
         Vá no <strong>Atendimento</strong>, abra um lead pendente, clique{' '}
         <strong>Responder com IA</strong>. Em ~1-2s aparece a resposta. Se preferir tom diferente,
-        ajuste o prompt em <em>Configurações → IA & Atendimento → Prompt do SDR</em>.
-      </Step>
-    </div>
-  );
-}
-
-// ─────────── OpenAI ────────────────────────────────────────────────────
-function OpenAIGuide() {
-  return (
-    <div>
-      <HelpHeader
-        logo="/assets/openai.png"
-        fallbackIcon={<Icon name="bot" size={22} />}
-        title="OpenAI — GPT (alternativa)"
-        lead="Funciona com qualquer modelo da OpenAI ou compatible (Groq, Together, Mistral, etc.) via o protocolo OpenAI. Use se já tem créditos OpenAI ou se quer testar comparativo."
-      />
-
-      <Step n={1} title="Crie conta + adicione billing">
-        Acesse{' '}
-        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">
-          platform.openai.com/api-keys
-        </a>{' '}
-        → crie conta → adicione cartão e crédito.
+        ajuste o prompt em <em>Prompt do SDR</em> nesta mesma página.
       </Step>
 
-      <Step n={2} title="Gere uma API Key">
-        <strong>Create new secret key</strong>. Permissions: <em>Read + Write</em> em todos os
-        recursos (ou pelo menos <em>Model capabilities → write</em>). Copie no formato{' '}
-        <Code>sk-proj-...</Code>.
-      </Step>
-
-      <Step n={3} title="Cole no Pons">
-        <ul>
-          <li>
-            <strong>Provider:</strong> <Code>openai</Code>
-          </li>
-          <li>
-            <strong>API Key:</strong> a chave OpenAI
-          </li>
-          <li>
-            <strong>Modelo:</strong> <Code>gpt-4o-mini</Code> (recomendado custo/qualidade)
-            ou <Code>gpt-4o</Code> pra qualidade superior
-          </li>
-        </ul>
-      </Step>
-
-      <Step n={4} title="Compatíveis (mais barato)">
-        Se quiser usar Groq (latência absurda), Together AI ou outro provider OpenAI-compatible,
-        configure o Base URL via env <Code>OPENAI_BASE_URL</Code> no backend (ex.:{' '}
-        <Code>https://api.groq.com/openai/v1</Code>) e use o modelo equivalente.
-      </Step>
+      <div className="help-warn" style={{ marginTop: 16 }}>
+        <strong>Pra monitorar gasto:</strong> volte em{' '}
+        <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> →{' '}
+        <em>Usage</em>. Mostra quanto cada modelo consumiu por dia. Configure um limite mensal
+        em <em>Billing → Limits</em> pra não estourar.
+      </div>
     </div>
   );
 }
@@ -175,12 +129,12 @@ function ModelosComparativo() {
   return (
     <div>
       <HelpHeader
+        logo="/assets/claude-icon.png"
         fallbackIcon={<Icon name="chart" size={22} />}
-        title="Comparar modelos"
-        lead="Preços por milhão de tokens (USD). 1 token ≈ 4 caracteres ≈ 0,75 palavra. Uma conversa típica de WhatsApp consome 200-500 tokens por turno (input+output)."
+        title="Modelos Claude — comparativo"
+        lead="Preços em USD por milhão de tokens. 1 token ≈ 4 caracteres ≈ 0,75 palavra. Uma conversa típica de WhatsApp consome 200-500 tokens por turno (input + output)."
       />
 
-      <h4 className="help-table__heading">Anthropic — Claude</h4>
       <table className="help-table">
         <thead>
           <tr>
@@ -202,7 +156,10 @@ function ModelosComparativo() {
             <td>$1,00</td>
             <td>$5,00</td>
             <td>200k</td>
-            <td>SDR/atendimento de alto volume. Rápido (~1s) e qualidade Claude.</td>
+            <td>
+              SDR / atendimento de alto volume. Latência ~1s e qualidade Claude. O equilíbrio
+              certo entre custo e bom acabamento de resposta.
+            </td>
           </tr>
           <tr>
             <td>
@@ -213,7 +170,10 @@ function ModelosComparativo() {
             <td>$3,00</td>
             <td>$15,00</td>
             <td>1M</td>
-            <td>Conversas complexas (objeções difíceis, raciocínio multi-passo).</td>
+            <td>
+              Conversas complexas: objeções difíceis, raciocínio multi-passo, contexto longo
+              (histórico extenso). 3× mais caro que Haiku.
+            </td>
           </tr>
           <tr>
             <td>
@@ -224,100 +184,61 @@ function ModelosComparativo() {
             <td>$15,00</td>
             <td>$75,00</td>
             <td>1M</td>
-            <td>Casos críticos. Caro pra atendimento em massa.</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h4 className="help-table__heading">OpenAI — GPT</h4>
-      <table className="help-table">
-        <thead>
-          <tr>
-            <th>Modelo</th>
-            <th>Input (M tok)</th>
-            <th>Output (M tok)</th>
-            <th>Contexto</th>
-            <th>Quando usar</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
             <td>
-              <strong>GPT-4o-mini</strong>
-              <br />
-              <code>gpt-4o-mini</code>
+              Casos críticos onde qualidade absoluta vale o custo (negociações high-ticket,
+              análises detalhadas). 15× Haiku — caro pra atendimento em massa.
             </td>
-            <td>$0,15</td>
-            <td>$0,60</td>
-            <td>128k</td>
-            <td>Mais barato. Bom pra começar com volume.</td>
-          </tr>
-          <tr>
-            <td>
-              <strong>GPT-4o</strong>
-              <br />
-              <code>gpt-4o</code>
-            </td>
-            <td>$2,50</td>
-            <td>$10,00</td>
-            <td>128k</td>
-            <td>Equilibrado. Compete com Claude Sonnet em qualidade.</td>
-          </tr>
-          <tr>
-            <td>
-              <strong>GPT-4.1</strong>
-              <br />
-              <code>gpt-4.1</code>
-            </td>
-            <td>$2,00</td>
-            <td>$8,00</td>
-            <td>1M</td>
-            <td>Contexto longo (manuais inteiros, histórico extenso).</td>
           </tr>
         </tbody>
       </table>
 
       <h4 className="help-table__heading">Estimativa de custo mensal</h4>
+      <p className="help-lead" style={{ marginTop: 0 }}>
+        Calculado com 5 turnos por conversa × ~400 tokens por turno (input+output) = ~2k tokens
+        por conversa. Valores arredondados, em USD.
+      </p>
       <table className="help-table">
         <thead>
           <tr>
-            <th>Volume</th>
+            <th>Volume / mês</th>
             <th>Haiku 4.5</th>
-            <th>GPT-4o-mini</th>
             <th>Sonnet 4.6</th>
-            <th>GPT-4o</th>
+            <th>Opus 4.7</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>1k conversas/mês<br /><span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>~5 turnos cada</span></td>
-            <td>~$30</td>
-            <td>~$3</td>
-            <td>~$90</td>
-            <td>~$75</td>
+            <td>1.000 conversas</td>
+            <td>~ $6</td>
+            <td>~ $18</td>
+            <td>~ $90</td>
           </tr>
           <tr>
-            <td>10k conversas/mês</td>
-            <td>~$300</td>
-            <td>~$30</td>
-            <td>~$900</td>
-            <td>~$750</td>
+            <td>10.000 conversas</td>
+            <td>~ $60</td>
+            <td>~ $180</td>
+            <td>~ $900</td>
           </tr>
           <tr>
-            <td>50k conversas/mês</td>
-            <td>~$1.500</td>
-            <td>~$150</td>
-            <td>~$4.500</td>
-            <td>~$3.750</td>
+            <td>50.000 conversas</td>
+            <td>~ $300</td>
+            <td>~ $900</td>
+            <td>~ $4.500</td>
+          </tr>
+          <tr>
+            <td>100.000 conversas</td>
+            <td>~ $600</td>
+            <td>~ $1.800</td>
+            <td>~ $9.000</td>
           </tr>
         </tbody>
       </table>
 
       <div className="help-warn" style={{ marginTop: 12 }}>
-        <strong>Nossa recomendação:</strong> comece com <code>claude-haiku-4-5-20251001</code>{' '}
-        (qualidade alta, latência baixa, custo razoável). Migre pra GPT-4o-mini se o orçamento
-        apertar — ele é 5-10× mais barato mas perde em controle de tom e tende a ser mais
-        verboso.
+        <strong>Nossa recomendação:</strong> comece com{' '}
+        <code>claude-haiku-4-5-20251001</code>. Em 95% dos atendimentos imobiliários ele dá
+        conta. Suba pro Sonnet apenas em casos onde notar respostas rasas ou perda de contexto
+        — testa primeiro, confirma melhora, depois migra.
       </div>
     </div>
   );
@@ -362,7 +283,7 @@ function PromptDicas() {
       <Step n={4} title="Quando passar pro corretor">
         Defina o critério. Exemplo: <em>"Quando o cliente pedir pra falar com humano, OU
         agendar visita, OU disser que vai assinar contrato — diga 'vou te conectar com o
-        corretor agora' e sugira estagio NEGOCIANDO."</em>
+        corretor agora' e sugira estágio NEGOCIANDO."</em>
       </Step>
 
       <Step n={5} title="O que NUNCA fazer">

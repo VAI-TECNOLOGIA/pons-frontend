@@ -150,7 +150,7 @@ function GoogleGuide({ apiBase }: { apiBase: string }) {
   return (
     <div>
       <HelpHeader
-        logo="/assets/google-calendar.png"
+        logo="/assets/calendar-icon.png"
         fallbackIcon={<GoogleCalendarIcon size={22} />}
         title="Google Calendar"
         lead="Eventos criados no Pons aparecem no Calendar do usuário. Compromissos criados no Google são puxados quando o usuário sincroniza."
@@ -215,7 +215,7 @@ function MetaGuide({ apiBase }: { apiBase: string }) {
   return (
     <div>
       <HelpHeader
-        logo="/assets/meta.png"
+        logo="/assets/meta-icon.png"
         fallbackIcon={<Icon name="chat" size={22} />}
         title="Meta WhatsApp Cloud"
         lead="Atendimento de WhatsApp direto via API oficial Meta. Sem precisar de proxy externo."
@@ -281,7 +281,7 @@ function VaiGuide({ apiBase }: { apiBase: string }) {
   return (
     <div>
       <HelpHeader
-        logo="/assets/vai-logo.png"
+        logo="/assets/vaicrm-icon.png"
         fallbackIcon={<Icon name="bot" size={22} />}
         title="VAI CRM"
         lead="Opcional. Use se a sua operação roda chatbots/flows pelo VAI. Se você só usa Meta direto, pode pular essa integração."
@@ -327,7 +327,7 @@ function R2Guide() {
   return (
     <div>
       <HelpHeader
-        logo="/assets/cloudflare.png"
+        logo="/assets/r2-icon.png"
         fallbackIcon={<Icon name="building" size={22} />}
         title="Cloudflare R2"
         lead="Storage de fotos de empreendimentos, avatares e anexos. R2 é S3-compatível sem custo de egress."
@@ -367,7 +367,7 @@ function SicrediGuide() {
   return (
     <div>
       <HelpHeader
-        logo="/assets/sicredi.png"
+        logo="/assets/sicredi-icon.png"
         fallbackIcon={<Icon name="bank" size={22} />}
         title="Sicredi"
         lead="Cobrança automatizada via API (PIX e boleto). Registra cobranças de comissão e baixa entradas automaticamente."
