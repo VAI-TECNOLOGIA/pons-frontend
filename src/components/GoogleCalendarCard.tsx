@@ -103,13 +103,7 @@ export function GoogleCalendarCard({ onChange }: { onChange?: () => void }) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        {status?.conectado ? (
-          <div className="field__hint" style={{ marginBottom: 12 }}>
-            Conta vinculada: <strong>{status.email || '(verificando…)'}</strong>
-            <br />
-            Calendário: <code>{status.calendarId || 'primary'}</code>
-          </div>
-        ) : (
+        {!status?.conectado && (
           <div className="field__hint" style={{ marginBottom: 12 }}>
             Clique em <strong>Conectar Google</strong> e autorize com sua conta Google.
             Seus compromissos vão sincronizar nos dois sentidos.
