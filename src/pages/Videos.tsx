@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
@@ -6,6 +6,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { Auth } from '../lib/auth';
 
 import './videos.css';
 
@@ -31,25 +32,66 @@ const CAT_BADGE: Record<string, [string, string]> = {
 export default function Videos() {
   const [filtro, setFiltro] = useState('');
   const [open, setOpen] = useState(false);
+  const [capaPreview, setCapaPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const capaFileRef = useRef<HTMLInputElement>(null);
   const { data, loading, error, reload } = useApi<any[]>(() => Api.videos(filtro || undefined), [filtro]);
   const toast = useToast();
   const confirm = useConfirm();
 
+  const onCapaPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 4 * 1024 * 1024) {
+      toast.error('Imagem maior que 4MB. Reduza antes de enviar.');
+      e.target.value = '';
+      return;
+    }
+    setCapaPreview(URL.createObjectURL(f));
+  };
+
+  const resetForm = () => {
+    setCapaPreview(null);
+    if (capaFileRef.current) capaFileRef.current.value = '';
+  };
+
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    setSaving(true);
     try {
+      // Se o usuário escolheu uma imagem de capa, faz upload pro R2 primeiro
+      let thumbnail: string | undefined;
+      const file = capaFileRef.current?.files?.[0];
+      if (file) {
+        const up = new FormData();
+        up.append('file', file);
+        up.append('prefix', 'uploads');
+        const r = await fetch('/api/uploads', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + (Auth.token || '') },
+          body: up,
+        });
+        if (!r.ok) throw new Error('upload_capa_falhou');
+        const j = await r.json();
+        thumbnail = j.url;
+      }
       await Api.videoCreate({
         titulo: String(fd.get('titulo') || ''),
         url: String(fd.get('url') || ''),
         categoria: String(fd.get('categoria') || 'OFERTA'),
         descricao: fd.get('descricao') ? String(fd.get('descricao')) : undefined,
+        // Se vazio, o frontend cai no ytThumb() automaticamente (capa do próprio vídeo)
+        ...(thumbnail ? { thumbnail } : {}),
       });
       toast.success('Vídeo adicionado');
       setOpen(false);
+      resetForm();
       reload();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -112,7 +154,7 @@ export default function Videos() {
           ) : (
             videos.map((v: any) => {
               const [bk, lbl] = CAT_BADGE[v.categoria] || ['badge--neutral', v.categoria];
-              const thumb = v.thumb || ytThumb(v.url);
+              const thumb = v.thumbnail || v.thumb || ytThumb(v.url);
               return (
                 <div className="video-card" key={v.id} style={{ position: 'relative' }}>
                   <button
@@ -146,7 +188,13 @@ export default function Videos() {
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Adicionar vídeo" subtitle="Link do YouTube ou Vimeo">
+      <Modal
+        open={open}
+        onClose={() => { setOpen(false); resetForm(); }}
+        title="Adicionar vídeo"
+        subtitle="Link do YouTube ou Vimeo"
+        size="lg"
+      >
         <form onSubmit={submit}>
           <div className="form-grid form-grid--single">
             <div className="field">
@@ -166,15 +214,52 @@ export default function Videos() {
               </select>
             </div>
             <div className="field">
+              <label className="field__label">Imagem de capa (opcional)</label>
+              <div className="video-capa">
+                <label htmlFor="video-capa-file" className="video-capa__picker">
+                  {capaPreview ? (
+                    <img src={capaPreview} alt="Preview da capa" />
+                  ) : (
+                    <div className="video-capa__placeholder">
+                      <Icon name="pencil" size={20} />
+                      <span>Clique pra escolher</span>
+                    </div>
+                  )}
+                </label>
+                <input
+                  id="video-capa-file"
+                  ref={capaFileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onCapaPick}
+                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                />
+                {capaPreview && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => { setCapaPreview(null); if (capaFileRef.current) capaFileRef.current.value = ''; }}
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+              <div className="field__hint">
+                Se não preencher, vamos usar a capa do próprio vídeo (YouTube/Vimeo).
+              </div>
+            </div>
+            <div className="field">
               <label className="field__label">Descrição</label>
-              <textarea name="descricao" className="field__textarea" rows={2} />
+              <textarea name="descricao" className="field__textarea" rows={3} />
             </div>
           </div>
           <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
-            <button type="button" className="btn btn--secondary" onClick={() => setOpen(false)}>
+            <button type="button" className="btn btn--secondary" onClick={() => { setOpen(false); resetForm(); }}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn--primary">Salvar</button>
+            <button type="submit" className="btn btn--primary" disabled={saving}>
+              {saving ? 'Salvando…' : 'Salvar'}
+            </button>
           </div>
         </form>
       </Modal>

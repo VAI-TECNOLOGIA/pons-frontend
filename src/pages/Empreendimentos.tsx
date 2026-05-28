@@ -9,6 +9,8 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 
+import './empreendimentos.css';
+
 type Construtora = { id: number; nome: string };
 type Foto = { id: number; url: string; ordem: number };
 type Empreendimento = {
@@ -421,6 +423,90 @@ function NovoEmpreendimentoModal({
   );
 }
 
+// ── Form embarcado dentro do modal de gerenciar empreendimento ──
+function EditarDadosEmpreendimento({
+  emp,
+  onSaved,
+}: {
+  emp: Empreendimento;
+  onSaved: (atualizado: Partial<Empreendimento>) => void;
+}) {
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setSaving(true);
+    try {
+      const payload: Record<string, any> = {
+        nome: String(fd.get('nome') || ''),
+        cidade: String(fd.get('cidade') || ''),
+        estado: String(fd.get('estado') || '').toUpperCase(),
+        status: String(fd.get('status') || ''),
+        unidadesTotal: Number(fd.get('unidadesTotal') || 0),
+        unidadesVendidas: Number(fd.get('unidadesVendidas') || 0),
+        descricao: fd.get('descricao') ? String(fd.get('descricao')) : null,
+      };
+      const v = fd.get('valorInicial');
+      if (v != null && String(v).trim() !== '') payload.valorInicial = Number(v);
+      const atualizado = await Api.empreendimentoUpdate(emp.id, payload);
+      toast.success('Empreendimento atualizado.');
+      onSaved(atualizado);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="emp-edit-form">
+      <div className="field emp-edit-form__row--full">
+        <label className="field__label">Nome</label>
+        <input name="nome" className="field__input" required defaultValue={emp.nome} />
+      </div>
+      <div className="field">
+        <label className="field__label">Status</label>
+        <select name="status" className="field__select" defaultValue={emp.status || 'PRE_LANCAMENTO'}>
+          <option value="PRE_LANCAMENTO">Pré-lançamento</option>
+          <option value="OBRA">Em obra</option>
+          <option value="ENTREGUE">Entregue</option>
+        </select>
+      </div>
+      <div className="field">
+        <label className="field__label">Valor inicial (R$)</label>
+        <input name="valorInicial" type="number" step="0.01" className="field__input" defaultValue={emp.valorInicial || ''} />
+      </div>
+      <div className="field">
+        <label className="field__label">Cidade</label>
+        <input name="cidade" className="field__input" required defaultValue={emp.cidade} />
+      </div>
+      <div className="field">
+        <label className="field__label">Estado (UF)</label>
+        <input name="estado" maxLength={2} className="field__input" required defaultValue={emp.estado} />
+      </div>
+      <div className="field">
+        <label className="field__label">Unidades totais</label>
+        <input name="unidadesTotal" type="number" min="0" className="field__input" defaultValue={emp.unidadesTotal ?? 0} />
+      </div>
+      <div className="field">
+        <label className="field__label">Unidades vendidas</label>
+        <input name="unidadesVendidas" type="number" min="0" className="field__input" defaultValue={emp.unidadesVendidas ?? 0} />
+      </div>
+      <div className="field emp-edit-form__row--full">
+        <label className="field__label">Descrição</label>
+        <textarea name="descricao" className="field__textarea" rows={2} defaultValue={emp.descricao || ''} />
+      </div>
+      <div className="emp-edit-form__actions">
+        <button type="submit" className="btn btn--primary btn--sm" disabled={saving}>
+          {saving ? 'Salvando…' : 'Salvar dados'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ── Modal: galeria + gerenciar fotos de um empreendimento existente ──
 function GaleriaFotosModal({
   empreendimento,
@@ -515,8 +601,8 @@ function GaleriaFotosModal({
     <Modal
       open
       onClose={onClose}
-      title={`Fotos · ${emp.nome}`}
-      subtitle={`${fotos.length}/8 fotos cadastradas`}
+      title={`Gerenciar · ${emp.nome}`}
+      subtitle={`${fotos.length}/8 fotos · status, preço e detalhes editáveis abaixo`}
       size="lg"
       footer={
         <>
@@ -524,6 +610,12 @@ function GaleriaFotosModal({
         </>
       }
     >
+      <EditarDadosEmpreendimento emp={emp} onSaved={async (atualizado) => { setEmp({ ...emp, ...atualizado }); onChanged(); }} />
+
+      <h4 style={{ margin: '24px 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+        Fotos
+      </h4>
+
       {/* input file invisível mas acessível por label htmlFor (funciona dentro de <dialog>) */}
       <input
         id="emp-galeria-file"
@@ -551,7 +643,7 @@ function GaleriaFotosModal({
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div className="emp-fotos-grid">
             {fotos.map((f) => {
               const isCapa = emp.imagemUrl === f.url;
               return (

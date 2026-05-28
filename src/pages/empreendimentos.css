@@ -1,0 +1,30 @@
+/* Grid de fotos responsivo dentro do modal Gerenciar empreendimento */
+.emp-fotos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .emp-fotos-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .emp-fotos-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+}
+
+/* Form de editar dados dentro do mesmo modal */
+.emp-edit-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.emp-edit-form__row--full { grid-column: 1 / -1; }
+.emp-edit-form__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+@media (max-width: 600px) {
+  .emp-edit-form { grid-template-columns: 1fr; }
+}

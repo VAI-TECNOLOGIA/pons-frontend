@@ -91,6 +91,7 @@ export const Api = {
   equipes: () => request<any[]>('/equipes'),
   equipeCreate: (data: any) => request<any>('/equipes', { method: 'POST', body: data }),
   equipeUpdate: (id: number, data: any) => request<any>(`/equipes/${id}`, { method: 'PATCH', body: data }),
+  equipeDelete: (id: number) => request<{ ok: boolean }>(`/equipes/${id}`, { method: 'DELETE' }),
   equipesResultados: (params: any = {}) => request<any>(`/equipes/resultados${qs(params)}`),
 
   // Corretores

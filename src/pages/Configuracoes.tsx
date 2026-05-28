@@ -10,6 +10,7 @@ import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { timeAgo } from '../lib/format';
 
 import './configuracoes.css';
@@ -764,6 +765,7 @@ function PanelEquipes() {
  const { data, loading, error, reload } = useApi<any[]>(() => Api.equipes());
  const [editing, setEditing] = useState<any | null>(null);
  const toast = useToast();
+ const confirm = useConfirm();
 
  const salvar = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -780,6 +782,24 @@ function PanelEquipes() {
  reload();
  } catch (err: any) {
  toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
+ const excluir = async (eq: any) => {
+ const ok = await confirm({
+   title: 'Excluir equipe?',
+   message: `A equipe "${eq.nome}" será removida. Isto só funciona se a equipe não tiver corretores ativos. Caso contrário, mova os corretores primeiro ou desative a equipe.`,
+   confirmText: 'Excluir',
+   tone: 'danger',
+ });
+ if (!ok) return;
+ try {
+ await Api.equipeDelete(eq.id);
+ toast.success('Equipe removida');
+ reload();
+ } catch (err: any) {
+ const msg = err?.message || 'falha';
+ toast.error('Não foi possível excluir: ' + msg);
  }
  };
 
@@ -809,7 +829,12 @@ function PanelEquipes() {
  <span style={{ display: 'inline-block', width: 16, height: 16, background: e.cor, borderRadius: 4 }} />
  </td>
  <td>
- <button className="btn btn--secondary btn--sm" onClick={() => setEditing(e)}>Editar</button>
+ <div className="flex gap-1" style={{ justifyContent: 'flex-end' }}>
+   <button className="btn btn--secondary btn--sm" onClick={() => setEditing(e)}>Editar</button>
+   <button className="btn btn--ghost btn--sm" onClick={() => excluir(e)} title="Excluir equipe">
+     <Icon name="trash" size={12} />
+   </button>
+ </div>
  </td>
  </tr>
  ))}
