@@ -5,7 +5,7 @@ import { GoogleCalendarIcon } from './GoogleCalendarIcon';
 
 import './integracoes-help.css';
 
-type Guide = 'google' | 'meta' | 'vai' | 'r2' | 'ia' | 'sicredi' | 'tracking';
+type Guide = 'google' | 'meta' | 'vai' | 'r2' | 'sicredi' | 'tracking';
 
 export function IntegracoesHelp() {
   const [open, setOpen] = useState(false);
@@ -24,7 +24,7 @@ export function IntegracoesHelp() {
         onClick={() => setOpen(true)}
         title="Guia passo-a-passo das integrações"
       >
-        <Icon name="bell" size={14} /> Como conectar
+        <Icon name="doc" size={14} /> Como conectar
       </button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Guia das integrações" size="lg">
@@ -33,8 +33,7 @@ export function IntegracoesHelp() {
             <Tab id="google" label="Google Calendar" current={active} onPick={setActive} />
             <Tab id="meta" label="Meta WhatsApp" current={active} onPick={setActive} />
             <Tab id="vai" label="VAI CRM" current={active} onPick={setActive} />
-            <Tab id="r2" label="R2 (uploads)" current={active} onPick={setActive} />
-            <Tab id="ia" label="IA" current={active} onPick={setActive} />
+            <Tab id="r2" label="R2 Cloudflare" current={active} onPick={setActive} />
             <Tab id="sicredi" label="Sicredi" current={active} onPick={setActive} />
             <Tab id="tracking" label="Webhook tracking" current={active} onPick={setActive} />
           </div>
@@ -44,7 +43,6 @@ export function IntegracoesHelp() {
             {active === 'meta' && <MetaGuide apiBase={apiBase} />}
             {active === 'vai' && <VaiGuide apiBase={apiBase} />}
             {active === 'r2' && <R2Guide />}
-            {active === 'ia' && <IAGuide />}
             {active === 'sicredi' && <SicrediGuide />}
             {active === 'tracking' && <TrackingGuide apiBase={apiBase} />}
           </div>
@@ -76,7 +74,8 @@ function Tab({
   );
 }
 
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+// ── Helpers compartilhados ──────────────────────────────────────────────
+export function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <div className="help-step">
       <div className="help-step__num">{n}</div>
@@ -88,11 +87,11 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-function Code({ children }: { children: React.ReactNode }) {
+export function Code({ children }: { children: React.ReactNode }) {
   return <code className="help-code">{children}</code>;
 }
 
-function CopyCode({ value }: { value: string }) {
+export function CopyCode({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <code
@@ -106,8 +105,42 @@ function CopyCode({ value }: { value: string }) {
       }}
       title="Clique para copiar"
     >
-      {value} {copied ? '✓' : '📋'}
+      {value} {copied ? '✓' : ''}
     </code>
+  );
+}
+
+/**
+ * Cabeçalho do guia com logo da marca + título.
+ * `logo` é caminho em /public/assets (ex: '/assets/meta.png').
+ * Se a imagem não existir/falhar, o fallback (`fallbackIcon`) entra em cena.
+ */
+export function HelpHeader({
+  logo,
+  fallbackIcon,
+  title,
+  lead,
+}: {
+  logo?: string;
+  fallbackIcon?: React.ReactNode;
+  title: string;
+  lead?: string;
+}) {
+  const [imgOk, setImgOk] = useState(true);
+  return (
+    <>
+      <h3 className="help-h">
+        <span className="help-h__logo" aria-hidden="true">
+          {logo && imgOk ? (
+            <img src={logo} alt="" onError={() => setImgOk(false)} />
+          ) : (
+            fallbackIcon || <Icon name="settings" size={20} />
+          )}
+        </span>
+        {title}
+      </h3>
+      {lead && <p className="help-lead">{lead}</p>}
+    </>
   );
 }
 
@@ -116,13 +149,12 @@ function GoogleGuide({ apiBase }: { apiBase: string }) {
   const callback = `${apiBase}/integracoes/google/callback`;
   return (
     <div>
-      <h3 className="help-h">
-        <GoogleCalendarIcon size={18} /> Google Calendar — Bi-direcional com a agenda
-      </h3>
-      <p className="help-lead">
-        Eventos criados no Pons aparecem no Calendar do usuário. Compromissos criados no Google
-        são puxados quando o usuário sincroniza.
-      </p>
+      <HelpHeader
+        logo="/assets/google-calendar.png"
+        fallbackIcon={<GoogleCalendarIcon size={22} />}
+        title="Google Calendar"
+        lead="Eventos criados no Pons aparecem no Calendar do usuário. Compromissos criados no Google são puxados quando o usuário sincroniza."
+      />
 
       <Step n={1} title="Abra o Google Cloud Console">
         Acesse{' '}
@@ -182,10 +214,12 @@ function MetaGuide({ apiBase }: { apiBase: string }) {
   const webhook = `${apiBase}/webhooks/meta-whatsapp`;
   return (
     <div>
-      <h3 className="help-h">📱 Meta WhatsApp Cloud — Recebe + envia mensagens</h3>
-      <p className="help-lead">
-        Atendimento de WhatsApp direto via API oficial Meta. Sem precisar de proxy externo.
-      </p>
+      <HelpHeader
+        logo="/assets/meta.png"
+        fallbackIcon={<Icon name="chat" size={22} />}
+        title="Meta WhatsApp Cloud"
+        lead="Atendimento de WhatsApp direto via API oficial Meta. Sem precisar de proxy externo."
+      />
 
       <Step n={1} title="Acesse o Business Manager">
         Abra <a href="https://business.facebook.com" target="_blank" rel="noopener">business.facebook.com</a>{' '}
@@ -231,6 +265,11 @@ function MetaGuide({ apiBase }: { apiBase: string }) {
       <Step n={8} title="Pronto pra mandar e receber">
         Cole tudo aqui no Pons → salva → aba <em>Atendimento</em> mostra conversas em tempo real.
       </Step>
+
+      <div className="help-warn" style={{ marginTop: 16 }}>
+        <strong>Importante — Janela de 24h:</strong> mensagens livres só são entregues nas 24h
+        após a última msg do cliente. Fora dessa janela, use templates HSM aprovados no Meta.
+      </div>
     </div>
   );
 }
@@ -241,11 +280,12 @@ function VaiGuide({ apiBase }: { apiBase: string }) {
   const flow = `${apiBase}/webhooks/vai-flow`;
   return (
     <div>
-      <h3 className="help-h">💬 VAI CRM — Integração com VAI da Venda</h3>
-      <p className="help-lead">
-        Opcional. Use se a sua operação roda chatbots/flows pelo VAI. Se você só usa Meta direto,
-        pode pular essa integração.
-      </p>
+      <HelpHeader
+        logo="/assets/vai-logo.png"
+        fallbackIcon={<Icon name="bot" size={22} />}
+        title="VAI CRM"
+        lead="Opcional. Use se a sua operação roda chatbots/flows pelo VAI. Se você só usa Meta direto, pode pular essa integração."
+      />
 
       <Step n={1} title="Acesse o painel VAI">
         Abra <a href="https://app.vaicrm.com.br" target="_blank" rel="noopener">app.vaicrm.com.br</a>{' '}
@@ -286,11 +326,12 @@ function VaiGuide({ apiBase }: { apiBase: string }) {
 function R2Guide() {
   return (
     <div>
-      <h3 className="help-h">☁️ Cloudflare R2 — Storage de fotos e anexos</h3>
-      <p className="help-lead">
-        Onde ficam fotos de empreendimentos, avatares e anexos. R2 é S3-compatível sem custo de
-        egress.
-      </p>
+      <HelpHeader
+        logo="/assets/cloudflare.png"
+        fallbackIcon={<Icon name="building" size={22} />}
+        title="Cloudflare R2"
+        lead="Storage de fotos de empreendimentos, avatares e anexos. R2 é S3-compatível sem custo de egress."
+      />
 
       <Step n={1} title="Criar conta + bucket">
         Abra <a href="https://dash.cloudflare.com" target="_blank" rel="noopener">dash.cloudflare.com</a>
@@ -321,44 +362,16 @@ function R2Guide() {
   );
 }
 
-// ── IA ──────────────────────────────────────────────────────────────────
-function IAGuide() {
-  return (
-    <div>
-      <h3 className="help-h">🤖 IA do SDR — Respostas automáticas em pendente</h3>
-      <p className="help-lead">
-        IA responde leads novos enquanto o corretor não assume. Usa Anthropic Claude ou
-        OpenAI/outros via OpenAI-compatible API.
-      </p>
-
-      <Step n={1} title="Anthropic (recomendado)">
-        Acesse <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>{' '}
-        → <strong>API Keys</strong> → criar key. Cole no campo API Key. Modelo padrão sugerido:{' '}
-        <Code>claude-haiku-4-5-20251001</Code> (rápido + barato).
-      </Step>
-
-      <Step n={2} title="OpenAI (alternativa)">
-        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>
-        → criar key. Provider: <Code>openai</Code>. Modelo: <Code>gpt-4o-mini</Code>.
-      </Step>
-
-      <Step n={3} title="Ajuste o prompt">
-        Em Configurações → IA & Atendimento, escreva o tom da resposta, o que a IA deve fazer e
-        quando passar pro corretor. Salve com confirmação de senha.
-      </Step>
-    </div>
-  );
-}
-
 // ── Sicredi ─────────────────────────────────────────────────────────────
 function SicrediGuide() {
   return (
     <div>
-      <h3 className="help-h">🏦 Sicredi — Cobrança automatizada (PIX/boleto)</h3>
-      <p className="help-lead">
-        Permite registrar boletos de comissão direto pela API Sicredi e baixar baixas
-        automaticamente.
-      </p>
+      <HelpHeader
+        logo="/assets/sicredi.png"
+        fallbackIcon={<Icon name="bank" size={22} />}
+        title="Sicredi"
+        lead="Cobrança automatizada via API (PIX e boleto). Registra cobranças de comissão e baixa entradas automaticamente."
+      />
 
       <Step n={1} title="Solicite acesso à API no Sicredi">
         Procure o gerente da conta PJ → solicite credenciais da <strong>API Cobrança</strong>{' '}
@@ -388,15 +401,15 @@ function TrackingGuide({ apiBase }: { apiBase: string }) {
   const url = `${apiBase}/webhooks/lead`;
   return (
     <div>
-      <h3 className="help-h">📈 Webhook de Tracking — Receber leads de fora</h3>
-      <p className="help-lead">
-        Endpoint pra Meta Lead Ads, formulários do site, Zapier, etc. mandarem leads pro Pons
-        automaticamente.
-      </p>
+      <HelpHeader
+        fallbackIcon={<Icon name="webhook" size={22} />}
+        title="Webhook de Tracking"
+        lead="Endpoint pra Meta Lead Ads, formulários do site, Zapier, etc. mandarem leads pro Pons automaticamente."
+      />
 
       <Step n={1} title="Defina um token compartilhado">
-        Em Configurações → Integrações → <em>Token do Webhook</em>: cole/cole uma string
-        aleatória forte. Esse token vai protegerthe endpoint de spam.
+        Em Configurações → Integrações → <em>Token do Webhook</em>: cole uma string
+        aleatória forte. Esse token vai proteger o endpoint de spam.
       </Step>
 
       <Step n={2} title="Use esta URL no provedor">

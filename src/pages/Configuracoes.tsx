@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import { GoogleCalendarIcon } from '../components/GoogleCalendarIcon';
 import { GoogleCalendarCard } from '../components/GoogleCalendarCard';
 import { IntegracoesHelp } from '../components/IntegracoesHelp';
+import { IAHelp } from '../components/IAHelp';
 import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -129,6 +130,12 @@ function PanelIA() {
  if (loading) return <LoadingBlock />;
  return (
  <>
+   <div className="flex-between" style={{ marginBottom: 12, alignItems: 'center' }}>
+     <div className="text-sm text-secondary">
+       Provedor de IA (Anthropic ou OpenAI), modelo e prompt do SDR.
+     </div>
+     <IAHelp />
+   </div>
    <ProviderIACard settings={settings || {}} onSaved={reload} />
    <SdrIACard settings={settings || {}} />
  </>

@@ -46,11 +46,88 @@
 .help-h {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
+  gap: 10px;
+  font-size: 17px;
   font-weight: 700;
   margin: 0 0 8px;
   color: var(--text-primary);
+}
+
+.help-h__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--bg-card-hover);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.help-h__logo img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.help-h__logo svg { color: var(--pons-blue); }
+
+/* ── Tabelas (usado no IA help) ──────────────────────────────────── */
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 16px;
+  font-size: 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.help-table th,
+.help-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+.help-table thead th {
+  background: var(--bg-card-hover);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+.help-table tbody tr:last-child td { border-bottom: none; }
+.help-table tbody tr.help-table__row--recommended {
+  background: rgba(136, 197, 89, 0.08);
+}
+.help-table tbody tr.help-table__row--recommended td:first-child {
+  border-left: 3px solid #88C559;
+}
+.help-table .help-badge--reco {
+  display: inline-block;
+  background: #88C559;
+  color: #061106;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-left: 6px;
+}
+.help-table code {
+  font-size: 11px;
+  background: var(--bg-card-hover);
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.help-table__heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 18px 0 4px;
 }
 
 .help-lead {
