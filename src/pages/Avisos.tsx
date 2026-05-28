@@ -127,8 +127,18 @@ export default function Avisos() {
         onClose={() => setOpen(false)}
         title="Novo aviso"
         subtitle="Será publicado no mural visível pra toda a equipe"
+        footer={
+          <>
+            <button type="button" className="btn btn--secondary" onClick={() => setOpen(false)}>
+              Cancelar
+            </button>
+            <button type="submit" form="aviso-form" className="btn btn--primary">
+              Publicar
+            </button>
+          </>
+        }
       >
-        <form onSubmit={submit}>
+        <form id="aviso-form" onSubmit={submit}>
           <div className="form-grid form-grid--single">
             <div className="field">
               <label className="field__label">
@@ -156,14 +166,6 @@ export default function Avisos() {
                 <input type="checkbox" name="fixado" /> Fixar no topo
               </label>
             </div>
-          </div>
-          <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
-            <button type="button" className="btn btn--secondary" onClick={() => setOpen(false)}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn--primary">
-              Publicar
-            </button>
           </div>
         </form>
       </Modal>

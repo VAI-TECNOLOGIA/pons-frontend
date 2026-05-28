@@ -47,6 +47,7 @@ export default function Chat() {
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations());
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
@@ -65,10 +66,15 @@ export default function Chat() {
   const lista = tab === 'pendente' ? pendente : atendendo;
   const mensagens: Mensagem[] = conv?.mensagens || [];
 
-  // Auto-scroll ao receber novas mensagens
+  // Auto-scroll ao receber novas mensagens: rola direto via scrollTop (mais robusto
+  // que scrollIntoView dentro de overflow:auto). Depende do id da última msg pra
+  // capturar caso o length não muda mas o conteúdo sim. Sem smooth: smooth chega
+  // depois da próxima msg em conversas movimentadas e dá efeito de "quebrar".
+  const lastMsgId = mensagens.length ? mensagens[mensagens.length - 1]?.id : null;
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [mensagens.length, activeId]);
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lastMsgId, activeId]);
 
   // Sync sob demanda ao abrir uma conversa com binding VAI
   useEffect(() => {
@@ -328,7 +334,7 @@ export default function Chat() {
                   </button>
                 ))}
               </div>
-              <div className="thread__messages">
+              <div className="thread__messages" ref={messagesContainerRef}>
                 {mensagens.map((m) => (
                   <MessageBubble key={m.id} m={m} />
                 ))}
