@@ -29,9 +29,9 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/distribuicao', label: 'Distribuição Agendada', section: 'Sócios', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
   { to: '/vendas', label: 'Vendas', section: 'Sócios', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },
   // VENDAS
-  { to: '/leads', label: 'Leads', section: 'Vendas', icon: 'users', roles: [...COMERCIAL, SOCIO] },
+  { to: '/leads', label: 'Leads', section: 'Vendas', icon: 'users', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/chat', label: 'Atendimento', section: 'Vendas', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
-  { to: '/pipeline', label: 'Funil', section: 'Vendas', icon: 'pipeline', roles: [...COMERCIAL, SOCIO] },
+  { to: '/pipeline', label: 'Funil', section: 'Vendas', icon: 'pipeline', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/empreendimentos', label: 'Empreendimentos', section: 'Vendas', icon: 'building' },
   { to: '/ranking', label: 'Ranking', section: 'Vendas', icon: 'crown' },
   // ADMINISTRAÇÃO
@@ -40,10 +40,13 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/trafego', label: 'Tráfego Pago', section: 'Administração', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/bm', label: 'Business Managers', section: 'Administração', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'CORRETOR', 'GERENTE_EQUIPE'] },
   { to: '/meta-custos', label: 'Custos Meta', section: 'Administração', icon: 'wallet', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
-  { to: '/tarefas', label: 'Tarefas', section: 'Administração', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA'] },
+  { to: '/tarefas', label: 'Tarefas', section: 'Administração', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA', 'CORRETOR', 'GERENTE_EQUIPE'] },
+  { to: '/importar', label: 'Importar Leads', section: 'Administração', icon: 'plus', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   // MARKETING
   { to: '/remarketing', label: 'Remarketing', section: 'Marketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/landing-pages', label: 'Landing Pages', section: 'Marketing', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+  { to: '/heatmap', label: 'Heatmap', section: 'Marketing', icon: 'fire', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+  { to: '/meta-verificacao', label: 'Verificação Meta', section: 'Marketing', icon: 'checkCircle', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   // CONTEÚDO
   { to: '/avisos', label: 'Avisos', section: 'Conteúdo', icon: 'megafone' },
   { to: '/videos', label: 'Vídeos', section: 'Conteúdo', icon: 'play' },

@@ -141,6 +141,7 @@ export default function Corretores() {
  <th>Corretor</th>
  <th>Equipe</th>
  <th>CRECI</th>
+ <th className="numeric">Score (mês)</th>
  <th className="numeric">Vendas (mês)</th>
  <th className="numeric">Volume</th>
  <th>Status</th>
@@ -180,6 +181,11 @@ export default function Corretores() {
  )}
  </td>
  <td className="text-xs">{c.creci || '—'}</td>
+ <td className="numeric">
+   <span style={{ fontWeight: 700, color: (c.scoreMes || 0) > 0 ? 'var(--color-success)' : 'var(--text-secondary)' }}>
+     {c.scoreMes ?? 0}
+   </span>
+ </td>
  <td className="numeric font-semibold">{c.vendasMes ?? 0}</td>
  <td className="numeric money">{formatCurrencyShort(c.volumeMes)}</td>
  <td>

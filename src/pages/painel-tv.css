@@ -593,3 +593,9 @@ body:has(.tv) {
   0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
 }
+
+/* Ticker de avisos (rolando topo do painel TV) */
+@keyframes tvTicker {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}

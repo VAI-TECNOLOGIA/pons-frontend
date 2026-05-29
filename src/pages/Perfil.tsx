@@ -8,6 +8,8 @@ import { useUser } from '../lib/userContext';
 import { useToast } from '../lib/toast';
 import { formatRole } from '../lib/auth';
 import { InsightsList } from '../components/InsightsList';
+import { ScorePanel } from '../components/ScorePanel';
+import { MinhasBMs } from '../components/MinhasBMs';
 
 import './perfil.css';
 
@@ -187,7 +189,18 @@ export default function Perfil() {
           </form>
         </div>
 
-        {user.role === 'CORRETOR' && <InsightsList />}
+        {user.role === 'CORRETOR' && user.corretor && (
+          <>
+            <ScorePanel
+              corretorId={user.corretor.id}
+              scoreAtual={(user.corretor as any).scoreAtual}
+              scoreMes={(user.corretor as any).scoreMes}
+              scoreAno={(user.corretor as any).scoreAno}
+            />
+            <MinhasBMs />
+            <InsightsList />
+          </>
+        )}
       </div>
 
       <Modal

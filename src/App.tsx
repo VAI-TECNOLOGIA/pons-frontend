@@ -30,6 +30,10 @@ import Remarketing from './pages/Remarketing';
 import MetaCustos from './pages/MetaCustos';
 import LandingPages from './pages/LandingPages';
 import PainelExecutivo from './pages/PainelExecutivo';
+import ImportarLeads from './pages/ImportarLeads';
+import Heatmap from './pages/Heatmap';
+import MetaVerificacao from './pages/MetaVerificacao';
+import LPPublica from './pages/LPPublica';
 
 export default function App() {
   return (
@@ -37,6 +41,7 @@ export default function App() {
       <Route path="/" element={<Gate />} />
       <Route path="/login" element={<Login />} />
       <Route path="/painel-tv" element={<PainelTV />} />
+      <Route path="/lp/:slug" element={<LPPublica />} />
 
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -65,6 +70,9 @@ export default function App() {
         <Route path="/meta-custos" element={<MetaCustos />} />
         <Route path="/landing-pages" element={<LandingPages />} />
         <Route path="/painel-executivo" element={<PainelExecutivo />} />
+        <Route path="/importar" element={<ImportarLeads />} />
+        <Route path="/heatmap" element={<Heatmap />} />
+        <Route path="/meta-verificacao" element={<MetaVerificacao />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

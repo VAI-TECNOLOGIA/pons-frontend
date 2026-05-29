@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
@@ -7,17 +7,33 @@ import { TvEventoOverlay } from '../components/TvEventoOverlay';
 
 import './painel-tv.css';
 
+// Lê ?unidade=ID na URL pra filtrar painel por filial. Sem param = todas.
+function useUnidadeFiltro() {
+  return useMemo(() => {
+    const u = new URLSearchParams(location.search).get('unidade');
+    return u ? Number(u) : null;
+  }, []);
+}
+
 export default function PainelTV() {
   const [now, setNow] = useState(new Date());
+  const unidadeId = useUnidadeFiltro();
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  // State agregado do painel — backend filtra por unidade quando informado
+  const { data: state } = useApi<any>(
+    () => Api.painelTvState(unidadeId ? { unidadeId } : {}).catch(() => null),
+    [unidadeId],
+  );
   const { data: dash } = useApi<any>(() => Api.dashboard());
   const { data: funilEmpresa } = useApi<any>(() => Api.funilEmpresa());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  // Avisos pra ticker
+  const { data: avisos } = useApi<any[]>(() => Api.avisos());
 
   const ranking = (dash?.ranking?.length ? dash.ranking : (corretores || []))
     .map((c: any) => ({
@@ -52,9 +68,27 @@ export default function PainelTV() {
   const gaugeAngle = (pct / 100) * 180 - 180; // -180 (esquerda) a 0 (direita)
   const gaugeColor = pct >= 80 ? '#88C559' : pct >= 50 ? '#F2B544' : '#E10600';
 
+  const avisosTicker = (avisos || []).filter((a: any) => a.fixado || a.tipo === 'CAMPANHA' || a.tipo === 'URGENTE').slice(0, 5);
+
   return (
     <div className="tv">
       <TvEventoOverlay />
+      {avisosTicker.length > 0 && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
+          background: 'rgba(225,6,0,0.85)', color: '#fff', padding: '6px 16px',
+          fontSize: 13, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap',
+        }}>
+          <div style={{ display: 'inline-block', animation: 'tvTicker 30s linear infinite' }}>
+            {avisosTicker.map((a: any) => `📢 ${a.titulo} · ${a.conteudo}`).join('     •     ')}
+          </div>
+        </div>
+      )}
+      {unidadeId && state?.metricas && (
+        <div style={{ position: 'fixed', top: 8, right: 16, zIndex: 10, fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+          Filtro: filial #{unidadeId}
+        </div>
+      )}
       <header className="tvh">
         <div className="tvh__brand">
           <img src="/assets/logo_white.png" alt="Grupo Pons" />

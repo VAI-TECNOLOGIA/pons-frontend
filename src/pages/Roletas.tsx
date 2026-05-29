@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { SLAStatusPanel } from '../components/SLAStatusPanel';
 import { Modal } from '../components/Modal';
 import { Link } from 'react-router-dom';
 import { Api } from '../lib/api';
@@ -97,6 +98,8 @@ export default function Roletas() {
  title={`${roletas.length} roletas ativas`}
  subtitle="Distribuição automática de leads · round-robin, performance, ponderada e manual"
  />
+
+ <SLAStatusPanel />
 
  <div className="mb-6">
  <div className="card" style={{ background: 'linear-gradient(135deg,#0F1729,#1A2444)', color: 'white', border: 'none' }}>

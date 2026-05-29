@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import { Topbar } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { DashboardKpisExtra } from '../components/DashboardKpisExtra';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -240,6 +241,8 @@ export default function Dashboard() {
  <KpiCard label="Em assinatura" value={String(data.kpis.contratosEmAssinatura ?? 0)} sub="aguardando cliente" color="navy" iconName="doc" />
  </div>
  )}
+
+ <DashboardKpisExtra />
 
  {/* Evolução */}
  {isExec && (

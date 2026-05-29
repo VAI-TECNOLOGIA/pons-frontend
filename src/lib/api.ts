@@ -101,6 +101,7 @@ export const Api = {
   corretorUpdate: (id: number, data: any) => request<any>(`/corretores/${id}`, { method: 'PATCH', body: data }),
   corretorDesativar: (id: number) => request<any>(`/corretores/${id}/desativar`, { method: 'POST' }),
   corretorJornada: (id: number) => request<any>(`/corretores/${id}/jornada`),
+  corretorScoreEventos: (id: number) => request<{ eventos: any[]; porTipo: Record<string, number> }>(`/corretores/${id}/score-eventos`),
 
   // Leads
   leads: (params: any = {}) => request<any[]>(`/leads${qs(params)}`),
@@ -341,6 +342,14 @@ export const Api = {
   metaAuditar: (url: string, cnpjEsperado?: string, razaoSocialEsperada?: string) =>
     request<any>('/meta-verificacao/auditar', { method: 'POST', body: { url, cnpjEsperado, razaoSocialEsperada } }),
   metaAuditoriaUltima: () => request<any>('/meta-verificacao/ultima'),
+
+  // ─── Fase B — SLA visibility ─────────────────────────────────────
+  slaStatus: () => request<{
+    alerta: any[]; fila: any[]; redistribuir: any[]; historico: any[];
+  }>('/roletas/sla'),
+
+  // ─── Fase D — Heatmap viewer ─────────────────────────────────────
+  heatmapPagina: (pagina: string, dias = 7) => request<any>(`/heatmap/pagina/${encodeURIComponent(pagina)}?dias=${dias}`),
 
   // ─── Fase G — Insights IA do Corretor ────────────────────────────
   insightsMe:        () => request<any[]>('/insights/me'),

@@ -22,6 +22,12 @@ export interface User {
   dataNascimento?: string | null;
   avatarUrl?: string | null;
   unidade?: { id: number; nome: string } | null;
+  corretor?: {
+    id: number;
+    scoreAtual?: number;
+    scoreMes?: number;
+    scoreAno?: number;
+  } | null;
 }
 
 const TOKEN_KEY = 'pons.token';
