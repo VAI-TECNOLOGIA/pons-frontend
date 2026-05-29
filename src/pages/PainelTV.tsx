@@ -4,50 +4,68 @@ import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { Icon } from '../components/Icon';
 import { TvEventoOverlay } from '../components/TvEventoOverlay';
+import { TVFiltroSelector } from '../components/TVFiltroSelector';
 
 import './painel-tv.css';
 
-// Lê ?unidade=ID na URL pra filtrar painel por filial. Sem param = todas.
-function useUnidadeFiltro() {
+// Lê ?unidade=ID e ?equipe=ID na URL pra filtrar o painel.
+function useFiltros() {
   return useMemo(() => {
-    const u = new URLSearchParams(location.search).get('unidade');
-    return u ? Number(u) : null;
+    const sp = new URLSearchParams(location.search);
+    const u = sp.get('unidade');
+    const e = sp.get('equipe');
+    return {
+      unidadeId: u ? Number(u) : null,
+      equipeId:  e ? Number(e) : null,
+    };
   }, []);
 }
 
 export default function PainelTV() {
   const [now, setNow] = useState(new Date());
-  const unidadeId = useUnidadeFiltro();
+  const { unidadeId, equipeId } = useFiltros();
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // State agregado do painel — backend filtra por unidade quando informado
-  const { data: state } = useApi<any>(
-    () => Api.painelTvState(unidadeId ? { unidadeId } : {}).catch(() => null),
-    [unidadeId],
+  // State do painel TV (backend já filtra por unidade/equipe e NÃO retorna VGV por corretor)
+  const { data: state, reload: reloadState } = useApi<any>(
+    () => Api.painelTvState({ ...(unidadeId ? { unidadeId } : {}), ...(equipeId ? { equipeId } : {}) }).catch(() => null),
+    [unidadeId, equipeId],
   );
+  // Auto-refresh ranking a cada 30s pra TV ficar viva
+  useEffect(() => {
+    const t = setInterval(() => reloadState(), 30_000);
+    return () => clearInterval(t);
+  }, [reloadState]);
+
   const { data: dash } = useApi<any>(() => Api.dashboard());
   const { data: funilEmpresa } = useApi<any>(() => Api.funilEmpresa());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
-  // Avisos pra ticker
   const { data: avisos } = useApi<any[]>(() => Api.avisos());
 
-  const ranking = (dash?.ranking?.length ? dash.ranking : (corretores || []))
-    .map((c: any) => ({
-      id: c.id,
-      nome: c.nome,
-      equipe: c.equipe?.nome || c.equipe || '',
-      equipeCor: c.equipe?.cor || c.equipeCor || '#5D8FE0',
-      initials: c.initials,
-      volumeMes: c.volume ?? c.volumeMes ?? 0,
-      vendasMes: c.vendas ?? c.vendasMes ?? 0,
-    }))
-    .sort((a: any, b: any) => b.volumeMes - a.volumeMes);
-  const top3 = ranking.slice(0, 3);
-  const resto = ranking.slice(3, 10);
+  // Lookup pra cor da equipe por id (vinda do /api/corretores)
+  const corPorEquipe = useMemo(() => {
+    const m = new Map<number, string>();
+    (corretores || []).forEach((c: any) => {
+      if (c.equipe?.id) m.set(c.equipe.id, c.equipe.cor || '#5D8FE0');
+    });
+    return m;
+  }, [corretores]);
+
+  // Ranking SEM VGV — só score + posição (privacidade exigida pelo cliente)
+  const rankingTV = (state?.ranking || []).map((r: any) => ({
+    id: r.corretorId,
+    nome: r.nome,
+    initials: r.initials,
+    equipe: '',     // a equipe vem implícita pelo filtro (todo o painel é dessa equipe)
+    equipeCor: corPorEquipe.get(r.equipeId) || state?.equipeCor || '#5D8FE0',
+    scoreMes: r.scoreMes,
+  }));
+  const top3 = rankingTV.slice(0, 3);
+  const resto = rankingTV.slice(3, 10);
   const a = dash?.avanco || { progressoMeta: 0, realizadoMes: 0, metaCasa: 0, noRitmo: false };
   const k = dash?.kpis || {};
 
@@ -73,6 +91,7 @@ export default function PainelTV() {
   return (
     <div className="tv">
       <TvEventoOverlay />
+      <TVFiltroSelector unidadeId={unidadeId} equipeId={equipeId} />
       {avisosTicker.length > 0 && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
@@ -84,9 +103,15 @@ export default function PainelTV() {
           </div>
         </div>
       )}
-      {unidadeId && state?.metricas && (
-        <div style={{ position: 'fixed', top: 8, right: 16, zIndex: 10, fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
-          Filtro: filial #{unidadeId}
+      {(unidadeId || equipeId) && (
+        <div style={{
+          position: 'fixed', top: avisosTicker.length > 0 ? 36 : 8, right: 16, zIndex: 10,
+          fontSize: 12, color: '#fff', fontWeight: 700,
+          background: state?.equipeCor ? `${state.equipeCor}cc` : 'rgba(0,0,0,0.5)',
+          padding: '4px 10px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)',
+        }}>
+          {equipeId && (state?.equipeNome ? `Equipe: ${state.equipeNome}` : `Equipe #${equipeId}`)}
+          {unidadeId && (equipeId ? ' · ' : '') + `Filial #${unidadeId}`}
         </div>
       )}
       <header className="tvh">
@@ -152,7 +177,7 @@ export default function PainelTV() {
         <div className="panel panel--ranking">
           <div className="panel__t">
             <Icon name="trophy" size={16} />
-            Grid de Largada · Pilotos do Mês
+            Grid de Largada · {state?.equipeNome ? `Equipe ${state.equipeNome}` : 'Pilotos do Mês'}
           </div>
 
           <div className="podium">
@@ -165,6 +190,8 @@ export default function PainelTV() {
             {resto.length === 0 && (
               <div className="grid-empty">Aguardando registros de mais pilotos…</div>
             )}
+            {/* IMPORTANTE: o cliente proibiu mostrar valor faturado por corretor no painel TV.
+                Aqui exibimos APENAS score do mês — sem VGV, sem volume, sem faturamento. */}
             {resto.map((c: any, i: number) => (
               <div className="grid-row" key={c.id} style={{ ['--tc' as any]: c.equipeCor || '#5D8FE0' }}>
                 <div className="grid-row__pos">P{i + 4}</div>
@@ -172,11 +199,10 @@ export default function PainelTV() {
                 <div className="grid-row__avatar">{c.initials}</div>
                 <div className="grid-row__main">
                   <div className="grid-row__name">{c.nome}</div>
-                  <div className="grid-row__team">{c.equipe || '—'}</div>
                 </div>
                 <div className="grid-row__stats">
-                  <div className="grid-row__val">{formatCurrencyShort(c.volumeMes)}</div>
-                  <div className="grid-row__sales">{c.vendasMes} vendas</div>
+                  <div className="grid-row__val">{c.scoreMes ?? 0} pts</div>
+                  <div className="grid-row__sales">score</div>
                 </div>
               </div>
             ))}
@@ -280,6 +306,8 @@ export default function PainelTV() {
 }
 
 function Podium({ pos, medal, piloto, highlight }: { pos: number; medal: string; piloto: any; highlight?: boolean }) {
+  // IMPORTANTE: cliente proibiu valor faturado por corretor na TV.
+  // Mostramos apenas nome + score do mês.
   return (
     <div className={'pod pod--' + pos + (highlight ? ' pod--p1' : '')}>
       <div className="pod__medal">{medal}</div>
@@ -287,9 +315,8 @@ function Podium({ pos, medal, piloto, highlight }: { pos: number; medal: string;
         {piloto.initials}
       </div>
       <div className="pod__name">{piloto.nome}</div>
-      <div className="pod__team">{piloto.equipe}</div>
-      <div className="pod__val">{formatCurrencyShort(piloto.volumeMes)}</div>
-      <div className="pod__sales">{piloto.vendasMes} vendas</div>
+      <div className="pod__val">{piloto.scoreMes ?? 0}</div>
+      <div className="pod__sales">pontos de performance</div>
     </div>
   );
 }

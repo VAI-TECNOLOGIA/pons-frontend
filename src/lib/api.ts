@@ -292,6 +292,8 @@ export const Api = {
   // ─── Fase A — Painel TV ──────────────────────────────────────────
   painelTvState:   (params: any = {}) => request<any>(`/painel-tv/state${qs(params)}`, { auth: false }),
   painelTvEventos: (params: any = {}) => request<any[]>(`/painel-tv/eventos${qs(params)}`, { auth: false }),
+  painelTvEquipes: () => request<any[]>('/painel-tv/equipes', { auth: false }),
+  painelTvUnidades: () => request<any[]>('/painel-tv/unidades', { auth: false }),
   painelTvTeste:   (data: any) => request<any>('/painel-tv/teste', { method: 'POST', body: data }),
 
   // ─── Fase B — Distribuição Agendada ──────────────────────────────
