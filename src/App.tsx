@@ -23,6 +23,13 @@ import Formularios from './pages/Formularios';
 import PainelTV from './pages/PainelTV';
 import Configuracoes from './pages/Configuracoes';
 import Perfil from './pages/Perfil';
+import Ranking from './pages/Ranking';
+import BM from './pages/BM';
+import Distribuicao from './pages/Distribuicao';
+import Remarketing from './pages/Remarketing';
+import MetaCustos from './pages/MetaCustos';
+import LandingPages from './pages/LandingPages';
+import PainelExecutivo from './pages/PainelExecutivo';
 
 export default function App() {
   return (
@@ -51,6 +58,13 @@ export default function App() {
         <Route path="/formularios" element={<Formularios />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
         <Route path="/perfil" element={<Perfil />} />
+        <Route path="/ranking" element={<Ranking />} />
+        <Route path="/bm" element={<BM />} />
+        <Route path="/distribuicao" element={<Distribuicao />} />
+        <Route path="/remarketing" element={<Remarketing />} />
+        <Route path="/meta-custos" element={<MetaCustos />} />
+        <Route path="/landing-pages" element={<LandingPages />} />
+        <Route path="/painel-executivo" element={<PainelExecutivo />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

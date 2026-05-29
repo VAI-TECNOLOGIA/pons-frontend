@@ -572,3 +572,24 @@ body:has(.tv) {
   .tv-main { gap: 10px; }
   .podium { grid-template-columns: 1fr; gap: 8px; }
 }
+
+/* ╔══════════════════════════════════════════════════════════════════════════╗
+   ║ TV EVENTO OVERLAY — animações de celebração (Fase A4)                    ║
+   ╚══════════════════════════════════════════════════════════════════════════╝ */
+@keyframes tvEventFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes tvEventScale {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes tvEventCar {
+  0%   { left: -200px; transform: rotate(0deg); }
+  100% { left: 100vw;  transform: rotate(2deg); }
+}
+@keyframes tvEventConfetti {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}

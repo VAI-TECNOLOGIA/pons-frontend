@@ -22,20 +22,28 @@ const ALL_ITEMS: NavItem[] = [
   // SÓCIOS
   { to: '/dashboard', label: 'Dashboard', section: 'Sócios', icon: 'dashboard' },
   { to: '/relatorios', label: 'Relatórios', section: 'Sócios', icon: 'chart', roles: RELATORIOS },
+  { to: '/painel-executivo', label: 'Painel Executivo', section: 'Sócios', icon: 'chart', roles: RELATORIOS },
   { to: '/executivo', label: 'Agenda Executiva', section: 'Sócios', icon: 'crown', roles: [...EXEC, 'ASSESSORA'] },
   { to: '/financeiro', label: 'Financeiro', section: 'Sócios', icon: 'wallet', roles: FINANCE },
   { to: '/roletas', label: 'Roletas', section: 'Sócios', icon: 'roulette', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
+  { to: '/distribuicao', label: 'Distribuição Agendada', section: 'Sócios', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
   { to: '/vendas', label: 'Vendas', section: 'Sócios', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },
   // VENDAS
   { to: '/leads', label: 'Leads', section: 'Vendas', icon: 'users', roles: [...COMERCIAL, SOCIO] },
   { to: '/chat', label: 'Atendimento', section: 'Vendas', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/pipeline', label: 'Funil', section: 'Vendas', icon: 'pipeline', roles: [...COMERCIAL, SOCIO] },
   { to: '/empreendimentos', label: 'Empreendimentos', section: 'Vendas', icon: 'building' },
+  { to: '/ranking', label: 'Ranking', section: 'Vendas', icon: 'crown' },
   // ADMINISTRAÇÃO
   { to: '/corretores', label: 'Corretores', section: 'Administração', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', SOCIO] },
   { to: '/equipes', label: 'Equipes', section: 'Administração', icon: 'shield', roles: ['CEO', 'DIRETOR_COMERCIAL', SOCIO] },
   { to: '/trafego', label: 'Tráfego Pago', section: 'Administração', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+  { to: '/bm', label: 'Business Managers', section: 'Administração', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'CORRETOR', 'GERENTE_EQUIPE'] },
+  { to: '/meta-custos', label: 'Custos Meta', section: 'Administração', icon: 'wallet', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
   { to: '/tarefas', label: 'Tarefas', section: 'Administração', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA'] },
+  // MARKETING
+  { to: '/remarketing', label: 'Remarketing', section: 'Marketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+  { to: '/landing-pages', label: 'Landing Pages', section: 'Marketing', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   // CONTEÚDO
   { to: '/avisos', label: 'Avisos', section: 'Conteúdo', icon: 'megafone' },
   { to: '/videos', label: 'Vídeos', section: 'Conteúdo', icon: 'play' },

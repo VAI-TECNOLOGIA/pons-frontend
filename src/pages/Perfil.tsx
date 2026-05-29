@@ -3,9 +3,11 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
+import { useApi } from '../lib/useApi';
 import { useUser } from '../lib/userContext';
 import { useToast } from '../lib/toast';
 import { formatRole } from '../lib/auth';
+import { InsightsList } from '../components/InsightsList';
 
 import './perfil.css';
 
@@ -184,6 +186,8 @@ export default function Perfil() {
             </div>
           </form>
         </div>
+
+        {user.role === 'CORRETOR' && <InsightsList />}
       </div>
 
       <Modal

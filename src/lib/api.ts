@@ -273,6 +273,80 @@ export const Api = {
       qualityRating?: string;
       wabaId?: string;
     }>('/conversations/_meta/health'),
+
+  // ─── Fase A — BM (Business Managers) ─────────────────────────────
+  bmList:    () => request<any[]>('/bm'),
+  bmGet:     (id: number) => request<any>(`/bm/${id}`),
+  bmCreate:  (data: any) => request<any>('/bm', { method: 'POST', body: data }),
+  bmUpdate:  (id: number, data: any) => request<any>(`/bm/${id}`, { method: 'PATCH', body: data }),
+  bmDelete:  (id: number) => request<{ ok: boolean }>(`/bm/${id}`, { method: 'DELETE' }),
+  bmDashboard: (id: number) => request<any>(`/bm/${id}/dashboard`),
+
+  // ─── Fase A — Ranking ────────────────────────────────────────────
+  ranking:       (params: any = {}) => request<any>(`/ranking${qs(params)}`),
+  rankingFiliais: (params: any = {}) => request<any>(`/ranking/filiais${qs(params)}`),
+  rankingEquipes: (params: any = {}) => request<any>(`/ranking/equipes${qs(params)}`),
+  rankingMe:     (params: any = {}) => request<any>(`/ranking/me${qs(params)}`),
+
+  // ─── Fase A — Painel TV ──────────────────────────────────────────
+  painelTvState:   (params: any = {}) => request<any>(`/painel-tv/state${qs(params)}`, { auth: false }),
+  painelTvEventos: (params: any = {}) => request<any[]>(`/painel-tv/eventos${qs(params)}`, { auth: false }),
+  painelTvTeste:   (data: any) => request<any>('/painel-tv/teste', { method: 'POST', body: data }),
+
+  // ─── Fase B — Distribuição Agendada ──────────────────────────────
+  distribuicaoList:    () => request<any[]>('/distribuicao'),
+  distribuicaoCreate:  (data: any) => request<any>('/distribuicao', { method: 'POST', body: data }),
+  distribuicaoUpdate:  (id: number, data: any) => request<any>(`/distribuicao/${id}`, { method: 'PATCH', body: data }),
+  distribuicaoDelete:  (id: number) => request<{ ok: boolean }>(`/distribuicao/${id}`, { method: 'DELETE' }),
+  distribuicaoExecutar:(id: number) => request<any>(`/distribuicao/${id}/executar`, { method: 'POST' }),
+
+  // ─── Fase B — Import Big Data ────────────────────────────────────
+  importLeadsPreview:  (file: File) => {
+    const fd = new FormData(); fd.append('arquivo', file);
+    return fetch(`${BASE}/import-leads/preview`, { method: 'POST', headers: { Authorization: `Bearer ${Auth.token}` }, body: fd }).then((r) => r.json());
+  },
+  importLeadsExecutar: (file: File) => {
+    const fd = new FormData(); fd.append('arquivo', file);
+    return fetch(`${BASE}/import-leads/executar`, { method: 'POST', headers: { Authorization: `Bearer ${Auth.token}` }, body: fd }).then((r) => r.json());
+  },
+  importLeadsFiltrar:  (params: any = {}) => request<any>(`/import-leads/filtrar${qs(params)}`),
+
+  // ─── Fase C — Remarketing ────────────────────────────────────────
+  remarketingList:    () => request<any[]>('/remarketing'),
+  remarketingGet:     (id: number) => request<any>(`/remarketing/${id}`),
+  remarketingCreate:  (data: any) => request<any>('/remarketing', { method: 'POST', body: data }),
+  remarketingUpdate:  (id: number, data: any) => request<any>(`/remarketing/${id}`, { method: 'PATCH', body: data }),
+  remarketingAgendar: (id: number, quando?: string) => request<any>(`/remarketing/${id}/agendar`, { method: 'POST', body: { quando } }),
+  remarketingCancelar:(id: number) => request<any>(`/remarketing/${id}/cancelar`, { method: 'POST' }),
+  remarketingPreview: (id: number) => request<{ total: number; custoEstimado: number }>(`/remarketing/${id}/preview-segmento`),
+  remarketingEnvios:  (id: number) => request<any[]>(`/remarketing/${id}/envios`),
+
+  // ─── Fase C — Custos Meta ────────────────────────────────────────
+  metaCustosResumo: (dias = 30) => request<any>(`/meta-custos/resumo?dias=${dias}`),
+  metaCustosSerie:  (dias = 30) => request<any[]>(`/meta-custos/serie?dias=${dias}`),
+
+  // ─── Fase D — Landing Pages ──────────────────────────────────────
+  lpList:    () => request<any[]>('/lp'),
+  lpCreate:  (data: any) => request<any>('/lp', { method: 'POST', body: data }),
+  lpUpdate:  (id: number, data: any) => request<any>(`/lp/${id}`, { method: 'PATCH', body: data }),
+  lpDelete:  (id: number) => request<{ ok: boolean }>(`/lp/${id}`, { method: 'DELETE' }),
+
+  // ─── Fase E — Painel Executivo ───────────────────────────────────
+  execEmpresa:    (params: any = {}) => request<any>(`/executivo/empresa${qs(params)}`),
+  execCorretores: (params: any = {}) => request<any>(`/executivo/corretores${qs(params)}`),
+  execFiliais:    (params: any = {}) => request<any>(`/executivo/filiais${qs(params)}`),
+  execCidades:    (params: any = {}) => request<any>(`/executivo/cidades${qs(params)}`),
+
+  // ─── Fase F — Verificação Meta ───────────────────────────────────
+  metaAuditar: (url: string, cnpjEsperado?: string, razaoSocialEsperada?: string) =>
+    request<any>('/meta-verificacao/auditar', { method: 'POST', body: { url, cnpjEsperado, razaoSocialEsperada } }),
+  metaAuditoriaUltima: () => request<any>('/meta-verificacao/ultima'),
+
+  // ─── Fase G — Insights IA do Corretor ────────────────────────────
+  insightsMe:        () => request<any[]>('/insights/me'),
+  insightsCorretor:  (id: number) => request<any[]>(`/insights/corretor/${id}`),
+  insightVisualizado:(id: number) => request<{ ok: boolean }>(`/insights/${id}/visualizado`, { method: 'POST' }),
+  insightsRodar:     () => request<{ ok: boolean }>('/insights/rodar', { method: 'POST' }),
 };
 
 /**

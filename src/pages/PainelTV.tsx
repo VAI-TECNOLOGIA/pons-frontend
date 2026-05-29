@@ -3,6 +3,7 @@ import { formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { Icon } from '../components/Icon';
+import { TvEventoOverlay } from '../components/TvEventoOverlay';
 
 import './painel-tv.css';
 
@@ -53,6 +54,7 @@ export default function PainelTV() {
 
   return (
     <div className="tv">
+      <TvEventoOverlay />
       <header className="tvh">
         <div className="tvh__brand">
           <img src="/assets/logo_white.png" alt="Grupo Pons" />
