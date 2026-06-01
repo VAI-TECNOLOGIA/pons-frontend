@@ -32,7 +32,6 @@ import LandingPages from './pages/LandingPages';
 import PainelExecutivo from './pages/PainelExecutivo';
 import ImportarLeads from './pages/ImportarLeads';
 import Heatmap from './pages/Heatmap';
-import MetaVerificacao from './pages/MetaVerificacao';
 import LPPublica from './pages/LPPublica';
 
 export default function App() {
@@ -72,7 +71,6 @@ export default function App() {
         <Route path="/painel-executivo" element={<PainelExecutivo />} />
         <Route path="/importar" element={<ImportarLeads />} />
         <Route path="/heatmap" element={<Heatmap />} />
-        <Route path="/meta-verificacao" element={<MetaVerificacao />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

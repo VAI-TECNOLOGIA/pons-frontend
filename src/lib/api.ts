@@ -56,8 +56,16 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
   }
 
   if (!res.ok) {
-    const details = await res.json().catch(() => ({ error: 'unknown' }));
-    throw new ApiError(details.error || `HTTP ${res.status}`, res.status, details);
+    const details = await res.json().catch(() => ({}));
+    // Mensagens amigáveis por status — antes mostrava "unknown" quando body vinha vazio
+    const fallback =
+      res.status === 403 ? 'Você não tem permissão pra acessar isso' :
+      res.status === 404 ? 'Não encontrado' :
+      res.status === 401 ? 'Sessão expirada — faça login de novo' :
+      res.status >= 500 ? 'Erro no servidor — tente em instantes' :
+      `Erro HTTP ${res.status}`;
+    const msg = details.error || details.message || fallback;
+    throw new ApiError(msg, res.status, details);
   }
 
   if (res.status === 204) return null as T;

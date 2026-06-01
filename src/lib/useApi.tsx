@@ -44,17 +44,16 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseA
 }
 
 export function ErrorBlock({ error, label = 'Erro ao carregar' }: { error: Error; label?: string }) {
+  // Trata erros 403 com tom suave — não é erro do app, é só permissão
+  const isForbidden = (error as any)?.status === 403;
+  const isNotFound  = (error as any)?.status === 404;
+  const bg   = isForbidden ? 'var(--bg-elevated)' : 'var(--color-danger-bg)';
+  const cor  = isForbidden ? 'var(--text-primary)' : '#8B0712';
+  const icone = isForbidden ? '🔒' : isNotFound ? '🔍' : '⚠️';
+  const titulo = isForbidden ? 'Sem permissão' : isNotFound ? 'Não encontrado' : label;
   return (
-    <div
-      className="card"
-      style={{
-        background: 'var(--color-danger-bg)',
-        borderColor: '#F2A0A8',
-        color: '#8B0712',
-        padding: 16,
-      }}
-    >
-      <strong>{label}</strong>
+    <div className="card" style={{ background: bg, color: cor, padding: 16 }}>
+      <strong>{icone} {titulo}</strong>
       <div className="text-sm" style={{ marginTop: 4 }}>
         {error.message}
       </div>

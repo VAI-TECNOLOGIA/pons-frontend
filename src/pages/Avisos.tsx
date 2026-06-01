@@ -7,6 +7,9 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { Auth } from '../lib/auth';
+
+const PODE_PUBLICAR = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA']);
 
 import './avisos.css';
 
@@ -22,6 +25,7 @@ export default function Avisos() {
   const { data: avisos, loading, error, reload } = useApi<any[]>(() => Api.avisos());
   const toast = useToast();
   const confirm = useConfirm();
+  const podePublicar = PODE_PUBLICAR.has(Auth.user?.role || '');
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,11 +70,11 @@ export default function Avisos() {
     <>
       <Topbar
         title="Avisos"
-        right={
+        right={podePublicar ? (
           <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>
             + Novo aviso
           </button>
-        }
+        ) : undefined}
       />
       <div className="main__content">
         <PageHeader
@@ -106,14 +110,16 @@ export default function Avisos() {
                     <div className="text-xs text-secondary">
                       {a.autorNome || 'Grupo Pons'} · {timeAgo(a.createdAt)}
                     </div>
-                    <button
-                      className="btn btn--ghost btn--sm"
-                      onClick={() => excluir(a.id)}
-                      title="Excluir"
-                      style={{ padding: '4px 8px' }}
-                    >
-                      <Icon name="trash" size={14} />
-                    </button>
+                    {podePublicar && (
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => excluir(a.id)}
+                        title="Excluir"
+                        style={{ padding: '4px 8px' }}
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

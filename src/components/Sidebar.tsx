@@ -46,7 +46,6 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/remarketing', label: 'Remarketing', section: 'Marketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/landing-pages', label: 'Landing Pages', section: 'Marketing', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/heatmap', label: 'Heatmap', section: 'Marketing', icon: 'fire', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
-  { to: '/meta-verificacao', label: 'Verificação Meta', section: 'Marketing', icon: 'checkCircle', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   // CONTEÚDO
   { to: '/avisos', label: 'Avisos', section: 'Conteúdo', icon: 'megafone' },
   { to: '/videos', label: 'Vídeos', section: 'Conteúdo', icon: 'play' },

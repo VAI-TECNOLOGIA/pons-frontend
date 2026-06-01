@@ -29,7 +29,10 @@ const CAT_BADGE: Record<string, [string, string]> = {
   TREINAMENTO: ['badge--signature', 'Treinamento'],
 };
 
+const PODE_GERIR_VIDEOS = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING']);
+
 export default function Videos() {
+  const podeGerir = PODE_GERIR_VIDEOS.has(Auth.user?.role || '');
   const [filtro, setFiltro] = useState('');
   const [open, setOpen] = useState(false);
   const [capaPreview, setCapaPreview] = useState<string | null>(null);
@@ -121,11 +124,11 @@ export default function Videos() {
     <>
       <Topbar
         title="Vídeos"
-        right={
+        right={podeGerir ? (
           <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>
             + Adicionar vídeo
           </button>
-        }
+        ) : undefined}
       />
       <div className="main__content">
         <PageHeader
@@ -157,14 +160,16 @@ export default function Videos() {
               const thumb = v.thumbnail || v.thumb || ytThumb(v.url);
               return (
                 <div className="video-card" key={v.id} style={{ position: 'relative' }}>
-                  <button
-                    className="btn btn--ghost btn--sm"
-                    onClick={(e) => excluir(v.id, e)}
-                    title="Excluir"
-                    style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, padding: '4px 8px' }}
-                  >
-                    <Icon name="trash" size={14} />
-                  </button>
+                  {podeGerir && (
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      onClick={(e) => excluir(v.id, e)}
+                      title="Excluir"
+                      style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, padding: '4px 8px' }}
+                    >
+                      <Icon name="trash" size={14} />
+                    </button>
+                  )}
                   <div
                     className="video-thumb"
                     style={thumb ? { background: `url(${thumb}) center/cover` } : {}}
