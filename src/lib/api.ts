@@ -386,6 +386,48 @@ export const Api = {
   auditoriaExclusoes: (params: any = {}) => request<any[]>(`/auditoria/exclusoes${qs(params)}`),
   auditoriaEntidades: () => request<{ entidade: string; total: number }[]>('/auditoria/entidades'),
 
+  // ─── Sprint 3-5 ───────────────────────────────────────────────────
+  // H1: FB OAuth
+  fbHealth:   () => request<{ configured: boolean }>('/fb-oauth/health'),
+  fbAuthUrl:  () => request<{ url: string }>('/fb-oauth/auth-url'),
+  fbCallback: (code: string) => request<any>('/fb-oauth/callback', { method: 'POST', body: { code } }),
+  fbLinkBM:   (data: any) => request<any>('/fb-oauth/link-bm', { method: 'POST', body: data }),
+  fbForms:    (bmId: number) => request<any[]>(`/fb-oauth/forms/${bmId}`),
+  fbSync:     (bmId: number, formId: string) => request<any>(`/fb-oauth/sync/${bmId}`, { method: 'POST', body: { formId } }),
+  // M8: CAPI
+  capiList:   () => request<any[]>('/capi'),
+  capiCreate: (data: any) => request<any>('/capi', { method: 'POST', body: data }),
+  capiUpdate: (id: number, data: any) => request<any>(`/capi/${id}`, { method: 'PATCH', body: data }),
+  capiDelete: (id: number) => request<{ ok: boolean }>(`/capi/${id}`, { method: 'DELETE' }),
+  // M4: Bolsões múltiplos
+  bolsoesList:   () => request<any[]>('/bolsoes'),
+  bolsaoCreate:  (data: any) => request<any>('/bolsoes', { method: 'POST', body: data }),
+  bolsaoUpdate:  (id: number, data: any) => request<any>(`/bolsoes/${id}`, { method: 'PATCH', body: data }),
+  bolsaoDelete:  (id: number) => request<{ ok: boolean }>(`/bolsoes/${id}`, { method: 'DELETE' }),
+  // M5: Cadências
+  cadenciasList:    () => request<any[]>('/cadencias'),
+  cadenciaCreate:   (data: any) => request<any>('/cadencias', { method: 'POST', body: data }),
+  cadenciaUpdate:   (id: number, data: any) => request<any>(`/cadencias/${id}`, { method: 'PATCH', body: data }),
+  cadenciaDelete:   (id: number) => request<{ ok: boolean }>(`/cadencias/${id}`, { method: 'DELETE' }),
+  cadenciaExecs:    (id: number) => request<any[]>(`/cadencias/${id}/execucoes`),
+  // M9: Webhook outbound
+  webhookSaidas:   () => request<any[]>('/webhook-saidas'),
+  wsCreate:        (data: any) => request<any>('/webhook-saidas', { method: 'POST', body: data }),
+  wsUpdate:        (id: number, data: any) => request<any>(`/webhook-saidas/${id}`, { method: 'PATCH', body: data }),
+  wsDelete:        (id: number) => request<{ ok: boolean }>(`/webhook-saidas/${id}`, { method: 'DELETE' }),
+  // M13: Campos custom
+  camposCustom:    () => request<any[]>('/campos-custom'),
+  campoCreate:     (data: any) => request<any>('/campos-custom', { method: 'POST', body: data }),
+  campoUpdate:     (id: number, data: any) => request<any>(`/campos-custom/${id}`, { method: 'PATCH', body: data }),
+  campoDelete:     (id: number) => request<{ ok: boolean }>(`/campos-custom/${id}`, { method: 'DELETE' }),
+  // M14: Regras
+  regrasList:      () => request<any[]>('/regras'),
+  regraCreate:     (data: any) => request<any>('/regras', { method: 'POST', body: data }),
+  regraUpdate:     (id: number, data: any) => request<any>(`/regras/${id}`, { method: 'PATCH', body: data }),
+  regraDelete:     (id: number) => request<{ ok: boolean }>(`/regras/${id}`, { method: 'DELETE' }),
+  // M22: Onboarding
+  onboardingStatus: () => request<any>('/onboarding/status'),
+
   // ─── Fase G — Insights IA do Corretor ────────────────────────────
   insightsMe:        () => request<any[]>('/insights/me'),
   insightsCorretor:  (id: number) => request<any[]>(`/insights/corretor/${id}`),

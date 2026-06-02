@@ -7,6 +7,7 @@ import { Topbar } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { DashboardKpisExtra } from '../components/DashboardKpisExtra';
+import { OnboardingProgress } from '../components/OnboardingProgress';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -242,6 +243,7 @@ export default function Dashboard() {
  </div>
  )}
 
+ <OnboardingProgress />
  <DashboardKpisExtra />
 
  {/* Evolução */}

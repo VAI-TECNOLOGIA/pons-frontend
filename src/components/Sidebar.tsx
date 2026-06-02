@@ -54,6 +54,11 @@ const ALL_ITEMS: NavItem[] = [
   // SISTEMA
   { to: '/configuracoes', label: 'Configurações', section: 'Sistema', icon: 'settings', roles: ['CEO'] },
   { to: '/auditoria', label: 'Auditoria · Exclusões', section: 'Sistema', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO'] },
+  { to: '/bolsoes', label: 'Bolsões', section: 'Sócios', icon: 'roulette', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
+  { to: '/cadencias', label: 'Cadências', section: 'Marketing', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+  { to: '/webhook-saidas', label: 'Webhooks Saída', section: 'Administração', icon: 'webhook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+  { to: '/campos-custom', label: 'Campos Custom', section: 'Sistema', icon: 'settings', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
+  { to: '/regras', label: 'Regras Automáticas', section: 'Sistema', icon: 'lightbulb', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
 ];
 
 export function Sidebar({ onClose }: { onClose?: () => void } = {}) {

@@ -35,6 +35,11 @@ import Heatmap from './pages/Heatmap';
 import LPPublica from './pages/LPPublica';
 import Transferencias from './pages/Transferencias';
 import Auditoria from './pages/Auditoria';
+import Bolsoes from './pages/Bolsoes';
+import Cadencias from './pages/Cadencias';
+import WebhookSaidas from './pages/WebhookSaidas';
+import CamposCustom from './pages/CamposCustom';
+import Regras from './pages/Regras';
 
 export default function App() {
   return (
@@ -75,6 +80,11 @@ export default function App() {
         <Route path="/heatmap" element={<Heatmap />} />
         <Route path="/transferencias" element={<Transferencias />} />
         <Route path="/auditoria" element={<Auditoria />} />
+        <Route path="/bolsoes" element={<Bolsoes />} />
+        <Route path="/cadencias" element={<Cadencias />} />
+        <Route path="/webhook-saidas" element={<WebhookSaidas />} />
+        <Route path="/campos-custom" element={<CamposCustom />} />
+        <Route path="/regras" element={<Regras />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
