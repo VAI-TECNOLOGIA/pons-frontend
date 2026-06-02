@@ -428,6 +428,32 @@ export const Api = {
   // M22: Onboarding
   onboardingStatus: () => request<any>('/onboarding/status'),
 
+  // ─── Financeiro Pons (rateio + sócios + fechamento + lote Sicredi) ───
+  rateioSimular: (data: any) => request<any>('/rateio/simular', { method: 'POST', body: data }),
+  rateioVenda:   (id: number) => request<any>(`/rateio/venda/${id}`),
+  rateioAplicar: (id: number) => request<any>(`/rateio/aplicar/${id}`, { method: 'POST' }),
+  rateioPoliticaDefault: () => request<any>('/rateio/politica-default'),
+  rateioPoliticas: () => request<any[]>('/rateio/politica'),
+  rateioPoliticaCreate: (data: any) => request<any>('/rateio/politica', { method: 'POST', body: data }),
+  rateioPoliticaUpdate: (id: number, data: any) => request<any>(`/rateio/politica/${id}`, { method: 'PATCH', body: data }),
+
+  sociosList: () => request<{ socios: any[]; somaParticipacaoAtivos: number }>('/socios'),
+  socioCreate: (data: any) => request<any>('/socios', { method: 'POST', body: data }),
+  socioUpdate: (id: number, data: any) => request<any>(`/socios/${id}`, { method: 'PATCH', body: data }),
+  socioDelete: (id: number) => request<{ ok: boolean }>(`/socios/${id}`, { method: 'DELETE' }),
+
+  fechamentoList: () => request<any[]>('/fechamento'),
+  fechamentoMes:  (ano: number, mes: number) => request<any>(`/fechamento/${ano}/${mes}`),
+  fechamentoGerar:  (ano: number, mes: number) => request<any>(`/fechamento/${ano}/${mes}/gerar`, { method: 'POST' }),
+  fechamentoFechar: (id: number) => request<any>(`/fechamento/${id}/fechar`, { method: 'POST' }),
+  fechamentoPagarRateio: (rateioId: number) => request<any>(`/fechamento/rateio/${rateioId}/pagar`, { method: 'POST' }),
+
+  loteSicrediList: () => request<any[]>('/sicredi-lote'),
+  loteSicrediProxima: () => request<{ dataExecucao: string; total: number; valor: number; lancamentos: any[] }>('/sicredi-lote/proxima'),
+  loteSicrediPreparar: () => request<any>('/sicredi-lote/preparar', { method: 'POST' }),
+  loteSicrediEnviar: (id: number) => request<any>(`/sicredi-lote/${id}/enviar`, { method: 'POST' }),
+  loteSicrediCancelar: (id: number) => request<{ ok: boolean }>(`/sicredi-lote/${id}/cancelar`, { method: 'POST' }),
+
   // ─── Fase G — Insights IA do Corretor ────────────────────────────
   insightsMe:        () => request<any[]>('/insights/me'),
   insightsCorretor:  (id: number) => request<any[]>(`/insights/corretor/${id}`),

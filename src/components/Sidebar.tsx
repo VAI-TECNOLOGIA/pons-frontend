@@ -25,6 +25,7 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/painel-executivo', label: 'Painel Executivo', section: 'Sócios', icon: 'chart', roles: RELATORIOS },
   { to: '/executivo', label: 'Agenda Executiva', section: 'Sócios', icon: 'crown', roles: [...EXEC, 'ASSESSORA'] },
   { to: '/financeiro', label: 'Financeiro', section: 'Sócios', icon: 'wallet', roles: FINANCE },
+  { to: '/financeiro-pons', label: 'Financeiro · Pons', section: 'Sócios', icon: 'wallet', roles: FINANCE },
   { to: '/roletas', label: 'Roletas', section: 'Sócios', icon: 'roulette', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
   { to: '/distribuicao', label: 'Distribuição Agendada', section: 'Sócios', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
   { to: '/vendas', label: 'Vendas', section: 'Sócios', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },

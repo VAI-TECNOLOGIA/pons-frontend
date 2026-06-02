@@ -44,9 +44,15 @@ export default function Vendas() {
  entradaTotal: num(fd.get('entradaTotal')),
  entradaParcelas: Number(fd.get('entradaParcelas')) || 1,
  percentualComissao: num(fd.get('percentualComissao')),
- splitCorretor: num(fd.get('splitCorretor')),
- splitGerente: num(fd.get('splitGerente')),
- splitCasa: num(fd.get('splitCasa')),
+ splitCorretor: num(fd.get('splitCorretor')) || 55,
+ splitGerente: num(fd.get('splitGerente')) || 15,
+ splitCasa: num(fd.get('splitCasa')) || 30,
+ // Sinalizadores Pons
+ temNotaFiscal: fd.get('temNotaFiscal') === 'on',
+ isLead: fd.get('isLead') === 'on',
+ lazaroEstrategia: String(fd.get('lazaroEstrategia') || 'CAMPANHA'),
+ splitVariante: String(fd.get('splitVariante') || '55_45'),
+ percentualGestor: Number(fd.get('percentualGestorPons') || 10),
  });
  toast.success('Venda registrada');
  setOpenNew(false);
@@ -268,25 +274,41 @@ export default function Vendas() {
  </div>
  </div>
 
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comissão & rateio (%)</div>
- <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comissão & rateio Pons</div>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 12 }}>
  <div className="field">
- <label className="field__label">Comissão</label>
- <input name="percentualComissao" className="field__input" defaultValue="5" />
- </div>
- <div className="field">
- <label className="field__label">Corretor</label>
- <input name="splitCorretor" className="field__input" defaultValue="60" />
+ <label className="field__label">% Comissão (sobre venda)</label>
+ <input type="number" step="0.01" name="percentualComissao" className="field__input" defaultValue="5" />
  </div>
  <div className="field">
- <label className="field__label">Gestor</label>
- <input name="splitGerente" className="field__input" defaultValue="15" />
+ <label className="field__label">Split</label>
+ <select name="splitVariante" className="field__select" defaultValue="55_45">
+ <option value="55_45">Corretor 55% / Imob. 45%</option>
+ <option value="50_50">Corretor 50% / Imob. 50%</option>
+ </select>
  </div>
  <div className="field">
- <label className="field__label">Imobiliária</label>
- <input name="splitCasa" className="field__input" defaultValue="25" />
+ <label className="field__label">% Gestor</label>
+ <select name="percentualGestorPons" className="field__select" defaultValue="10">
+ <option value="10">10%</option><option value="13">13%</option>
+ </select>
+ </div>
+ <div className="field">
+ <label className="field__label">Estratégia (se Lead)</label>
+ <select name="lazaroEstrategia" className="field__select" defaultValue="CAMPANHA">
+ <option value="CAMPANHA">Campanha (-6,5%)</option>
+ <option value="LAZARO">Lázaro (-3% corretor / -1% imob.)</option>
+ </select>
  </div>
  </div>
+ <div className="flex" style={{ gap: 16, marginBottom: 16 }}>
+ <label style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="temNotaFiscal" /> Tem Nota Fiscal (-16%)</label>
+ <label style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="isLead" /> Veio de Lead</label>
+ </div>
+ {/* Legacy fields (mantidos como hidden pra não quebrar legado) */}
+ <input type="hidden" name="splitCorretor" value="55" />
+ <input type="hidden" name="splitGerente" value="15" />
+ <input type="hidden" name="splitCasa" value="30" />
 
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
  <button type="button" className="btn btn--secondary" onClick={() => setOpenNew(false)}>Cancelar</button>

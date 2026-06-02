@@ -40,6 +40,7 @@ import Cadencias from './pages/Cadencias';
 import WebhookSaidas from './pages/WebhookSaidas';
 import CamposCustom from './pages/CamposCustom';
 import Regras from './pages/Regras';
+import FinanceiroPons from './pages/FinanceiroPons';
 
 export default function App() {
   return (
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/webhook-saidas" element={<WebhookSaidas />} />
         <Route path="/campos-custom" element={<CamposCustom />} />
         <Route path="/regras" element={<Regras />} />
+        <Route path="/financeiro-pons" element={<FinanceiroPons />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
