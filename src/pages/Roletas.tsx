@@ -35,6 +35,9 @@ export default function Roletas() {
  campanhaFiltro: fd.get('campanhaFiltro') ? String(fd.get('campanhaFiltro')) : undefined,
  slaHoras: Number(fd.get('slaHoras')) || 4,
  prioridade: Number(fd.get('prioridade')) || 5,
+ maxTransferencias: Number(fd.get('maxTransferencias')) || 10,
+ destinoFallbackTipo: String(fd.get('destinoFallbackTipo') || 'BOLSAO'),
+ destinoFallbackUserId: fd.get('destinoFallbackUserId') ? Number(fd.get('destinoFallbackUserId')) : null,
  ativa: true,
  });
  toast.success('Roleta criada');
@@ -265,6 +268,19 @@ export default function Roletas() {
  <div className="field">
  <label className="field__label">Prioridade</label>
  <input name="prioridade" type="number" className="field__input" defaultValue="5" />
+ </div>
+ <div className="field">
+ <label className="field__label">Max. transferências antes de fallback</label>
+ <input name="maxTransferencias" type="number" className="field__input" defaultValue="10" min={1} />
+ <div className="field__hint">Após N transferências SLA, lead cai no destino fallback</div>
+ </div>
+ <div className="field">
+ <label className="field__label">Tipo de destino fallback</label>
+ <select name="destinoFallbackTipo" className="field__select" defaultValue="BOLSAO">
+ <option value="BOLSAO">Bolsão (recaptura)</option>
+ <option value="USER">Usuário específico</option>
+ </select>
+ <div className="field__hint">Se USER, preencha ID do user em campo separado pela API</div>
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>

@@ -361,6 +361,18 @@ export const Api = {
   // ─── Fase D — Heatmap viewer ─────────────────────────────────────
   heatmapPagina: (pagina: string, dias = 7) => request<any>(`/heatmap/pagina/${encodeURIComponent(pagina)}?dias=${dias}`),
 
+  // ─── Sprint 1 (Imobilead parity) ──────────────────────────────────
+  // M15: Transferências
+  transferenciasList: (params: any = {}) => request<any[]>(`/transferencias${qs(params)}`),
+  transferenciasLead: (leadId: number) => request<any[]>(`/transferencias/lead/${leadId}`),
+  transferir: (data: { leadId: number; paraCorretorId?: number | null; motivo?: string; observacao?: string | null }) =>
+    request<any>('/transferencias', { method: 'POST', body: data }),
+  // M16: KPIs Agendamento
+  agendaKpis: () => request<{ hoje: number; semana: number; atrasados: number; concluidos: number; proximos: number }>('/agenda/kpis'),
+  // M21: Preferences
+  preferencesMe: () => request<any>('/preferences/me'),
+  preferencesUpdate: (data: any) => request<any>('/preferences/me', { method: 'PUT', body: data }),
+
   // ─── Fase G — Insights IA do Corretor ────────────────────────────
   insightsMe:        () => request<any[]>('/insights/me'),
   insightsCorretor:  (id: number) => request<any[]>(`/insights/corretor/${id}`),

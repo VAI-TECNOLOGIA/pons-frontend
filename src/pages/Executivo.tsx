@@ -5,6 +5,7 @@ import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { GoogleCalendarIcon } from '../components/GoogleCalendarIcon';
 import { CalendarView, type CalendarEvent } from '../components/CalendarView';
+import { AgendaKpisBar } from '../components/AgendaKpisBar';
 import { Auth } from '../lib/auth';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -268,6 +269,8 @@ export default function Executivo() {
           title={`Bom dia, ${user.name.split(' ')[0]}.`}
           subtitle={dateLabel}
         />
+
+        <AgendaKpisBar />
 
         <div className="kpi-grid">
           <div className="kpi">

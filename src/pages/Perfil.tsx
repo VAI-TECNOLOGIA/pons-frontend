@@ -10,6 +10,7 @@ import { formatRole } from '../lib/auth';
 import { InsightsList } from '../components/InsightsList';
 import { ScorePanel } from '../components/ScorePanel';
 import { MinhasBMs } from '../components/MinhasBMs';
+import { PreferenciasCard } from '../components/PreferenciasCard';
 
 import './perfil.css';
 
@@ -201,6 +202,7 @@ export default function Perfil() {
             <InsightsList />
           </>
         )}
+        <PreferenciasCard />
       </div>
 
       <Modal

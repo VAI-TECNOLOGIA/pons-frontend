@@ -42,6 +42,7 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/meta-custos', label: 'Custos Meta', section: 'Administração', icon: 'wallet', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
   { to: '/tarefas', label: 'Tarefas', section: 'Administração', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA', 'CORRETOR', 'GERENTE_EQUIPE'] },
   { to: '/importar', label: 'Importar Leads', section: 'Administração', icon: 'plus', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+  { to: '/transferencias', label: 'Transferências', section: 'Administração', icon: 'pipeline', roles: ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'] },
   // MARKETING
   { to: '/remarketing', label: 'Remarketing', section: 'Marketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/landing-pages', label: 'Landing Pages', section: 'Marketing', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },

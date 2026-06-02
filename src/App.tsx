@@ -33,6 +33,7 @@ import PainelExecutivo from './pages/PainelExecutivo';
 import ImportarLeads from './pages/ImportarLeads';
 import Heatmap from './pages/Heatmap';
 import LPPublica from './pages/LPPublica';
+import Transferencias from './pages/Transferencias';
 
 export default function App() {
   return (
@@ -71,6 +72,7 @@ export default function App() {
         <Route path="/painel-executivo" element={<PainelExecutivo />} />
         <Route path="/importar" element={<ImportarLeads />} />
         <Route path="/heatmap" element={<Heatmap />} />
+        <Route path="/transferencias" element={<Transferencias />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
