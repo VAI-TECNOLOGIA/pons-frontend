@@ -372,6 +372,19 @@ export const Api = {
   // M21: Preferences
   preferencesMe: () => request<any>('/preferences/me'),
   preferencesUpdate: (data: any) => request<any>('/preferences/me', { method: 'PUT', body: data }),
+  // ─── Sprint 2 ─────────────────────────────────────────────────────
+  // M7: Mappings
+  mappingsList:   (params: any = {}) => request<any[]>(`/mappings${qs(params)}`),
+  mappingCreate:  (data: any) => request<any>('/mappings', { method: 'POST', body: data }),
+  mappingUpdate:  (id: number, data: any) => request<any>(`/mappings/${id}`, { method: 'PATCH', body: data }),
+  mappingDelete:  (id: number) => request<{ ok: boolean }>(`/mappings/${id}`, { method: 'DELETE' }),
+  // M17: Hierarquia diretor→corretor
+  corretorAtribuirDiretor: (id: number, diretorId: number | null) =>
+    request<any>(`/corretores/${id}/diretor`, { method: 'PATCH', body: { diretorId } }),
+  meusCorretores: () => request<any[]>('/corretores/meus-corretores'),
+  // M19: Auditoria de exclusões
+  auditoriaExclusoes: (params: any = {}) => request<any[]>(`/auditoria/exclusoes${qs(params)}`),
+  auditoriaEntidades: () => request<{ entidade: string; total: number }[]>('/auditoria/entidades'),
 
   // ─── Fase G — Insights IA do Corretor ────────────────────────────
   insightsMe:        () => request<any[]>('/insights/me'),

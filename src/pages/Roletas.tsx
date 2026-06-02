@@ -38,6 +38,10 @@ export default function Roletas() {
  maxTransferencias: Number(fd.get('maxTransferencias')) || 10,
  destinoFallbackTipo: String(fd.get('destinoFallbackTipo') || 'BOLSAO'),
  destinoFallbackUserId: fd.get('destinoFallbackUserId') ? Number(fd.get('destinoFallbackUserId')) : null,
+ expedienteDias: Array.from(fd.getAll('expedienteDias')).join(',') || '1,2,3,4,5',
+ expedienteInicioHora: Number(fd.get('expedienteInicioHora')) || 8,
+ expedienteFimHora: Number(fd.get('expedienteFimHora')) || 18,
+ rotacaoIntervaloMin: fd.get('rotacaoIntervaloMin') ? Number(fd.get('rotacaoIntervaloMin')) : null,
  ativa: true,
  });
  toast.success('Roleta criada');
@@ -281,6 +285,44 @@ export default function Roletas() {
  <option value="USER">Usuário específico</option>
  </select>
  <div className="field__hint">Se USER, preencha ID do user em campo separado pela API</div>
+ </div>
+ <div className="field" style={{ gridColumn: '1 / -1' }}>
+ <label className="field__label">Expediente — dias da semana</label>
+ <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+ {[['0','Dom'],['1','Seg'],['2','Ter'],['3','Qua'],['4','Qui'],['5','Sex'],['6','Sab']].map(([v,l]) => (
+ <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+ <input type="checkbox" name="expedienteDias" value={v} defaultChecked={['1','2','3','4','5'].includes(v)} />
+ {l}
+ </label>
+ ))}
+ </div>
+ </div>
+ <div className="field">
+ <label className="field__label">Início expediente</label>
+ <select name="expedienteInicioHora" className="field__select" defaultValue="8">
+ {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{i}h</option>)}
+ </select>
+ </div>
+ <div className="field">
+ <label className="field__label">Fim expediente</label>
+ <select name="expedienteFimHora" className="field__select" defaultValue="18">
+ {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{i}h</option>)}
+ </select>
+ </div>
+ <div className="field">
+ <label className="field__label">Rotação contínua (opcional)</label>
+ <select name="rotacaoIntervaloMin" className="field__select" defaultValue="">
+ <option value="">Desligada</option>
+ <option value="5">A cada 5 min</option>
+ <option value="10">A cada 10 min</option>
+ <option value="15">A cada 15 min</option>
+ <option value="20">A cada 20 min</option>
+ <option value="30">A cada 30 min</option>
+ <option value="60">A cada 1h</option>
+ <option value="120">A cada 2h</option>
+ <option value="240">A cada 4h</option>
+ </select>
+ <div className="field__hint">Imobilead-style: rotaciona leads sem resposta entre corretores a cada intervalo</div>
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>

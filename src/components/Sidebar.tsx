@@ -53,6 +53,7 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/painel-tv', label: 'Painel TV', section: 'Conteúdo', icon: 'tv', blank: true, roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   // SISTEMA
   { to: '/configuracoes', label: 'Configurações', section: 'Sistema', icon: 'settings', roles: ['CEO'] },
+  { to: '/auditoria', label: 'Auditoria · Exclusões', section: 'Sistema', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO'] },
 ];
 
 export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
