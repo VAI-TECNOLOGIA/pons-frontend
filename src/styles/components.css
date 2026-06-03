@@ -1893,3 +1893,155 @@
 .topbar { box-shadow: 0 1px 0 rgba(38,54,84,0.05); }
 .field__input:focus, .field__select:focus, .field__textarea:focus { border-color: var(--border-focus); box-shadow: var(--shadow-focus); }
 
+
+
+/* ============================================================
+   POLIMENTO 2026-06-03 — micro-interações + responsive
+   ============================================================ */
+
+/* Cards com hover sutil */
+.card {
+  transition: transform var(--transition-base) var(--ease-out),
+              box-shadow var(--transition-base) var(--ease-out),
+              border-color var(--transition-fast);
+}
+.card:hover:not(.card--no-hover) {
+  border-color: var(--border-medium);
+}
+
+/* Card interativo (com hover lift) */
+.card--interactive {
+  cursor: pointer;
+}
+.card--interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Botões — focus visible acessível */
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.btn:active {
+  transform: translateY(0);
+  filter: brightness(0.96);
+}
+
+/* Inputs — placeholder mais visível em dark */
+.field__input::placeholder,
+.field__textarea::placeholder {
+  color: var(--text-disabled);
+  opacity: 0.85;
+}
+
+/* Topbar sticky no mobile */
+@media (max-width: 1023px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    backdrop-filter: saturate(180%) blur(8px);
+    background: rgba(255, 255, 255, 0.92);
+  }
+  [data-theme="dark"] .topbar {
+    background: rgba(19, 26, 46, 0.92);
+  }
+}
+
+/* Sidebar mobile — drawer */
+@media (max-width: 1023px) {
+  .layout__sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 280ms var(--ease-out);
+    z-index: var(--z-modal);
+    box-shadow: var(--shadow-xl);
+  }
+  .layout__sidebar--mobile-open {
+    transform: translateX(0);
+  }
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    z-index: var(--z-modal-backdrop);
+    backdrop-filter: blur(2px);
+    animation: fadeIn 200ms var(--ease-out);
+  }
+}
+
+/* Badge — efeito sutil de relevo */
+.badge {
+  transition: transform var(--transition-fast);
+}
+.badge:hover {
+  transform: scale(1.05);
+}
+
+/* Field — animação smooth no foco */
+.field__input,
+.field__select,
+.field__textarea {
+  transition: border-color var(--transition-base),
+              box-shadow var(--transition-base),
+              background var(--transition-base);
+}
+
+/* Modal — animação de entrada melhorada */
+.modal__content,
+dialog.modal[open] {
+  animation: pageEnter 280ms var(--ease-out) both;
+}
+
+/* Toast — slide da direita */
+.toast {
+  animation: slideInRight 280ms var(--ease-out) both;
+}
+
+/* Page header — letter-spacing refinado */
+.page-header__title {
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+.page-header__breadcrumb {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+/* TV mode (≥1920px) — cards maiores + tipografia escalada */
+@media (min-width: 1920px) {
+  .kpi__value { font-size: 36px !important; }
+  .card { border-radius: 16px; }
+  .page-header__title { font-size: 36px; }
+}
+
+
+
+/* ============================================================
+   ANIMAÇÃO GLOBAL — toda página entra com fade-in suave
+   ============================================================ */
+.main__content {
+  animation: pageEnter 320ms var(--ease-out) both;
+}
+
+/* Cards dentro de main__content fazem stagger automático na 1ª view */
+.main__content > .card,
+.main__content > .grid,
+.main__content > .kpi-grid {
+  animation: cardStagger 360ms var(--ease-out) both;
+}
+.main__content > *:nth-child(1) { animation-delay: 40ms; }
+.main__content > *:nth-child(2) { animation-delay: 80ms; }
+.main__content > *:nth-child(3) { animation-delay: 120ms; }
+.main__content > *:nth-child(4) { animation-delay: 160ms; }
+.main__content > *:nth-child(5) { animation-delay: 200ms; }
+.main__content > *:nth-child(n+6) { animation-delay: 240ms; }
+

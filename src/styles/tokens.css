@@ -263,3 +263,36 @@ body {
   letter-spacing: 0.08em;
   color: var(--text-secondary);
 }
+
+/* ============================================================
+   EXTENSÃO 2026-06-03 — bg-elevated, focus rings, breakpoints
+   ============================================================ */
+:root {
+  --bg-elevated: var(--gray-100);
+  --bg-app-soft: var(--gray-100);
+
+  /* Container / max widths */
+  --container-sm: 640px;
+  --container-md: 960px;
+  --container-lg: 1280px;
+  --container-xl: 1600px;
+
+  /* Easing curves */
+  --ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme="dark"] {
+  --bg-elevated: rgba(255, 255, 255, 0.04);
+  --bg-app-soft: #0F1530;
+}
+
+/* ============================================================
+   BREAKPOINTS (use via media queries diretas — variáveis CSS não
+   funcionam em @media, mas centraliza valores no CSS)
+   --bp-mobile: 640px
+   --bp-tablet: 1024px
+   --bp-desktop: 1440px
+   --bp-tv: 1920px
+   ============================================================ */
+

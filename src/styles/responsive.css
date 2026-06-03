@@ -1,0 +1,128 @@
+/* ============================================================
+   RESPONSIVE — Mobile · Tablet · Desktop · TV
+   Breakpoints unificados, base mobile-first
+   ============================================================ */
+
+/* Mobile (default — sem media query) */
+
+/* ============================================================
+   TABLET (640px - 1023px)  — iPad portrait, telefone landscape
+   ============================================================ */
+@media (max-width: 1023px) {
+  :root {
+    --header-height: 56px;
+    --sidebar-width: 220px;
+  }
+  .main__content { padding: 16px !important; }
+  .kpi-grid     { grid-template-columns: repeat(2, 1fr) !important; }
+  .form-grid    { grid-template-columns: 1fr !important; }
+  .form-grid--single { grid-template-columns: 1fr !important; }
+  table.table   { font-size: 13px; }
+  .card         { padding: 16px !important; }
+  .topbar       { padding: 8px 12px; }
+  .filter-bar   { flex-wrap: wrap; gap: 6px; }
+  .grid-3, .grid-4 { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ============================================================
+   MOBILE (≤ 640px)  — smartphone portrait
+   ============================================================ */
+@media (max-width: 640px) {
+  :root {
+    --fs-body-md: 14px;
+    --fs-heading-md: 18px;
+    --fs-heading-lg: 22px;
+    --fs-display-lg: 26px;
+  }
+
+  /* Hide desktop sidebar; mobile usa overlay */
+  .layout__sidebar { display: none !important; }
+  .layout__sidebar--mobile-open { display: flex !important; }
+
+  .main__content { padding: 12px !important; }
+
+  /* KPI vira coluna única ou 2 col */
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .kpi { padding: 12px !important; }
+  .kpi__value { font-size: 22px !important; }
+
+  /* Cards mais compactos */
+  .card { padding: 14px !important; border-radius: 10px !important; }
+
+  /* Tabelas viram cards-stack em mobile (CSS visual mantém — só faz scroll horizontal) */
+  .table-wrap, .card > .table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.table { min-width: 540px; }
+
+  /* Modais ocupam quase a tela toda */
+  dialog.modal { width: 96vw !important; max-width: 96vw !important; max-height: 92vh !important; }
+
+  /* Topbar mais compacta */
+  .topbar { padding: 8px 12px; gap: 8px; }
+  .topbar h1, .topbar__title { font-size: 16px !important; }
+
+  /* Botões em mobile ficam touch-friendly (44px mínimo) */
+  .btn:not(.btn--sm) { min-height: 44px; }
+
+  /* Esconde elementos secundários em mobile (revelar com util classes) */
+  .hide-mobile { display: none !important; }
+}
+
+/* ============================================================
+   DESKTOP (1024px - 1439px) — laptops
+   ============================================================ */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .main__content { padding: 24px; }
+}
+
+/* ============================================================
+   DESKTOP LARGE (1440px - 1919px) — monitores grandes
+   ============================================================ */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .main__content { max-width: var(--container-xl); margin: 0 auto; padding: 28px; }
+}
+
+/* ============================================================
+   TV / 4K (≥ 1920px) — sala de guerra, displays grandes
+   ============================================================ */
+@media (min-width: 1920px) {
+  :root {
+    --fs-body-md: 16px;
+    --fs-body-lg: 18px;
+    --fs-heading-md: 22px;
+    --fs-heading-lg: 28px;
+    --fs-display-lg: 36px;
+    --fs-display-xl: 48px;
+  }
+  .main__content { max-width: 1800px; margin: 0 auto; padding: 32px; }
+  .kpi__value { font-size: 32px; }
+  .card { padding: 24px; }
+}
+
+/* ============================================================
+   Modo retrato/paisagem específico
+   ============================================================ */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Phone landscape — esconde header tall */
+  :root { --header-height: 48px; }
+  .topbar { padding: 6px 12px; }
+}
+
+/* ============================================================
+   Touch device detection — botões maiores
+   ============================================================ */
+@media (hover: none) and (pointer: coarse) {
+  .btn { min-height: 44px; }
+  a, button { -webkit-tap-highlight-color: rgba(18, 88, 202, 0.18); }
+}
+
+/* ============================================================
+   Reduced motion accessibility
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

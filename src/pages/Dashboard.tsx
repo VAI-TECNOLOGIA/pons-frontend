@@ -8,6 +8,8 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { DashboardKpisExtra } from '../components/DashboardKpisExtra';
 import { OnboardingProgress } from '../components/OnboardingProgress';
+import { PageSkeleton } from '../components/Skeleton';
+import { PageWrap } from '../components/PageWrap';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -93,7 +95,7 @@ export default function Dashboard() {
  };
  }, [isExec, serie]);
 
- if (loading) return <DashboardShell user={user}><LoadingBlock /></DashboardShell>;
+ if (loading) return <DashboardShell user={user}><PageSkeleton /></DashboardShell>;
  if (error) return <DashboardShell user={user}><ErrorBlock error={error} label="Erro ao carregar dashboard" /></DashboardShell>;
  if (!data) return null;
 

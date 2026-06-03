@@ -9,6 +9,9 @@ import { UserProvider } from './lib/userContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './styles/tokens.css';
 import './styles/components.css';
+import './styles/utilities.css';
+import './styles/animations.css';
+import './styles/responsive.css';
 import './styles/theme-overrides.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

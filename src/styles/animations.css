@@ -1,0 +1,99 @@
+/* ============================================================
+   ANIMATIONS — entrada de página, skeleton, micro-interações
+   ============================================================ */
+
+/* ---------- Page entrance (fade + slide up) ---------- */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageEnter 320ms var(--ease-out) both; }
+
+/* ---------- Stagger cards ---------- */
+@keyframes cardStagger {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger > * {
+  animation: cardStagger 360ms var(--ease-out) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(n+7) { animation-delay: 240ms; }
+
+/* ---------- Skeleton loader (shimmer) ---------- */
+@keyframes skeletonShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    var(--bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s linear infinite;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+.skeleton--text {
+  height: 14px;
+  width: 100%;
+}
+.skeleton--title {
+  height: 24px;
+  width: 60%;
+}
+.skeleton--card {
+  height: 80px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+}
+.skeleton--avatar {
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+}
+
+/* ---------- Spinner ---------- */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-light);
+  border-top-color: var(--blue-500);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ---------- Pulse (chamar atenção) ---------- */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ---------- Bounce-in (badges/notificações) ---------- */
+@keyframes bounceIn {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.bounce-in { animation: bounceIn 480ms var(--ease-spring) both; }
+
+/* ---------- Fade in ---------- */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fadeIn 240ms var(--ease-out) both; }
+
+/* ---------- Slide in da direita (drawers/sidebars) ---------- */
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.slide-in-right { animation: slideInRight 280ms var(--ease-out) both; }
+@keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.slide-in-left { animation: slideInLeft 280ms var(--ease-out) both; }
