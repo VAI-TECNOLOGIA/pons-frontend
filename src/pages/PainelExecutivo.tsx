@@ -54,7 +54,7 @@ export default function PainelExecutivo() {
             <table className="table">
               <thead><tr><th>Corretor</th><th>Filial</th><th>Recebidos</th><th>Atend %</th><th>Vendas</th><th>VGV</th><th>ROI</th></tr></thead>
               <tbody>
-                {data.corretores.map((c: any) => (
+                {(data.corretores ?? []).map((c: any) => (
                   <tr key={c.corretorId}>
                     <td><strong>{c.nome}</strong></td>
                     <td>{c.filial || '—'}</td>
@@ -75,7 +75,7 @@ export default function PainelExecutivo() {
             <table className="table">
               <thead><tr><th>Filial</th><th>Cidade</th><th>Recebidos</th><th>Conversão</th><th>Vendas</th><th>VGV</th></tr></thead>
               <tbody>
-                {data.filiais.map((f: any) => (
+                {(data.filiais ?? []).map((f: any) => (
                   <tr key={f.unidadeId}>
                     <td><strong>{f.nome}</strong></td>
                     <td>{f.cidade}</td>
@@ -95,7 +95,7 @@ export default function PainelExecutivo() {
             <table className="table">
               <thead><tr><th>Cidade</th><th>Recebidos</th><th>Conversão</th><th>Vendas</th><th>VGV</th><th>ROI</th></tr></thead>
               <tbody>
-                {data.cidades.map((c: any) => (
+                {(data.cidades ?? []).map((c: any) => (
                   <tr key={c.cidade}>
                     <td><strong>{c.cidade}</strong></td>
                     <td>{c.leadsRecebidos}</td>

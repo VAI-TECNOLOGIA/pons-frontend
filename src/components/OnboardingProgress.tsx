@@ -42,7 +42,7 @@ export function OnboardingProgress() {
       </div>
 
       <div className="flex" style={{ gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-        {data.passos.map((p: any) => (
+        {(data.passos ?? []).map((p: any) => (
           <div key={p.slug} style={{
             fontSize: 11,
             color: p.feito ? 'var(--color-success)' : 'var(--text-secondary)',

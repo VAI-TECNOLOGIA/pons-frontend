@@ -45,7 +45,7 @@ export default function MetaCustos() {
               <table className="table">
                 <thead><tr><th>Corretor</th><th>Conversas</th><th>Custo</th></tr></thead>
                 <tbody>
-                  {data.porCorretor.map((p: any) => (
+                  {(data.porCorretor ?? []).map((p: any) => (
                     <tr key={p.corretorId}>
                       <td>{p.nome}</td>
                       <td>{p.conversas}</td>

@@ -347,7 +347,7 @@ export default function Formularios() {
                   </div>
                 ) : (
                   <div className="list">
-                    {data.origens.map((o) => {
+                    {(data.origens ?? []).map((o) => {
                       const meta = metaFor(o.origem);
                       const ativo = o.ultimos30d > 0;
                       return (

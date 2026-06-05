@@ -23,6 +23,10 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseA
     let alive = true;
     setLoading(true);
     setError(null);
+    // Limpa dados antigos quando deps mudam — evita renderizar com shape stale
+    // (ex: trocar de aba e tentar acessar data.corretores quando data ainda
+    // é do endpoint anterior, gerando "undefined is not an object").
+    setData(null);
     fetcherRef
       .current()
       .then((res) => {

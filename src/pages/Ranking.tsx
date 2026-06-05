@@ -55,7 +55,7 @@ export default function Ranking() {
                 </tr>
               </thead>
               <tbody>
-                {data.ranking.map((r: any) => (
+                {(data.ranking ?? []).map((r: any) => (
                   <tr key={r.corretorId}>
                     <td style={{ fontWeight: 700, color: r.posicao <= 3 ? 'var(--color-warning)' : 'inherit' }}>
                       {r.posicao}º {r.posicao === 1 ? '🥇' : r.posicao === 2 ? '🥈' : r.posicao === 3 ? '🥉' : ''}
@@ -89,7 +89,7 @@ export default function Ranking() {
             <table className="table">
               <thead><tr><th>#</th><th>Filial</th><th>Score</th><th>Corretores</th><th>Vendas</th><th>VGV</th></tr></thead>
               <tbody>
-                {data.filiais.map((f: any) => (
+                {(data.filiais ?? []).map((f: any) => (
                   <tr key={f.unidadeId}>
                     <td>{f.posicao}º</td>
                     <td><strong>{f.nome}</strong><div className="text-xs text-secondary">{f.cidade}</div></td>
@@ -109,7 +109,7 @@ export default function Ranking() {
             <table className="table">
               <thead><tr><th>#</th><th>Equipe</th><th>Score</th><th>Corretores</th>{isGestor && <><th>Vendas</th><th>VGV</th></>}</tr></thead>
               <tbody>
-                {data.equipes.map((e: any) => (
+                {(data.equipes ?? []).map((e: any) => (
                   <tr key={e.equipeId}>
                     <td>{e.posicao}º</td>
                     <td><span style={{ display: 'inline-block', width: 10, height: 10, background: e.cor, borderRadius: 2, marginRight: 6 }}/>{e.nome}</td>
