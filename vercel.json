@@ -5,7 +5,15 @@
       "destination": "https://web-production-e420b.up.railway.app/api/:path*"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/privacidade",
+      "destination": "/privacidade/index.html"
+    },
+    {
+      "source": "/termos",
+      "destination": "/termos/index.html"
+    },
+    {
+      "source": "/((?!api/|privacidade|termos).*)",
       "destination": "/index.html"
     }
   ],
