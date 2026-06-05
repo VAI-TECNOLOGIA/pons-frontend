@@ -459,6 +459,33 @@ export const Api = {
   insightsCorretor:  (id: number) => request<any[]>(`/insights/corretor/${id}`),
   insightVisualizado:(id: number) => request<{ ok: boolean }>(`/insights/${id}/visualizado`, { method: 'POST' }),
   insightsRodar:     () => request<{ ok: boolean }>('/insights/rodar', { method: 'POST' }),
+
+  // ─── DEV panel ───────────────────────────────────────────────────
+  devFeedback:        (limit = 200) => request<{ data: any[]; total: number }>(`/dev/feedback?limit=${limit}`),
+  devFeedbackAnalyze: (body: { description: string; type?: string; currentUrl?: string; userAgent?: string }) =>
+    request<{ analysis: string }>('/dev/feedback/analyze', { method: 'POST', body }),
+  devAudit: (params: { action?: string; userId?: number; since?: string; limit?: number } = {}) =>
+    request<{ data: any[]; total: number }>(`/dev/audit${qs(params)}`),
+  devDeliveryStats: () =>
+    request<{ rows: Array<{ period: string; total: number }>; meta?: { generatedAt: string } }>(
+      '/dev/messages/delivery-stats',
+    ),
+  devNotifications: () => request<{ data: any[]; unread: number }>('/dev/notifications'),
+  devNotificationsReadAll: () => request<{ ok: boolean }>('/dev/notifications/read-all', { method: 'POST' }),
+  metricsSnapshot: (slow = false) => request<any>(`/_metrics${slow ? '?slow=1' : ''}`),
+
+  // ─── Bug report ──────────────────────────────────────────────────
+  // Multipart — usa fetch direto pra preservar Content-Type boundary
+  feedbackSubmit: async (form: FormData) => {
+    const headers: Record<string, string> = {};
+    if (Auth.token) headers.Authorization = `Bearer ${Auth.token}`;
+    const res = await fetch(BASE + '/feedback', { method: 'POST', headers, body: form });
+    if (!res.ok) {
+      const details = await res.json().catch(() => ({}));
+      throw new ApiError(details.message || details.error || `Erro HTTP ${res.status}`, res.status, details);
+    }
+    return res.json() as Promise<{ ok: boolean; adminsNotified: number; screenshotUrl: string | null }>;
+  },
 };
 
 /**

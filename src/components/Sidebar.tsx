@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Auth, formatRole, type Role } from '../lib/auth';
 import { useUser } from '../lib/userContext';
 import { Icon } from './Icon';
+import { ReportarProblemaModal } from './ReportarProblemaModal';
 
 const COMERCIAL: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'];
 const FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO'];
@@ -62,15 +64,27 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/regras', label: 'Regras Automáticas', section: 'Sistema', icon: 'lightbulb', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
 ];
 
+// Sidebar separado pro persona DEV — login DEV NÃO vê nada do CRM, só sistema.
+const DEV_ITEMS: NavItem[] = [
+  { to: '/dev/mensagens', label: 'Escala de envios', section: 'Painel DEV', icon: 'warn', roles: ['DEV'] },
+  { to: '/dev/feedback', label: 'Bug Reports', section: 'Painel DEV', icon: 'bug', roles: ['DEV'] },
+  { to: '/dev/logs', label: 'Audit Logs', section: 'Painel DEV', icon: 'scroll', roles: ['DEV'] },
+  { to: '/dev/metrics', label: 'Métricas', section: 'Painel DEV', icon: 'gauge', roles: ['DEV'] },
+];
+
 export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   const navigate = useNavigate();
   const { user: ctxUser, setUser } = useUser();
+  const [reportOpen, setReportOpen] = useState(false);
   // Prefere o user do contexto (atualiza ao trocar login).
   // Fallback Auth.user pra caso de race em montagem inicial.
   const user = ctxUser || Auth.user;
   if (!user) return null;
 
-  const items = ALL_ITEMS.filter((it) => !it.roles || it.roles.includes(user.role));
+  const isDev = user.role === 'DEV';
+  const items = isDev
+    ? DEV_ITEMS
+    : ALL_ITEMS.filter((it) => !it.roles || it.roles.includes(user.role));
   const sections: Record<string, NavItem[]> = {};
   items.forEach((it) => {
     (sections[it.section] = sections[it.section] || []).push(it);
@@ -139,6 +153,22 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
           </div>
         </NavLink>
         <button
+          onClick={() => setReportOpen(true)}
+          className="icon-button"
+          title="Reportar problema"
+          aria-label="Reportar problema"
+          style={{
+            border: 'none',
+            background: 'transparent',
+            color: 'rgba(255,255,255,0.55)',
+            width: 32,
+            height: 32,
+            cursor: 'pointer',
+          }}
+        >
+          <Icon name="bug" />
+        </button>
+        <button
           onClick={handleLogout}
           className="icon-button"
           title="Sair"
@@ -155,6 +185,7 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
           <Icon name="logout" />
         </button>
       </div>
+      <ReportarProblemaModal open={reportOpen} onClose={() => setReportOpen(false)} />
       {onClose && (
         <button
           onClick={onClose}

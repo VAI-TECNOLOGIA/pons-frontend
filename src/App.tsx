@@ -41,6 +41,14 @@ import WebhookSaidas from './pages/WebhookSaidas';
 import CamposCustom from './pages/CamposCustom';
 import Regras from './pages/Regras';
 import FinanceiroPons from './pages/FinanceiroPons';
+// DEV panel
+import DevMensagens from './pages/DevMensagens';
+import DevFeedback from './pages/DevFeedback';
+import DevLogs from './pages/DevLogs';
+import DevMetrics from './pages/DevMetrics';
+// Páginas públicas (Google/Facebook OAuth verification)
+import Privacidade from './pages/Privacidade';
+import Termos from './pages/Termos';
 
 export default function App() {
   return (
@@ -49,6 +57,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/painel-tv" element={<PainelTV />} />
       <Route path="/lp/:slug" element={<LPPublica />} />
+      <Route path="/privacidade" element={<Privacidade />} />
+      <Route path="/termos" element={<Termos />} />
 
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -87,6 +97,11 @@ export default function App() {
         <Route path="/campos-custom" element={<CamposCustom />} />
         <Route path="/regras" element={<Regras />} />
         <Route path="/financeiro-pons" element={<FinanceiroPons />} />
+        {/* DEV panel — CEO + DEV */}
+        <Route path="/dev/mensagens" element={<DevMensagens />} />
+        <Route path="/dev/feedback" element={<DevFeedback />} />
+        <Route path="/dev/logs" element={<DevLogs />} />
+        <Route path="/dev/metrics" element={<DevMetrics />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

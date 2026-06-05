@@ -7,11 +7,17 @@ import { BirthdayGreeter } from './BirthdayGreeter';
 import { AssistantChat } from './AssistantChat';
 
 export function AppLayout() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const loc = useLocation();
+
   if (!Auth.gatePassed) return <Navigate to="/" replace />;
   if (!Auth.token) return <Navigate to="/login" replace />;
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const loc = useLocation();
+  // Persona guard: DEV só vê /dev/*; demais NÃO vêem /dev/*.
+  const role = Auth.user?.role;
+  const onDev = loc.pathname.startsWith('/dev');
+  if (role === 'DEV' && !onDev) return <Navigate to="/dev/mensagens" replace />;
+  if (role && role !== 'DEV' && onDev) return <Navigate to="/dashboard" replace />;
 
   useEffect(() => {
     setMenuOpen(false);

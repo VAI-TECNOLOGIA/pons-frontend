@@ -28,7 +28,7 @@ export default function Login() {
  }
  if (Auth.token) {
  Api.me()
- .then(() => navigate('/dashboard', { replace: true }))
+ .then((r) => navigate(r.user?.role === 'DEV' ? '/dev/mensagens' : '/dashboard', { replace: true }))
  .catch(() => Auth.clear());
  }
  // Aquece o banco enquanto o usuário digita
@@ -46,7 +46,7 @@ export default function Login() {
  // até o próximo reload do browser.
  Auth.set(token, user);
  setUser(user);
- navigate('/dashboard', { replace: true });
+ navigate(user.role === 'DEV' ? '/dev/mensagens' : '/dashboard', { replace: true });
  } catch (err) {
  const msg =
  err instanceof ApiError && err.message === 'credenciais_invalidas'
