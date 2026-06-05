@@ -110,7 +110,7 @@ export function AssistantChat() {
       setMsgs((cur) =>
         append(cur, {
           role: 'ai',
-          text: '⚠️ Não consegui responder agora. Tente novamente em instantes.',
+          text: 'Não consegui responder agora. Tente novamente em instantes.',
           at: Date.now(),
         }),
       );

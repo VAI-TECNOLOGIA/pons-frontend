@@ -99,7 +99,7 @@ export default function PainelTV() {
           fontSize: 13, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap',
         }}>
           <div style={{ display: 'inline-block', animation: 'tvTicker 30s linear infinite' }}>
-            {avisosTicker.map((a: any) => `📢 ${a.titulo} · ${a.conteudo}`).join('     •     ')}
+            {avisosTicker.map((a: any) => `• ${a.titulo} · ${a.conteudo}`).join('     •     ')}
           </div>
         </div>
       )}

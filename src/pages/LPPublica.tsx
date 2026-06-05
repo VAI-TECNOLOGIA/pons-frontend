@@ -118,12 +118,12 @@ export default function LPPublica() {
                 style={{ ...btnStyle, background: '#25D366', display: 'block', textAlign: 'center', marginTop: 8, textDecoration: 'none' }}
                 target="_blank"
                 rel="noreferrer"
-              >📱 Falar no WhatsApp</a>
+              >Falar no WhatsApp</a>
             )}
           </form>
         ) : (
           <div style={{ ...cardStyle, textAlign: 'center' }}>
-            <h2 style={{ fontSize: 24, color: '#fff' }}>🎉 Obrigado!</h2>
+            <h2 style={{ fontSize: 24, color: '#fff' }}>Obrigado!</h2>
             <p style={{ color: '#ddd', marginTop: 8 }}>Seu contato foi recebido. Um corretor entrará em contato em breve.</p>
           </div>
         )}

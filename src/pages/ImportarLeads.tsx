@@ -122,7 +122,9 @@ export default function ImportarLeads() {
         )}
 
         <div className="card" style={{ marginTop: 16, background: 'var(--bg-elevated)' }}>
-          <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📋 Formato esperado</h4>
+          <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="doc" size={14} /> Formato esperado
+          </h4>
           <pre style={{ fontSize: 11, fontFamily: 'monospace', overflow: 'auto', background: 'var(--bg-card)', padding: 10, borderRadius: 6 }}>
 {`nome,telefone,email,origem,campanha,status,tags,notas
 João Silva,+55 47 99999-1111,joao@email.com,META_ADS,Verão 2026,NOVO,investidor;quente,Quer 2 dorms

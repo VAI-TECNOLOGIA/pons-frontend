@@ -1,5 +1,6 @@
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
+import { Icon } from './Icon';
 
 // Painel de visibilidade do SLA (Fase B2) — leads em risco + histórico
 export function SLAStatusPanel() {
@@ -12,11 +13,13 @@ export function SLAStatusPanel() {
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>⏱️ SLA · Leads em risco</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Icon name="clock" size={16} /> SLA · Leads em risco
+      </h3>
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
-        <Bucket label="🟡 Alerta (10-30 min)" cor="var(--color-warning-bg)" itens={data.alerta} />
-        <Bucket label="🟠 Em fila (30-60 min)" cor="var(--color-warning-bg)" itens={data.fila} />
-        <Bucket label="🔴 Vai redistribuir (>60 min)" cor="var(--color-danger-bg)" itens={data.redistribuir} />
+        <Bucket label="Alerta (10-30 min)" dotColor="#EAB308" cor="var(--color-warning-bg)" itens={data.alerta} />
+        <Bucket label="Em fila (30-60 min)" dotColor="#F97316" cor="var(--color-warning-bg)" itens={data.fila} />
+        <Bucket label="Vai redistribuir (>60 min)" dotColor="#DC2626" cor="var(--color-danger-bg)" itens={data.redistribuir} />
       </div>
 
       {data.historico && data.historico.length > 0 && (
@@ -35,10 +38,12 @@ export function SLAStatusPanel() {
   );
 }
 
-function Bucket({ label, cor, itens }: { label: string; cor: string; itens: any[] }) {
+function Bucket({ label, cor, itens, dotColor }: { label: string; cor: string; itens: any[]; dotColor?: string }) {
   return (
     <div style={{ padding: 10, borderRadius: 8, background: cor }}>
-      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+        {dotColor && <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />} {label}
+      </div>
       <div style={{ fontSize: 28, fontWeight: 900 }}>{itens?.length || 0}</div>
       <div style={{ maxHeight: 100, overflow: 'auto', marginTop: 4 }}>
         {(itens || []).slice(0, 5).map((l: any) => (

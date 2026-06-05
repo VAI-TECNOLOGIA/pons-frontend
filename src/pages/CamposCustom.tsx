@@ -5,6 +5,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { Icon } from '../components/Icon';
 
 // Sprint 5 M13 — Campos customizados no Lead
 export default function CamposCustom() {
@@ -60,7 +61,7 @@ export default function CamposCustom() {
                   <td><strong>{c.nome}</strong></td>
                   <td className="text-xs"><code>{c.slug}</code></td>
                   <td><span className="badge badge--info">{c.tipo}</span></td>
-                  <td>{c.obrigatorio ? '✓' : '—'}</td>
+                  <td>{c.obrigatorio ? <Icon name="check" size={14} /> : '—'}</td>
                   <td className="flex" style={{ gap: 6 }}>
                     <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(c); setOpen(true); }}>Editar</button>
                     <button className="btn btn--ghost btn--sm" onClick={() => excluir(c)}>×</button>

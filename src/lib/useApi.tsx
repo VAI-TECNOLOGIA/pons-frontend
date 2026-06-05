@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Icon } from '../components/Icon';
 
 export interface UseApiState<T> {
   data: T | null;
@@ -53,11 +54,13 @@ export function ErrorBlock({ error, label = 'Erro ao carregar' }: { error: Error
   const isNotFound  = (error as any)?.status === 404;
   const bg   = isForbidden ? 'var(--bg-elevated)' : 'var(--color-danger-bg)';
   const cor  = isForbidden ? 'var(--text-primary)' : '#8B0712';
-  const icone = isForbidden ? '🔒' : isNotFound ? '🔍' : '⚠️';
+  const iconName = isForbidden ? 'lock' : isNotFound ? 'search' : 'warn';
   const titulo = isForbidden ? 'Sem permissão' : isNotFound ? 'Não encontrado' : label;
   return (
     <div className="card" style={{ background: bg, color: cor, padding: 16 }}>
-      <strong>{icone} {titulo}</strong>
+      <strong style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <Icon name={iconName} size={14} /> {titulo}
+      </strong>
       <div className="text-sm" style={{ marginTop: 4 }}>
         {error.message}
       </div>

@@ -249,10 +249,10 @@ export default function Chat() {
                   <div className="conv__name">
                     <span>
                       {c.nome}
-                      {c.vip && ' ⭐'}
+                      {c.vip && <Icon name="star" size={11} style={{ marginLeft: 4, color: '#EAB308', verticalAlign: 'middle' }} />}
                       {c.vaiConectado && (
-                        <span title="WhatsApp ativo" style={{ marginLeft: 4, color: 'var(--color-success-border)', fontSize: 10 }}>
-                          ●
+                        <span title="WhatsApp ativo" style={{ marginLeft: 4, color: 'var(--color-success-border)', display: 'inline-flex', alignItems: 'center' }}>
+                          <Icon name="circle" size={8} />
                         </span>
                       )}
                     </span>
@@ -261,10 +261,16 @@ export default function Chat() {
                     </span>
                   </div>
                   <div className="conv__last">
-                    {c.ultimaMensagem
-                      ? (c.ultimaMensagem.direction === 'outbound' ? '➡ ' : '') +
-                        (c.ultimaMensagem.texto || '').slice(0, 40)
-                      : c.origem + ' · ' + (c.interesse || '—')}
+                    {c.ultimaMensagem ? (
+                      <>
+                        {c.ultimaMensagem.direction === 'outbound' && (
+                          <Icon name="arrowRight" size={10} style={{ verticalAlign: 'middle', marginRight: 2 }} />
+                        )}
+                        {(c.ultimaMensagem.texto || '').slice(0, 40)}
+                      </>
+                    ) : (
+                      c.origem + ' · ' + (c.interesse || '—')
+                    )}
                   </div>
                 </div>
               </div>
@@ -294,7 +300,7 @@ export default function Chat() {
                     <div className="avatar">{initials(conv.nome)}</div>
                     <div>
                       <div className="font-bold">
-                        {conv.nome} {conv.vip && '⭐'}
+                        {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#EAB308', verticalAlign: 'middle' }} />}
                       </div>
                       <div className="text-xs text-secondary">
                         {conv.reservado
@@ -433,12 +439,16 @@ function StatusTicks({ m }: { m: Mensagem }) {
   if (m.errorReason) return <span title={m.errorReason} style={{ color: 'var(--money-negative)', fontSize: 11 }}>! falha</span>;
   if (m.readAt) {
     return (
-      <span title={`Lido às ${new Date(m.readAt).toLocaleTimeString()}`} style={{ color: 'var(--text-link)' }}>
-        ✓✓
+      <span title={`Lido às ${new Date(m.readAt).toLocaleTimeString()}`} style={{ color: 'var(--text-link)', display: 'inline-flex' }}>
+        <Icon name="check" size={11} /><Icon name="check" size={11} style={{ marginLeft: -5 }} />
       </span>
     );
   }
-  if (m.deliveredAt) return <span title="Entregue" style={{ opacity: 0.7 }}>✓✓</span>;
-  if (m.vaiMessageId) return <span title="Enviado" style={{ opacity: 0.5 }}>✓</span>;
-  return <span title="Aguardando envio" style={{ opacity: 0.4 }}>⌛</span>;
+  if (m.deliveredAt) return (
+    <span title="Entregue" style={{ opacity: 0.7, display: 'inline-flex' }}>
+      <Icon name="check" size={11} /><Icon name="check" size={11} style={{ marginLeft: -5 }} />
+    </span>
+  );
+  if (m.vaiMessageId) return <span title="Enviado" style={{ opacity: 0.5 }}><Icon name="check" size={11} /></span>;
+  return <span title="Aguardando envio" style={{ opacity: 0.4 }}><Icon name="clock" size={11} /></span>;
 }

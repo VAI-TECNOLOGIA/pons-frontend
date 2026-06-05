@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { Icon } from './Icon';
 
 // Sprint 1 M21 — Preferências do App do corretor (Imobilead-style)
 export function PreferenciasCard() {
@@ -37,7 +38,9 @@ export function PreferenciasCard() {
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>⚙️ Preferências do App</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Icon name="settings" size={16} /> Preferências do App
+      </h3>
 
       <div className="form-grid">
         <div className="field">

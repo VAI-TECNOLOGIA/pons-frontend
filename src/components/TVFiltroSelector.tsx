@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
+import { Icon } from './Icon';
 
 // Selector flutuante de filtros do Painel TV (canto inferior esquerdo).
 // Permite trocar entre TODAS / por filial / por equipe sem editar URL.
@@ -57,7 +58,7 @@ export function TVFiltroSelector({ unidadeId, equipeId }: { unidadeId: number | 
           backdropFilter: 'blur(8px)',
         }}
       >
-        🔍 {labelAtual}
+        <Icon name="search" size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> {labelAtual}
       </button>
 
       {aberto && (

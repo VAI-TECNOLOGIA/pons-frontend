@@ -5,6 +5,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { Icon } from '../components/Icon';
 
 const CANAIS = ['WHATSAPP', 'EMAIL', 'SMS', 'PUSH'];
 const STATUS_BADGES: Record<string, string> = {
@@ -92,8 +93,14 @@ export default function Remarketing() {
               <div className="text-xs text-secondary">{c.canal} · {c.totalEnviados}/{c.totalDestinatarios} enviados</div>
               <p style={{ fontSize: 13, marginTop: 8, color: 'var(--gray-700)', maxHeight: 60, overflow: 'hidden' }}>{c.mensagem}</p>
               <div className="flex" style={{ gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                <button className="btn btn--ghost btn--sm" onClick={() => verPreview(c)}>👁 Preview</button>
-                {c.status === 'RASCUNHO' && <button className="btn btn--primary btn--sm" onClick={() => agendar(c)}>▶ Disparar</button>}
+                <button className="btn btn--ghost btn--sm" onClick={() => verPreview(c)}>
+                  <Icon name="eye" size={12} /> Preview
+                </button>
+                {c.status === 'RASCUNHO' && (
+                  <button className="btn btn--primary btn--sm" onClick={() => agendar(c)}>
+                    <Icon name="play" size={12} /> Disparar
+                  </button>
+                )}
                 {c.status === 'RASCUNHO' && <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(c); setOpen(true); }}>Editar</button>}
                 {['AGENDADA','ENVIANDO'].includes(c.status) && <button className="btn btn--ghost btn--sm" onClick={() => cancelar(c)}>Cancelar</button>}
               </div>

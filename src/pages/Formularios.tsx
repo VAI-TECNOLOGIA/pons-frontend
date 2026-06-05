@@ -206,7 +206,9 @@ export default function Formularios() {
                 </div>
                 <div className="kpi__delta">
                   {data.tokenStatus.configurado ? (
-                    <span style={{ color: 'var(--color-success-fg)' }}>● Configurado</span>
+                    <span style={{ color: 'var(--color-success-fg)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Icon name="circle" size={8} /> Configurado
+                    </span>
                   ) : (
                     <Link to="/configuracoes?secao=integracoes" style={{ color: 'var(--color-danger-fg)' }}>
                       Configure o token →

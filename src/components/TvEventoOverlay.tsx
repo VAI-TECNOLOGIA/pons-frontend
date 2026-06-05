@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Api, streamUrl } from '../lib/api';
 import { Auth } from '../lib/auth';
+import { Icon } from './Icon';
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║ OVERLAY DE EVENTO TV — animação celebração (Fase A4)                     ║
@@ -60,8 +61,19 @@ export function TvEventoOverlay() {
       {isVenda && <Confetes />}
       <div style={cardStyle}>
         {isVenda && <CarroAnim />}
-        <div style={{ fontSize: 64, fontWeight: 900, color: '#fff', textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
-          {isVenda ? '🚗💨🎆' : '✍️📜'}
+        <div style={{ fontSize: 64, fontWeight: 900, color: '#fff', textShadow: '0 4px 24px rgba(0,0,0,0.5)', display: 'flex', gap: 16, alignItems: 'center' }}>
+          {isVenda ? (
+            <>
+              <Icon name="car" size={72} />
+              <Icon name="speed" size={56} />
+              <Icon name="partyPopper" size={72} />
+            </>
+          ) : (
+            <>
+              <Icon name="pencil" size={64} />
+              <Icon name="scroll" size={64} />
+            </>
+          )}
         </div>
         <div style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginTop: 12, textAlign: 'center' }}>
           {evento.titulo}
@@ -91,8 +103,9 @@ const cardStyle: React.CSSProperties = {
 
 function CarroAnim() {
   return (
-    <div style={{ position: 'absolute', bottom: '20%', left: '-200px', animation: 'tvEventCar 5s linear forwards', fontSize: 96 }}>
-      🏎️💨
+    <div style={{ position: 'absolute', bottom: '20%', left: '-200px', animation: 'tvEventCar 5s linear forwards', display: 'flex', gap: 12, alignItems: 'center', color: '#fff' }}>
+      <Icon name="car" size={96} />
+      <Icon name="speed" size={72} />
     </div>
   );
 }

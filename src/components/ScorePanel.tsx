@@ -1,5 +1,6 @@
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
+import { Icon } from './Icon';
 
 // Painel de score com breakdown de eventos (Fase A2)
 // Usado em Perfil do corretor logado e em Corretores detail (gestor)
@@ -23,7 +24,9 @@ export function ScorePanel({ corretorId, scoreMes, scoreAno, scoreAtual, posicao
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <div className="flex-between" style={{ marginBottom: 12 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>🏆 Score de Performance</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="trophy" size={16} /> Score de Performance
+        </h3>
         {posicaoMes != null && <span className="badge badge--launch">{posicaoMes}º no mês</span>}
       </div>
 
@@ -34,7 +37,9 @@ export function ScorePanel({ corretorId, scoreMes, scoreAno, scoreAtual, posicao
       </div>
 
       <div style={{ background: 'var(--bg-elevated)', padding: 10, borderRadius: 6, marginBottom: 12 }}>
-        <div className="text-xs text-secondary" style={{ marginBottom: 6 }}>📊 Como ganhar pontos:</div>
+        <div className="text-xs text-secondary" style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Icon name="chart" size={12} /> Como ganhar pontos:
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 4 }}>
           {REGRAS.map(([k, pts, txt]) => (
             <div key={k} className="text-xs" style={{ display: 'flex', justifyContent: 'space-between' }}>

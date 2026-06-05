@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
+import { Icon } from './Icon';
 
 // Lista resumida das BMs do corretor logado (Fase A1)
 // Embutida no /perfil pra dar acesso rápido sem precisar navegar pra /bm
@@ -12,7 +13,9 @@ export function MinhasBMs() {
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <div className="flex-between" style={{ marginBottom: 12 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>🎯 Minhas BMs (Tráfego Próprio)</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="target" size={16} /> Minhas BMs (Tráfego Próprio)
+        </h3>
         <Link to="/bm" className="btn btn--ghost btn--sm">Gerenciar BMs →</Link>
       </div>
 

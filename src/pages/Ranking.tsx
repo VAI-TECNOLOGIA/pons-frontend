@@ -3,6 +3,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { Auth } from '../lib/auth';
+import { Icon } from '../components/Icon';
 
 type Periodo = 'MES' | 'ANO';
 type Aba = 'CORRETORES' | 'FILIAIS' | 'EQUIPES';
@@ -58,7 +59,17 @@ export default function Ranking() {
                 {(data.ranking ?? []).map((r: any) => (
                   <tr key={r.corretorId}>
                     <td style={{ fontWeight: 700, color: r.posicao <= 3 ? 'var(--color-warning)' : 'inherit' }}>
-                      {r.posicao}º {r.posicao === 1 ? '🥇' : r.posicao === 2 ? '🥈' : r.posicao === 3 ? '🥉' : ''}
+                      {r.posicao}º {r.posicao <= 3 && (
+                        <Icon
+                          name="trophy"
+                          size={14}
+                          style={{
+                            color: r.posicao === 1 ? '#FFD700' : r.posicao === 2 ? '#C0C0C0' : '#CD7F32',
+                            marginLeft: 4,
+                            verticalAlign: 'middle',
+                          }}
+                        />
+                      )}
                     </td>
                     <td>
                       <div className="flex" style={{ alignItems: 'center', gap: 8 }}>

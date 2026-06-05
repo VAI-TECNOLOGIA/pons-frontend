@@ -87,7 +87,7 @@ export default function BMPage() {
               )}
               <div className="text-xs">
                 <div>Leads captados: <strong>{bm.leadsCaptados}</strong></div>
-                <div>IA padrão: {bm.iaHabilitadaPadrao ? '✓ Sim' : '✗ Não'}</div>
+                <div>IA padrão: {bm.iaHabilitadaPadrao ? 'Sim' : 'Não'}</div>
               </div>
               <div className="flex" style={{ gap: 6, marginTop: 12 }}>
                 <button className="btn btn--ghost btn--sm" onClick={() => verDashboard(bm)}>Dashboard</button>

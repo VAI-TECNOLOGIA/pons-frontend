@@ -105,7 +105,7 @@ export function CopyCode({ value }: { value: string }) {
       }}
       title="Clique para copiar"
     >
-      {value} {copied ? '✓' : ''}
+      {value} {copied && <Icon name="check" size={11} style={{ verticalAlign: 'middle' }} />}
     </code>
   );
 }

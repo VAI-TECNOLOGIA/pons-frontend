@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
+import { Icon } from './Icon';
 
 // Sprint 5 M22 — Bloco de progresso de onboarding no Dashboard
 export function OnboardingProgress() {
@@ -22,7 +23,9 @@ export function OnboardingProgress() {
     <div className="card" style={{ marginBottom: 16, background: 'linear-gradient(135deg, var(--bg-elevated), var(--bg-card))' }}>
       <div className="flex-between" style={{ marginBottom: 8 }}>
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 800 }}>🚀 Configuração inicial — {data.percentual}%</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="zap" size={16} /> Configuração inicial — {data.percentual}%
+          </h3>
           <div className="text-xs text-secondary">{data.feitos} de {data.total} passos concluídos</div>
         </div>
         {proximoPasso && (
@@ -47,8 +50,11 @@ export function OnboardingProgress() {
             fontSize: 11,
             color: p.feito ? 'var(--color-success)' : 'var(--text-secondary)',
             textDecoration: p.feito ? 'line-through' : 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
           }}>
-            {p.feito ? '✓' : '○'} {p.label}
+            <Icon name={p.feito ? 'check' : 'circleOutline'} size={11} /> {p.label}
           </div>
         ))}
       </div>

@@ -5,6 +5,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { Icon } from '../components/Icon';
 
 type Tab = 'POLITICA' | 'SOCIOS' | 'FECHAMENTO' | 'SICREDI';
 
@@ -121,7 +122,9 @@ function PoliticaTab() {
       </div>
 
       <div className="card">
-        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>🧮 Simulador de rateio</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="calculator" size={16} /> Simulador de rateio
+        </h3>
         <div className="form-grid">
           <div className="field"><label className="field__label">Comissão bruta (R$)</label><input id="sim-valor" type="number" className="field__input" defaultValue={50000} step={0.01} /></div>
           <div className="field"><label className="field__label">Parcelas</label><input id="sim-parc" type="number" className="field__input" defaultValue={1} min={1} /></div>
@@ -150,14 +153,18 @@ function PoliticaTab() {
               </div>
             </div>
             <hr style={{ margin: '12px 0' }} />
-            <h5 style={{ fontWeight: 700, fontSize: 13 }}>👤 Corretor</h5>
+            <h5 style={{ fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon name="users" size={14} /> Corretor
+            </h5>
             <div>Bruto: {fmt(sim.corretor.valorBruto)}</div>
             <div>− Marketing: {fmt(sim.corretor.descontoMarketing)}</div>
             <div>− Campanha: {fmt(sim.corretor.descontoCampanha)}</div>
             <div>− Lázaro: {fmt(sim.corretor.descontoLazaro)}</div>
             <div style={{ color: 'var(--color-success)', fontWeight: 700 }}>= Líquido: {fmt(sim.corretor.valorLiquido)}</div>
             <hr style={{ margin: '12px 0' }} />
-            <h5 style={{ fontWeight: 700, fontSize: 13 }}>🏢 Imobiliária</h5>
+            <h5 style={{ fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon name="building" size={14} /> Imobiliária
+            </h5>
             <div>Bruto: {fmt(sim.imobiliaria.valorBruto)}</div>
             <div>− Gestor: {fmt(sim.imobiliaria.descontoGestor)}</div>
             <div>− Direção: {fmt(sim.imobiliaria.descontoDirecao)}</div>
@@ -269,7 +276,10 @@ function SociosTab() {
       <div className="card" style={{ marginBottom: 16, background: alertOK ? 'var(--color-success-bg)' : 'var(--color-warning-bg)' }}>
         <div className="flex-between">
           <div><strong>Soma de participação ativos: {soma}%</strong></div>
-          <div>{alertOK ? '✓ OK pra fechar' : '⚠ Deve somar exatamente 100% pra fechar mês'}</div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Icon name={alertOK ? 'check' : 'warn'} size={14} />
+            {alertOK ? 'OK pra fechar' : 'Deve somar exatamente 100% pra fechar mês'}
+          </div>
         </div>
       </div>
       <div className="card">
@@ -386,7 +396,9 @@ function FechamentoTab() {
 
           {data.status === 'ABERTO' && (
             <div style={{ marginTop: 16 }}>
-              <button className="btn btn--primary" onClick={fechar}>🔒 Fechar mês + Dividir entre sócios</button>
+              <button className="btn btn--primary" onClick={fechar}>
+                <Icon name="lock" size={14} /> Fechar mês + Dividir entre sócios
+              </button>
             </div>
           )}
         </div>
@@ -426,7 +438,9 @@ function SicrediTab() {
     <>
       {proxima && (
         <div className="card" style={{ marginBottom: 16, background: 'var(--bg-elevated)' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>📅 Próximo lote — {new Date(proxima.dataExecucao).toLocaleDateString('pt-BR')} (quarta-feira)</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="calendar" size={16} /> Próximo lote — {new Date(proxima.dataExecucao).toLocaleDateString('pt-BR')} (quarta-feira)
+          </h3>
           <div>
             <strong>{proxima.total} lançamentos</strong> · Total: <strong>{fmt(proxima.valor)}</strong>
           </div>
