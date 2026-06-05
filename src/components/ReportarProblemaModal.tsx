@@ -20,8 +20,7 @@ const CAPTURE_TIMEOUT_MS = 6000;
 
 // Carrega html2canvas só no momento de capturar (não bloqueia o bundle inicial)
 async function loadHtml2Canvas(): Promise<any> {
-  // @ts-expect-error — biblioteca opcional, carregada lazily
-  const mod = await import('html2canvas');
+  const mod: any = await import(/* @vite-ignore */ 'html2canvas' as string);
   return mod.default || mod;
 }
 
