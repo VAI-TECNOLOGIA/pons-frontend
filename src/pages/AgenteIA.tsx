@@ -1,13 +1,13 @@
-// Configuração do Agente IA — layout split estilo "criador de agente"
-// (inspiração: print enviado pelo cliente, similar a Manus AI / Chatwoot Bot).
+// Agente IA do Atendimento WhatsApp — configura o bot que responde leads em
+// PENDENTE até o corretor aceitar. Roda durante as 3 primeiras respostas
+// automáticas (limite configurável em Settings "ia.limiteRespostas").
 //
-// Estrutura:
-//   header        — breadcrumb · título "Novo Agente" · botão Salvar
-//   sidebar       — avatar bot · nome · provider select · menu (Instruções/Integrações/MCP)
+// Layout split:
+//   header        — breadcrumb · botão Salvar
+//   sidebar       — avatar bot · nome · provider · menu (Instruções, Integrações)
 //   main          — aba ativa
-//     Instruções  — Comportamento (tom + descrição) + Instruções de resposta + Base
-//     Integrações — Provider + API key + Modelo
-//     MCP         — placeholder (em breve)
+//     Instruções  — Tom + Descrição do comportamento + Instruções + Base de Conhecimento
+//     Integrações — Provider (Anthropic/OpenAI) + Modelo + API Key
 
 import { useEffect, useState } from 'react';
 import { Topbar } from '../components/PageHeader';
@@ -17,7 +17,7 @@ import { useToast } from '../lib/toast';
 import { Icon } from '../components/Icon';
 import './agente-ia.css';
 
-type Tab = 'instrucoes' | 'integracoes' | 'mcp';
+type Tab = 'instrucoes' | 'integracoes';
 
 const TONS: Array<{ id: 'formal' | 'equilibrado' | 'descontraido' | 'criativo'; label: string; sub: string; icon: string }> = [
   { id: 'formal',       label: 'Formal',       sub: 'Direto, preciso e profissional.', icon: 'shield' },
@@ -80,12 +80,12 @@ export default function AgenteIA() {
 
   return (
     <>
-      <Topbar title="Agentes IA" />
+      <Topbar title="Agente IA · Atendimento WhatsApp" />
       <div className="agente">
         {/* Breadcrumb + ações no topo */}
         <div className="agente__topbar">
           <a className="agente__crumb" href="/agente-ia">
-            <Icon name="arrow_left" size={14} /> Agentes IA
+            <Icon name="arrow_left" size={14} /> Agente IA · WhatsApp
           </a>
           <div className="agente__topbar-right">
             <button className="agente__save-btn" onClick={salvar} disabled={saving}>
@@ -113,7 +113,10 @@ export default function AgenteIA() {
               placeholder="Novo Agente"
             />
             <div className="agente__name-sub">
-              {form['ia.atendimento.descricao']?.slice(0, 40) || 'Sem descrição'}
+              Atendimento WhatsApp · Pendente
+            </div>
+            <div className="agente__name-tag">
+              <Icon name="whatsapp" size={11} /> WhatsApp Cloud Meta
             </div>
 
             <div className="agente__provider-pill">
@@ -135,20 +138,25 @@ export default function AgenteIA() {
               >
                 <Icon name="link" size={16} /> Integrações
               </button>
-              <button
-                className={'agente__menu-item' + (tab === 'mcp' ? ' is-active' : '')}
-                onClick={() => setTab('mcp')}
-              >
-                <Icon name="settings" size={16} /> MCP
-              </button>
             </nav>
           </aside>
 
           {/* Coluna direita — header + conteúdo */}
           <main className="agente__main">
+            <div className="agente__channel-banner">
+              <Icon name="whatsapp" size={18} />
+              <div>
+                <b>Canal: WhatsApp Cloud API (Meta)</b>
+                <span> · este agente responde leads na aba Atendimento &rsaquo; Pendente. Quando o corretor clica em <i>Aceitar</i>, a IA para automaticamente.</span>
+              </div>
+            </div>
+
             <header className="agente__head">
               <h1 className="agente__title">{nome}</h1>
-              <p className="agente__subtitle">Configure seu novo agente de IA</p>
+              <p className="agente__subtitle">
+                Configure o agente que responde leads no WhatsApp enquanto o corretor não aceita o atendimento.
+                Limite padrão: <b>3 respostas automáticas</b> por lead. Depois, a conversa fica esperando humano.
+              </p>
             </header>
 
             {tab === 'instrucoes' && (
@@ -300,17 +308,6 @@ Política comercial:
               </section>
             )}
 
-            {tab === 'mcp' && (
-              <section className="agente__section">
-                <h2 className="agente__sec-title">MCP</h2>
-                <p className="agente__sec-sub">Model Context Protocol — conectar tools externos ao agente.</p>
-                <div className="agente__empty">
-                  <Icon name="sparkles" size={32} />
-                  <div>Em breve</div>
-                  <p>Configuração de MCP servers + tools customizadas chega na próxima sprint.</p>
-                </div>
-              </section>
-            )}
           </main>
         </div>
       </div>
