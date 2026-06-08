@@ -219,13 +219,14 @@ function AppDownloadBlock() {
       >
         Baixe o aplicativo
       </div>
-      <StoreButton label="Google Play" iconName="play" />
-      <StoreButton label="App Store" iconName="phone" />
+      <StoreButton label="Google Play" imgSrc="/assets/android.png" />
+      <StoreButton label="App Store" imgSrc="/assets/apple.png" />
     </div>
   );
 }
 
-function StoreButton({ label, iconName }: { label: string; iconName: string }) {
+function StoreButton({ label, imgSrc }: { label: string; imgSrc: string }) {
+  const [imgErr, setImgErr] = useState(false);
   const [hover, setHover] = useState(false);
   return (
     <div
@@ -250,7 +251,16 @@ function StoreButton({ label, iconName }: { label: string; iconName: string }) {
         transition: 'opacity 200ms',
       }}
     >
-      <Icon name={iconName} size={18} />
+      {imgErr ? (
+        <Icon name={label.includes('Play') ? 'play' : 'phone'} size={18} />
+      ) : (
+        <img
+          src={imgSrc}
+          alt={label}
+          onError={() => setImgErr(true)}
+          style={{ width: 22, height: 22, objectFit: 'contain' }}
+        />
+      )}
       <span>{label}</span>
       {hover && (
         <span
