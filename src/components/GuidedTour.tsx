@@ -1,24 +1,21 @@
 // Tour guiado — onboarding/walkthrough leve sem libs externas.
 //
-// Versão 2 (responsiva): tooltip vira bottom sheet no mobile (<700px),
-// posicionamento robusto com 2 passes (mede altura real do tooltip antes
-// de posicionar), backdrop com pointer-events transparente pra não travar
-// o scroll da página, e desktop com posicionamento dinâmico (auto bottom/top).
+// Design simples e previsível:
+//   - Tooltip SEMPRE como bottom sheet (desktop + mobile) — flutua na base da tela
+//   - Em desktop, max-width 520px centralizado horizontalmente
+//   - Backdrop escuro com "buraco" sobre o target via box-shadow + halo azul
+//   - Auto-scroll do target pro centro da viewport (descontando altura do tooltip)
+//   - Aparece uma vez (localStorage flag). forceOpen reabre.
 //
 // Uso:
 //   <GuidedTour
 //     storageKey="integracoes-v1"
-//     steps={[
-//       { target: '[data-tour="x"]', title: 'X', body: '...' },
-//     ]}
+//     steps={[{ target: '[data-tour="x"]', title, body }]}
 //     forceOpen={tour.forceOpen}
 //     onDone={tour.onDone}
 //   />
-//
-// Auto-abre uma vez (controlado por localStorage `tour:<storageKey>`).
-// forceOpen=true reabre mesmo após concluído.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Icon } from './Icon';
 
 export interface TourStep {
@@ -34,10 +31,7 @@ interface Props {
   onDone?: () => void;
 }
 
-const PADDING = 12;
-const MOBILE_BREAKPOINT = 700;
-const TOOLTIP_DESKTOP_W = 340;
-const TOOLTIP_GAP = 14;
+const SHEET_HEIGHT_RESERVE = 260; // espaço aproximado do tooltip+padding pra calcular scroll
 
 function storageDone(key: string): boolean {
   try {
@@ -56,11 +50,6 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; placement: 'bottom' | 'top' | 'sheet' } | null>(null);
-  const [vw, setVw] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
-  const tooltipRef = useRef<HTMLDivElement>(null);
-
-  const isMobile = vw < MOBILE_BREAKPOINT;
 
   // ── Auto-open na 1ª vez ──────────────────────────────────────────
   useEffect(() => {
@@ -77,87 +66,49 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
     }
   }, [forceOpen, storageKey, steps]);
 
-  // ── Resize listener ─────────────────────────────────────────────
-  useEffect(() => {
-    const onResize = () => setVw(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  // ── Posiciona tooltip + highlight ───────────────────────────────
+  // ── Posiciona highlight + scroll do target ──────────────────────
   const reposition = useCallback(() => {
     if (!open || !steps[idx]) return;
     const el = document.querySelector(steps[idx].target) as HTMLElement | null;
     if (!el) {
       setRect(null);
-      setPos(null);
       return;
     }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    // Aguarda scroll terminar via requestAnimationFrame chain
+    // Scroll customizado: alinha o target ~1/3 do viewport (acima do tooltip)
+    const r0 = el.getBoundingClientRect();
+    const targetTop = window.innerHeight / 2 - SHEET_HEIGHT_RESERVE / 2 - r0.height / 2;
+    const delta = r0.top - targetTop;
+    window.scrollBy({ top: delta, behavior: 'smooth' });
+
+    // Aguarda scroll terminar
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        const r = el.getBoundingClientRect();
-        setRect(r);
-        computePos(r);
+        setRect(el.getBoundingClientRect());
       });
     });
-  }, [open, idx, steps]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, idx, steps]);
 
-  function computePos(r: DOMRect) {
-    if (isMobile) {
-      // Bottom sheet — fixed bottom, full width
-      setPos({ top: window.innerHeight, left: 0, width: vw, placement: 'sheet' });
-      return;
-    }
-    const tooltipH = tooltipRef.current?.offsetHeight || 220;
-    const w = Math.min(TOOLTIP_DESKTOP_W, vw - 2 * PADDING);
-    const spaceBelow = window.innerHeight - r.bottom - PADDING;
-    const spaceAbove = r.top - PADDING;
-    const placement: 'bottom' | 'top' = spaceBelow >= tooltipH + TOOLTIP_GAP
-      ? 'bottom'
-      : spaceAbove >= tooltipH + TOOLTIP_GAP
-        ? 'top'
-        : 'bottom'; // fallback
-    let top = placement === 'bottom' ? r.bottom + TOOLTIP_GAP : r.top - TOOLTIP_GAP - tooltipH;
-    let left = r.left + r.width / 2 - w / 2;
-    left = Math.max(PADDING, Math.min(window.innerWidth - w - PADDING, left));
-    // Se passar do bottom do viewport, joga acima do final do viewport
-    if (top + tooltipH > window.innerHeight - PADDING) {
-      top = window.innerHeight - tooltipH - PADDING;
-    }
-    if (top < PADDING) top = PADDING;
-    setPos({ top, left, width: w, placement });
-  }
-
-  // Reposiciona quando step muda
   useEffect(() => {
     reposition();
   }, [reposition]);
 
-  // 2º pass: depois que o tooltip monta com altura real, refaz cálculo desktop
-  useEffect(() => {
-    if (!open || !rect || isMobile) return;
-    const id = requestAnimationFrame(() => computePos(rect));
-    return () => cancelAnimationFrame(id);
-  }, [open, rect, isMobile, idx]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Reposiciona no resize/scroll
   useEffect(() => {
     if (!open) return;
-    const onWin = () => reposition();
+    const onWin = () => {
+      const el = document.querySelector(steps[idx]?.target) as HTMLElement | null;
+      if (el) setRect(el.getBoundingClientRect());
+    };
     window.addEventListener('resize', onWin);
     window.addEventListener('scroll', onWin, true);
     return () => {
       window.removeEventListener('resize', onWin);
       window.removeEventListener('scroll', onWin, true);
     };
-  }, [open, reposition]);
+  }, [open, idx, steps]);
 
   function close(markDone = true) {
     setOpen(false);
     setRect(null);
-    setPos(null);
     if (markDone) setStorageDone(storageKey);
     onDone?.();
   }
@@ -177,75 +128,84 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
 
   return (
     <>
-      {/* Backdrop — pointer-events: none pra não travar scroll/clicks da página */}
+      {/* Backdrop escuro sobre toda a tela. pointer-events:none pra não travar scroll. */}
       <div
         style={{
           position: 'fixed',
           inset: 0,
           zIndex: 9998,
           pointerEvents: 'none',
-          background: rect ? 'transparent' : 'rgba(0,0,0,0.55)',
-          transition: 'background 200ms',
+          background: 'rgba(0,0,0,0.55)',
+          transition: 'opacity 200ms',
         }}
       />
 
-      {/* Highlight do target (halo + sombra que escurece o resto) */}
+      {/* Highlight: divs separadas escurecendo os 4 lados do rect (sem "buraco" branco) */}
       {rect && (
-        <div
-          style={{
-            position: 'fixed',
-            top: rect.top - 6,
-            left: rect.left - 6,
-            width: rect.width + 12,
-            height: rect.height + 12,
-            zIndex: 9999,
-            pointerEvents: 'none',
-            borderRadius: 12,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.6), 0 0 0 3px rgba(96,165,250,0.8)',
-            transition: 'top 220ms, left 220ms, width 220ms, height 220ms',
-          }}
-        />
+        <>
+          {/* Halo azul em volta do target */}
+          <div
+            style={{
+              position: 'fixed',
+              top: rect.top - 4,
+              left: rect.left - 4,
+              width: rect.width + 8,
+              height: rect.height + 8,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              borderRadius: 12,
+              border: '3px solid rgba(96,165,250,0.9)',
+              boxShadow: '0 0 24px rgba(96,165,250,0.5)',
+              transition: 'top 220ms, left 220ms, width 220ms, height 220ms',
+            }}
+          />
+          {/* "Buraco" — bloco sólido na cor do bg que cobre o rect e deixa só o conteúdo aparecer
+              (não fica branco gigante porque é box-shadow inverso aplicado em volta) */}
+          <div
+            style={{
+              position: 'fixed',
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+              zIndex: 9997,
+              pointerEvents: 'none',
+              borderRadius: 8,
+              background: 'transparent',
+              boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)',
+              transition: 'top 220ms, left 220ms, width 220ms, height 220ms',
+            }}
+          />
+        </>
       )}
 
-      {/* Tooltip — pointer-events: auto pra capturar clicks dos botões */}
+      {/* Tooltip = bottom sheet (desktop + mobile) */}
       <div
-        ref={tooltipRef}
+        role="dialog"
+        aria-label="Tour guiado"
         style={{
           position: 'fixed',
-          ...(pos?.placement === 'sheet'
-            ? {
-                bottom: 0,
-                left: 0,
-                right: 0,
-                width: '100%',
-                borderRadius: '16px 16px 0 0',
-                paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
-                animation: 'tourSlideUp 280ms cubic-bezier(0.4,0,0.2,1)',
-              }
-            : pos
-              ? {
-                  top: pos.top,
-                  left: pos.left,
-                  width: pos.width,
-                  borderRadius: 12,
-                  transition: 'top 220ms, left 220ms',
-                }
-              : { visibility: 'hidden', top: 0, left: 0, width: TOOLTIP_DESKTOP_W }),
+          bottom: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'min(calc(100% - 32px), 540px)',
           zIndex: 10000,
           pointerEvents: 'auto',
           background: '#1E40AF',
           color: '#fff',
+          borderRadius: 14,
           padding: 20,
           boxShadow: '0 16px 48px rgba(0,0,0,0.45)',
           fontSize: 14,
           lineHeight: 1.5,
-          maxHeight: pos?.placement === 'sheet' ? '70vh' : `calc(100vh - ${2 * PADDING}px)`,
+          maxHeight: '50vh',
           overflowY: 'auto',
           boxSizing: 'border-box',
+          animation: 'tourSlideUp 280ms cubic-bezier(0.4,0,0.2,1)',
         }}
       >
         {/* Dots de progresso */}
-        <div style={{ display: 'flex', gap: 5, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 5, marginBottom: 12 }}>
           {steps.map((_, i) => (
             <span
               key={i}
@@ -259,28 +219,37 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
               }}
             />
           ))}
+          <span
+            style={{
+              marginLeft: 'auto',
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.7)',
+              alignSelf: 'center',
+            }}
+          >
+            {idx + 1} / {steps.length}
+          </span>
         </div>
 
         {step.title && (
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{step.title}</div>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{step.title}</div>
         )}
         <div style={{ color: 'rgba(255,255,255,0.92)' }}>{step.body}</div>
 
-        <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {!first && (
             <button
               type="button"
               onClick={prev}
               style={{
                 background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.3)',
+                border: '1px solid rgba(255,255,255,0.35)',
                 color: '#fff',
-                padding: '9px 14px',
-                borderRadius: 6,
+                padding: '9px 16px',
+                borderRadius: 8,
                 fontSize: 13,
                 cursor: 'pointer',
                 fontWeight: 600,
-                flexShrink: 0,
               }}
             >
               Anterior
@@ -288,15 +257,30 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
           )}
           <button
             type="button"
+            onClick={() => close(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255,255,255,0.7)',
+              padding: '9px 12px',
+              fontSize: 12,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              marginRight: 'auto',
+            }}
+          >
+            Pular
+          </button>
+          <button
+            type="button"
             onClick={next}
             style={{
-              flex: 1,
               minWidth: 140,
               background: '#fff',
               color: '#1E40AF',
               border: 'none',
-              padding: '11px 16px',
-              borderRadius: 6,
+              padding: '11px 20px',
+              borderRadius: 8,
               fontSize: 14,
               fontWeight: 700,
               cursor: 'pointer',
@@ -317,37 +301,26 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
             )}
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => close(true)}
-          style={{
-            marginTop: 10,
-            width: '100%',
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255,255,255,0.7)',
-            fontSize: 12,
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            padding: '4px 0',
-          }}
-        >
-          Pular tour
-        </button>
       </div>
 
       <style>{`
         @keyframes tourSlideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from { transform: translate(-50%, 100%); opacity: 0; }
+          to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        @media (max-width: 600px) {
+          [role="dialog"][aria-label="Tour guiado"] {
+            bottom: 0 !important;
+            border-radius: 16px 16px 0 0 !important;
+            width: 100% !important;
+            padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+          }
         }
       `}</style>
     </>
   );
 }
 
-/** Helper hook pra controlar abertura via botão externo (ícone "?") */
 export function useTourTrigger(storageKey: string) {
   const [forceOpen, setForceOpen] = useState(false);
   return {
