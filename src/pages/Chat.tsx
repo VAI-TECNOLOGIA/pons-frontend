@@ -424,7 +424,9 @@ export default function Chat() {
                 ))}
                 <div ref={messagesEndRef} />
               </div>
-              {conv?.windowOpen === false ? (
+              {!conv?.reservado ? (
+                <ComposerPendenteIA onAceitar={aceitarLead} />
+              ) : conv?.windowOpen === false ? (
                 <ComposerJanelaFechada
                   onAbrirTemplates={() => setTemplatePickerOpen(true)}
                   hasInbound={!!conv?.lastInboundAt}
@@ -659,6 +661,38 @@ function StatusTicks({ m }: { m: Mensagem }) {
 
 // ─── Composer quando janela 24h está fechada ───────────────────────────────
 // Texto livre desabilitado; só template Meta aprovado pode reabrir a conversa.
+// ─── Composer quando lead ainda está PENDENTE ──────────────────────────────
+// A IA cuida do atendimento. Corretor só consegue mandar texto após Aceitar.
+function ComposerPendenteIA({ onAceitar }: { onAceitar: () => void }) {
+  return (
+    <div
+      className="composer"
+      style={{
+        background: 'rgba(96, 165, 250, 0.06)',
+        borderTop: '1px solid rgba(96, 165, 250, 0.20)',
+        padding: '14px 16px',
+        display: 'flex',
+        gap: 12,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--blue-600)' }}>
+        <Icon name="bot" size={18} />
+        <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+          <div style={{ fontWeight: 700 }}>IA está atendendo este lead</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+            Pra assumir a conversa e mandar mensagem, clica em Aceitar.
+          </div>
+        </div>
+      </div>
+      <button className="btn btn--primary btn--sm" onClick={onAceitar}>
+        <Icon name="check" size={14} /> Aceitar lead
+      </button>
+    </div>
+  );
+}
+
 function ComposerJanelaFechada({
   onAbrirTemplates,
   hasInbound,
