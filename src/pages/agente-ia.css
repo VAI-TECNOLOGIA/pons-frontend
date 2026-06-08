@@ -1,0 +1,396 @@
+/* ============================================================
+   Agentes IA — layout estilo criador de agente (split view)
+   Inspirado em ferramentas como Manus AI, Chatwoot Bot
+   ============================================================ */
+
+.agente {
+  height: calc(100dvh - var(--header-height));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  overflow: hidden;
+}
+
+/* Topbar interna: breadcrumb à esquerda, botão Salvar à direita */
+.agente__topbar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-card);
+}
+.agente__crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.16s ease;
+}
+.agente__crumb:hover { color: var(--text-primary); }
+.agente__save-btn {
+  background: var(--pons-blue, #5d8fe0);
+  color: #fff;
+  border: none;
+  padding: 8px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+.agente__save-btn:hover:not(:disabled) {
+  background: var(--blue-600, #4978c4);
+}
+.agente__save-btn:active:not(:disabled) { transform: scale(0.97); }
+.agente__save-btn:disabled { opacity: 0.6; cursor: wait; }
+
+/* Body em 2 colunas */
+.agente__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  overflow: hidden;
+}
+
+/* ── Coluna esquerda (sidebar interna do agente) ──────────────── */
+.agente__side {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-light);
+  padding: 28px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.agente__avatar-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 8px;
+}
+.agente__avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+.agente__avatar-cam {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+.agente__avatar-cam:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+
+.agente__name {
+  text-align: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 6px;
+  outline: none;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+.agente__name:hover, .agente__name:focus {
+  background: var(--bg-elevated);
+  border-color: var(--border-light);
+}
+.agente__name-sub {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: -6px;
+}
+
+/* Pill do provider */
+.agente__provider-pill {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+  align-self: center;
+  cursor: default;
+}
+.agente__provider-arrow {
+  opacity: 0.5;
+  margin-left: auto;
+}
+
+/* Menu vertical (tabs) */
+.agente__menu {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 14px;
+}
+.agente__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+.agente__menu-item:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+.agente__menu-item.is-active {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+.agente__menu-item.is-active .icon { color: var(--pons-blue, #5d8fe0); }
+
+/* ── Coluna direita (main) ─────────────────────────────────────── */
+.agente__main {
+  padding: 32px 40px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.agente__head {
+  margin-bottom: 28px;
+}
+.agente__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.agente__subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.agente__section {
+  margin-bottom: 36px;
+}
+.agente__sec-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.agente__sec-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 18px;
+}
+
+.agente__field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+.agente__field-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+.agente__field-hint code {
+  background: var(--bg-elevated);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* Cards de Tom (e providers — reusa estilo) */
+.agente__tons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.agente__tom {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agente__tom:hover {
+  border-color: rgba(93, 143, 224, 0.35);
+}
+.agente__tom.is-active {
+  border-color: var(--pons-blue, #5d8fe0);
+  background: rgba(93, 143, 224, 0.06);
+}
+.agente__tom .icon { color: var(--text-secondary); }
+.agente__tom.is-active .icon { color: var(--pons-blue, #5d8fe0); }
+.agente__tom-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.agente__tom-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Textarea container com footer (Gerar com IA + contador) */
+.agente__textarea-wrap {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  transition: border-color 0.16s ease;
+}
+.agente__textarea-wrap:focus-within {
+  border-color: var(--pons-blue, #5d8fe0);
+}
+.agente__textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  display: block;
+  min-height: 80px;
+}
+.agente__textarea::placeholder { color: var(--text-secondary); opacity: 0.65; }
+.agente__textarea-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-light);
+}
+.agente__ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.agente__ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.agente__char-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Input simples (provider/model/key) */
+.agente__input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.16s ease;
+}
+.agente__input:focus {
+  outline: none;
+  border-color: var(--pons-blue, #5d8fe0);
+}
+.agente__input::placeholder { color: var(--text-secondary); opacity: 0.65; }
+.agente__hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 6px 0 0;
+}
+
+/* Empty state (MCP) */
+.agente__empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+.agente__empty .icon { color: var(--text-secondary); margin-bottom: 12px; }
+.agente__empty div {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.agente__empty p { font-size: 13px; max-width: 400px; margin: 0 auto; }
+
+/* ── Responsivo (≤ 900px: empilha em coluna) ──────────────────── */
+@media (max-width: 900px) {
+  .agente__body {
+    grid-template-columns: 1fr;
+  }
+  .agente__side {
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    padding: 16px;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+  }
+  .agente__avatar-wrap { width: 56px; height: 56px; margin: 0; }
+  .agente__avatar { border-radius: 12px; }
+  .agente__name { font-size: 13px; padding: 4px 6px; }
+  .agente__name-sub { font-size: 10px; }
+  .agente__menu {
+    flex-direction: row;
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+    border-left: 1px solid var(--border-light);
+    padding-left: 12px;
+    overflow-x: auto;
+  }
+  .agente__menu-item { flex-shrink: 0; }
+  .agente__main { padding: 18px; }
+  .agente__title { font-size: 20px; }
+}
