@@ -760,140 +760,111 @@ function TemplatePickerModal({
   }
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15,23,42,0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: 16,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'var(--card-bg, #fff)',
-          borderRadius: 12,
-          maxWidth: 760,
-          width: '100%',
-          maxHeight: '90vh',
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: selected ? '280px 1fr' : '1fr',
-          boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
-        }}
-      >
-        {/* Lista de templates */}
-        <div style={{ borderRight: selected ? '1px solid var(--border, #e5e7eb)' : 'none', maxHeight: '90vh', overflow: 'auto' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border, #e5e7eb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <b>Templates Meta aprovados</b>
-            <button className="btn btn--ghost btn--sm" onClick={onClose}>×</button>
+    <div className="tpl-modal__backdrop" onClick={onClose}>
+      <div className="tpl-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="tpl-modal__header">
+          <div className="tpl-modal__title">
+            <Icon name="doc" size={16} /> Templates Meta aprovados
           </div>
-          {loading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>Carregando…</div>
-          ) : items.length === 0 ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
-              Nenhum template aprovado encontrado. Configure no WhatsApp Manager
-              e aguarde aprovação Meta (24-48h).
-            </div>
-          ) : (
-            items.map((t) => (
-              <div
-                key={t.name + ':' + t.language}
-                onClick={() => pickTemplate(t)}
-                style={{
-                  padding: '10px 16px',
-                  cursor: 'pointer',
-                  borderBottom: '1px solid var(--border-subtle, #f1f5f9)',
-                  background: selected?.name === t.name ? 'rgba(34,197,94,0.06)' : 'transparent',
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{t.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', gap: 6 }}>
-                  <span>{t.language}</span> · <span>{t.category}</span>
-                  {t.varCount > 0 && <> · <span>{t.varCount} var{t.varCount > 1 ? 's' : ''}</span></>}
-                </div>
-                <div style={{ fontSize: 12, marginTop: 4, color: 'var(--text-secondary)', maxHeight: 36, overflow: 'hidden' }}>
-                  {(t.bodyText || '').slice(0, 70)}{(t.bodyText || '').length > 70 ? '…' : ''}
-                </div>
-              </div>
-            ))
-          )}
+          <button
+            className="tpl-modal__close"
+            onClick={onClose}
+            aria-label="Fechar"
+            title="Fechar (Esc)"
+          >
+            <Icon name="x" size={16} />
+          </button>
         </div>
 
-        {/* Preview WhatsApp Web look + form de params */}
-        {selected && (
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '90vh', overflow: 'auto' }}>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Pré-visualização · WhatsApp Web</div>
-            <div
-              style={{
-                background: '#ECE5DD',
-                padding: '20px 16px',
-                borderRadius: 8,
-                minHeight: 200,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
-              }}
-            >
-              <div
-                style={{
-                  background: '#DCF8C6',
-                  alignSelf: 'flex-end',
-                  padding: '8px 12px',
-                  borderRadius: '8px 0 8px 8px',
-                  maxWidth: '80%',
-                  whiteSpace: 'pre-wrap',
-                  fontSize: 14,
-                  color: '#111',
-                  boxShadow: '0 1px 1px rgba(0,0,0,0.10)',
-                }}
-              >
-                {renderPreview()}
+        {/* Body: 2 colunas (lista + preview) */}
+        <div className="tpl-modal__body">
+          {/* Lista de templates */}
+          <div className="tpl-modal__list">
+            {loading ? (
+              <div className="tpl-modal__empty">Carregando templates…</div>
+            ) : items.length === 0 ? (
+              <div className="tpl-modal__empty">
+                Nenhum template aprovado encontrado.<br/>
+                Configure no WhatsApp Manager e aguarde aprovação Meta (24–48h).
               </div>
-            </div>
-            {(selected.varCount || 0) > 0 && (
-              <div style={{ display: 'grid', gap: 8 }}>
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Parâmetros</div>
-                {Array.from({ length: selected.varCount }).map((_: any, i: number) => (
-                  <div key={i}>
-                    <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{`{{${i + 1}}}`}</label>
-                    <input
-                      type="text"
-                      value={params[i] || ''}
-                      onChange={(e) => {
-                        const next = [...params];
-                        next[i] = e.target.value;
-                        setParams(next);
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid var(--border, #e5e7eb)',
-                        borderRadius: 6,
-                        fontSize: 13,
-                      }}
-                    />
+            ) : (
+              items.map((t) => (
+                <div
+                  key={t.name + ':' + t.language}
+                  className={'tpl-item' + (selected?.name === t.name ? ' tpl-item--active' : '')}
+                  onClick={() => pickTemplate(t)}
+                >
+                  <div className="tpl-item__name">{t.name}</div>
+                  <div className="tpl-item__meta">
+                    <span>{t.language}</span>
+                    <span className="tpl-dot">·</span>
+                    <span>{t.category}</span>
+                    {t.varCount > 0 && (
+                      <>
+                        <span className="tpl-dot">·</span>
+                        <span>{t.varCount} var{t.varCount > 1 ? 's' : ''}</span>
+                      </>
+                    )}
                   </div>
-                ))}
-              </div>
+                  <div className="tpl-item__body">
+                    {(t.bodyText || '').slice(0, 90)}{(t.bodyText || '').length > 90 ? '…' : ''}
+                  </div>
+                </div>
+              ))
             )}
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 'auto' }}>
-              <button className="btn btn--ghost" onClick={onClose} disabled={sending}>Cancelar</button>
-              <button
-                className="btn btn--primary"
-                onClick={enviar}
-                disabled={sending || params.some((p, i) => i < selected.varCount && !String(p).trim())}
-              >
-                {sending ? 'Enviando…' : 'Enviar template'}
-              </button>
-            </div>
           </div>
-        )}
+
+          {/* Preview + form */}
+          <div className="tpl-modal__preview">
+            {!selected ? (
+              <div className="tpl-modal__placeholder">
+                <Icon name="doc" size={40} />
+                <div>Selecione um template à esquerda<br/>pra ver o preview e configurar.</div>
+              </div>
+            ) : (
+              <>
+                <div className="tpl-preview__label">Pré-visualização · WhatsApp Web</div>
+                <div className="tpl-preview__chat">
+                  <div className="tpl-preview__bubble">{renderPreview()}</div>
+                </div>
+                {(selected.varCount || 0) > 0 && (
+                  <div className="tpl-preview__params">
+                    <div className="tpl-preview__params-title">Parâmetros</div>
+                    {Array.from({ length: selected.varCount }).map((_: any, i: number) => (
+                      <div key={i} className="field" style={{ marginBottom: 8 }}>
+                        <label className="field__label">{`{{${i + 1}}}`}</label>
+                        <input
+                          type="text"
+                          className="field__input"
+                          value={params[i] || ''}
+                          onChange={(e) => {
+                            const next = [...params];
+                            next[i] = e.target.value;
+                            setParams(next);
+                          }}
+                          placeholder={i === 0 ? leadName : `Valor da variável ${i + 1}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="tpl-modal__actions">
+                  <button className="btn btn--ghost" onClick={onClose} disabled={sending}>
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn btn--primary"
+                    onClick={enviar}
+                    disabled={sending || params.some((p, i) => i < selected.varCount && !String(p).trim())}
+                  >
+                    {sending ? 'Enviando…' : <><Icon name="send" size={14} /> Enviar template</>}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
