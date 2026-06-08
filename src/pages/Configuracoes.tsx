@@ -477,6 +477,7 @@ function PanelIntegracoes() {
  <div data-tour="vai-card">
  <VaiIntegrationCard settings={s || {}} onSaved={reload} />
  </div>
+ <FacebookLeadsCardComingSoon />
  <form className="card" onSubmit={submit} style={{ marginTop: 16 }} data-tour="outras-integracoes">
  <h3 className="card__title mb-4">Outras integrações externas</h3>
  <div className="form-grid">
@@ -652,6 +653,127 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  </button>
  </form>
  );
+}
+
+// Card preview pra Facebook Lead Ads — visual cinza + tooltip "Em breve"
+// Mostra o flow que virá em uma futura iteração (após Verification do app Meta)
+function FacebookLeadsCardComingSoon() {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: 'relative',
+        marginTop: 16,
+        background: 'var(--bg-elevated)',
+        border: '1px dashed var(--border-light)',
+        borderRadius: 12,
+        padding: 24,
+        opacity: 0.7,
+        cursor: 'not-allowed',
+        userSelect: 'none',
+        transition: 'opacity 200ms',
+        filter: 'grayscale(0.4)',
+      }}
+    >
+      {/* Tooltip "Em breve" no hover */}
+      {hover && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: '#1E40AF',
+            color: '#fff',
+            padding: '6px 12px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: 0.3,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+            pointerEvents: 'none',
+            zIndex: 10,
+          }}
+        >
+          EM BREVE
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+        <div
+          style={{
+            background: '#1877F2',
+            color: '#fff',
+            width: 32,
+            height: 32,
+            borderRadius: 6,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <Icon name="facebook" size={20} />
+        </div>
+        <div>
+          <h3 className="card__title" style={{ margin: 0 }}>Integração Facebook Lead Ads</h3>
+          <p className="text-sm text-secondary" style={{ marginTop: 2 }}>
+            Receba leads do Facebook Ads em tempo real e distribua automaticamente nas suas filas de atendimento.
+          </p>
+        </div>
+      </div>
+
+      {/* Preview do form (desabilitado) */}
+      <div className="form-grid" style={{ marginTop: 16, pointerEvents: 'none' }}>
+        <div className="field">
+          <label className="field__label">Nome da integração</label>
+          <input
+            className="field__input"
+            value="Facebook Leads 1"
+            disabled
+            readOnly
+            style={{ background: 'var(--bg-card)' }}
+          />
+        </div>
+        <div className="field">
+          <label className="field__label">Conta do Facebook</label>
+          <select className="field__select" disabled style={{ background: 'var(--bg-card)' }}>
+            <option>Selecione uma conta</option>
+          </select>
+        </div>
+        <div className="field">
+          <label className="field__label">Fila de Atendimento</label>
+          <select className="field__select" disabled style={{ background: 'var(--bg-card)' }}>
+            <option>Sem Fila de Atendimento</option>
+          </select>
+        </div>
+        <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <label
+            className="text-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            <input type="checkbox" disabled defaultChecked /> Ignorar verificação de produto
+          </label>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button
+          type="button"
+          className="btn btn--primary btn--sm"
+          disabled
+          style={{ background: '#94A3B8', borderColor: '#94A3B8', cursor: 'not-allowed' }}
+        >
+          <Icon name="plus" size={12} /> Conectar Nova Conta
+        </button>
+        <span className="text-xs text-secondary" style={{ marginLeft: 'auto' }}>
+          Liberação após aprovação do app na Meta
+        </span>
+      </div>
+    </div>
+  );
 }
 
 function VaiIntegrationCard({ settings, onSaved }: { settings: Record<string, string>; onSaved: () => void }) {
