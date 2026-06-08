@@ -136,6 +136,8 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
         </div>
       ))}
 
+      <AppDownloadBlock />
+
       <div className="sidebar__footer">
         <NavLink to="/perfil" className="sidebar__user-link" title="Meu perfil">
           <div className="sidebar__user-avatar">
@@ -197,5 +199,81 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
         </button>
       )}
     </aside>
+  );
+}
+
+// Bloco "Baixe o aplicativo" — Google Play + App Store em cinza com tooltip "Em breve".
+// Aparece no rodapé da sidebar antes do user-chip.
+function AppDownloadBlock() {
+  return (
+    <div style={{ padding: '12px 14px 4px', marginTop: 'auto' }}>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+          color: 'rgba(255,255,255,0.55)',
+          marginBottom: 8,
+        }}
+      >
+        Baixe o aplicativo
+      </div>
+      <StoreButton label="Google Play" iconName="play" />
+      <StoreButton label="App Store" iconName="phone" />
+    </div>
+  );
+}
+
+function StoreButton({ label, iconName }: { label: string; iconName: string }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: 'relative',
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 10,
+        padding: '10px 12px',
+        marginBottom: 8,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        cursor: 'not-allowed',
+        opacity: 0.55,
+        color: 'rgba(255,255,255,0.65)',
+        fontWeight: 700,
+        fontSize: 13,
+        userSelect: 'none',
+        transition: 'opacity 200ms',
+      }}
+    >
+      <Icon name={iconName} size={18} />
+      <span>{label}</span>
+      {hover && (
+        <span
+          style={{
+            position: 'absolute',
+            top: '50%',
+            right: 8,
+            transform: 'translateY(-50%)',
+            background: '#1E40AF',
+            color: '#fff',
+            padding: '4px 9px',
+            borderRadius: 5,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.35)',
+            pointerEvents: 'none',
+            zIndex: 5,
+          }}
+        >
+          EM BREVE
+        </span>
+      )}
+    </div>
   );
 }
