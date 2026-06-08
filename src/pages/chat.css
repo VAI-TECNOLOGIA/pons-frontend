@@ -1,16 +1,25 @@
 /* ── Atendimento (Chat) ── light + dark theme aware ──────────────────── */
 
+/* Layout MOBILE-FIRST com flexbox rígido: inbox ocupa o espaço disponível
+   abaixo da topbar (que tem altura fixa via --header-height), thread vira
+   coluna flex com header/banner/tools fixos no topo, mensagens crescendo
+   e composer ancorado no fundo. Sem dependência de 100vh (que quebra em
+   iOS por causa do address bar). */
+
 .inbox {
   display: grid;
   grid-template-columns: 340px 1fr;
-  height: calc(100vh - var(--header-height));
+  height: calc(100dvh - var(--header-height));
+  min-height: 0;
   background: var(--bg-app);
+  overflow: hidden;          /* containment estrito — nada escapa */
 }
 
 .inbox__list {
   border-right: 1px solid var(--border-light);
   overflow-y: auto;
   background: var(--bg-card);
+  min-height: 0;
 }
 .inbox__tabs {
   display: flex;
@@ -73,25 +82,35 @@
   flex-shrink: 0;
 }
 
+/* THREAD: coluna flex rígida. Header/banner/tools/composer nunca encolhem;
+   só .thread__messages cresce e rola. */
 .thread {
   display: flex;
   flex-direction: column;
   background: var(--chat-thread-bg);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 .thread__header {
+  flex-shrink: 0;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
-  padding: 14px 24px;
+  padding: 12px 20px;
   color: var(--text-primary);
 }
 .thread__tools {
+  flex-shrink: 0;
   display: flex;
   gap: 8px;
-  padding: 10px 24px;
+  padding: 8px 20px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
   flex-wrap: wrap;
   align-items: center;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .imovel-chip {
@@ -104,16 +123,20 @@
   border: 1px solid transparent;
   cursor: pointer;
   transition: background var(--transition-base);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .imovel-chip:hover { background: var(--chat-chip-hover); }
 
 .thread__messages {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  padding: 24px;
+  overflow-x: hidden;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .bubble {
@@ -162,21 +185,25 @@
 }
 
 .composer {
+  flex-shrink: 0;
   background: var(--bg-card);
   border-top: 1px solid var(--border-light);
-  padding: 16px 24px;
+  padding: 12px 20px;
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-end;
+  /* Safe-area pro iPhone (notch + barra inferior) */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 .composer textarea {
   flex: 1;
   border: 1px solid var(--border-light);
   border-radius: 10px;
-  padding: 12px;
+  padding: 10px 12px;
   font: 400 14px var(--font-sans);
   resize: none;
-  height: 44px;
+  min-height: 40px;
+  max-height: 120px;
   background: var(--field-bg);
   color: var(--text-primary);
 }
@@ -198,7 +225,6 @@
 }
 
 /* ── Tokens semânticos do chat ───────────────────────────────────────── */
-/* Light (padrão) — visual original whatsapp-like */
 :root {
   --chat-thread-bg: #EEF1F5;
   --chat-bubble-lead-bg: #FFFFFF;
@@ -210,8 +236,6 @@
   --chat-chip-hover: var(--blue-100);
 }
 
-/* Dark — fundo escuro, bolha do lead em cinza escuro com leitura clara,
-   bolha do corretor em verde apagado (continua remetendo WhatsApp). */
 [data-theme="dark"] {
   --chat-thread-bg: var(--bg-app);
   --chat-bubble-lead-bg: var(--bg-card-hover);
@@ -223,7 +247,7 @@
   --chat-chip-hover: rgba(93, 143, 224, 0.28);
 }
 
-/* ── Botão de voltar (mobile) ────────────────────────────────────────── */
+/* Botão de voltar (mobile) — escondido por padrão */
 .thread__back {
   display: none;
   background: transparent;
@@ -237,16 +261,37 @@
 }
 .thread__back:hover { background: var(--bg-card-hover); }
 
-/* ── Tablet ─────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .inbox { grid-template-columns: 280px 1fr; }
-  .thread__header,
-  .thread__tools,
-  .composer { padding-left: 16px; padding-right: 16px; }
-  .thread__messages { padding: 18px; }
+/* Topbar do chat NÃO pode ser sticky — atrapalha o cálculo de altura. */
+.inbox + .topbar, .topbar:has(+ .inbox) { /* no-op anchor pra ordem */ }
+
+/* ── Layout do header do thread: scroll horizontal dos badges em tela
+   apertada, em vez de wrap pra 3 linhas que come a área de mensagens. ── */
+.thread__header .flex-between {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.thread__header .flex-between > .flex {
+  min-width: 0;
+}
+.thread__header .flex-between > .flex.gap-2 {
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 
-/* ── Mobile ─────────────────────────────────────────────────────────── */
+/* ── Tablet (≤1023px) ─────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .inbox { grid-template-columns: 280px 1fr; }
+  .thread__header { padding: 10px 14px; }
+  .thread__tools { padding: 8px 14px; }
+  .thread__messages { padding: 14px; gap: 8px; }
+  .composer { padding: 10px 14px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .bubble { max-width: 78%; }
+}
+
+/* ── Mobile (≤768px) — single-pane com swap entre lista e thread ───── */
 @media (max-width: 768px) {
   .inbox {
     display: block;
@@ -266,13 +311,31 @@
   .inbox--thread-open .thread { display: flex; }
 
   .thread__back { display: inline-flex; align-items: center; gap: 4px; }
-  .thread__header,
-  .thread__tools,
-  .composer { padding: 10px 12px; }
+  .thread__header { padding: 10px 12px; }
+  .thread__tools { padding: 8px 12px; }
   .thread__messages { padding: 12px; gap: 8px; }
   .bubble { max-width: 85%; font-size: 13px; padding: 8px 12px; }
-  .composer textarea { font-size: 16px; /* evita zoom no iOS */ height: 40px; }
+  .composer {
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .composer textarea { font-size: 16px; /* evita zoom no iOS */ min-height: 40px; }
   .conv { padding: 12px 14px; }
   .conv__name { font-size: 13px; }
   .conv__last { font-size: 11px; }
+
+  /* Empilha badges quando aperta — não deixa o header inflar */
+  .thread__header .flex-between > .flex.gap-2 .badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+/* ── Mobile pequeno (≤480px) — UI ainda mais compacta ─────────────── */
+@media (max-width: 480px) {
+  .thread__header { padding: 8px 10px; }
+  .thread__tools { padding: 6px 10px; }
+  .thread__messages { padding: 10px; }
+  .composer { padding: 8px 10px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .bubble { max-width: 90%; }
 }

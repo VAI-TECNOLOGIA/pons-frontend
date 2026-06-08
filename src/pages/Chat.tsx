@@ -362,9 +362,7 @@ export default function Chat() {
                         {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#EAB308', verticalAlign: 'middle' }} />}
                       </div>
                       <div className="text-xs text-secondary">
-                        {conv.reservado
-                          ? `${conv.telefone || '—'} · ${conv.origem}`
-                          : `Telefone protegido — ative a negociação para liberar · ${conv.origem}`}
+                        {conv.telefone || 'Telefone protegido'} · {conv.origem}
                         {conv.vaiConectado && ' · WhatsApp ativo'}
                       </div>
                     </div>
