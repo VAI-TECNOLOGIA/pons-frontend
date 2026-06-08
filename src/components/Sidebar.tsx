@@ -26,11 +26,13 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/relatorios', label: 'Relatórios', section: 'Sócios', icon: 'chart', roles: RELATORIOS },
   { to: '/painel-executivo', label: 'Painel Executivo', section: 'Sócios', icon: 'chart', roles: RELATORIOS },
   { to: '/executivo', label: 'Agenda Executiva', section: 'Sócios', icon: 'crown', roles: [...EXEC, 'ASSESSORA'] },
-  { to: '/financeiro', label: 'Financeiro', section: 'Sócios', icon: 'wallet', roles: FINANCE },
-  { to: '/financeiro-pons', label: 'Financeiro · Pons', section: 'Sócios', icon: 'wallet', roles: FINANCE },
   { to: '/roletas', label: 'Roletas', section: 'Sócios', icon: 'roulette', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
   { to: '/distribuicao', label: 'Distribuição Agendada', section: 'Sócios', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
   { to: '/vendas', label: 'Vendas', section: 'Sócios', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },
+  // MÓDULO FINANCEIRO
+  { to: '/financeiro-pons', label: 'Rateio & Sócios', section: 'Módulo Financeiro', icon: 'wallet', roles: FINANCE },
+  { to: '/financeiro', label: 'Caixa & Lançamentos', section: 'Módulo Financeiro', icon: 'dollar', roles: FINANCE },
+  { to: '/meta-custos', label: 'Custos Meta', section: 'Módulo Financeiro', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
   // VENDAS
   { to: '/leads', label: 'Leads', section: 'Vendas', icon: 'users', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/chat', label: 'Atendimento', section: 'Vendas', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
@@ -42,7 +44,6 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/equipes', label: 'Equipes', section: 'Administração', icon: 'shield', roles: ['CEO', 'DIRETOR_COMERCIAL', SOCIO] },
   { to: '/trafego', label: 'Tráfego Pago', section: 'Administração', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/bm', label: 'Business Managers', section: 'Administração', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'CORRETOR', 'GERENTE_EQUIPE'] },
-  { to: '/meta-custos', label: 'Custos Meta', section: 'Administração', icon: 'wallet', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
   { to: '/tarefas', label: 'Tarefas', section: 'Administração', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA', 'CORRETOR', 'GERENTE_EQUIPE'] },
   { to: '/importar', label: 'Importar Leads', section: 'Administração', icon: 'plus', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/transferencias', label: 'Transferências', section: 'Administração', icon: 'pipeline', roles: ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'] },
