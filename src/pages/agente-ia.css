@@ -19,7 +19,7 @@
   align-items: center;
   padding: 14px 24px;
   border-bottom: 1px solid var(--border-light);
-  background: var(--bg-card);
+  background: transparent;
 }
 .agente__crumb {
   display: inline-flex;
@@ -59,9 +59,11 @@
 }
 
 /* ── Coluna esquerda (sidebar interna do agente) ──────────────── */
+/* Sem background diferenciado nem border-right — fica como um espaço só
+   com o conteúdo da main. Match o print da inspiração. */
 .agente__side {
-  background: var(--bg-card);
-  border-right: 1px solid var(--border-light);
+  background: transparent;
+  border-right: none;
   padding: 28px 18px;
   display: flex;
   flex-direction: column;

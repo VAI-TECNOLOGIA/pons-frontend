@@ -48,7 +48,9 @@ const ICON_PATHS: Record<string, string> = {
   flagCheckered:
     '<path d="M4 22V3"/><path d="M4 5 L20 5 L20 14 L4 14 Z"/><path d="M4 5 L12 5 L12 9.5 L4 9.5 Z" fill="currentColor" stroke="none"/><path d="M12 9.5 L20 9.5 L20 14 L12 14 Z" fill="currentColor" stroke="none"/>',
   bot:
-    '<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/>',
+    // Cabeça arredondada (rounded rect) com antena no topo + 2 olhos grandes —
+    // estilo "robô fofo" do print de inspiração (similar Manus AI / OpenAI bot).
+    '<line x1="12" y1="2" x2="12" y2="5"/><circle cx="12" cy="2" r="1"/><rect x="4" y="5" width="16" height="14" rx="5"/><circle cx="9" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.8" fill="currentColor" stroke="none"/>',
   fire:
     '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
   pin:
