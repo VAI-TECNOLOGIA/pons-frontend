@@ -270,21 +270,45 @@
 /* Topbar do chat NÃO pode ser sticky — atrapalha o cálculo de altura. */
 .inbox + .topbar, .topbar:has(+ .inbox) { /* no-op anchor pra ordem */ }
 
-/* ── Layout do header do thread: scroll horizontal dos badges em tela
-   apertada, em vez de wrap pra 3 linhas que come a área de mensagens. ── */
+/* ── Layout do header do thread: nome+avatar à esquerda toma 100%, badges
+   embaixo em row separado. Evita o nome quebrar pra 4 linhas só pq tem
+   PENDENTE/IA/FECHADA/Aceitar/Liberar disputando espaço horizontal. ── */
 .thread__header .flex-between {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  row-gap: 8px;
+  row-gap: 10px;
 }
-.thread__header .flex-between > .flex {
+/* Lado esquerdo (avatar + nome + subtítulo) — ocupa o que tiver disponível,
+   trunca nome se passar. */
+.thread__header .flex-between > .flex.gap-3 {
+  flex: 1 1 280px;
   min-width: 0;
+  align-items: center;
 }
+.thread__header .flex-between > .flex.gap-3 .font-bold {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.thread__header .flex-between > .flex.gap-3 .text-xs {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+/* Lado direito (badges + ações) — empacota com wrap natural, alinha à
+   direita quando sobra espaço. Em telas estreitas vai pra linha de baixo
+   inteira sem comprimir o nome. */
 .thread__header .flex-between > .flex.gap-2 {
+  flex: 0 1 auto;
   flex-wrap: wrap;
   row-gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 /* ── Tablet (≤1023px) ─────────────────────────────────────────────── */
