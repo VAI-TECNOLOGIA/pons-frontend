@@ -237,12 +237,6 @@ export default function AgenteIA() {
               </div>
             )}
 
-            {/* Menu — só Instruções agora (MCP e Integrações foram embora) */}
-            <nav className="agente__menu">
-              <button className="agente__menu-item is-active">
-                <Icon name="doc" size={16} /> Instruções
-              </button>
-            </nav>
           </aside>
 
           {/* Coluna direita — header + conteúdo */}

@@ -81,7 +81,6 @@ const GROUPS: NavGroup[] = [
       { to: '/remarketing', label: 'Remarketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/landing-pages', label: 'Landing Pages', icon: 'globe', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/heatmap', label: 'Heatmap', icon: 'fire', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
-      { to: '/cadencias', label: 'Cadências', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/importar', label: 'Importar Leads', icon: 'plus', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
     ],
   },
@@ -102,9 +101,6 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: '/configuracoes', label: 'Configurações', icon: 'settings', roles: ['CEO'] },
       { to: '/agente-ia', label: 'Agentes IA', icon: 'bot', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
-      { to: '/regras', label: 'Regras Automáticas', icon: 'zap', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
-      { to: '/campos-custom', label: 'Campos Custom', icon: 'pencil', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
-      { to: '/webhook-saidas', label: 'Webhooks', icon: 'webhook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/auditoria', label: 'Auditoria', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO'] },
     ],
   },
