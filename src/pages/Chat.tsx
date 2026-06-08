@@ -6,6 +6,7 @@ import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useSSE } from '../lib/useSSE';
+import { humanizeErrorReason } from '../lib/meta-errors';
 
 import './chat.css';
 
@@ -31,12 +32,23 @@ type ConversationDetail = {
   nome: string;
   telefone: string | null;
   telefoneOculto: boolean;
+  telefoneLiberado?: boolean;
+  classificacao?: string;
+  iaAtendendo?: boolean;
   origem: string;
   vaiConectado: boolean;
   vaiConvId?: string | null;
   reservado: boolean;
   vip: boolean;
   status: string;
+  lastInboundAt?: string | null;
+  windowOpen?: boolean;
+  _redistribution?: {
+    count: number;
+    previousCorretorName: string | null;
+    redistributedAt: string;
+    motivo: string;
+  } | null;
   mensagens: Mensagem[];
 };
 
@@ -46,6 +58,7 @@ export default function Chat() {
   const [draft, setDraft] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -386,37 +399,65 @@ export default function Chat() {
                   </button>
                 ))}
               </div>
+              <BannerRedistribuicao info={(conv as any)._redistribution} />
               <div className="thread__messages" ref={messagesContainerRef}>
                 {mensagens.map((m) => (
                   <MessageBubble key={m.id} m={m} />
                 ))}
                 <div ref={messagesEndRef} />
               </div>
-              <div className="composer">
-                <button
-                  className="btn btn--secondary btn--sm"
-                  title="IA responder"
-                  onClick={iaResponder}
-                  disabled={sending}
-                >
-                  IA
-                </button>
-                <textarea
-                  placeholder="Escreva como corretor…"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      enviar();
-                    }
-                  }}
-                  disabled={sending}
+              {conv?.windowOpen === false ? (
+                <ComposerJanelaFechada
+                  onAbrirTemplates={() => setTemplatePickerOpen(true)}
+                  hasInbound={!!conv?.lastInboundAt}
                 />
-                <button className="btn btn--primary" onClick={enviar} disabled={sending || !draft.trim()}>
-                  {sending ? 'Enviando…' : 'Enviar'}
-                </button>
-              </div>
+              ) : (
+                <div className="composer">
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    title="IA responder"
+                    onClick={iaResponder}
+                    disabled={sending}
+                  >
+                    IA
+                  </button>
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    title="Enviar template Meta aprovado"
+                    onClick={() => setTemplatePickerOpen(true)}
+                    disabled={sending}
+                  >
+                    <Icon name="doc" size={14} /> Template
+                  </button>
+                  <textarea
+                    placeholder="Escreva como corretor…"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        enviar();
+                      }
+                    }}
+                    disabled={sending}
+                  />
+                  <button className="btn btn--primary" onClick={enviar} disabled={sending || !draft.trim()}>
+                    {sending ? 'Enviando…' : 'Enviar'}
+                  </button>
+                </div>
+              )}
+              {templatePickerOpen && conv && (
+                <TemplatePickerModal
+                  leadId={conv.id}
+                  leadName={conv.nome}
+                  onClose={() => setTemplatePickerOpen(false)}
+                  onSent={() => {
+                    setTemplatePickerOpen(false);
+                    reloadConv();
+                    reloadInbox();
+                  }}
+                />
+              )}
             </>
           )}
         </div>
@@ -481,42 +522,107 @@ function MessageBody({ m }: { m: Mensagem }) {
   return <>{m.texto}</>;
 }
 
-// Indicador da janela de 24h da Meta. Calcula com base na ÚLTIMA mensagem inbound do lead.
-// Dentro da janela = texto livre permitido. Fora = só template HSM aprovado.
+// Indicador da janela de 24h da Meta. Backend agora envia `lastInboundAt` e
+// `windowOpen` já calculados, mas a gente faz fallback derivando do array de
+// mensagens. Tick a cada segundo pra contagem regressiva ao vivo (padrão
+// herdado do MODULO-CHAT-CALEBE/WindowBadge).
 function Janela24h({ conv }: { conv: any }) {
-  const mensagens: any[] = conv?.mensagens || [];
-  const lastInbound = [...mensagens].reverse().find((m) => m.direction === 'inbound' || m.autor === 'LEAD');
-  if (!lastInbound) return null;
-  const ts = new Date(lastInbound.createdAt).getTime();
-  const expiry = ts + 24 * 60 * 60 * 1000;
-  const restante = expiry - Date.now();
+  const [tick, setTick] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const lastInboundAt = conv?.lastInboundAt
+    ? new Date(conv.lastInboundAt).getTime()
+    : (() => {
+        const ms: any[] = conv?.mensagens || [];
+        const li = [...ms].reverse().find((m) => m.direction === 'inbound' || m.autor === 'LEAD');
+        return li ? new Date(li.createdAt).getTime() : 0;
+      })();
+
+  if (!lastInboundAt) {
+    return (
+      <span
+        className="badge"
+        style={{ background: 'rgba(148,163,184,0.18)', color: '#64748B' }}
+        title="Lead ainda não respondeu — só template Meta pra abrir conversa"
+      >
+        <Icon name="warn" size={10} /> Sem inbound
+      </span>
+    );
+  }
+
+  const expiry = lastInboundAt + 24 * 60 * 60 * 1000;
+  const restante = expiry - tick;
   const aberta = restante > 0;
+
   if (aberta) {
     const horas = Math.floor(restante / 3_600_000);
     const minutos = Math.floor((restante % 3_600_000) / 60_000);
+    const segundos = Math.floor((restante % 60_000) / 1000);
+    // Quando faltam < 1h, mostra mm:ss; senão xh ymin
+    const txt = horas > 0 ? `${horas}h ${minutos}m` : `${minutos}:${String(segundos).padStart(2, '0')}`;
     return (
       <span
         className="badge"
         style={{ background: 'rgba(34,197,94,0.15)', color: '#16A34A' }}
         title="Janela de 24h aberta — pode enviar texto livre"
       >
-        <Icon name="clock" size={10} /> {horas}h{minutos}m
+        <Icon name="clock" size={10} /> Aberta · {txt}
       </span>
     );
   }
+
+  // Fechada — quantos dias?
+  const fechadaHaMs = -restante;
+  const dias = Math.floor(fechadaHaMs / 86_400_000);
   return (
     <span
       className="badge"
       style={{ background: 'rgba(245,158,11,0.15)', color: '#D97706' }}
       title="Janela 24h fechada — envie um template HSM pra reabrir"
     >
-      <Icon name="warn" size={10} /> Janela fechada · use template
+      <Icon name="warn" size={10} /> Fechada {dias > 0 ? `· ${dias}d` : ''}
     </span>
   );
 }
 
+// Banner amarelo mostrando que esta conversa foi recebida via redistribuição.
+// Aparece SÓ quando histórico veio junto (lead já tinha respondido) — caso
+// contrário o histórico foi descartado e não há por que sinalizar.
+function BannerRedistribuicao({ info }: { info: any }) {
+  if (!info) return null;
+  const data = info.redistributedAt ? new Date(info.redistributedAt).toLocaleDateString('pt-BR') : '—';
+  const previo = info.previousCorretorName || 'corretor anterior';
+  return (
+    <div
+      style={{
+        background: 'rgba(234,179,8,0.10)',
+        color: '#854D0E',
+        border: '1px solid rgba(234,179,8,0.30)',
+        borderRadius: 8,
+        padding: '8px 12px',
+        margin: '8px 12px 0',
+        fontSize: 13,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      <Icon name="bell" size={14} />
+      <span>
+        Lead reatribuído a você em {data}. Mensagens anteriores foram enviadas por <b>{previo}</b>.
+      </span>
+    </div>
+  );
+}
+
 function StatusTicks({ m }: { m: Mensagem }) {
-  if (m.errorReason) return <span title={m.errorReason} style={{ color: 'var(--money-negative)', fontSize: 11 }}>! falha</span>;
+  if (m.errorReason) {
+    const human = humanizeErrorReason(m.errorReason);
+    return <span title={human || m.errorReason} style={{ color: 'var(--money-negative)', fontSize: 11 }}>! {human || 'falha'}</span>;
+  }
   if (m.readAt) {
     return (
       <span title={`Lido às ${new Date(m.readAt).toLocaleTimeString()}`} style={{ color: 'var(--text-link)', display: 'inline-flex' }}>
@@ -531,4 +637,246 @@ function StatusTicks({ m }: { m: Mensagem }) {
   );
   if (m.vaiMessageId) return <span title="Enviado" style={{ opacity: 0.5 }}><Icon name="check" size={11} /></span>;
   return <span title="Aguardando envio" style={{ opacity: 0.4 }}><Icon name="clock" size={11} /></span>;
+}
+
+// ─── Composer quando janela 24h está fechada ───────────────────────────────
+// Texto livre desabilitado; só template Meta aprovado pode reabrir a conversa.
+function ComposerJanelaFechada({
+  onAbrirTemplates,
+  hasInbound,
+}: {
+  onAbrirTemplates: () => void;
+  hasInbound: boolean;
+}) {
+  return (
+    <div
+      className="composer"
+      style={{
+        background: 'rgba(245,158,11,0.06)',
+        borderTop: '1px solid rgba(245,158,11,0.20)',
+        padding: '12px',
+        display: 'flex',
+        gap: 12,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#92400E' }}>
+        <Icon name="warn" size={16} />
+        <span style={{ fontSize: 13 }}>
+          {hasInbound
+            ? 'Janela de 24h fechou. Use um template Meta pra reabrir a conversa.'
+            : 'Cliente ainda não respondeu. Use um template Meta pra iniciar a conversa.'}
+        </span>
+      </div>
+      <button className="btn btn--primary btn--sm" onClick={onAbrirTemplates}>
+        <Icon name="doc" size={14} /> Escolher template
+      </button>
+    </div>
+  );
+}
+
+// ─── Modal de templates: lista + preview WhatsApp Web look + envio ─────────
+// Padrão herdado do MODULO-CHAT-CALEBE/PreviewChatV2. Renderiza o texto final
+// com os {{1}}, {{2}} substituídos pelos params digitados.
+function TemplatePickerModal({
+  leadId,
+  leadName,
+  onClose,
+  onSent,
+}: {
+  leadId: number;
+  leadName: string;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<any | null>(null);
+  const [params, setParams] = useState<string[]>([]);
+  const [sending, setSending] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    Api.whatsappTemplates()
+      .then((r) => setItems(r.items || []))
+      .catch((e) => toast.error('Erro ao carregar templates: ' + e.message))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function pickTemplate(t: any) {
+    setSelected(t);
+    const defaults: string[] = [];
+    for (let i = 0; i < (t.varCount || 0); i++) {
+      if (i === 0) defaults[i] = leadName;
+      else defaults[i] = '';
+    }
+    setParams(defaults);
+  }
+
+  function renderPreview(): string {
+    if (!selected) return '';
+    return String(selected.bodyText || '').replace(/\{\{(\d+)\}\}/g, (_: any, idx: any) => {
+      const i = Number(idx) - 1;
+      return params[i] || `{{${idx}}}`;
+    });
+  }
+
+  async function enviar() {
+    if (!selected) return;
+    setSending(true);
+    try {
+      await Api.whatsappSendTemplate(leadId, {
+        name: selected.name,
+        language: selected.language,
+        bodyParams: params,
+      });
+      toast.success('Template enviado.');
+      onSent();
+    } catch (e: any) {
+      toast.error('Erro: ' + (e?.message || 'falha'));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(15,23,42,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'var(--card-bg, #fff)',
+          borderRadius: 12,
+          maxWidth: 760,
+          width: '100%',
+          maxHeight: '90vh',
+          overflow: 'hidden',
+          display: 'grid',
+          gridTemplateColumns: selected ? '280px 1fr' : '1fr',
+          boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+        }}
+      >
+        {/* Lista de templates */}
+        <div style={{ borderRight: selected ? '1px solid var(--border, #e5e7eb)' : 'none', maxHeight: '90vh', overflow: 'auto' }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border, #e5e7eb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <b>Templates Meta aprovados</b>
+            <button className="btn btn--ghost btn--sm" onClick={onClose}>×</button>
+          </div>
+          {loading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>Carregando…</div>
+          ) : items.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+              Nenhum template aprovado encontrado. Configure no WhatsApp Manager
+              e aguarde aprovação Meta (24-48h).
+            </div>
+          ) : (
+            items.map((t) => (
+              <div
+                key={t.name + ':' + t.language}
+                onClick={() => pickTemplate(t)}
+                style={{
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid var(--border-subtle, #f1f5f9)',
+                  background: selected?.name === t.name ? 'rgba(34,197,94,0.06)' : 'transparent',
+                }}
+              >
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', gap: 6 }}>
+                  <span>{t.language}</span> · <span>{t.category}</span>
+                  {t.varCount > 0 && <> · <span>{t.varCount} var{t.varCount > 1 ? 's' : ''}</span></>}
+                </div>
+                <div style={{ fontSize: 12, marginTop: 4, color: 'var(--text-secondary)', maxHeight: 36, overflow: 'hidden' }}>
+                  {(t.bodyText || '').slice(0, 70)}{(t.bodyText || '').length > 70 ? '…' : ''}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Preview WhatsApp Web look + form de params */}
+        {selected && (
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '90vh', overflow: 'auto' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Pré-visualização · WhatsApp Web</div>
+            <div
+              style={{
+                background: '#ECE5DD',
+                padding: '20px 16px',
+                borderRadius: 8,
+                minHeight: 200,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <div
+                style={{
+                  background: '#DCF8C6',
+                  alignSelf: 'flex-end',
+                  padding: '8px 12px',
+                  borderRadius: '8px 0 8px 8px',
+                  maxWidth: '80%',
+                  whiteSpace: 'pre-wrap',
+                  fontSize: 14,
+                  color: '#111',
+                  boxShadow: '0 1px 1px rgba(0,0,0,0.10)',
+                }}
+              >
+                {renderPreview()}
+              </div>
+            </div>
+            {(selected.varCount || 0) > 0 && (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Parâmetros</div>
+                {Array.from({ length: selected.varCount }).map((_: any, i: number) => (
+                  <div key={i}>
+                    <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{`{{${i + 1}}}`}</label>
+                    <input
+                      type="text"
+                      value={params[i] || ''}
+                      onChange={(e) => {
+                        const next = [...params];
+                        next[i] = e.target.value;
+                        setParams(next);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        border: '1px solid var(--border, #e5e7eb)',
+                        borderRadius: 6,
+                        fontSize: 13,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 'auto' }}>
+              <button className="btn btn--ghost" onClick={onClose} disabled={sending}>Cancelar</button>
+              <button
+                className="btn btn--primary"
+                onClick={enviar}
+                disabled={sending || params.some((p, i) => i < selected.varCount && !String(p).trim())}
+              >
+                {sending ? 'Enviando…' : 'Enviar template'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

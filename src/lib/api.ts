@@ -467,10 +467,27 @@ export const Api = {
 
   // ─── Lead — aceitar / liberar contato ────────────────────────────
   leadAceitar: (id: number) => request<{ ok: boolean; nome: string; estadoAtendimento: string }>(`/leads/${id}/aceitar`, { method: 'POST' }),
-  leadLiberarContato: (id: number) =>
+  leadLiberarContato: (id: number, justificativa?: string) =>
     request<{ ok: boolean; telefone: string; classificacao: string; jaLiberado?: boolean }>(
       `/leads/${id}/liberar-contato`,
-      { method: 'POST' },
+      { method: 'POST', body: { justificativa: justificativa || null } },
+    ),
+
+  // ─── WhatsApp templates (Meta Cloud) ────────────────────────────
+  whatsappTemplates: (refresh = false) =>
+    request<{ items: Array<{
+      name: string;
+      language: string;
+      status: string;
+      category: string;
+      components: any[];
+      bodyText: string;
+      varCount: number;
+    }>; cached: boolean; reason?: string }>(`/whatsapp/templates${refresh ? '?refresh=1' : ''}`),
+  whatsappSendTemplate: (leadId: number, body: { name: string; language?: string; bodyParams: string[] }) =>
+    request<{ ok: boolean; messageId: number; externalId?: string }>(
+      `/whatsapp/leads/${leadId}/send-template`,
+      { method: 'POST', body },
     ),
 
   // ─── DEV panel ───────────────────────────────────────────────────
