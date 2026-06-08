@@ -462,6 +462,11 @@ function PanelIntegracoes() {
  body: 'Canal alternativo via VAI CRM. Funciona como fallback se a janela de 24h do Meta estourar.',
  },
  {
+ target: '[data-tour="facebook-card"]',
+ title: 'Facebook Business Manager',
+ body: 'Conecte páginas e contas de anúncios pra capturar leads do Facebook Ads em tempo real. Clique em "Gerenciar BMs" pra adicionar.',
+ },
+ {
  target: '[data-tour="outras-integracoes"]',
  title: 'Outras integrações',
  body: 'Tokens de webhook Meta Lead Ads, Sicredi e credenciais auxiliares ficam aqui.',
@@ -476,6 +481,9 @@ function PanelIntegracoes() {
  </div>
  <div data-tour="vai-card">
  <VaiIntegrationCard settings={s || {}} onSaved={reload} />
+ </div>
+ <div data-tour="facebook-card">
+ <FacebookBMCard />
  </div>
  <form className="card" onSubmit={submit} style={{ marginTop: 16 }} data-tour="outras-integracoes">
  <h3 className="card__title mb-4">Outras integrações externas</h3>
@@ -652,6 +660,55 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  </button>
  </form>
  );
+}
+
+// Card de Facebook Business Manager — atalho pra página /bm
+// Mostra status (quantas BMs conectadas) e linka pra gerenciar
+function FacebookBMCard() {
+  const { data: bms } = useApi<any[]>(() => Api.bmList().catch(() => []));
+  const conectadas = bms?.length || 0;
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              background: '#1877F2',
+              color: '#fff',
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="facebook" size={20} />
+          </div>
+          <div>
+            <h3 className="card__title" style={{ margin: 0 }}>Facebook Business Manager</h3>
+            <p className="text-sm text-secondary" style={{ marginTop: 2 }}>
+              Conecte páginas e contas de anúncios pra receber leads do Facebook Ads em tempo real.
+              Suporta múltiplas BMs (uma por imobiliária / corretor).
+            </p>
+          </div>
+        </div>
+        {conectadas > 0 ? (
+          <span className="badge badge--signed">{conectadas} BM{conectadas > 1 ? 's' : ''} conectada{conectadas > 1 ? 's' : ''}</span>
+        ) : (
+          <span className="badge badge--analysis">Nenhuma BM conectada</span>
+        )}
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <a href="/bm" className="btn btn--primary btn--sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="settings" size={14} /> Gerenciar BMs
+        </a>
+      </div>
+    </div>
+  );
 }
 
 function VaiIntegrationCard({ settings, onSaved }: { settings: Record<string, string>; onSaved: () => void }) {

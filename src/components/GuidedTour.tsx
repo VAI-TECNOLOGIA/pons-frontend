@@ -67,6 +67,9 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
   }, [forceOpen, storageKey, steps]);
 
   // ── Posiciona highlight + scroll do target ──────────────────────
+  // Estratégia: pré-calcula o rect FINAL (left+width+height vêm do elemento, top
+  // vai pra posição desejada) e usa CSS transition pro halo "viajar" enquanto a
+  // página rola. Isso evita problemas de timing do scroll smooth.
   const reposition = useCallback(() => {
     if (!open || !steps[idx]) return;
     const el = document.querySelector(steps[idx].target) as HTMLElement | null;
@@ -74,19 +77,27 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
       setRect(null);
       return;
     }
-    // Scroll customizado: target a 25% do topo (longe do tooltip que fica embaixo)
     const r0 = el.getBoundingClientRect();
     const availableSpace = window.innerHeight - SHEET_HEIGHT_RESERVE;
-    const targetTop = Math.max(80, availableSpace / 2 - r0.height / 2);
-    const delta = r0.top - targetTop;
-    window.scrollBy({ top: delta, behavior: 'smooth' });
-
-    // Aguarda scroll terminar
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setRect(el.getBoundingClientRect());
-      });
-    });
+    const finalTop = Math.max(80, availableSpace / 2 - r0.height / 2);
+    const delta = r0.top - finalTop;
+    if (Math.abs(delta) > 4) {
+      window.scrollBy({ top: delta, behavior: 'smooth' });
+    }
+    // Rect previsto: left/width/height idênticos ao atual, top vai pro alvo final.
+    // Usa um DOMRect-like pra não precisar esperar scroll terminar.
+    const predicted = {
+      top: finalTop,
+      left: r0.left,
+      width: r0.width,
+      height: r0.height,
+      right: r0.left + r0.width,
+      bottom: finalTop + r0.height,
+      x: r0.left,
+      y: finalTop,
+      toJSON: () => ({}),
+    } as DOMRect;
+    setRect(predicted);
   }, [open, idx, steps]);
 
   useEffect(() => {
@@ -95,17 +106,11 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const onWin = () => {
-      const el = document.querySelector(steps[idx]?.target) as HTMLElement | null;
-      if (el) setRect(el.getBoundingClientRect());
-    };
-    window.addEventListener('resize', onWin);
-    window.addEventListener('scroll', onWin, true);
-    return () => {
-      window.removeEventListener('resize', onWin);
-      window.removeEventListener('scroll', onWin, true);
-    };
-  }, [open, idx, steps]);
+    // Só reposiciona em resize (scroll mantém highlight estático no rect previsto).
+    const onResize = () => reposition();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [open, reposition]);
 
   function close(markDone = true) {
     setOpen(false);
