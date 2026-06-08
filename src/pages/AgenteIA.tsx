@@ -17,7 +17,7 @@ import { useToast } from '../lib/toast';
 import { Icon } from '../components/Icon';
 import './agente-ia.css';
 
-type Tab = 'instrucoes' | 'integracoes';
+// 1 aba só — Integrações virou um dropdown na própria pill da sidebar.
 
 const TONS: Array<{ id: 'formal' | 'equilibrado' | 'descontraido' | 'criativo'; label: string; sub: string; icon: string }> = [
   { id: 'formal',       label: 'Formal',       sub: 'Direto, preciso e profissional.', icon: 'shield' },
@@ -26,9 +26,14 @@ const TONS: Array<{ id: 'formal' | 'equilibrado' | 'descontraido' | 'criativo'; 
   { id: 'criativo',     label: 'Criativo',     sub: 'Expressivo e com personalidade.', icon: 'lightbulb' },
 ];
 
-const PROVIDERS = [
-  { id: 'anthropic', label: 'Anthropic Claude', model: 'claude-haiku-4-5-20251001' },
-  { id: 'openai',    label: 'OpenAI GPT-4',     model: 'gpt-4o-mini' },
+type ProviderOpt = { id: string; label: string; model: string; provider: 'anthropic' | 'openai' };
+
+const PROVIDER_OPTIONS: ProviderOpt[] = [
+  { id: 'claude-opus-4-7',        label: 'Anthropic · Claude Opus 4.7',   model: 'claude-opus-4-7',           provider: 'anthropic' },
+  { id: 'claude-sonnet-4-6',      label: 'Anthropic · Claude Sonnet 4.6', model: 'claude-sonnet-4-6',         provider: 'anthropic' },
+  { id: 'claude-haiku-4-5',       label: 'Anthropic · Claude Haiku 4.5',  model: 'claude-haiku-4-5-20251001', provider: 'anthropic' },
+  { id: 'gpt-4o',                 label: 'OpenAI · GPT-4o',               model: 'gpt-4o',                    provider: 'openai' },
+  { id: 'gpt-4o-mini',            label: 'OpenAI · GPT-4o mini',          model: 'gpt-4o-mini',               provider: 'openai' },
 ];
 
 export default function AgenteIA() {
@@ -36,7 +41,8 @@ export default function AgenteIA() {
   const toast = useToast();
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<Tab>('instrucoes');
+  const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
+  const [editandoKey, setEditandoKey] = useState(false);
 
   useEffect(() => {
     if (data && Object.keys(form).length === 0) {
@@ -75,8 +81,39 @@ export default function AgenteIA() {
 
   const nome = form['ia.atendimento.nome'] || 'Novo Agente';
   const tomSelecionado = form['ia.atendimento.tom'] || 'equilibrado';
-  const providerAtual = form['ia.atendimento.provider'] || 'anthropic';
-  const providerLabel = PROVIDERS.find((p) => p.id === providerAtual)?.label || 'Selecione';
+  const modeloAtual = form['ia.atendimento.model'] || '';
+  const selecionado = PROVIDER_OPTIONS.find((p) => p.model === modeloAtual);
+  const labelAtual = selecionado?.label || 'Selecione um modelo';
+
+  function escolherModelo(opt: ProviderOpt) {
+    upd('ia.atendimento.provider', opt.provider);
+    upd('ia.atendimento.model', opt.model);
+    setProviderDropdownOpen(false);
+    // Se ainda não tem chave salva pra esse provider, abre o campo de chave
+    if (!apiKeyPreview) setEditandoKey(true);
+  }
+
+  function confirmarKey() {
+    const k = (form['ia.atendimento.apiKey'] || '').trim();
+    if (!k) {
+      toast.info('Cola a API key antes de confirmar.');
+      return;
+    }
+    // Salva agora pra "confirmar" o campo
+    Api.agenteIaSave({
+      'ia.atendimento.provider': form['ia.atendimento.provider'],
+      'ia.atendimento.model':    form['ia.atendimento.model'],
+      'ia.atendimento.apiKey':   k,
+    })
+      .then(() => {
+        toast.success('API key confirmada');
+        setEditandoKey(false);
+        // Limpa o input pra não mostrar a chave plain
+        setForm((f) => ({ ...f, 'ia.atendimento.apiKey': '' }));
+        reload();
+      })
+      .catch((e) => toast.error('Erro: ' + (e?.message || 'falha')));
+  }
 
   return (
     <>
@@ -119,24 +156,91 @@ export default function AgenteIA() {
               <Icon name="whatsapp" size={11} /> WhatsApp Cloud Meta
             </div>
 
-            <div className="agente__provider-pill">
-              <Icon name="bot" size={14} />
-              <span>{providerLabel}</span>
-              <Icon name="arrow_down" size={12} className="agente__provider-arrow" />
+            {/* Provider Pill — clica pra abrir dropdown de modelos */}
+            <div className="agente__pill-wrap">
+              <button
+                type="button"
+                className="agente__provider-pill"
+                onClick={() => setProviderDropdownOpen((v) => !v)}
+              >
+                <Icon name="bot" size={14} />
+                <span>{labelAtual}</span>
+                <Icon name="arrow_down" size={12} className={'agente__provider-arrow' + (providerDropdownOpen ? ' is-open' : '')} />
+              </button>
+              {providerDropdownOpen && (
+                <div className="agente__provider-dropdown" onMouseLeave={() => setProviderDropdownOpen(false)}>
+                  {PROVIDER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => escolherModelo(opt)}
+                      className={'agente__provider-option' + (selecionado?.id === opt.id ? ' is-selected' : '')}
+                    >
+                      <Icon name={opt.provider === 'anthropic' ? 'sparkles' : 'bot'} size={14} />
+                      <span>{opt.label}</span>
+                      {selecionado?.id === opt.id && <Icon name="check" size={14} className="agente__provider-check" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* Campo de API key inline. Some quando key está confirmada,
+                volta a aparecer ao clicar em "Trocar chave". */}
+            {modeloAtual && (
+              <div className="agente__key-area">
+                {!editandoKey && apiKeyPreview ? (
+                  <div className="agente__key-confirmed">
+                    <Icon name="check" size={13} />
+                    <span>Chave salva: <code>{apiKeyPreview}</code></span>
+                    <button
+                      type="button"
+                      className="agente__key-edit-btn"
+                      onClick={() => setEditandoKey(true)}
+                    >
+                      Trocar
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="password"
+                      className="agente__key-input"
+                      value={form['ia.atendimento.apiKey'] || ''}
+                      onChange={(e) => upd('ia.atendimento.apiKey', e.target.value)}
+                      placeholder={selecionado?.provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
+                      autoFocus
+                    />
+                    <div className="agente__key-actions">
+                      {apiKeyPreview && (
+                        <button
+                          type="button"
+                          className="agente__key-cancel"
+                          onClick={() => {
+                            setEditandoKey(false);
+                            upd('ia.atendimento.apiKey', '');
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="agente__key-confirm"
+                        onClick={confirmarKey}
+                      >
+                        Confirmar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Menu — só Instruções agora (MCP e Integrações foram embora) */}
             <nav className="agente__menu">
-              <button
-                className={'agente__menu-item' + (tab === 'instrucoes' ? ' is-active' : '')}
-                onClick={() => setTab('instrucoes')}
-              >
+              <button className="agente__menu-item is-active">
                 <Icon name="doc" size={16} /> Instruções
-              </button>
-              <button
-                className={'agente__menu-item' + (tab === 'integracoes' ? ' is-active' : '')}
-                onClick={() => setTab('integracoes')}
-              >
-                <Icon name="link" size={16} /> Integrações
               </button>
             </nav>
           </aside>
@@ -159,8 +263,8 @@ export default function AgenteIA() {
               </p>
             </header>
 
-            {tab === 'instrucoes' && (
-              <>
+            {/* Conteúdo único — Instruções (Comportamento + Resposta + Base) */}
+            <>
                 {/* Comportamento */}
                 <section className="agente__section">
                   <h2 className="agente__sec-title">Comportamento</h2>
@@ -251,62 +355,8 @@ Política comercial:
                     />
                   </div>
                 </section>
-              </>
-            )}
+            </>
 
-            {tab === 'integracoes' && (
-              <section className="agente__section">
-                <h2 className="agente__sec-title">Integrações</h2>
-                <p className="agente__sec-sub">Conecte o agente a um provedor de IA (LLM).</p>
-
-                <div className="agente__field-label">Provider</div>
-                <div className="agente__tons" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-                  {PROVIDERS.map((p) => {
-                    const sel = providerAtual === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          upd('ia.atendimento.provider', p.id);
-                          upd('ia.atendimento.model', p.model);
-                        }}
-                        className={'agente__tom' + (sel ? ' is-active' : '')}
-                      >
-                        <Icon name={p.id === 'anthropic' ? 'sparkles' : 'bot'} size={16} />
-                        <div className="agente__tom-name">{p.label}</div>
-                        <div className="agente__tom-sub">{p.model}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="agente__field-label" style={{ marginTop: 24 }}>
-                  Modelo
-                </div>
-                <input
-                  className="agente__input"
-                  value={form['ia.atendimento.model'] || ''}
-                  onChange={(e) => upd('ia.atendimento.model', e.target.value)}
-                  placeholder={providerAtual === 'anthropic' ? 'claude-haiku-4-5-20251001' : 'gpt-4o-mini'}
-                />
-
-                <div className="agente__field-label" style={{ marginTop: 24 }}>
-                  API Key
-                  {apiKeyPreview && (
-                    <span className="agente__field-hint"> · salvo: <code>{apiKeyPreview}</code></span>
-                  )}
-                </div>
-                <input
-                  className="agente__input"
-                  type="password"
-                  value={form['ia.atendimento.apiKey'] || ''}
-                  onChange={(e) => upd('ia.atendimento.apiKey', e.target.value)}
-                  placeholder={apiKeyPreview ? 'Deixe vazio pra manter a chave atual' : 'sk-... (OpenAI) ou sk-ant-... (Claude)'}
-                />
-                <p className="agente__hint">A chave fica criptografada — só os 4 últimos dígitos são exibidos.</p>
-              </section>
-            )}
 
           </main>
         </div>

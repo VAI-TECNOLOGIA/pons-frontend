@@ -145,25 +145,158 @@
   margin-top: 4px;
 }
 
-/* Pill do provider */
-.agente__provider-pill {
+/* Pill do provider — vira botão clicável que abre o dropdown */
+.agente__pill-wrap {
+  position: relative;
+  align-self: center;
   margin-top: 6px;
+  width: 100%;
+}
+.agente__provider-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  padding: 7px 12px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
   font-size: 12px;
+  font-weight: 600;
   color: var(--text-primary);
-  align-self: center;
-  cursor: default;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.agente__provider-pill:hover {
+  border-color: var(--pons-blue, #5d8fe0);
+}
+.agente__provider-pill > span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .agente__provider-arrow {
   opacity: 0.5;
-  margin-left: auto;
+  transition: transform 0.16s ease;
 }
+.agente__provider-arrow.is-open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown de modelos */
+.agente__provider-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.agente__provider-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.agente__provider-option:hover { background: var(--bg-card-hover); }
+.agente__provider-option.is-selected { background: rgba(93, 143, 224, 0.10); color: var(--pons-blue, #5d8fe0); }
+.agente__provider-option.is-selected .icon { color: var(--pons-blue, #5d8fe0); }
+.agente__provider-option > span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agente__provider-check { color: var(--pons-blue, #5d8fe0); margin-left: 6px; }
+
+/* Área da API key embaixo do pill */
+.agente__key-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.agente__key-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.20);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+.agente__key-confirmed .icon { color: #16A34A; flex-shrink: 0; }
+.agente__key-confirmed span { flex: 1; }
+.agente__key-confirmed code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  color: var(--text-primary);
+}
+[data-theme="dark"] .agente__key-confirmed code { background: rgba(255, 255, 255, 0.06); }
+.agente__key-edit-btn {
+  background: transparent;
+  border: none;
+  color: var(--pons-blue, #5d8fe0);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.agente__key-edit-btn:hover { text-decoration: underline; }
+.agente__key-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  outline: none;
+}
+.agente__key-input:focus { border-color: var(--pons-blue, #5d8fe0); }
+.agente__key-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.agente__key-cancel, .agente__key-confirm {
+  border: 1px solid var(--border-light);
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+.agente__key-cancel {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.agente__key-cancel:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+.agente__key-confirm {
+  background: var(--pons-blue, #5d8fe0);
+  border-color: var(--pons-blue, #5d8fe0);
+  color: #fff;
+}
+.agente__key-confirm:hover { background: var(--blue-600, #4978c4); }
 
 /* Menu vertical (tabs) */
 .agente__menu {
