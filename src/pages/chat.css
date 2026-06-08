@@ -9,10 +9,16 @@
 .inbox {
   display: grid;
   grid-template-columns: 340px 1fr;
+  grid-template-rows: 1fr;                       /* trava: 1 linha tomando 100% */
   height: calc(100dvh - var(--header-height));
   min-height: 0;
   background: var(--bg-app);
   overflow: hidden;          /* containment estrito — nada escapa */
+}
+.inbox > * {
+  min-height: 0;             /* sem isso filhos com overflow expandem o row implícito */
+  min-width: 0;
+  max-height: 100%;
 }
 
 .inbox__list {
