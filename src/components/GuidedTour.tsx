@@ -16,6 +16,7 @@
 //   />
 
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 
 export interface TourStep {
@@ -127,12 +128,14 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
     if (idx > 0) setIdx(idx - 1);
   }
 
-  if (!open || !steps.length) return null;
+  if (!open || !steps.length || typeof document === 'undefined') return null;
   const step = steps[idx];
   const last = idx === steps.length - 1;
   const first = idx === 0;
 
-  return (
+  // Render via portal pra escapar do containing block do .main__content
+  // (que tem transform da animação page-enter e quebra position:fixed)
+  return createPortal(
     <>
       {/* Backdrop escuro sobre TODA a tela (cobre uniformemente, sem "buraco"). */}
       <div
@@ -308,7 +311,8 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
           }
         }
       `}</style>
-    </>
+    </>,
+    document.body,
   );
 }
 
