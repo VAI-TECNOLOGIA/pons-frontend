@@ -102,6 +102,26 @@ export default function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, conv?.vaiConvId]);
 
+  // Refetch inbox ao voltar pra aba (resolve banner "Configure WhatsApp" que
+  // fica fantasma quando admin salvou credencial em outra aba). Pausa quando
+  // aba está em background (não martela backend à toa).
+  useEffect(() => {
+    const onFocus = () => reloadInbox();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [reloadInbox]);
+
+  // Polling leve a cada 30s — padrão herdado do MODULO-CHAT-CALEBE
+  // (lista a cada 25s, conv aberta a cada 15s; pausa quando aba escondida).
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      reloadInbox();
+      if (activeId) reloadConv();
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [activeId, reloadInbox, reloadConv]);
+
   // SSE — atualizações ao vivo
   useSSE(
     {
