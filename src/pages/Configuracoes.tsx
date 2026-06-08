@@ -4,6 +4,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { GoogleCalendarCard } from '../components/GoogleCalendarCard';
+import { GuidedTour, useTourTrigger } from '../components/GuidedTour';
 import { IntegracoesHelp } from '../components/IntegracoesHelp';
 import { IAHelp } from '../components/IAHelp';
 import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
@@ -399,6 +400,7 @@ function SdrIACard({ settings }: { settings: Record<string, string> }) {
 function PanelIntegracoes() {
  const { data: s, loading, reload } = useApi<Record<string, string>>(() => Api.settings());
  const toast = useToast();
+ const tour = useTourTrigger('integracoes-v1');
  if (loading) return <LoadingBlock />;
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -426,12 +428,56 @@ function PanelIntegracoes() {
  <div className="text-sm text-secondary">
  Configure as integrações abaixo. Cada card tem seu botão de salvar.
  </div>
+ <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+ <button
+ type="button"
+ onClick={tour.open}
+ className="btn btn--ghost btn--sm"
+ title="Tour guiado"
+ style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+ >
+ <Icon name="lightbulb" size={14} /> Tour guiado
+ </button>
  <IntegracoesHelp />
  </div>
+ </div>
+ <GuidedTour
+ storageKey="integracoes-v1"
+ forceOpen={tour.forceOpen}
+ onDone={tour.onDone}
+ steps={[
+ {
+ target: '[data-tour="google-card"]',
+ title: 'Google Calendar',
+ body: 'Sincroniza eventos da agenda do VAI com seu Google Calendar nos 2 sentidos. Clique em "Conectar Google" e autorize.',
+ },
+ {
+ target: '[data-tour="meta-card"]',
+ title: 'WhatsApp Cloud API (Meta)',
+ body: 'Canal oficial Meta — envia/recebe mensagens diretamente. Cole Phone ID, Token, App Secret e Verify Token. Depois clique em "Testar conexão".',
+ },
+ {
+ target: '[data-tour="vai-card"]',
+ title: 'WhatsApp via VAI CRM',
+ body: 'Canal alternativo via VAI CRM. Funciona como fallback se a janela de 24h do Meta estourar.',
+ },
+ {
+ target: '[data-tour="outras-integracoes"]',
+ title: 'Outras integrações',
+ body: 'Tokens de webhook Meta Lead Ads, Sicredi e credenciais auxiliares ficam aqui.',
+ },
+ ]}
+ />
+ <div data-tour="google-card">
  <GoogleCalendarCard onChange={reload} />
+ </div>
+ <div data-tour="meta-card">
  <MetaWhatsappCard settings={s || {}} onSaved={reload} />
+ </div>
+ <div data-tour="vai-card">
  <VaiIntegrationCard settings={s || {}} onSaved={reload} />
- <form className="card" onSubmit={submit} style={{ marginTop: 16 }}>
+ </div>
+ <form className="card" onSubmit={submit} style={{ marginTop: 16 }} data-tour="outras-integracoes">
  <h3 className="card__title mb-4">Outras integrações externas</h3>
  <div className="form-grid">
  <div className="field">
