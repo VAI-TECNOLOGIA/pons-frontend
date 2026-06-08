@@ -12,127 +12,247 @@
   overflow: hidden; /* o shell nunca rola — só o lado direito (.main) rola */
 }
 
-/* ---------- SIDEBAR ---------- */
+/* ---------- SIDEBAR (minimalista, estilo Kairos/Chatwoot) ---------- */
 
 .sidebar {
-  background: var(--bg-sidebar);
-  color: var(--text-on-dark);
-  padding: 24px 0;
+  background: #0B0F1A;            /* preto quase puro, mais profundo que navy */
+  color: rgba(255, 255, 255, 0.85);
+  padding: 18px 0 8px;
   display: flex;
   flex-direction: column;
-  height: 100vh;        /* fixa: ocupa toda a altura da viewport */
-  overflow-y: auto;     /* se o menu for maior que a tela, rola dentro da própria sidebar */
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .sidebar__logo {
-  padding: 0 24px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 16px;
+  padding: 0 18px 18px;
+  margin-bottom: 4px;
 }
 
 .sidebar__logo img {
-  height: 32px;
+  height: 28px;
   width: auto;
   display: block;
-}
-
-.sidebar__section {
-  padding: 16px 0 8px;
-}
-
-.sidebar__section-title {
-  padding: 0 24px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.4);
+  opacity: 0.95;
 }
 
 .sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 0 12px;
+  gap: 1px;
+  padding: 0 10px;
 }
 
-.sidebar__nav-item {
+.sidebar__item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.7);
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.72);
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
-  transition: background var(--transition-base), color var(--transition-base);
+  transition: background 0.16s ease, color 0.16s ease;
   cursor: pointer;
   border: none;
   background: transparent;
   width: 100%;
   text-align: left;
+  white-space: nowrap;
 }
-
-.sidebar__nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-on-dark);
+.sidebar__item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
 }
-
-.sidebar__nav-item--active {
-  background: var(--pons-blue);
-  color: var(--text-on-dark);
+.sidebar__item--active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
-
-.sidebar__nav-item--active:hover {
-  background: var(--blue-600);
+.sidebar__item--active .icon {
+  color: var(--pons-blue, #5d8fe0);
 }
-
-.sidebar__nav-item .icon {
+.sidebar__item--nested {
+  padding-left: 32px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.62);
+}
+.sidebar__item .icon {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  stroke-width: 1.75;
+}
+.sidebar__item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar__item-meta {
+  width: 12px;
+  height: 12px;
+  opacity: 0.4;
+}
+.sidebar__item-badge {
+  background: var(--pons-blue, #5d8fe0);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
 }
 
-.sidebar__footer {
-  margin-top: auto;
-  padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+/* Grupo colapsável (Equipe, Financeiro, etc) */
+.sidebar__group {
+  margin-top: 6px;
+}
+.sidebar__group-trigger {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  text-align: left;
+  transition: background 0.16s ease, color 0.16s ease;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.sidebar__group-trigger:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+}
+.sidebar__group-trigger .icon:not(.sidebar__group-chevron) {
+  width: 17px;
+  height: 17px;
+  opacity: 0.7;
+  stroke-width: 1.75;
+}
+.sidebar__group-label {
+  flex: 1;
+}
+.sidebar__group-chevron {
+  width: 14px;
+  height: 14px;
+  opacity: 0.45;
+  transition: transform 0.16s ease;
+}
+.sidebar__group-trigger.is-open .sidebar__group-chevron {
+  transform: rotate(90deg);
+}
+.sidebar__group-children {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: 2px;
+  margin-bottom: 4px;
 }
 
+/* Footer (user + ações) */
+.sidebar__footer {
+  margin-top: auto;
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar__user-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 4px 6px;
+  transition: background 0.16s ease;
+}
+.sidebar__user-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 .sidebar__user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
-  background: var(--pons-blue);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: var(--text-on-dark);
-  font-size: 13px;
+  color: #fff;
+  font-size: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
 }
-
+.sidebar__user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sidebar__user-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22C55E;
+  border: 2px solid #0B0F1A;
+}
 .sidebar__user-info {
   flex: 1;
   min-width: 0;
 }
-
 .sidebar__user-name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-on-dark);
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .sidebar__user-role {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar__footer-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.16s ease, color 0.16s ease;
+  flex-shrink: 0;
+}
+.sidebar__footer-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+.sidebar__footer-btn .icon {
+  width: 16px;
+  height: 16px;
 }
 
 /* ---------- TOP HEADER ---------- */

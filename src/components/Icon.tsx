@@ -79,6 +79,10 @@ const ICON_PATHS: Record<string, string> = {
   arrow_right: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
   arrow_left: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
   arrow_up: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+  'chevron-right': '<polyline points="9 18 15 12 9 6"/>',
+  'chevron-down': '<polyline points="6 9 12 15 18 9"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/><polyline points="12 7 12 12 16 14"/>',
+  history_alt: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/><polyline points="12 7 12 12 16 14"/>',
   webhook:
     '<path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"/><path d="m6 17 3.13-5.78c.53-.97.43-2.22-.26-3.07A4 4 0 0 1 17 8a3.84 3.84 0 0 1-.42 1.78"/><path d="m12 6 3.13 5.73C15.66 12.7 16.9 13.13 18 13a4 4 0 1 1-2.84 6.6"/>',
   arrow_down: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
