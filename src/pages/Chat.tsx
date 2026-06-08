@@ -35,6 +35,8 @@ type ConversationDetail = {
   telefoneLiberado?: boolean;
   classificacao?: string;
   iaAtendendo?: boolean;
+  iaRespostasCount?: number;
+  iaLimiteAtingido?: boolean;
   origem: string;
   vaiConectado: boolean;
   vaiConvId?: string | null;
@@ -53,7 +55,7 @@ type ConversationDetail = {
 };
 
 export default function Chat() {
-  const [tab, setTab] = useState<Tab>('pendente');
+  const [tab, setTab] = useState<Tab>('atendendo');
   const [activeId, setActiveId] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
   const [syncing, setSyncing] = useState(false);
@@ -102,25 +104,15 @@ export default function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, conv?.vaiConvId]);
 
-  // Refetch inbox ao voltar pra aba (resolve banner "Configure WhatsApp" que
-  // fica fantasma quando admin salvou credencial em outra aba). Pausa quando
-  // aba está em background (não martela backend à toa).
+  // Refetch inbox ao voltar pra aba (resolve banner fantasma "Configure
+  // WhatsApp" e estados stales depois de algum tempo fora). Sem polling
+  // periódico — o SSE (useSSE abaixo) já atualiza ao vivo via push do
+  // backend. Polling redundante causava flicker visual ruim.
   useEffect(() => {
     const onFocus = () => reloadInbox();
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [reloadInbox]);
-
-  // Polling leve a cada 30s — padrão herdado do MODULO-CHAT-CALEBE
-  // (lista a cada 25s, conv aberta a cada 15s; pausa quando aba escondida).
-  useEffect(() => {
-    const id = setInterval(() => {
-      if (document.hidden) return;
-      reloadInbox();
-      if (activeId) reloadConv();
-    }, 30_000);
-    return () => clearInterval(id);
-  }, [activeId, reloadInbox, reloadConv]);
 
   // SSE — atualizações ao vivo
   useSSE(
@@ -277,16 +269,16 @@ export default function Chat() {
         <div className="inbox__list">
           <div className="inbox__tabs">
             <div
-              className={'inbox__tab ' + (tab === 'pendente' ? 'inbox__tab--active' : '')}
-              onClick={() => setTab('pendente')}
-            >
-              Pendente <span className="badge badge--analysis">{pendente.length}</span>
-            </div>
-            <div
               className={'inbox__tab ' + (tab === 'atendendo' ? 'inbox__tab--active' : '')}
               onClick={() => setTab('atendendo')}
             >
               Atendendo <span className="badge badge--signed">{atendendo.length}</span>
+            </div>
+            <div
+              className={'inbox__tab ' + (tab === 'pendente' ? 'inbox__tab--active' : '')}
+              onClick={() => setTab('pendente')}
+            >
+              Pendente <span className="badge badge--analysis">{pendente.length}</span>
             </div>
           </div>
 
@@ -379,9 +371,14 @@ export default function Chat() {
                     <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                       {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                     </span>
-                    {(conv as any).iaAtendendo && !conv.reservado && (
+                    {(conv as any).iaAtendendo && !conv.reservado && !(conv as any).iaLimiteAtingido && (
                       <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }}>
-                        <Icon name="bot" size={10} /> IA respondendo
+                        <Icon name="bot" size={10} /> IA respondendo · {(conv as any).iaRespostasCount || 0}/3
+                      </span>
+                    )}
+                    {(conv as any).iaLimiteAtingido && !conv.reservado && (
+                      <span className="badge" style={{ background: 'rgba(245,158,11,0.18)', color: '#B45309' }}>
+                        <Icon name="warn" size={10} /> IA esgotou (3/3) — aceite p/ continuar
                       </span>
                     )}
                     {(conv as any).classificacao === 'QUENTE' && (
@@ -425,7 +422,11 @@ export default function Chat() {
                 <div ref={messagesEndRef} />
               </div>
               {!conv?.reservado ? (
-                <ComposerPendenteIA onAceitar={aceitarLead} />
+                <ComposerPendenteIA
+                  onAceitar={aceitarLead}
+                  respostasUsadas={(conv as any).iaRespostasCount || 0}
+                  limiteAtingido={!!(conv as any).iaLimiteAtingido}
+                />
               ) : conv?.windowOpen === false ? (
                 <ComposerJanelaFechada
                   onAbrirTemplates={() => setTemplatePickerOpen(true)}
@@ -662,14 +663,33 @@ function StatusTicks({ m }: { m: Mensagem }) {
 // ─── Composer quando janela 24h está fechada ───────────────────────────────
 // Texto livre desabilitado; só template Meta aprovado pode reabrir a conversa.
 // ─── Composer quando lead ainda está PENDENTE ──────────────────────────────
-// A IA cuida do atendimento. Corretor só consegue mandar texto após Aceitar.
-function ComposerPendenteIA({ onAceitar }: { onAceitar: () => void }) {
+// A IA cuida do atendimento (limite 3 respostas). Corretor só consegue mandar
+// texto após Aceitar. Quando a IA esgota as 3 respostas, o card vira ÂMBAR
+// com tom mais urgente — esse lead precisa do humano AGORA.
+function ComposerPendenteIA({
+  onAceitar,
+  respostasUsadas,
+  limiteAtingido,
+}: {
+  onAceitar: () => void;
+  respostasUsadas: number;
+  limiteAtingido: boolean;
+}) {
+  const cor = limiteAtingido ? '#B45309' : 'var(--blue-600)';
+  const bg = limiteAtingido ? 'rgba(245, 158, 11, 0.10)' : 'rgba(96, 165, 250, 0.06)';
+  const border = limiteAtingido ? 'rgba(245, 158, 11, 0.32)' : 'rgba(96, 165, 250, 0.20)';
+  const titulo = limiteAtingido
+    ? 'IA esgotou as 3 respostas — assume agora'
+    : 'IA está atendendo este lead';
+  const sub = limiteAtingido
+    ? 'Cliente continuou conversando, mas a IA pausou pra evitar respostas mecânicas. Você assume.'
+    : `IA respondeu ${respostasUsadas} de 3 vezes. Após o limite, aceite pra continuar.`;
   return (
     <div
       className="composer"
       style={{
-        background: 'rgba(96, 165, 250, 0.06)',
-        borderTop: '1px solid rgba(96, 165, 250, 0.20)',
+        background: bg,
+        borderTop: '1px solid ' + border,
         padding: '14px 16px',
         display: 'flex',
         gap: 12,
@@ -677,13 +697,11 @@ function ComposerPendenteIA({ onAceitar }: { onAceitar: () => void }) {
         justifyContent: 'space-between',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--blue-600)' }}>
-        <Icon name="bot" size={18} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: cor }}>
+        <Icon name={limiteAtingido ? 'warn' : 'bot'} size={18} />
         <div style={{ fontSize: 13, lineHeight: 1.4 }}>
-          <div style={{ fontWeight: 700 }}>IA está atendendo este lead</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
-            Pra assumir a conversa e mandar mensagem, clica em Aceitar.
-          </div>
+          <div style={{ fontWeight: 700 }}>{titulo}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{sub}</div>
         </div>
       </div>
       <button className="btn btn--primary btn--sm" onClick={onAceitar}>
