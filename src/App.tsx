@@ -49,6 +49,7 @@ import DevMetrics from './pages/DevMetrics';
 // Páginas públicas (Google/Facebook OAuth verification)
 import Privacidade from './pages/Privacidade';
 import Termos from './pages/Termos';
+import FbCallback from './pages/FbCallback';
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
       <Route path="/lp/:slug" element={<LPPublica />} />
       <Route path="/privacidade" element={<Privacidade />} />
       <Route path="/termos" element={<Termos />} />
+      <Route path="/integracoes/fb-callback" element={<FbCallback />} />
 
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />

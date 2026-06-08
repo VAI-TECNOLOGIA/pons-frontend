@@ -662,52 +662,247 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  );
 }
 
-// Card de Facebook Business Manager — atalho pra página /bm
-// Mostra status (quantas BMs conectadas) e linka pra gerenciar
+// Card Facebook Business Manager — OAuth completo na própria página.
+// Click em "Conectar Nova Conta" → popup OAuth FB → seletor de página/conta → cria BM no banco.
 function FacebookBMCard() {
-  const { data: bms } = useApi<any[]>(() => Api.bmList().catch(() => []));
+  const { data: bms, reload } = useApi<any[]>(() => Api.bmList().catch(() => []));
+  const { data: health } = useApi<{ configured: boolean }>(() => Api.fbHealth().catch(() => ({ configured: false })));
   const conectadas = bms?.length || 0;
+  const toast = useToast();
+  const [connecting, setConnecting] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pages, setPages] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [selectedPage, setSelectedPage] = useState<string>('');
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [bmName, setBmName] = useState('Facebook Leads 1');
+
+  useEffect(() => {
+    function onMsg(ev: MessageEvent) {
+      if (ev.origin !== window.location.origin) return;
+      const m = ev.data;
+      if (!m || typeof m !== 'object') return;
+      if (m.kind === 'fb-oauth-success' && m.code) {
+        (async () => {
+          try {
+            const r: any = await Api.fbCallback(m.code);
+            setPages(r.pages || []);
+            setAccounts(r.accounts || []);
+            (window as any).__fbUserToken = r.userToken;
+            setPickerOpen(true);
+            setConnecting(false);
+          } catch (err: any) {
+            toast.error('Falha ao trocar code: ' + (err?.message || ''));
+            setConnecting(false);
+          }
+        })();
+      } else if (m.kind === 'fb-oauth-error') {
+        toast.error('OAuth cancelado: ' + (m.error || ''));
+        setConnecting(false);
+      }
+    }
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [toast]);
+
+  const conectar = async () => {
+    if (!health?.configured) {
+      toast.error('Meta App não configurado no backend (META_APP_ID/SECRET).');
+      return;
+    }
+    setConnecting(true);
+    try {
+      const r = await Api.fbAuthUrl();
+      const w = 600, h = 700;
+      const left = window.screenX + (window.innerWidth - w) / 2;
+      const top = window.screenY + (window.innerHeight - h) / 2;
+      window.open(r.url, 'fb-oauth', `width=${w},height=${h},left=${left},top=${top}`);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+      setConnecting(false);
+    }
+  };
+
+  const salvar = async () => {
+    if (!selectedPage) {
+      toast.error('Selecione uma página do Facebook');
+      return;
+    }
+    const page = pages.find((p) => p.id === selectedPage);
+    if (!page) return;
+    try {
+      // 1. Cria a BM no banco
+      const bm = await Api.bmCreate({
+        nome: bmName,
+        paginaFbId: page.id,
+        contaAnuncioId: selectedAccount || null,
+      });
+      // 2. Linka token de página
+      await Api.fbLinkBM({
+        bmId: bm.id,
+        pageFbId: page.id,
+        paginaName: page.name,
+        pageAccessToken: page.access_token,
+        contaAnuncioId: selectedAccount || undefined,
+      });
+      toast.success(`Conta "${page.name}" conectada`);
+      setPickerOpen(false);
+      setSelectedPage('');
+      setSelectedAccount('');
+      setBmName('Facebook Leads 1');
+      reload();
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err?.message || ''));
+    }
+  };
 
   return (
-    <div className="card" style={{ marginTop: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              background: '#1877F2',
-              color: '#fff',
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Icon name="facebook" size={20} />
+    <>
+      <div className="card" style={{ marginTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                background: '#1877F2',
+                color: '#fff',
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="facebook" size={20} />
+            </div>
+            <div>
+              <h3 className="card__title" style={{ margin: 0 }}>Facebook Business Manager</h3>
+              <p className="text-sm text-secondary" style={{ marginTop: 2 }}>
+                Comece a receber leads do Facebook Ads em tempo real e distribua automaticamente nas suas filas de atendimento.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="card__title" style={{ margin: 0 }}>Facebook Business Manager</h3>
-            <p className="text-sm text-secondary" style={{ marginTop: 2 }}>
-              Conecte páginas e contas de anúncios pra receber leads do Facebook Ads em tempo real.
-              Suporta múltiplas BMs (uma por imobiliária / corretor).
-            </p>
-          </div>
+          {conectadas > 0 ? (
+            <span className="badge badge--signed">{conectadas} BM{conectadas > 1 ? 's' : ''} conectada{conectadas > 1 ? 's' : ''}</span>
+          ) : (
+            <span className="badge badge--analysis">Nenhuma BM conectada</span>
+          )}
         </div>
-        {conectadas > 0 ? (
-          <span className="badge badge--signed">{conectadas} BM{conectadas > 1 ? 's' : ''} conectada{conectadas > 1 ? 's' : ''}</span>
-        ) : (
-          <span className="badge badge--analysis">Nenhuma BM conectada</span>
+
+        {/* Lista resumida das BMs conectadas */}
+        {conectadas > 0 && (
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {(bms || []).slice(0, 5).map((bm) => (
+              <div
+                key={bm.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '8px 12px',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 6,
+                  fontSize: 13,
+                }}
+              >
+                <Icon name="facebook" size={14} style={{ color: '#1877F2' }} />
+                <span style={{ fontWeight: 600 }}>{bm.nome || bm.paginaName || bm.paginaFbId}</span>
+                <span className="text-xs text-secondary">{bm.leadsCaptados || 0} leads</span>
+                <a href="/bm" className="text-xs" style={{ marginLeft: 'auto', color: 'var(--text-link)' }}>
+                  Gerenciar
+                </a>
+              </div>
+            ))}
+          </div>
         )}
+
+        <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn btn--primary btn--sm"
+            onClick={conectar}
+            disabled={connecting}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Icon name="plus" size={14} />
+            {connecting ? 'Aguardando...' : 'Conectar Nova Conta'}
+          </button>
+          <a href="/bm" className="btn btn--ghost btn--sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="settings" size={14} /> Gerenciar BMs
+          </a>
+          {!health?.configured && (
+            <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>
+              ⚠️ META_APP_ID/SECRET não configurado no backend
+            </span>
+          )}
+        </div>
       </div>
 
-      <div style={{ marginTop: 14 }}>
-        <a href="/bm" className="btn btn--primary btn--sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Icon name="settings" size={14} /> Gerenciar BMs
-        </a>
-      </div>
-    </div>
+      {/* Modal seletor de página + conta após OAuth */}
+      <Modal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="Editar Integração Facebook"
+        subtitle="Selecione a página e a conta de anúncios pra começar a receber leads."
+        size="md"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="field">
+            <label className="field__label">Nome da integração</label>
+            <input
+              className="field__input"
+              value={bmName}
+              onChange={(e) => setBmName(e.target.value)}
+              placeholder="Facebook Leads 1"
+            />
+          </div>
+
+          <div className="field">
+            <label className="field__label">Página do Facebook *</label>
+            <select
+              className="field__select"
+              value={selectedPage}
+              onChange={(e) => setSelectedPage(e.target.value)}
+            >
+              <option value="">Selecione uma página</option>
+              {pages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.id})
+                </option>
+              ))}
+            </select>
+            <p className="field__hint">{pages.length} página(s) disponível(eis) na sua conta.</p>
+          </div>
+
+          <div className="field">
+            <label className="field__label">Conta de Anúncios (opcional)</label>
+            <select
+              className="field__select"
+              value={selectedAccount}
+              onChange={(e) => setSelectedAccount(e.target.value)}
+            >
+              <option value="">Sem conta vinculada</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name || a.id}
+                </option>
+              ))}
+            </select>
+            <p className="field__hint">Necessária se quiser ver métricas de custo no painel Tráfego.</p>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <button className="btn btn--ghost" onClick={() => setPickerOpen(false)}>
+              Cancelar
+            </button>
+            <button className="btn btn--primary" onClick={salvar} disabled={!selectedPage}>
+              Salvar e ativar
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
 
