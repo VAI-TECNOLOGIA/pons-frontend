@@ -198,6 +198,18 @@ export default function Perfil() {
               scoreMes={(user.corretor as any).scoreMes}
               scoreAno={(user.corretor as any).scoreAno}
             />
+            {typeof (user.corretor as any).leadsChamadosFora === 'number' && (
+              <div className="card" style={{ marginTop: 16, padding: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Icon name="phone" size={20} style={{ color: 'var(--blue-500)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>Leads chamados externamente</div>
+                  <div className="text-xs text-secondary">Contatos que você liberou pra ligar/abordar fora da plataforma</div>
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--blue-500)' }}>
+                  {(user.corretor as any).leadsChamadosFora}
+                </div>
+              </div>
+            )}
             <MinhasBMs />
             <InsightsList />
           </>

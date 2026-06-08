@@ -159,6 +159,32 @@ export default function Chat() {
     }
   };
 
+  const aceitarLead = async () => {
+    if (!activeId) return;
+    try {
+      await Api.leadAceitar(activeId);
+      toast.success('Lead aceito — IA pausada, atendimento agora é seu');
+      reloadConv();
+      reloadInbox();
+      setTab('atendendo');
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    }
+  };
+
+  const liberarContato = async () => {
+    if (!activeId) return;
+    if (!window.confirm('Liberar contato? O telefone do lead será exibido pra você, o lead vira QUENTE e contará na sua estatística "leads chamados externamente".')) return;
+    try {
+      const r = await Api.leadLiberarContato(activeId);
+      toast.success(`Telefone liberado: ${r.telefone}`);
+      reloadConv();
+      reloadInbox();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    }
+  };
+
   const enviarImovel = async (nome: string) => {
     if (!activeId) return;
     setDraft(
@@ -322,9 +348,29 @@ export default function Chat() {
                     <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                       {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                     </span>
+                    {(conv as any).iaAtendendo && !conv.reservado && (
+                      <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }}>
+                        <Icon name="bot" size={10} /> IA respondendo
+                      </span>
+                    )}
+                    {(conv as any).classificacao === 'QUENTE' && (
+                      <span className="badge" style={{ background: 'rgba(220,38,38,0.15)', color: '#DC2626' }}>
+                        <Icon name="fire" size={10} /> QUENTE
+                      </span>
+                    )}
+                    <Janela24h conv={conv} />
                     {!conv.reservado && (
-                      <button className="btn btn--primary btn--sm" onClick={ativarNegociacao}>
-                        Ativar Negociação
+                      <button className="btn btn--primary btn--sm" onClick={aceitarLead}>
+                        <Icon name="check" size={12} /> Aceitar
+                      </button>
+                    )}
+                    {!(conv as any).telefoneLiberado && conv.reservado && (
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={liberarContato}
+                        title="Mostra o telefone do lead, marca como QUENTE e contabiliza no seu perfil"
+                      >
+                        <Icon name="phone" size={12} /> Liberar contato
                       </button>
                     )}
                   </div>
@@ -433,6 +479,40 @@ function MessageBody({ m }: { m: Mensagem }) {
     );
   }
   return <>{m.texto}</>;
+}
+
+// Indicador da janela de 24h da Meta. Calcula com base na ÚLTIMA mensagem inbound do lead.
+// Dentro da janela = texto livre permitido. Fora = só template HSM aprovado.
+function Janela24h({ conv }: { conv: any }) {
+  const mensagens: any[] = conv?.mensagens || [];
+  const lastInbound = [...mensagens].reverse().find((m) => m.direction === 'inbound' || m.autor === 'LEAD');
+  if (!lastInbound) return null;
+  const ts = new Date(lastInbound.createdAt).getTime();
+  const expiry = ts + 24 * 60 * 60 * 1000;
+  const restante = expiry - Date.now();
+  const aberta = restante > 0;
+  if (aberta) {
+    const horas = Math.floor(restante / 3_600_000);
+    const minutos = Math.floor((restante % 3_600_000) / 60_000);
+    return (
+      <span
+        className="badge"
+        style={{ background: 'rgba(34,197,94,0.15)', color: '#16A34A' }}
+        title="Janela de 24h aberta — pode enviar texto livre"
+      >
+        <Icon name="clock" size={10} /> {horas}h{minutos}m
+      </span>
+    );
+  }
+  return (
+    <span
+      className="badge"
+      style={{ background: 'rgba(245,158,11,0.15)', color: '#D97706' }}
+      title="Janela 24h fechada — envie um template HSM pra reabrir"
+    >
+      <Icon name="warn" size={10} /> Janela fechada · use template
+    </span>
+  );
 }
 
 function StatusTicks({ m }: { m: Mensagem }) {

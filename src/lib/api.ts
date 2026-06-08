@@ -460,6 +460,19 @@ export const Api = {
   insightVisualizado:(id: number) => request<{ ok: boolean }>(`/insights/${id}/visualizado`, { method: 'POST' }),
   insightsRodar:     () => request<{ ok: boolean }>('/insights/rodar', { method: 'POST' }),
 
+  // ─── Agente IA (atendimento de lead) ─────────────────────────────
+  agenteIaStatus: () => request<{ configurado: boolean; provider: string; model: string; tom: string; temBaseConhecimento: boolean }>('/ia/agente/status'),
+  agenteIaConfig:  () => request<Record<string, string>>('/ia/agente/config'),
+  agenteIaSave:    (data: Record<string, string>) => request<{ ok: boolean }>('/ia/agente/config', { method: 'PUT', body: data }),
+
+  // ─── Lead — aceitar / liberar contato ────────────────────────────
+  leadAceitar: (id: number) => request<{ ok: boolean; nome: string; estadoAtendimento: string }>(`/leads/${id}/aceitar`, { method: 'POST' }),
+  leadLiberarContato: (id: number) =>
+    request<{ ok: boolean; telefone: string; classificacao: string; jaLiberado?: boolean }>(
+      `/leads/${id}/liberar-contato`,
+      { method: 'POST' },
+    ),
+
   // ─── DEV panel ───────────────────────────────────────────────────
   devFeedback:        (limit = 200) => request<{ data: any[]; total: number }>(`/dev/feedback?limit=${limit}`),
   devFeedbackAnalyze: (body: { description: string; type?: string; currentUrl?: string; userAgent?: string }) =>

@@ -63,6 +63,7 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/webhook-saidas', label: 'Webhooks Saída', section: 'Administração', icon: 'webhook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
   { to: '/campos-custom', label: 'Campos Custom', section: 'Sistema', icon: 'settings', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
   { to: '/regras', label: 'Regras Automáticas', section: 'Sistema', icon: 'lightbulb', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
+  { to: '/agente-ia', label: 'Agente IA', section: 'Sistema', icon: 'bot', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
 ];
 
 // Sidebar separado pro persona DEV — login DEV NÃO vê nada do CRM, só sistema.

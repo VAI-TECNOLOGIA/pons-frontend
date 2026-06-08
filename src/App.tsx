@@ -41,6 +41,7 @@ import WebhookSaidas from './pages/WebhookSaidas';
 import CamposCustom from './pages/CamposCustom';
 import Regras from './pages/Regras';
 import FinanceiroPons from './pages/FinanceiroPons';
+import AgenteIA from './pages/AgenteIA';
 // DEV panel
 import DevMensagens from './pages/DevMensagens';
 import DevFeedback from './pages/DevFeedback';
@@ -99,6 +100,7 @@ export default function App() {
         <Route path="/campos-custom" element={<CamposCustom />} />
         <Route path="/regras" element={<Regras />} />
         <Route path="/financeiro-pons" element={<FinanceiroPons />} />
+        <Route path="/agente-ia" element={<AgenteIA />} />
         {/* DEV panel — CEO + DEV */}
         <Route path="/dev/mensagens" element={<DevMensagens />} />
         <Route path="/dev/feedback" element={<DevFeedback />} />
