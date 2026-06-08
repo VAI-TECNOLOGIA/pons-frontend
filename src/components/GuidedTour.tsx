@@ -31,7 +31,7 @@ interface Props {
   onDone?: () => void;
 }
 
-const SHEET_HEIGHT_RESERVE = 260; // espaço aproximado do tooltip+padding pra calcular scroll
+const SHEET_HEIGHT_RESERVE = 320; // espaço do tooltip+padding pra calcular scroll do target
 
 function storageDone(key: string): boolean {
   try {
@@ -74,9 +74,10 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
       setRect(null);
       return;
     }
-    // Scroll customizado: alinha o target ~1/3 do viewport (acima do tooltip)
+    // Scroll customizado: target a 25% do topo (longe do tooltip que fica embaixo)
     const r0 = el.getBoundingClientRect();
-    const targetTop = window.innerHeight / 2 - SHEET_HEIGHT_RESERVE / 2 - r0.height / 2;
+    const availableSpace = window.innerHeight - SHEET_HEIGHT_RESERVE;
+    const targetTop = Math.max(80, availableSpace / 2 - r0.height / 2);
     const delta = r0.top - targetTop;
     window.scrollBy({ top: delta, behavior: 'smooth' });
 
@@ -128,55 +129,36 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
 
   return (
     <>
-      {/* Backdrop escuro sobre toda a tela. pointer-events:none pra não travar scroll. */}
+      {/* Backdrop escuro sobre TODA a tela (cobre uniformemente, sem "buraco"). */}
       <div
         style={{
           position: 'fixed',
           inset: 0,
           zIndex: 9998,
           pointerEvents: 'none',
-          background: 'rgba(0,0,0,0.55)',
-          transition: 'opacity 200ms',
+          background: 'rgba(0,0,0,0.62)',
         }}
       />
 
-      {/* Highlight: divs separadas escurecendo os 4 lados do rect (sem "buraco" branco) */}
+      {/* Halo azul ao redor do target — NÃO escurece nada, apenas destaca com pulse animado */}
       {rect && (
-        <>
-          {/* Halo azul em volta do target */}
-          <div
-            style={{
-              position: 'fixed',
-              top: rect.top - 4,
-              left: rect.left - 4,
-              width: rect.width + 8,
-              height: rect.height + 8,
-              zIndex: 9999,
-              pointerEvents: 'none',
-              borderRadius: 12,
-              border: '3px solid rgba(96,165,250,0.9)',
-              boxShadow: '0 0 24px rgba(96,165,250,0.5)',
-              transition: 'top 220ms, left 220ms, width 220ms, height 220ms',
-            }}
-          />
-          {/* "Buraco" — bloco sólido na cor do bg que cobre o rect e deixa só o conteúdo aparecer
-              (não fica branco gigante porque é box-shadow inverso aplicado em volta) */}
-          <div
-            style={{
-              position: 'fixed',
-              top: rect.top,
-              left: rect.left,
-              width: rect.width,
-              height: rect.height,
-              zIndex: 9997,
-              pointerEvents: 'none',
-              borderRadius: 8,
-              background: 'transparent',
-              boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)',
-              transition: 'top 220ms, left 220ms, width 220ms, height 220ms',
-            }}
-          />
-        </>
+        <div
+          style={{
+            position: 'fixed',
+            top: rect.top - 4,
+            left: rect.left - 4,
+            width: rect.width + 8,
+            height: rect.height + 8,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            borderRadius: 12,
+            border: '3px solid rgba(96,165,250,1)',
+            boxShadow: '0 0 0 4px rgba(96,165,250,0.25), 0 0 40px rgba(96,165,250,0.4)',
+            background: 'transparent',
+            transition: 'top 240ms cubic-bezier(0.4,0,0.2,1), left 240ms cubic-bezier(0.4,0,0.2,1), width 240ms cubic-bezier(0.4,0,0.2,1), height 240ms cubic-bezier(0.4,0,0.2,1)',
+            animation: 'tourPulse 2.2s ease-in-out infinite',
+          }}
+        />
       )}
 
       {/* Tooltip = bottom sheet (desktop + mobile) */}
@@ -307,6 +289,10 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
         @keyframes tourSlideUp {
           from { transform: translate(-50%, 100%); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        @keyframes tourPulse {
+          0%, 100% { box-shadow: 0 0 0 4px rgba(96,165,250,0.25), 0 0 40px rgba(96,165,250,0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(96,165,250,0.18), 0 0 60px rgba(96,165,250,0.55); }
         }
         @media (max-width: 600px) {
           [role="dialog"][aria-label="Tour guiado"] {
