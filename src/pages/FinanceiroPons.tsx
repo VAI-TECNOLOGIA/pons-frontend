@@ -129,10 +129,26 @@ function PoliticaTab() {
           <div className="field"><label className="field__label">Comissão bruta (R$)</label><input id="sim-valor" type="number" className="field__input" defaultValue={50000} step={0.01} /></div>
           <div className="field"><label className="field__label">Parcelas</label><input id="sim-parc" type="number" className="field__input" defaultValue={1} min={1} /></div>
           <div className="field"><label className="field__label">Split</label>
-            <select id="sim-split" className="field__select" defaultValue="55_45"><option value="55_45">55/45</option><option value="50_50">50/50</option></select>
+            <select id="sim-split" className="field__select" defaultValue="55_45">
+              <option value="55_45">55/45 (corretor &gt; 1 ano de casa)</option>
+              <option value="50_50">50/50 (corretor ≤ 1 ano de casa)</option>
+            </select>
+            <div className="field__hint">Auto-determinado pela data de admissão no cadastro real; aqui só simulação manual.</div>
           </div>
           <div className="field"><label className="field__label">Estratégia (se lead)</label>
-            <select id="sim-estr" className="field__select" defaultValue="CAMPANHA"><option>CAMPANHA</option><option>LAZARO</option></select>
+            <select id="sim-estr" className="field__select" defaultValue="CAMPANHA">
+              <optgroup label="Com desconto">
+                <option value="CAMPANHA">Campanha (-6,5% corretor / -6,5% imob)</option>
+                <option value="LAZARO">Lázaro (-3% corretor / -1% imob)</option>
+              </optgroup>
+              <optgroup label="Sem desconto extra">
+                <option value="NETWORK">Network</option>
+                <option value="CAMPANHA_PRIVADA">Campanha Privada</option>
+                <option value="INDICACAO">Indicação</option>
+                <option value="PARCERIA">Parceria</option>
+                <option value="COMPRA_PROPRIA">Compra Própria</option>
+              </optgroup>
+            </select>
           </div>
           <div className="field"><label className="field__label" style={{ display: 'flex', gap: 8 }}><input id="sim-nf" type="checkbox" /> Tem Nota Fiscal (-16%)</label></div>
           <div className="field"><label className="field__label" style={{ display: 'flex', gap: 8 }}><input id="sim-lead" type="checkbox" /> É lead (descontos extras)</label></div>
@@ -166,8 +182,8 @@ function PoliticaTab() {
               <Icon name="building" size={14} /> Imobiliária
             </h5>
             <div>Bruto: {fmt(sim.imobiliaria.valorBruto)}</div>
-            <div>− Gestor: {fmt(sim.imobiliaria.descontoGestor)}</div>
-            <div>− Direção: {fmt(sim.imobiliaria.descontoDirecao)}</div>
+            <div>− Gestor: {fmt(sim.imobiliaria.descontoGestor)} <span className="text-xs text-secondary">(10–13% conforme negociação)</span></div>
+            <div>− Direção Adm/Financeira: {fmt(sim.imobiliaria.descontoDirecao)} <span className="text-xs text-secondary">(5% fixo)</span></div>
             <div>− Campanha: {fmt(sim.imobiliaria.descontoCampanha)}</div>
             <div>− Lázaro: {fmt(sim.imobiliaria.descontoLazaro)}</div>
             <div style={{ color: 'var(--color-success)', fontWeight: 700 }}>= Líquido: {fmt(sim.imobiliaria.valorLiquido)}</div>
