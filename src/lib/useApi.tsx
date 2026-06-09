@@ -19,31 +19,41 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseA
   const [tick, setTick] = useState(0);
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
+  const isMountedRef = useRef(false);
 
+  // Effect 1: deps mudaram (ex: activeId trocou) → LIMPA data pra não renderizar
+  // shape stale, mostra loading, refetch.
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(null);
-    // Limpa dados antigos quando deps mudam — evita renderizar com shape stale
-    // (ex: trocar de aba e tentar acessar data.corretores quando data ainda
-    // é do endpoint anterior, gerando "undefined is not an object").
-    setData(null);
+    if (isMountedRef.current) {
+      // Só limpa em troca de deps real (não na primeira montagem nem em reload).
+      setData(null);
+    }
+    isMountedRef.current = true;
     fetcherRef
       .current()
-      .then((res) => {
-        if (alive) setData(res);
-      })
-      .catch((err) => {
-        if (alive) setError(err instanceof Error ? err : new Error(String(err)));
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-    return () => {
-      alive = false;
-    };
+      .then((res) => { if (alive) setData(res); })
+      .catch((err) => { if (alive) setError(err instanceof Error ? err : new Error(String(err))); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, tick]);
+  }, deps);
+
+  // Effect 2: reload via tick → REFETCH SILENCIOSO (sem limpar data, sem
+  // mostrar loading). Evita flicker do banner "Configure WhatsApp" quando
+  // chega mensagem nova via SSE.
+  useEffect(() => {
+    if (tick === 0) return; // skip primeiro render
+    let alive = true;
+    setError(null);
+    fetcherRef
+      .current()
+      .then((res) => { if (alive) setData(res); })
+      .catch((err) => { if (alive) setError(err instanceof Error ? err : new Error(String(err))); });
+    return () => { alive = false; };
+  }, [tick]);
 
   return { data, loading, error, reload: () => setTick((t) => t + 1) };
 }

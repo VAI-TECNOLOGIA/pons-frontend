@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
+import { Modal } from '../components/Modal';
 import { initials, timeAgo } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
@@ -61,6 +62,9 @@ export default function Chat() {
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [liberarOpen, setLiberarOpen] = useState(false);
+  const [liberarJustif, setLiberarJustif] = useState('');
+  const [liberarSending, setLiberarSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -197,16 +201,25 @@ export default function Chat() {
     }
   };
 
-  const liberarContato = async () => {
+  const liberarContato = () => {
     if (!activeId) return;
-    if (!window.confirm('Liberar contato? O telefone do lead será exibido pra você, o lead vira QUENTE e contará na sua estatística "leads chamados externamente".')) return;
+    setLiberarJustif('');
+    setLiberarOpen(true);
+  };
+
+  const confirmarLiberar = async () => {
+    if (!activeId || liberarSending) return;
+    setLiberarSending(true);
     try {
-      const r = await Api.leadLiberarContato(activeId);
+      const r = await Api.leadLiberarContato(activeId, liberarJustif.trim() || undefined);
       toast.success(`Telefone liberado: ${r.telefone}`);
+      setLiberarOpen(false);
       reloadConv();
       reloadInbox();
     } catch (err: any) {
       toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setLiberarSending(false);
     }
   };
 
@@ -479,6 +492,38 @@ export default function Chat() {
                   }}
                 />
               )}
+              <Modal
+                open={liberarOpen}
+                onClose={() => !liberarSending && setLiberarOpen(false)}
+                title="Liberar contato do lead"
+                subtitle={`O telefone de ${conv?.nome || 'lead'} será exibido pra você. Lead vira QUENTE e contará na sua estatística "leads chamados externamente". Ação auditada.`}
+                size="sm"
+                footer={
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button className="btn btn--ghost" onClick={() => setLiberarOpen(false)} disabled={liberarSending}>
+                      Cancelar
+                    </button>
+                    <button className="btn btn--primary" onClick={confirmarLiberar} disabled={liberarSending}>
+                      {liberarSending ? 'Liberando…' : 'Liberar contato'}
+                    </button>
+                  </div>
+                }
+              >
+                <label className="field__label" style={{ fontSize: 12, marginBottom: 6, display: 'block' }}>
+                  Motivo (opcional)
+                </label>
+                <textarea
+                  className="field__textarea"
+                  rows={3}
+                  placeholder="Ex: cliente pediu retorno por ligação, vou fechar a proposta"
+                  value={liberarJustif}
+                  onChange={(e) => setLiberarJustif(e.target.value)}
+                  style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
+                />
+                <p className="text-xs text-secondary" style={{ marginTop: 8 }}>
+                  Motivo entra no audit log e na notificação enviada aos admins.
+                </p>
+              </Modal>
             </>
           )}
         </div>
