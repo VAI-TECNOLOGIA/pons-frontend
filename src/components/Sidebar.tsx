@@ -87,7 +87,7 @@ const GROUPS: NavGroup[] = [
   {
     key: 'conteudo',
     label: 'Conteúdo',
-    icon: 'play',
+    icon: 'book-open',
     items: [
       { to: '/avisos', label: 'Avisos', icon: 'bell' },
       { to: '/videos', label: 'Vídeos', icon: 'video' },
