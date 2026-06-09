@@ -26,6 +26,9 @@ const ICON_PATHS: Record<string, string> = {
   megafone:
     '<path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
   play: '<polygon points="5 3 19 12 5 21 5 3"/>',
+  video:
+    // Lucide video — câmera de filme com tela retangular + lente projetando
+    '<path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>',
   wallet:
     '<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
   chart:

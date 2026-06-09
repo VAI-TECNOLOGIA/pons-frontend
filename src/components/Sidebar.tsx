@@ -90,7 +90,7 @@ const GROUPS: NavGroup[] = [
     icon: 'play',
     items: [
       { to: '/avisos', label: 'Avisos', icon: 'bell' },
-      { to: '/videos', label: 'Vídeos', icon: 'play' },
+      { to: '/videos', label: 'Vídeos', icon: 'video' },
       { to: '/painel-tv', label: 'Painel TV', icon: 'tv', blank: true, roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
     ],
   },
@@ -196,6 +196,8 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
         )}
       </nav>
 
+      <AppDownloadBlock />
+
       <div className="sidebar__footer">
         <NavLink to="/perfil" className="sidebar__user-link" title="Meu perfil">
           <div className="sidebar__user-avatar">
@@ -269,5 +271,25 @@ function NavItemLink({ item, nested }: { item: NavItem; nested?: boolean }) {
         <span className="sidebar__item-badge">{item.badge}</span>
       )}
     </NavLink>
+  );
+}
+
+// Bloco "Baixe o aplicativo" — Google Play + App Store em cinza com tooltip "Em breve".
+// Aparece no rodapé da sidebar antes do user-chip.
+function AppDownloadBlock() {
+  return (
+    <div className="sidebar__app-download">
+      <div className="sidebar__app-download-title">Baixe o aplicativo</div>
+      <div className="sidebar__app-download-row">
+        <div className="sidebar__app-badge" title="Em breve">
+          <img src="/assets/apple.png" alt="App Store" />
+          <span>App Store</span>
+        </div>
+        <div className="sidebar__app-badge" title="Em breve">
+          <img src="/assets/android.png" alt="Google Play" />
+          <span>Google Play</span>
+        </div>
+      </div>
+    </div>
   );
 }
