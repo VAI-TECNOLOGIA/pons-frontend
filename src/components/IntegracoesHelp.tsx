@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal } from './Modal';
 import { Icon } from './Icon';
 import { GoogleCalendarIcon } from './GoogleCalendarIcon';
+import { GOOGLE_CALENDAR_ENABLED } from '../lib/featureFlags';
 
 import './integracoes-help.css';
 
@@ -9,7 +10,8 @@ type Guide = 'google' | 'meta' | 'vai' | 'r2' | 'sicredi' | 'tracking';
 
 export function IntegracoesHelp() {
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<Guide>('google');
+  // Quando Google Calendar tá desabilitado, default = primeira integração disponível
+  const [active, setActive] = useState<Guide>(GOOGLE_CALENDAR_ENABLED ? 'google' : 'meta');
 
   const apiBase =
     typeof window !== 'undefined'
@@ -146,6 +148,27 @@ export function HelpHeader({
 
 // ── Google Calendar ────────────────────────────────────────────────────
 function GoogleGuide({ apiBase: _apiBase }: { apiBase: string }) {
+  // Quando a feature está desabilitada, mostra mensagem "em breve" no lugar
+  // dos 4 passos de conexão. Quando GOOGLE_CALENDAR_ENABLED virar true, o
+  // guia detalhado abaixo (no bloco `else`) volta automaticamente.
+  if (!GOOGLE_CALENDAR_ENABLED) {
+    return (
+      <div>
+        <HelpHeader
+          logo="/assets/calendar-icon.png"
+          fallbackIcon={<GoogleCalendarIcon size={22} />}
+          title="Google Calendar"
+          lead="Em breve. Aguardando aprovação do app pelo Google."
+        />
+        <div className="help-warn" style={{ marginTop: 12 }}>
+          A sincronização com o Google Calendar fica disponível assim que o app for aprovado
+          pelo Google. Enquanto isso, a agenda interna do sistema (na aba <em>Agenda</em>)
+          funciona normalmente — você cria, edita e exclui compromissos sem depender da
+          integração externa.
+        </div>
+      </div>
+    );
+  }
   return (
     <div>
       <HelpHeader

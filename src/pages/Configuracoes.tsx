@@ -449,7 +449,7 @@ function PanelIntegracoes() {
  {
  target: '[data-tour="google-card"]',
  title: 'Google Calendar',
- body: 'Sincroniza eventos da agenda do VAI com seu Google Calendar nos 2 sentidos. Clique em "Conectar Google" e autorize.',
+ body: 'Sincronização com o Google Calendar fica disponível assim que o app for aprovado pelo Google. A agenda interna do sistema continua funcionando normalmente.',
  },
  {
  target: '[data-tour="meta-card"]',
