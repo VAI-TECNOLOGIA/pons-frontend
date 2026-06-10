@@ -4,6 +4,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { GoogleCalendarIcon } from '../components/GoogleCalendarIcon';
+import { GOOGLE_CALENDAR_ENABLED } from '../lib/featureFlags';
 import { CalendarView, type CalendarEvent } from '../components/CalendarView';
 import { AgendaKpisBar } from '../components/AgendaKpisBar';
 import { Auth } from '../lib/auth';
@@ -247,15 +248,26 @@ export default function Executivo() {
         title="Agenda Executiva"
         right={
           <>
-            <button
-              className={'btn btn--sm ' + (googleConectado ? 'btn--secondary' : 'btn--secondary')}
-              onClick={conectarGoogle}
-              title={googleConectado ? 'Google Calendar conectado · clique pra reconectar' : 'Conectar com Google Calendar'}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
-            >
-              <GoogleCalendarIcon size={16} />
-              {googleConectado ? 'Sincronizado' : 'Google Calendar'}
-            </button>
+            {GOOGLE_CALENDAR_ENABLED ? (
+              <button
+                className={'btn btn--sm ' + (googleConectado ? 'btn--secondary' : 'btn--secondary')}
+                onClick={conectarGoogle}
+                title={googleConectado ? 'Google Calendar conectado · clique pra reconectar' : 'Conectar com Google Calendar'}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+              >
+                <GoogleCalendarIcon size={16} />
+                {googleConectado ? 'Sincronizado' : 'Google Calendar'}
+              </button>
+            ) : (
+              <span
+                className="badge badge--neutral"
+                title="Aguardando aprovação do app no Google — em breve"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, opacity: 0.65, cursor: 'not-allowed' }}
+              >
+                <GoogleCalendarIcon size={14} />
+                Google Calendar · em breve
+              </span>
+            )}
             <button className="btn btn--primary btn--sm" onClick={() => abrirNovo()}>
               + Compromisso
             </button>
@@ -297,7 +309,7 @@ export default function Executivo() {
           </div>
         </div>
 
-        {!googleConectado && (
+        {GOOGLE_CALENDAR_ENABLED && !googleConectado && (
           <div className="card google-cta">
             <div className="google-cta__icon">
               <GoogleCalendarIcon size={26} />

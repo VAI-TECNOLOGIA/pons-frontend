@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { GoogleCalendarIcon } from './GoogleCalendarIcon';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { GOOGLE_CALENDAR_ENABLED } from '../lib/featureFlags';
 
 interface GoogleStatus {
   hasConfig?: boolean;
@@ -12,7 +13,14 @@ interface GoogleStatus {
   calendarId?: string | null;
 }
 
+// Wrapper externo: escolhe entre o card real (flag on) e o card "em breve"
+// (flag off). Mantém regras-dos-hooks limpas — early return ANTES de qualquer hook.
 export function GoogleCalendarCard({ onChange }: { onChange?: () => void }) {
+  if (!GOOGLE_CALENDAR_ENABLED) return <GoogleCalendarEmBreveCard />;
+  return <GoogleCalendarCardReal onChange={onChange} />;
+}
+
+function GoogleCalendarCardReal({ onChange }: { onChange?: () => void }) {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
@@ -135,6 +143,38 @@ export function GoogleCalendarCard({ onChange }: { onChange?: () => void }) {
             Atualizar status
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Card desabilitado — exibe "Em breve" em cinza enquanto o app OAuth do Google
+// está aguardando aprovação. Quando GOOGLE_CALENDAR_ENABLED virar true, este
+// componente para de ser usado e o card real volta sem nenhuma outra mudança.
+function GoogleCalendarEmBreveCard() {
+  return (
+    <div
+      className="card"
+      style={{
+        marginTop: 16,
+        opacity: 0.7,
+        filter: 'grayscale(0.5)',
+        background: 'var(--bg-app)',
+        borderStyle: 'dashed',
+      }}
+    >
+      <div className="flex-between" style={{ alignItems: 'center' }}>
+        <h3
+          className="card__title"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0, color: 'var(--text-secondary)' }}
+        >
+          <GoogleCalendarIcon size={20} /> Google Calendar
+        </h3>
+        <span className="badge badge--neutral">Em breve</span>
+      </div>
+      <div className="field__hint" style={{ marginTop: 12 }}>
+        A sincronização com o Google Calendar fica disponível assim que o app for aprovado pelo Google.
+        Enquanto isso, a agenda interna do sistema funciona normalmente.
       </div>
     </div>
   );
