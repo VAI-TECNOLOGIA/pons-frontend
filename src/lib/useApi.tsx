@@ -8,33 +8,76 @@ export interface UseApiState<T> {
   reload: () => void;
 }
 
+// ── Cache stale-while-revalidate em memória ────────────────────────────────
+// Tipo SWR mas inline: ao navegar de volta pra uma página já visitada, o hook
+// devolve os dados do cache IMEDIATAMENTE (sem flicker "Carregando…") e
+// dispara um refetch silencioso em background pra atualizar. TTL serve só
+// pra expirar a entrada (ainda assim, refresh-on-mount sempre fala com a API).
+//
+// Cache vive enquanto a aba estiver aberta; reload da página limpa.
+type CacheEntry = { data: unknown; ts: number };
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 5 * 60_000; // 5min — após isso, entry é descartada
+
+// Deriva uma cache key estável a partir do fetcher.toString() + deps.
+// Funciona pra arrow functions inline tipo `() => Api.dashboard()` —
+// duas montagens do mesmo componente geram a mesma string. Pra fetchers
+// com closure variável, passe deps explícito que muda quando o fetch muda.
+function makeKey(fetcher: () => unknown, deps: unknown[]): string {
+  try { return fetcher.toString() + '::' + JSON.stringify(deps); }
+  catch { return fetcher.toString() + '::__unserializable_deps__'; }
+}
+
 /**
  * Hook genérico pra chamar Api.* com loading/error/reload.
+ *
+ * Mecânica:
+ *  • Primeira visita à página → loading=true → API call → cache pra próxima.
+ *  • Volta à mesma página (mesmo fetcher + deps) → data sai do cache na hora
+ *    (loading=false), e em paralelo refazemos a call pra atualizar a UI.
+ *  • deps mudaram (ex: filtro de busca) → limpa o data, mostra loading,
+ *    nova call. Não consulta cache da chamada antiga.
+ *
  * Use deps para refazer a chamada quando filtros mudarem.
  */
 export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseApiState<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = makeKey(fetcher, deps);
+  const cached = cache.get(cacheKey);
+  const hasCache = !!cached && Date.now() - cached.ts < CACHE_TTL_MS;
+
+  const [data, setData] = useState<T | null>(hasCache ? (cached!.data as T) : null);
+  const [loading, setLoading] = useState(!hasCache);
   const [error, setError] = useState<Error | null>(null);
   const [tick, setTick] = useState(0);
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
   const isMountedRef = useRef(false);
 
-  // Effect 1: deps mudaram (ex: activeId trocou) → LIMPA data pra não renderizar
-  // shape stale, mostra loading, refetch.
+  // Effect 1: deps mudaram (ex: activeId trocou) → consulta cache; se hit
+  // mostra na hora e revalida em background; se miss, fluxo normal de loading.
   useEffect(() => {
     let alive = true;
-    setLoading(true);
-    setError(null);
-    if (isMountedRef.current) {
-      // Só limpa em troca de deps real (não na primeira montagem nem em reload).
-      setData(null);
+    const cached2 = cache.get(cacheKey);
+    const hit = !!cached2 && Date.now() - cached2.ts < CACHE_TTL_MS;
+
+    if (hit) {
+      setData(cached2!.data as T);
+      setLoading(false);
+      setError(null);
+    } else {
+      setLoading(true);
+      setError(null);
+      if (isMountedRef.current) setData(null);
     }
     isMountedRef.current = true;
+
     fetcherRef
       .current()
-      .then((res) => { if (alive) setData(res); })
+      .then((res) => {
+        if (!alive) return;
+        cache.set(cacheKey, { data: res, ts: Date.now() });
+        setData(res);
+      })
       .catch((err) => { if (alive) setError(err instanceof Error ? err : new Error(String(err))); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
@@ -43,16 +86,21 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseA
 
   // Effect 2: reload via tick → REFETCH SILENCIOSO (sem limpar data, sem
   // mostrar loading). Evita flicker do banner "Configure WhatsApp" quando
-  // chega mensagem nova via SSE.
+  // chega mensagem nova via SSE. Também atualiza o cache.
   useEffect(() => {
     if (tick === 0) return; // skip primeiro render
     let alive = true;
     setError(null);
     fetcherRef
       .current()
-      .then((res) => { if (alive) setData(res); })
+      .then((res) => {
+        if (!alive) return;
+        cache.set(cacheKey, { data: res, ts: Date.now() });
+        setData(res);
+      })
       .catch((err) => { if (alive) setError(err instanceof Error ? err : new Error(String(err))); });
     return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 
   return { data, loading, error, reload: () => setTick((t) => t + 1) };
