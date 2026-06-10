@@ -444,6 +444,25 @@ export const Api = {
   agenteIaConfig:  () => request<Record<string, string>>('/ia/agente/config'),
   agenteIaSave:    (data: Record<string, string>) => request<{ ok: boolean }>('/ia/agente/config', { method: 'PUT', body: data }),
 
+  // ─── Equipe (hierarquia, departamentos, usuários, níveis) ───────
+  equipeUsers:         (q = '') => request<any[]>(`/equipe/users${q ? '?q=' + encodeURIComponent(q) : ''}`),
+  equipeUserCreate:    (data: any) => request<any>('/equipe/users', { method: 'POST', body: data }),
+  equipeUserUpdate:    (id: number, data: any) => request<any>(`/equipe/users/${id}`, { method: 'PATCH', body: data }),
+  equipeUserDelete:    (id: number) => request<{ ok: boolean }>(`/equipe/users/${id}`, { method: 'DELETE' }),
+  equipeUserToggleActive: (id: number) => request<{ ok: boolean; active: boolean }>(`/equipe/users/${id}/toggle-active`, { method: 'POST' }),
+
+  equipeDepartments:   () => request<any[]>('/equipe/departments'),
+  equipeDepartmentCreate: (data: any) => request<any>('/equipe/departments', { method: 'POST', body: data }),
+  equipeDepartmentUpdate: (id: number, data: any) => request<any>(`/equipe/departments/${id}`, { method: 'PATCH', body: data }),
+  equipeDepartmentDelete: (id: number) => request<{ ok: boolean }>(`/equipe/departments/${id}`, { method: 'DELETE' }),
+
+  equipeLevels:        () => request<any[]>('/equipe/hierarchy/levels'),
+  equipeLevelCreate:   (data: any) => request<any>('/equipe/hierarchy/levels', { method: 'POST', body: data }),
+  equipeLevelUpdate:   (id: number, data: any) => request<any>(`/equipe/hierarchy/levels/${id}`, { method: 'PATCH', body: data }),
+  equipeLevelDelete:   (id: number) => request<{ ok: boolean }>(`/equipe/hierarchy/levels/${id}`, { method: 'DELETE' }),
+
+  equipeHierarchyTree: () => request<{ roots: any[]; totalUsers: number }>('/equipe/hierarchy/tree'),
+
   // ─── Lead — aceitar / liberar contato ────────────────────────────
   leadAceitar: (id: number) => request<{ ok: boolean; nome: string; estadoAtendimento: string }>(`/leads/${id}/aceitar`, { method: 'POST' }),
   leadLiberarContato: (id: number, justificativa?: string) =>

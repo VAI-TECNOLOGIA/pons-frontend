@@ -38,6 +38,7 @@ import Auditoria from './pages/Auditoria';
 import Bolsoes from './pages/Bolsoes';
 import FinanceiroPons from './pages/FinanceiroPons';
 import AgenteIA from './pages/AgenteIA';
+import Equipe from './pages/Equipe';
 // DEV panel
 import DevMensagens from './pages/DevMensagens';
 import DevFeedback from './pages/DevFeedback';
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/bolsoes" element={<Bolsoes />} />
         <Route path="/financeiro-pons" element={<FinanceiroPons />} />
         <Route path="/agente-ia" element={<AgenteIA />} />
+        <Route path="/equipe" element={<Equipe />} />
         {/* DEV panel — CEO + DEV */}
         <Route path="/dev/mensagens" element={<DevMensagens />} />
         <Route path="/dev/feedback" element={<DevFeedback />} />
