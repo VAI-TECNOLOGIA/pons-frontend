@@ -63,11 +63,14 @@
   white-space: nowrap;
 }
 .sidebar__item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
+.sidebar__item:hover .icon {
+  color: var(--pons-blue, #5d8fe0);
+}
 .sidebar__item--active {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
   color: #fff;
 }
 .sidebar__item--active .icon {
@@ -129,8 +132,16 @@
   letter-spacing: 0;
 }
 .sidebar__group-trigger:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+}
+.sidebar__group-trigger:hover .icon:not(.sidebar__group-chevron) {
+  color: var(--pons-blue, #5d8fe0);
+  opacity: 1;
+}
+.sidebar__group-trigger.is-open .icon:not(.sidebar__group-chevron) {
+  color: var(--pons-blue, #5d8fe0);
+  opacity: 1;
 }
 .sidebar__group-trigger .icon:not(.sidebar__group-chevron) {
   width: 17px;
