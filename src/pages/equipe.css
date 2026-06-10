@@ -13,27 +13,23 @@
 }
 
 /* ── Sidebar interna ─────────────────────────────────────────── */
-/* Em DARK MODE: tom diferente da sidebar principal (#0B0F1A). Aqui
-   usamos #131A2E que cria hierarquia visual igual ao VAI CRM. */
+/* Mesma cor da sidebar principal (#0B0F1A) — em ambos os temas.
+   Garante continuidade visual entre as duas sidebars. */
 .equipe__side {
-  background: var(--bg-card);
-  border-right: 1px solid var(--border-light);
+  background: #0B0F1A;
+  color: rgba(255, 255, 255, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
   padding: 22px 14px;
   overflow-y: auto;
-}
-[data-theme="dark"] .equipe__side {
-  background: #131A2E;
-  border-right-color: rgba(255, 255, 255, 0.04);
 }
 .equipe__side-title {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.55);
   padding: 0 10px;
   margin: 0 0 8px;
-  opacity: 0.7;
 }
 .equipe__nav {
   display: flex;
@@ -48,43 +44,36 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.72);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: background 0.14s ease, color 0.14s ease;
+  transition: background 0.16s ease, color 0.16s ease;
+  width: 100%;
 }
 .equipe__nav-item .icon {
-  color: var(--text-secondary);
-  opacity: 0.75;
+  color: rgba(255, 255, 255, 0.72);
   stroke-width: 1.75;
   flex-shrink: 0;
-  transition: color 0.14s ease, opacity 0.14s ease;
+  transition: color 0.16s ease;
 }
-/* Hover: barrinha cinza atrás + ícone azul */
+/* Hover: barrinha branca translúcida + ícone azul */
 .equipe__nav-item:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
 }
 .equipe__nav-item:hover .icon {
-  color: var(--pons-blue, #2563eb);
-  opacity: 1;
+  color: var(--pons-blue, #5d8fe0);
 }
-/* Ativo: mesma barrinha + ícone azul + texto reforçado */
+/* Ativo: barrinha mais forte + ícone azul + texto branco */
 .equipe__nav-item.is-active {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
   font-weight: 600;
 }
 .equipe__nav-item.is-active .icon {
-  color: var(--pons-blue, #2563eb);
-  opacity: 1;
-}
-[data-theme="dark"] .equipe__nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-[data-theme="dark"] .equipe__nav-item.is-active {
-  background: rgba(255, 255, 255, 0.07);
+  color: var(--pons-blue, #5d8fe0);
 }
 
 /* ── Main ─────────────────────────────────────────────────────── */
@@ -623,17 +612,42 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 2px;
+  padding: 3px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.equipe__org-zoom button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+}
+.equipe__org-zoom button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+[data-theme="dark"] .equipe__org-zoom button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+.equipe__org-zoom span {
+  min-width: 38px;
+  text-align: center;
+  user-select: none;
 }
 .equipe__org-canvas {
   padding: 36px 30px;
   min-height: 140px;
+  background: rgba(0, 0, 0, 0.015);
+  overflow: auto;
+}
+.equipe__org-canvas-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: rgba(0, 0, 0, 0.015);
+  transition: transform 0.18s ease;
 }
 [data-theme="dark"] .equipe__org-canvas { background: rgba(255, 255, 255, 0.015); }
 

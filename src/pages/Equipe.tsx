@@ -14,10 +14,10 @@ import './equipe.css';
 type Tab = 'usuarios' | 'departamentos' | 'hierarquia' | 'niveis';
 
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: 'usuarios',      label: 'Usuários',      icon: 'users' },
-  { id: 'departamentos', label: 'Departamentos', icon: 'building' },
-  { id: 'hierarquia',    label: 'Hierarquia',    icon: 'pipeline' },
-  { id: 'niveis',        label: 'Níveis',        icon: 'database' },
+  { id: 'usuarios',      label: 'Usuários',      icon: 'users_vai' },
+  { id: 'departamentos', label: 'Departamentos', icon: 'network' },
+  { id: 'hierarquia',    label: 'Hierarquia',    icon: 'hierarchy' },
+  { id: 'niveis',        label: 'Níveis',        icon: 'layers' },
 ];
 
 export default function Equipe() {
@@ -543,6 +543,11 @@ function AbaHierarquia() {
   const { data: users } = useApi<any[]>(() => Api.equipeUsers());
   const roots = data?.roots || [];
   const lista = users || [];
+  // Zoom: 50% ... 200%, passo de 10
+  const [zoom, setZoom] = useState(100);
+  const zoomIn  = () => setZoom((z) => Math.min(200, z + 10));
+  const zoomOut = () => setZoom((z) => Math.max(50,  z - 10));
+  const zoomReset = () => setZoom(100);
 
   // Agrupa por nível (ordem)
   const byLevel: Record<string, any[]> = {};
@@ -567,16 +572,25 @@ function AbaHierarquia() {
             <button className="equipe__org-btn" disabled>Expandir</button>
             <button className="equipe__org-btn">Colapsar</button>
             <span className="equipe__org-zoom">
-              <button><Icon name="search" size={14} /></button>
-              <span>100%</span>
-              <button><Icon name="search" size={14} /></button>
+              <button onClick={zoomOut} disabled={zoom <= 50} title="Diminuir zoom">
+                <Icon name="zoom_out" size={14} />
+              </button>
+              <span onClick={zoomReset} style={{ cursor: 'pointer' }} title="Resetar para 100%">{zoom}%</span>
+              <button onClick={zoomIn} disabled={zoom >= 200} title="Aumentar zoom">
+                <Icon name="zoom_in" size={14} />
+              </button>
             </span>
             <button className="equipe__org-btn">Confortável</button>
           </div>
         </div>
         <div className="equipe__org-canvas">
-          {roots.map((r: any) => <OrgNode key={r.id} node={r} />)}
-          {!roots.length && <div className="equipe__empty-sub">Nenhum usuário cadastrado ainda.</div>}
+          <div
+            className="equipe__org-canvas-inner"
+            style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
+          >
+            {roots.map((r: any) => <OrgNode key={r.id} node={r} />)}
+            {!roots.length && <div className="equipe__empty-sub">Nenhum usuário cadastrado ainda.</div>}
+          </div>
         </div>
       </div>
 
