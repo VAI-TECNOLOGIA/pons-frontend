@@ -8,16 +8,13 @@ import { Icon } from '../components/Icon';
 import { useApi } from '../lib/useApi';
 import { Api } from '../lib/api';
 import { useToast } from '../lib/toast';
-import { Modal } from '../components/Modal';
 import './equipe.css';
 
-type Tab = 'usuarios' | 'departamentos' | 'hierarquia' | 'niveis';
+type Tab = 'usuarios' | 'hierarquia';
 
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: 'usuarios',      label: 'Usuários',      icon: 'users_vai' },
-  { id: 'departamentos', label: 'Departamentos', icon: 'network' },
-  { id: 'hierarquia',    label: 'Hierarquia',    icon: 'hierarchy' },
-  { id: 'niveis',        label: 'Níveis',        icon: 'layers' },
+  { id: 'usuarios',   label: 'Usuários',   icon: 'users_vai' },
+  { id: 'hierarquia', label: 'Hierarquia', icon: 'hierarchy' },
 ];
 
 export default function Equipe() {
@@ -43,9 +40,7 @@ export default function Equipe() {
         </aside>
         <main className="equipe__main">
           {tab === 'usuarios' && <AbaUsuarios />}
-          {tab === 'departamentos' && <AbaDepartamentos />}
           {tab === 'hierarquia' && <AbaHierarquia />}
-          {tab === 'niveis' && <AbaNiveis />}
         </main>
       </div>
     </>
@@ -424,115 +419,6 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ABA: DEPARTAMENTOS
-// ═══════════════════════════════════════════════════════════════════════════
-
-function AbaDepartamentos() {
-  const [search, setSearch] = useState('');
-  const { data, reload } = useApi<any[]>(() => Api.equipeDepartments());
-  const [novoOpen, setNovoOpen] = useState(false);
-  const toast = useToast();
-
-  const submit = async (form: any) => {
-    try {
-      await Api.equipeDepartmentCreate(form);
-      toast.success('Departamento criado');
-      setNovoOpen(false);
-      reload();
-    } catch (e: any) { toast.error('Erro: ' + e.message); }
-  };
-
-  const lista = (data || []).filter((d) => d.nome.toLowerCase().includes(search.toLowerCase()));
-
-  return (
-    <div>
-      <div className="equipe__page-head">
-        <h1 className="equipe__page-title">Departamentos</h1>
-        <p className="equipe__page-sub">Organize equipes e defina capacidades de atendimento</p>
-      </div>
-
-      <div className="equipe__toolbar">
-        <div className="equipe__search">
-          <Icon name="search" size={14} />
-          <input type="text" placeholder="Buscar departamento..." value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <button className="equipe__filter">Todos <Icon name="arrow_down" size={12} /></button>
-        <div className="equipe__count">{lista.length} departamento{lista.length !== 1 ? 's' : ''}</div>
-        <button className="btn-novo" onClick={() => setNovoOpen(true)}>
-          <Icon name="plus" size={14} /> Novo
-        </button>
-      </div>
-
-      <div className="equipe__panel">
-        {lista.length === 0 ? (
-          <div className="equipe__empty-state">
-            <div className="equipe__empty-icon"><Icon name="building" size={26} /></div>
-            <div className="equipe__empty-title">Nenhum departamento encontrado</div>
-            <div className="equipe__empty-sub">Crie seu primeiro departamento para organizar sua equipe.</div>
-            <button className="btn-novo" onClick={() => setNovoOpen(true)}>
-              <Icon name="plus" size={14} /> Novo Departamento
-            </button>
-          </div>
-        ) : (
-          <div className="equipe__dep-grid">
-            {lista.map((d) => (
-              <div key={d.id} className="equipe__dep-card">
-                <div className="equipe__dep-cor" style={{ background: d.cor }} />
-                <div style={{ flex: 1 }}>
-                  <div className="equipe__dep-nome">{d.nome}</div>
-                  {d.descricao && <div className="equipe__dep-desc">{d.descricao}</div>}
-                  <div className="equipe__dep-meta">{d.usersCount || 0} membro{d.usersCount === 1 ? '' : 's'}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {novoOpen && <NovoDeptModal onClose={() => setNovoOpen(false)} onSave={submit} />}
-    </div>
-  );
-}
-
-function NovoDeptModal({ onClose, onSave }: any) {
-  const [form, setForm] = useState({ nome: '', descricao: '', cor: '#1258CA' });
-  const cores = ['#1258CA', '#22C55E', '#EAB308', '#EF4444', '#A855F7', '#06B6D4'];
-
-  return (
-    <Modal open={true} onClose={onClose} title="Novo departamento" size="sm"
-      footer={<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button className="btn btn--ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn-novo" onClick={() => onSave(form)}>Criar</button>
-      </div>}>
-      <div className="novo-nivel">
-        <label className="field">
-          <span className="field__label">Nome *</span>
-          <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Comercial BC" />
-        </label>
-        <label className="field">
-          <span className="field__label">Descrição (opcional)</span>
-          <input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
-        </label>
-        <div>
-          <span className="field__label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Cor</span>
-          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-            {cores.map((c) => (
-              <button key={c} type="button"
-                onClick={() => setForm({ ...form, cor: c })}
-                style={{
-                  background: c, width: 28, height: 28,
-                  border: form.cor === c ? '3px solid var(--text-primary)' : '1px solid var(--border-light)',
-                  borderRadius: 6, cursor: 'pointer'
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </Modal>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ABA: HIERARQUIA (organograma)
@@ -644,174 +530,3 @@ function OrgNode({ node }: { node: any }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ABA: NÍVEIS
-// ═══════════════════════════════════════════════════════════════════════════
-
-function AbaNiveis() {
-  const { data: levels, reload } = useApi<any[]>(() => Api.equipeLevels());
-  const [novoOpen, setNovoOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const toast = useToast();
-
-  const criar = async (data: any) => {
-    try { await Api.equipeLevelCreate(data); toast.success('Nível criado'); setNovoOpen(false); reload(); }
-    catch (e: any) { toast.error('Erro: ' + e.message); }
-  };
-  const salvarEdit = async (data: any) => {
-    try { await Api.equipeLevelUpdate(editing.id, data); toast.success('Nível atualizado'); setEditing(null); reload(); }
-    catch (e: any) { toast.error('Erro: ' + e.message); }
-  };
-  const deletar = async (id: number) => {
-    if (!confirm('Remover este nível? Só funciona se nenhum usuário estiver vinculado.')) return;
-    try { await Api.equipeLevelDelete(id); toast.success('Nível removido'); reload(); }
-    catch (e: any) { toast.error('Erro: ' + (e.message || 'falha')); }
-  };
-
-  return (
-    <div>
-      <div className="equipe__page-head">
-        <h1 className="equipe__page-title">Níveis de Hierarquia</h1>
-        <p className="equipe__page-sub">Renomeie níveis padrão e crie níveis customizados (ex: Analista)</p>
-      </div>
-
-      <div className="equipe__panel">
-        <div className="equipe__panel-head">
-          <div>
-            <h2>Níveis de hierarquia</h2>
-            <p>
-              Os 5 níveis padrão (Dono, Gerente, Coordenador, Supervisor, Agente) podem ser renomeados. Você também pode criar níveis customizados (ex: "Analista") posicionando-os entre os existentes.
-            </p>
-          </div>
-          <button className="btn-novo" onClick={() => setNovoOpen(true)}>
-            <Icon name="plus" size={14} /> Novo nível
-          </button>
-        </div>
-
-        <div className="equipe__level-list">
-          {(levels || []).map((lv: any) => (
-            <div key={lv.id} className="level-item">
-              <div className="level-item__ordem">{lv.ordem}</div>
-              <div>
-                <div className="level-item__head">
-                  <span className="level-item__nome">{lv.nome}</span>
-                  <code className="level-item__code">{lv.code}</code>
-                  {!lv.custom && <span className="level-item__padrao">Padrão</span>}
-                </div>
-                <div className="level-item__scope">
-                  <Icon name="eye" size={12} /> {scopeLabel(lv.scope)}
-                </div>
-              </div>
-              <div className="level-item__actions">
-                <button className="level-item__btn" onClick={() => setEditing(lv)}>
-                  <Icon name="pencil" size={13} /> Editar
-                </button>
-                <button
-                  className="level-item__btn"
-                  disabled={!lv.custom}
-                  title={lv.custom ? 'Remover nível' : 'Níveis padrão não podem ser removidos'}
-                  onClick={() => lv.custom && deletar(lv.id)}
-                >
-                  <Icon name="trash" size={13} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="equipe__hint">
-          <Icon name="lock" size={13} />
-          <span>
-            Níveis customizados herdam o comportamento de visibilidade do nível padrão equivalente ao seu <b>scope</b>.
-            Por ex., um nível "Analista" com scope "Vê própria árvore" se comporta como o Coordenador para o sistema.
-            O <code style={{ fontSize: 11, background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 4 }}>scope</code> dos níveis padrão é fixo para preservar compatibilidade.
-          </span>
-        </div>
-      </div>
-
-      {novoOpen && <NovoNivelModal levels={levels || []} onClose={() => setNovoOpen(false)} onSave={criar} />}
-      {editing && <EditNivelModal level={editing} onClose={() => setEditing(null)} onSave={salvarEdit} />}
-    </div>
-  );
-}
-
-function NovoNivelModal({ levels, onClose, onSave }: any) {
-  const [nome, setNome] = useState('');
-  const supervisorLv = levels.find((l: any) => l.code === 'supervisor');
-  const [posicaoAbaixoId, setPosicaoAbaixoId] = useState<number | undefined>(supervisorLv?.id);
-  const [scope, setScope] = useState('coord_tree_dept');
-
-  return (
-    <Modal open={true} onClose={onClose}
-      title="Novo nível customizado"
-      subtitle="Defina um nome, posição e regra de visibilidade."
-      size="sm"
-      footer={<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button className="btn btn--ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn-novo" onClick={() => onSave({ nome, scope, posicionarAbaixoDeId: posicaoAbaixoId })}>Criar nível</button>
-      </div>}>
-      <div className="novo-nivel">
-        <label className="field">
-          <span className="field__label">Nome</span>
-          <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="ex: Analista de Atendimento" />
-        </label>
-        <label className="field">
-          <span className="field__label">Posicionar abaixo de</span>
-          <select value={posicaoAbaixoId || ''} onChange={(e) => setPosicaoAbaixoId(Number(e.target.value))}>
-            {levels.map((lv: any) => (
-              <option key={lv.id} value={lv.id}>{lv.nome}</option>
-            ))}
-          </select>
-          <p className="field__hint">
-            Custom levels são criados sempre do nível Dono pra baixo. Os níveis abaixo desta posição descem 1 lugar automaticamente.
-          </p>
-        </label>
-        <label className="field">
-          <span className="field__label">Scope (regra de visibilidade)</span>
-          <select value={scope} onChange={(e) => setScope(e.target.value)}>
-            <option value="manager_all">Vê tudo</option>
-            <option value="coord_tree_dept">Vê própria árvore + departamentos</option>
-            <option value="supervisor_direct_dept">Vê reportes diretos + departamentos</option>
-            <option value="agent_self">Vê apenas a si mesmo</option>
-          </select>
-          <p className="field__hint">{scopeLabel(scope)}</p>
-        </label>
-      </div>
-    </Modal>
-  );
-}
-
-function EditNivelModal({ level, onClose, onSave }: any) {
-  const [nome, setNome] = useState(level.nome);
-
-  return (
-    <Modal open={true} onClose={onClose}
-      title={`Editar nível: ${level.nome}`}
-      subtitle={level.custom ? 'Renomeie o nível ou altere o scope.' : 'Você pode renomear este nível padrão. O scope é fixo para preservar compatibilidade.'}
-      size="sm"
-      footer={<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button className="btn btn--ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn-novo" onClick={() => onSave({ nome })}>Salvar</button>
-      </div>}>
-      <label className="novo-nivel field">
-        <span className="field__label">Nome</span>
-        <input value={nome} onChange={(e) => setNome(e.target.value)} />
-      </label>
-    </Modal>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Helpers
-// ═══════════════════════════════════════════════════════════════════════════
-
-function scopeLabel(scope: string): string {
-  switch (scope) {
-    case 'owner_all':              return 'Vê tudo';
-    case 'manager_all':            return 'Vê tudo';
-    case 'coord_tree_dept':        return 'Vê própria árvore + departamentos';
-    case 'supervisor_direct_dept': return 'Vê reportes diretos + departamentos';
-    case 'agent_self':             return 'Vê apenas os próprios chats';
-    default:                       return scope;
-  }
-}
