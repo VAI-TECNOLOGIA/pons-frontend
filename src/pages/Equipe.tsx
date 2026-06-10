@@ -239,7 +239,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   const submit = async () => {
     if (!form.nome || !form.email || !form.password) return toast.error('Preencha nome, email e senha.');
     if (form.password !== confirmPass) return toast.error('As senhas não conferem.');
-    if (form.role === 'GERENTE_EQUIPE' && !form.equipeIds.length) {
+    if (!form.equipeIds.length) {
       return toast.error('Selecione pelo menos uma equipe pra esse gestor gerenciar.');
     }
     setSaving(true);
@@ -329,39 +329,39 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
             </div>
           </section>
 
-          {form.role === 'GERENTE_EQUIPE' && (
-            <section>
-              <p className="user-drawer__sec">EQUIPES QUE VAI GERENCIAR *</p>
-              <p className="user-drawer__hint">
-                Esse usuário só vai ver dados (leads, atendimento, vendas) das equipes que você selecionar.
-              </p>
-              <div className="user-drawer__equipes">
-                {(equipes || []).length === 0 ? (
-                  <p className="user-drawer__warn">Nenhuma equipe cadastrada ainda. Crie em Administração → Equipes.</p>
-                ) : (
-                  (equipes || []).map((e: any) => (
-                    <label key={e.id} className={'user-drawer__equipe' + (form.equipeIds.includes(e.id) ? ' is-selected' : '')}>
-                      <input
-                        type="checkbox"
-                        checked={form.equipeIds.includes(e.id)}
-                        onChange={(ev) => {
-                          const next = ev.target.checked
-                            ? [...form.equipeIds, e.id]
-                            : form.equipeIds.filter((x) => x !== e.id);
-                          setForm({ ...form, equipeIds: next });
-                        }}
-                      />
-                      <span style={{ background: e.cor }} className="user-drawer__equipe-dot" />
-                      <div>
-                        <div className="user-drawer__equipe-nome">{e.nome}</div>
-                        {e.unidade && <div className="user-drawer__equipe-sub">{e.unidade}</div>}
-                      </div>
-                    </label>
-                  ))
-                )}
-              </div>
-            </section>
-          )}
+          <section>
+            <p className="user-drawer__sec">EQUIPES QUE VAI GERENCIAR *</p>
+            <p className="user-drawer__hint">
+              {form.role === 'DIRETOR_FINANCEIRO'
+                ? 'O Gerente Financeiro só vai ver rateios, fechamentos, vendas e relatórios financeiros das equipes selecionadas.'
+                : 'Esse usuário só vai ver dados (leads, atendimento, vendas) das equipes que você selecionar.'}
+            </p>
+            <div className="user-drawer__equipes">
+              {(equipes || []).length === 0 ? (
+                <p className="user-drawer__warn">Nenhuma equipe cadastrada ainda. Crie em Administração → Equipes.</p>
+              ) : (
+                (equipes || []).map((e: any) => (
+                  <label key={e.id} className={'user-drawer__equipe' + (form.equipeIds.includes(e.id) ? ' is-selected' : '')}>
+                    <input
+                      type="checkbox"
+                      checked={form.equipeIds.includes(e.id)}
+                      onChange={(ev) => {
+                        const next = ev.target.checked
+                          ? [...form.equipeIds, e.id]
+                          : form.equipeIds.filter((x) => x !== e.id);
+                        setForm({ ...form, equipeIds: next });
+                      }}
+                    />
+                    <span style={{ background: e.cor }} className="user-drawer__equipe-dot" />
+                    <div>
+                      <div className="user-drawer__equipe-nome">{e.nome}</div>
+                      {e.unidade && <div className="user-drawer__equipe-sub">{e.unidade}</div>}
+                    </div>
+                  </label>
+                ))
+              )}
+            </div>
+          </section>
 
           <section>
             <p className="user-drawer__sec">SENHA DE ACESSO</p>
