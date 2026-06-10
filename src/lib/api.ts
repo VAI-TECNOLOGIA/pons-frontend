@@ -1,9 +1,20 @@
 import { Auth } from './auth';
 
-// API base. Em prod (Vercel), o domínio do front faz proxy '/api' → Railway via vercel.json.
-// Em build standalone (app nativo, etc.), set VITE_API_BASE_URL pra URL absoluta do backend.
+// API base. Default = chama Railway DIRETO (sem passar por Vercel rewrite que
+// adiciona 1-12s de overhead inconsistente). Em dev local o proxy do Vite
+// (vite.config.ts) cuida do /api → :3030 quando rodando em localhost.
+//
+// Override via env: VITE_API_BASE_URL pra apontar pra outro backend.
+const PROD_API = 'https://web-production-e420b.up.railway.app';
 const envBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-const BASE = envBase ? `${envBase}/api` : '/api';
+const isLocalDev =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const BASE = envBase
+  ? `${envBase}/api`
+  : isLocalDev
+    ? '/api'         // dev: Vite proxy /api → :3030
+    : `${PROD_API}/api`; // prod: vai direto na Railway (skip Vercel rewrite)
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
