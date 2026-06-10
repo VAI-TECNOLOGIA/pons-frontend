@@ -86,6 +86,8 @@ const DevMetrics      = lazyRetry(() => import('./pages/DevMetrics'));
 // Páginas públicas (Google/Facebook OAuth verification)
 const Privacidade     = lazyRetry(() => import('./pages/Privacidade'));
 const Termos          = lazyRetry(() => import('./pages/Termos'));
+const ExcluirConta    = lazyRetry(() => import('./pages/ExcluirConta'));
+const ExcluirDados    = lazyRetry(() => import('./pages/ExcluirDados'));
 const FbCallback      = lazyRetry(() => import('./pages/FbCallback'));
 
 export default function App() {
@@ -97,6 +99,9 @@ export default function App() {
         <Route path="/painel-tv" element={<PainelTV />} />
         <Route path="/lp/:slug" element={<LPPublica />} />
         <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/politica-de-seguranca" element={<Privacidade />} />
+        <Route path="/excluir-conta" element={<ExcluirConta />} />
+        <Route path="/excluir-dados" element={<ExcluirDados />} />
         <Route path="/termos" element={<Termos />} />
         <Route path="/integracoes/fb-callback" element={<FbCallback />} />
 

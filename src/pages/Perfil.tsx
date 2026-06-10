@@ -11,6 +11,7 @@ import { InsightsList } from '../components/InsightsList';
 import { ScorePanel } from '../components/ScorePanel';
 import { MinhasBMs } from '../components/MinhasBMs';
 import { PreferenciasCard } from '../components/PreferenciasCard';
+import { DeleteAccountCard } from '../components/DeleteAccountCard';
 
 import './perfil.css';
 
@@ -215,6 +216,7 @@ export default function Perfil() {
           </>
         )}
         <PreferenciasCard />
+        <DeleteAccountCard />
       </div>
 
       <Modal
