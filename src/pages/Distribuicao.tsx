@@ -7,37 +7,76 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 
 const PRESETS: { label: string; expr: string }[] = [
-  { label: 'Segunda 9h', expr: '0 9 * * 1' },
-  { label: 'Quinta 18h', expr: '0 18 * * 4' },
-  { label: 'Sexta 17h', expr: '0 17 * * 5' },
+  { label: 'Segunda 9h',       expr: '0 9 * * 1' },
+  { label: 'Quinta 18h',       expr: '0 18 * * 4' },
+  { label: 'Sexta 10h',        expr: '0 10 * * 5' },
+  { label: 'Sexta 17h',        expr: '0 17 * * 5' },
   { label: 'Todo dia útil 8h', expr: '0 8 * * 1-5' },
-  { label: 'Toda manhã 10h', expr: '0 10 * * *' },
+  { label: 'Toda manhã 10h',   expr: '0 10 * * *' },
 ];
 
 export default function Distribuicao() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  // Escopo: 'sistema' (sem filtro de equipe) | 'equipes' (filtra pelas equipes selecionadas)
+  const [escopo, setEscopo] = useState<'sistema' | 'equipes'>('sistema');
+  const [equipesSel, setEquipesSel] = useState<number[]>([]);
   const { data, loading, error, reload } = useApi<any[]>(() => Api.distribuicaoList());
+  const { data: equipes } = useApi<any[]>(() => Api.equipes());
   const toast = useToast();
   const confirm = useConfirm();
 
+  // Abre o modal já com o escopo correto baseado na regra sendo editada
+  const abrirCriar = () => {
+    setEditing(null);
+    setEscopo('sistema');
+    setEquipesSel([]);
+    setOpen(true);
+  };
+  const abrirEditar = (d: any) => {
+    setEditing(d);
+    const ids: number[] = Array.isArray(d.equipeIds) ? d.equipeIds : (d.equipeId ? [d.equipeId] : []);
+    setEscopo(ids.length > 0 ? 'equipes' : 'sistema');
+    setEquipesSel(ids);
+    setOpen(true);
+  };
+
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (escopo === 'equipes' && equipesSel.length === 0) {
+      toast.error('Selecione pelo menos 1 equipe — ou troque o escopo pra "Sistema todo".');
+      return;
+    }
     const fd = new FormData(e.currentTarget);
-    const payload = {
+    const payload: any = {
       nome: String(fd.get('nome') || ''),
       cronExpr: String(fd.get('cronExpr') || ''),
       qtdPorCorretor: Number(fd.get('qtdPorCorretor') || 10),
       cidade: String(fd.get('cidade') || '') || null,
       origemLead: String(fd.get('origemLead') || '') || null,
       statusLead: String(fd.get('statusLead') || '') || null,
-      ativa: true,
+      ativa: editing?.ativa ?? true,
+      // Escopo: sistema → equipeIds null + equipeId null. Equipes → equipeIds = sel
+      equipeIds: escopo === 'equipes' ? equipesSel : null,
+      equipeId: null, // sempre limpa legado quando salvamos pelo modal novo
     };
     try {
       if (editing) await Api.distribuicaoUpdate(editing.id, payload);
       else await Api.distribuicaoCreate(payload);
       toast.success('Salvo'); setOpen(false); setEditing(null); reload();
     } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+  };
+
+  const toggleEquipe = (id: number) => {
+    setEquipesSel((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
+  };
+
+  // Mostra o escopo da regra na tabela ("Sistema" ou "Equipes: A, B")
+  const escopoLabel = (d: any) => {
+    const ids: number[] = Array.isArray(d.equipeIds) ? d.equipeIds : (d.equipeId ? [d.equipeId] : []);
+    if (ids.length === 0) return 'Sistema todo';
+    const nomes = ids.map((id) => (equipes || []).find((e: any) => e.id === id)?.nome || `#${id}`);
+    return nomes.join(', ');
   };
 
   const executar = async (d: any) => {
@@ -65,7 +104,7 @@ export default function Distribuicao() {
     <>
       <Topbar
         title="Distribuição Agendada"
-        right={<button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova regra</button>}
+        right={<button className="btn btn--primary btn--sm" onClick={abrirCriar}>+ Nova regra</button>}
       />
       <div className="main__content">
         <PageHeader
@@ -79,7 +118,7 @@ export default function Distribuicao() {
         <div className="card">
           <table className="table">
             <thead>
-              <tr><th>Nome</th><th>Cron</th><th>Qtd/corretor</th><th>Filtros</th><th>Última exec.</th><th></th></tr>
+              <tr><th>Nome</th><th>Cron</th><th>Qtd/corretor</th><th>Escopo</th><th>Filtros</th><th>Última exec.</th><th></th></tr>
             </thead>
             <tbody>
               {(data || []).map((d: any) => (
@@ -90,6 +129,7 @@ export default function Distribuicao() {
                   </td>
                   <td><code>{d.cronExpr}</code></td>
                   <td>{d.qtdPorCorretor}</td>
+                  <td className="text-xs">{escopoLabel(d)}</td>
                   <td className="text-xs">
                     {[d.cidade && `cidade=${d.cidade}`, d.origemLead && `origem=${d.origemLead}`, d.statusLead && `status=${d.statusLead}`].filter(Boolean).join(' · ') || '—'}
                   </td>
@@ -98,14 +138,14 @@ export default function Distribuicao() {
                     <div className="flex" style={{ gap: 4 }}>
                       <button className="btn btn--ghost btn--sm" onClick={() => executar(d)}>▶ Executar</button>
                       <button className="btn btn--ghost btn--sm" onClick={() => toggle(d)}>{d.ativa ? '⏸' : '▶'}</button>
-                      <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(d); setOpen(true); }}>Editar</button>
+                      <button className="btn btn--ghost btn--sm" onClick={() => abrirEditar(d)}>Editar</button>
                       <button className="btn btn--ghost btn--sm" onClick={() => excluir(d)}>×</button>
                     </div>
                   </td>
                 </tr>
               ))}
               {data?.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma regra criada</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma regra criada</td></tr>
               )}
             </tbody>
           </table>
@@ -126,6 +166,61 @@ export default function Distribuicao() {
         <form id="dist-form" onSubmit={submit}>
           <div className="form-grid">
             <div className="field"><label className="field__label">Nome *</label><input name="nome" className="field__input" required defaultValue={editing?.nome} placeholder="Ex: Itapema toda segunda" /></div>
+
+            {/* ─── Escopo (sistema todo vs equipes específicas) ─── */}
+            <div className="field" style={{ gridColumn: '1 / -1' }}>
+              <label className="field__label">Atribuir regra a *</label>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="escopo"
+                    checked={escopo === 'sistema'}
+                    onChange={() => { setEscopo('sistema'); setEquipesSel([]); }}
+                  />
+                  <span>Sistema todo <span className="text-xs text-secondary">(corretores de qualquer equipe)</span></span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="escopo"
+                    checked={escopo === 'equipes'}
+                    onChange={() => setEscopo('equipes')}
+                  />
+                  <span>Equipes específicas</span>
+                </label>
+              </div>
+
+              {escopo === 'equipes' && (
+                <div style={{
+                  border: '1px solid var(--border-light)', borderRadius: 8, padding: 10,
+                  display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 180, overflowY: 'auto',
+                }}>
+                  {(equipes || []).length === 0 && (
+                    <span className="text-xs text-secondary">Nenhuma equipe cadastrada — crie em Equipes primeiro.</span>
+                  )}
+                  {(equipes || []).map((eq: any) => {
+                    const sel = equipesSel.includes(eq.id);
+                    return (
+                      <button
+                        key={eq.id}
+                        type="button"
+                        onClick={() => toggleEquipe(eq.id)}
+                        className="btn btn--sm"
+                        style={{
+                          background: sel ? eq.cor || '#1258CA' : 'transparent',
+                          color: sel ? '#fff' : 'var(--text-primary)',
+                          border: `1px solid ${sel ? (eq.cor || '#1258CA') : 'var(--border-light)'}`,
+                        }}
+                      >
+                        {sel && '✓ '}{eq.nome}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div className="field">
               <label className="field__label">Cron expression *</label>
               <input name="cronExpr" className="field__input" required defaultValue={editing?.cronExpr || '0 9 * * 1'} />
