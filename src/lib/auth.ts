@@ -33,7 +33,6 @@ export interface User {
 
 const TOKEN_KEY = 'pons.token';
 const USER_KEY = 'pons.user';
-const GATE_KEY = 'vai.gate';
 
 export const Auth = {
   get token(): string | null {
@@ -46,12 +45,6 @@ export const Auth = {
     } catch {
       return null;
     }
-  },
-  get gatePassed(): boolean {
-    return localStorage.getItem(GATE_KEY) === '1';
-  },
-  setGate() {
-    localStorage.setItem(GATE_KEY, '1');
   },
   set(token: string, user: User) {
     localStorage.setItem(TOKEN_KEY, token);

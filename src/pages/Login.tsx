@@ -22,10 +22,6 @@ export default function Login() {
  const [busy, setBusy] = useState(false);
 
  useEffect(() => {
- if (!Auth.gatePassed) {
- navigate('/', { replace: true });
- return;
- }
  if (Auth.token) {
  Api.me()
  .then((r) => navigate(r.user?.role === 'DEV' ? '/dev/mensagens' : '/dashboard', { replace: true }))

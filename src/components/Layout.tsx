@@ -10,7 +10,6 @@ export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const loc = useLocation();
 
-  if (!Auth.gatePassed) return <Navigate to="/" replace />;
   if (!Auth.token) return <Navigate to="/login" replace />;
 
   // Persona guard: DEV só vê /dev/*; demais NÃO vêem /dev/*.

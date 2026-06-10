@@ -73,10 +73,6 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
 }
 
 export const Api = {
-  // Gate
-  gateVerificar: (token: string) =>
-    request<{ ok: boolean }>('/gate/verificar', { method: 'POST', body: { token }, auth: false }),
-
   // Auth
   login: (email: string, password: string) =>
     request<{ token: string; user: import('./auth').User }>('/auth/login', {

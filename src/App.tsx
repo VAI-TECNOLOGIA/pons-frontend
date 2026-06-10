@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/Layout';
 
-import Gate from './pages/Gate';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
@@ -52,7 +51,7 @@ import FbCallback from './pages/FbCallback';
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Gate />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/painel-tv" element={<PainelTV />} />
       <Route path="/lp/:slug" element={<LPPublica />} />
