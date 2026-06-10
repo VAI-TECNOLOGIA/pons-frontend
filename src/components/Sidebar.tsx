@@ -52,7 +52,6 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: '/corretores', label: 'Corretores', icon: 'users', roles: ['CEO', 'DIRETOR_COMERCIAL', SOCIO] },
       { to: '/equipes', label: 'Equipes', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', SOCIO] },
-      { to: '/distribuicao', label: 'Distribuição', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/roletas', label: 'Roletas', icon: 'roulette', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/bolsoes', label: 'Bolsões', icon: 'database', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/transferencias', label: 'Transferências', icon: 'arrow_right', roles: ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'] },
@@ -79,8 +78,7 @@ const GROUPS: NavGroup[] = [
       { to: '/trafego', label: 'Tráfego Pago', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/bm', label: 'Business Managers', icon: 'facebook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'CORRETOR', 'GERENTE_EQUIPE'] },
       { to: '/remarketing', label: 'Remarketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
-      { to: '/landing-pages', label: 'Landing Pages', icon: 'globe', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
-      { to: '/heatmap', label: 'Heatmap', icon: 'fire', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+      { to: '/distribuicao', label: 'Distribuição', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/importar', label: 'Importar Leads', icon: 'plus', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
     ],
   },

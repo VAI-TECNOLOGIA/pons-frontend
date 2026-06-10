@@ -284,31 +284,6 @@ export default function Executivo() {
 
         <AgendaKpisBar />
 
-        <div className="kpi-grid">
-          <div className="kpi">
-            <div className="kpi__label">Próximos compromissos</div>
-            <div className="kpi__value">{calEvents.length}</div>
-          </div>
-          <div className="kpi">
-            <div className="kpi__label">Hoje</div>
-            <div className="kpi__value">
-              {calEvents.filter((e) => sameDay(new Date(e.inicio), today)).length}
-            </div>
-          </div>
-          <div className="kpi">
-            <div className="kpi__label">Esta semana</div>
-            <div className="kpi__value">
-              {calEvents.filter((e) => withinWeek(new Date(e.inicio), today)).length}
-            </div>
-          </div>
-          <div className="kpi">
-            <div className="kpi__label">Tarefas abertas</div>
-            <div className="kpi__value">
-              {tks.filter((t: any) => t.status !== 'CONCLUIDO' && t.status !== 'CONCLUIDA').length}
-            </div>
-          </div>
-        </div>
-
         {GOOGLE_CALENDAR_ENABLED && !googleConectado && (
           <div className="card google-cta">
             <div className="google-cta__icon">
