@@ -6,11 +6,11 @@ import { useUser } from '../lib/userContext';
 
 import './login.css';
 
-const DEMO_OPTIONS = [
- { email: 'paulo@grupopons.com.br', label: 'paulo@grupopons.com.br — CEO (vê tudo)' },
- { email: 'junior@grupopons.com.br', label: 'junior@grupopons.com.br — Diretor Comercial' },
- { email: 'financeiro@grupopons.com.br', label: 'financeiro@grupopons.com.br — Diretor Financeiro' },
- { email: 'rafael@grupopons.com.br', label: 'rafael@grupopons.com.br — Corretor' },
+const DEMO_OPTIONS: { email: string; password: string; label: string }[] = [
+ { email: 'paulo@grupopons.com.br', password: 'pons123', label: 'paulo@grupopons.com.br — CEO (vê tudo)' },
+ { email: 'junior@grupopons.com.br', password: 'pons123', label: 'junior@grupopons.com.br — Diretor Comercial' },
+ { email: 'marcelo.financeiro@grupopons.com.br', password: 'finPons!2026', label: 'marcelo.financeiro@grupopons.com.br — Diretor Financeiro' },
+ { email: 'rafael@grupopons.com.br', password: 'pons123', label: 'rafael@grupopons.com.br — Corretor' },
 ];
 
 export default function Login() {
@@ -53,9 +53,9 @@ export default function Login() {
  }
  };
 
- const fillDemo = (e: string) => {
- setEmail(e);
- setPassword('pons123');
+ const fillDemo = (email: string, password: string) => {
+ setEmail(email);
+ setPassword(password);
  };
 
  return (
@@ -152,7 +152,7 @@ export default function Login() {
  <strong>Contas de demonstração</strong> (senha: <code>pons123</code>)
  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
  {DEMO_OPTIONS.map((o) => (
- <button key={o.email} type="button" className="login__demo-btn" onClick={() => fillDemo(o.email)}>
+ <button key={o.email} type="button" className="login__demo-btn" onClick={() => fillDemo(o.email, o.password)}>
  {o.label}
  </button>
  ))}
