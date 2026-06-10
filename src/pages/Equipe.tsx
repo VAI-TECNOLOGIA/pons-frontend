@@ -98,7 +98,6 @@ function AbaUsuarios() {
   const [novoOpen, setNovoOpen] = useState(false);
   const { data: users, loading, reload } = useApi<any[]>(() => Api.equipeUsers(search), [search]);
   const { data: levels } = useApi<any[]>(() => Api.equipeLevels());
-  const { data: departments } = useApi<any[]>(() => Api.equipeDepartments());
   const toast = useToast();
 
   const toggleAtivo = async (id: number) => {
@@ -145,7 +144,7 @@ function AbaUsuarios() {
                 <th>Usuário <span className="sort-arrow"><Icon name="arrow_down" size={10} /></span></th>
                 <th>Nível <span className="sort-arrow"><Icon name="arrow_down" size={10} /></span></th>
                 <th>Gestor</th>
-                <th>Departamentos <span className="sort-arrow"><Icon name="arrow_down" size={10} /></span></th>
+                <th>Equipes <span className="sort-arrow"><Icon name="arrow_down" size={10} /></span></th>
                 <th>Status <span className="sort-arrow"><Icon name="arrow_down" size={10} /></span></th>
                 <th></th>
               </tr>
@@ -174,8 +173,8 @@ function AbaUsuarios() {
                   </td>
                   <td>{u.manager?.name || '—'}</td>
                   <td>
-                    {u.departments?.length ? u.departments.map((d: any) => (
-                      <span key={d.id} className="equipe__dept-chip" style={{ background: d.cor + '22', color: d.cor }}>{d.nome}</span>
+                    {u.equipes?.length ? u.equipes.map((e: any) => (
+                      <span key={e.id} className="equipe__dept-chip" style={{ background: e.cor + '22', color: e.cor }}>{e.nome}</span>
                     )) : '—'}
                   </td>
                   <td>
@@ -213,8 +212,6 @@ function AbaUsuarios() {
       {novoOpen && (
         <NovoUsuarioModal
           levels={levels || []}
-          departments={departments || []}
-          users={lista}
           onClose={() => setNovoOpen(false)}
           onSaved={() => { setNovoOpen(false); reload(); }}
         />
@@ -223,30 +220,40 @@ function AbaUsuarios() {
   );
 }
 
-function NovoUsuarioModal({ levels, departments, users, onClose, onSaved }: any) {
+// Side-drawer (não modal centralizado). Visual VAI: header com avatar circular
+// + título, scroll interno, footer fixo. Foco no fluxo simplificado: criar
+// Gerente (Comercial ou Financeiro) e escolher as equipes que ele gerencia.
+function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   const toast = useToast();
+  const { data: equipes } = useApi<any[]>(() => Api.equipeEquipesList());
   const [form, setForm] = useState({
-    name: '', email: '', password: '', phone: '',
-    hierarchyLevelId: null as number | null,
-    managerId: null as number | null,
-    departmentIds: [] as number[],
+    nome: '', sobrenome: '', email: '', password: '', phone: '',
+    role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'DIRETOR_FINANCEIRO',
+    hierarchyLevelId: levels.find((l: any) => l.code === 'manager')?.id || null,
+    equipeIds: [] as number[],
     active: true,
   });
   const [confirmPass, setConfirmPass] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const selectedLevel = levels.find((l: any) => l.id === form.hierarchyLevelId);
-  const needManager = selectedLevel && selectedLevel.ordem > 0;
-  const managerLevel = selectedLevel ? levels.find((l: any) => l.ordem === selectedLevel.ordem - 1) : null;
-  const managerCandidates = managerLevel ? users.filter((u: any) => u.nivel?.code === managerLevel.code) : [];
-
   const submit = async () => {
-    if (!form.name || !form.email || !form.password) return toast.error('Preencha nome, email e senha.');
+    if (!form.nome || !form.email || !form.password) return toast.error('Preencha nome, email e senha.');
     if (form.password !== confirmPass) return toast.error('As senhas não conferem.');
-    if (needManager && !form.managerId) return toast.error(`Selecione um ${managerLevel?.nome} como gestor.`);
+    if (form.role === 'GERENTE_EQUIPE' && !form.equipeIds.length) {
+      return toast.error('Selecione pelo menos uma equipe pra esse gestor gerenciar.');
+    }
     setSaving(true);
     try {
-      await Api.equipeUserCreate(form);
+      await Api.equipeUserCreate({
+        name: `${form.nome} ${form.sobrenome}`.trim(),
+        email: form.email,
+        password: form.password,
+        phone: form.phone || null,
+        role: form.role,
+        hierarchyLevelId: form.hierarchyLevelId,
+        equipeIds: form.equipeIds,
+        active: form.active,
+      });
       toast.success('Usuário criado');
       onSaved();
     } catch (e: any) {
@@ -257,99 +264,126 @@ function NovoUsuarioModal({ levels, departments, users, onClose, onSaved }: any)
   };
 
   return (
-    <Modal
-      open={true}
-      onClose={onClose}
-      title="Novo Usuário"
-      subtitle="Cadastra um novo membro da equipe com nível e departamento"
-      size="lg"
-      footer={
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+    <div className="user-drawer__overlay" onClick={onClose}>
+      <div className="user-drawer" onClick={(e) => e.stopPropagation()}>
+        <header className="user-drawer__header">
+          <div className="user-drawer__icon">
+            <Icon name="users" size={22} />
+          </div>
+          <h2 className="user-drawer__title">Novo Usuário</h2>
+          <button className="user-drawer__close" onClick={onClose} aria-label="Fechar">
+            <Icon name="x" size={18} />
+          </button>
+        </header>
+
+        <div className="user-drawer__body">
+          <section>
+            <p className="user-drawer__sec">DADOS PESSOAIS</p>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>Nome *</span>
+                <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="João" />
+              </label>
+              <label className="user-drawer__field">
+                <span>Sobrenome *</span>
+                <input value={form.sobrenome} onChange={(e) => setForm({ ...form, sobrenome: e.target.value })} placeholder="Silva" />
+              </label>
+            </div>
+            <label className="user-drawer__field">
+              <span>E-mail *</span>
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="joao.silva@empresa.com" />
+            </label>
+            <label className="user-drawer__field">
+              <span>Telefone</span>
+              <div className="user-drawer__phone">
+                <div className="user-drawer__phone-ddi">
+                  <span className="user-drawer__flag">🇧🇷</span>
+                  <Icon name="arrow_down" size={10} />
+                </div>
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(00) 00000-0000" />
+              </div>
+            </label>
+          </section>
+
+          <section>
+            <p className="user-drawer__sec">CARGO</p>
+            <div className="user-drawer__role-grid">
+              <button
+                type="button"
+                className={'user-drawer__role' + (form.role === 'GERENTE_EQUIPE' ? ' is-active' : '')}
+                onClick={() => setForm({ ...form, role: 'GERENTE_EQUIPE' })}
+              >
+                <Icon name="users" size={16} />
+                <div className="user-drawer__role-name">Gerente Comercial</div>
+                <div className="user-drawer__role-sub">Vê as conversas e leads das equipes que gerencia</div>
+              </button>
+              <button
+                type="button"
+                className={'user-drawer__role' + (form.role === 'DIRETOR_FINANCEIRO' ? ' is-active' : '')}
+                onClick={() => setForm({ ...form, role: 'DIRETOR_FINANCEIRO' })}
+              >
+                <Icon name="wallet" size={16} />
+                <div className="user-drawer__role-name">Gerente Financeiro</div>
+                <div className="user-drawer__role-sub">Acesso aos rateios, fechamentos e relatórios financeiros</div>
+              </button>
+            </div>
+          </section>
+
+          {form.role === 'GERENTE_EQUIPE' && (
+            <section>
+              <p className="user-drawer__sec">EQUIPES QUE VAI GERENCIAR *</p>
+              <p className="user-drawer__hint">
+                Esse usuário só vai ver dados (leads, atendimento, vendas) das equipes que você selecionar.
+              </p>
+              <div className="user-drawer__equipes">
+                {(equipes || []).length === 0 ? (
+                  <p className="user-drawer__warn">Nenhuma equipe cadastrada ainda. Crie em Administração → Equipes.</p>
+                ) : (
+                  (equipes || []).map((e: any) => (
+                    <label key={e.id} className={'user-drawer__equipe' + (form.equipeIds.includes(e.id) ? ' is-selected' : '')}>
+                      <input
+                        type="checkbox"
+                        checked={form.equipeIds.includes(e.id)}
+                        onChange={(ev) => {
+                          const next = ev.target.checked
+                            ? [...form.equipeIds, e.id]
+                            : form.equipeIds.filter((x) => x !== e.id);
+                          setForm({ ...form, equipeIds: next });
+                        }}
+                      />
+                      <span style={{ background: e.cor }} className="user-drawer__equipe-dot" />
+                      <div>
+                        <div className="user-drawer__equipe-nome">{e.nome}</div>
+                        {e.unidade && <div className="user-drawer__equipe-sub">{e.unidade}</div>}
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <p className="user-drawer__sec">SENHA DE ACESSO</p>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>Senha *</span>
+                <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
+              </label>
+              <label className="user-drawer__field">
+                <span>Confirmar senha *</span>
+                <input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} placeholder="Repita a senha" />
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <footer className="user-drawer__footer">
           <button className="btn btn--ghost" onClick={onClose} disabled={saving}>Cancelar</button>
           <button className="btn-novo" onClick={submit} disabled={saving}>{saving ? 'Criando…' : 'Criar usuário'}</button>
-        </div>
-      }
-    >
-      <div className="novo-user">
-        <section>
-          <p className="novo-user__sec">Dados pessoais</p>
-          <div className="novo-user__grid">
-            <label><span>Nome completo *</span><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="João Silva" /></label>
-            <label><span>E-mail *</span><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="joao.silva@empresa.com" /></label>
-            <label><span>Telefone</span><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(48) 99999-9999" /></label>
-          </div>
-        </section>
-
-        <section>
-          <p className="novo-user__sec">Hierarquia</p>
-          <div className="novo-user__levels">
-            {levels.map((lv: any) => (
-              <button
-                key={lv.id}
-                type="button"
-                className={'novo-user__level' + (form.hierarchyLevelId === lv.id ? ' is-active' : '')}
-                onClick={() => setForm({ ...form, hierarchyLevelId: lv.id, managerId: null })}
-              >
-                <Icon name="star" size={14} />
-                <div className="novo-user__level-name">{lv.nome}</div>
-                <div className="novo-user__level-sub">{scopeLabel(lv.scope)}</div>
-              </button>
-            ))}
-          </div>
-
-          {needManager && (
-            <div className="novo-user__manager">
-              <label>
-                <span>{managerLevel?.nome} (gestor) *</span>
-                <select value={form.managerId || ''} onChange={(e) => setForm({ ...form, managerId: e.target.value ? Number(e.target.value) : null })}>
-                  <option value="">Selecione…</option>
-                  {managerCandidates.map((u: any) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </label>
-              {!managerCandidates.length && (
-                <p className="novo-user__warn">
-                  Você ainda não tem nenhum <b>{managerLevel?.nome}</b> cadastrado. Pra criar um <b>{selectedLevel?.nome}</b>, cria um {managerLevel?.nome} primeiro.
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <p className="novo-user__sec">Departamentos</p>
-          <div className="novo-user__deps">
-            {departments.length === 0 ? (
-              <p className="text-sm text-secondary">Nenhum departamento cadastrado ainda.</p>
-            ) : (
-              departments.map((d: any) => (
-                <label key={d.id} className={'novo-user__dep' + (form.departmentIds.includes(d.id) ? ' is-selected' : '')}>
-                  <input
-                    type="checkbox"
-                    checked={form.departmentIds.includes(d.id)}
-                    onChange={(e) => {
-                      const next = e.target.checked ? [...form.departmentIds, d.id] : form.departmentIds.filter((x) => x !== d.id);
-                      setForm({ ...form, departmentIds: next });
-                    }}
-                  />
-                  <span style={{ background: d.cor }} className="novo-user__dep-dot" />
-                  {d.nome}
-                </label>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section>
-          <p className="novo-user__sec">Senha de acesso</p>
-          <div className="novo-user__grid">
-            <label><span>Senha *</span><input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" /></label>
-            <label><span>Confirmar senha *</span><input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} placeholder="Repita a senha" /></label>
-          </div>
-        </section>
+        </footer>
       </div>
-    </Modal>
+    </div>
   );
 }
 

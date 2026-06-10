@@ -461,6 +461,7 @@ export const Api = {
   equipeLevelUpdate:   (id: number, data: any) => request<any>(`/equipe/hierarchy/levels/${id}`, { method: 'PATCH', body: data }),
   equipeLevelDelete:   (id: number) => request<{ ok: boolean }>(`/equipe/hierarchy/levels/${id}`, { method: 'DELETE' }),
 
+  equipeEquipesList:   () => request<any[]>('/equipe/equipes'),
   equipeHierarchyTree: () => request<{ roots: any[]; totalUsers: number }>('/equipe/hierarchy/tree'),
 
   // ─── Lead — aceitar / liberar contato ────────────────────────────

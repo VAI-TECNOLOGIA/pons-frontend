@@ -797,3 +797,238 @@
   .equipe__main { padding: 20px; }
   .equipe__toolbar { flex-wrap: wrap; }
 }
+
+/* ============================================================
+   User Drawer — side drawer estilo VAI (cria/edita usuário)
+   ============================================================ */
+
+.user-drawer__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 180ms ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.user-drawer {
+  width: 100%;
+  max-width: 520px;
+  height: 100dvh;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.18);
+  animation: slideIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.user-drawer__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+.user-drawer__icon {
+  width: 42px; height: 42px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+[data-theme="dark"] .user-drawer__icon { background: rgba(255,255,255,0.06); }
+.user-drawer__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  flex: 1;
+  color: var(--text-primary);
+}
+.user-drawer__close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-drawer__close:hover { background: rgba(0,0,0,0.05); color: var(--text-primary); }
+
+.user-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.user-drawer__sec {
+  font-size: 11px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+.user-drawer__hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: -4px 0 12px;
+  line-height: 1.5;
+}
+.user-drawer__warn {
+  font-size: 12.5px;
+  color: #B45309;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+}
+
+.user-drawer__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.user-drawer__field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.user-drawer__field input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.user-drawer__field input:focus { border-color: #2563eb; }
+.user-drawer__field input[type="email"]:focus,
+.user-drawer__field input[type="email"]:not(:placeholder-shown) {
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.user-drawer__row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.user-drawer__row-2 .user-drawer__field { margin-bottom: 0; }
+
+.user-drawer__phone {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.user-drawer__phone-ddi {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: default;
+}
+.user-drawer__flag { font-size: 18px; }
+.user-drawer__phone input { flex: 1; }
+
+/* Cargo cards (Gerente Comercial / Financeiro) */
+.user-drawer__role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.user-drawer__role {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.14s, background 0.14s;
+}
+.user-drawer__role:hover { border-color: rgba(37, 99, 235, 0.4); }
+.user-drawer__role.is-active {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.04);
+}
+.user-drawer__role .icon { color: var(--text-secondary); margin-bottom: 6px; }
+.user-drawer__role.is-active .icon { color: #2563eb; }
+.user-drawer__role-name { font-weight: 700; font-size: 13.5px; color: var(--text-primary); }
+.user-drawer__role-sub { font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4; }
+
+/* Equipes (multi-select com checkbox) */
+.user-drawer__equipes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.user-drawer__equipe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+}
+.user-drawer__equipe:hover { border-color: rgba(37, 99, 235, 0.3); }
+.user-drawer__equipe.is-selected {
+  background: rgba(37, 99, 235, 0.04);
+  border-color: #2563eb;
+}
+.user-drawer__equipe input {
+  width: 16px; height: 16px;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+.user-drawer__equipe-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.user-drawer__equipe-nome { font-weight: 600; font-size: 13.5px; color: var(--text-primary); }
+.user-drawer__equipe-sub { font-size: 11.5px; color: var(--text-secondary); }
+
+.user-drawer__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+  background: var(--bg-card);
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .user-drawer { max-width: 100%; }
+  .user-drawer__row-2 { grid-template-columns: 1fr; }
+  .user-drawer__role-grid { grid-template-columns: 1fr; }
+}
