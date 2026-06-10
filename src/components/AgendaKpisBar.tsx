@@ -15,8 +15,9 @@ export function AgendaKpisBar() {
   ];
 
   return (
-    <div className="grid" style={{
-      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
       gap: 12, marginBottom: 16,
     }}>
       {cards.map((c) => (

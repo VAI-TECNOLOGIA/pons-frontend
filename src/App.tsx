@@ -34,10 +34,8 @@ const BM              = lazy(() => import('./pages/BM'));
 const Distribuicao    = lazy(() => import('./pages/Distribuicao'));
 const Remarketing     = lazy(() => import('./pages/Remarketing'));
 const MetaCustos      = lazy(() => import('./pages/MetaCustos'));
-const LandingPages    = lazy(() => import('./pages/LandingPages'));
 const PainelExecutivo = lazy(() => import('./pages/PainelExecutivo'));
 const ImportarLeads   = lazy(() => import('./pages/ImportarLeads'));
-const Heatmap         = lazy(() => import('./pages/Heatmap'));
 const LPPublica       = lazy(() => import('./pages/LPPublica'));
 const Transferencias  = lazy(() => import('./pages/Transferencias'));
 const Auditoria       = lazy(() => import('./pages/Auditoria'));
@@ -92,10 +90,8 @@ export default function App() {
           <Route path="/distribuicao" element={<Distribuicao />} />
           <Route path="/remarketing" element={<Remarketing />} />
           <Route path="/meta-custos" element={<MetaCustos />} />
-          <Route path="/landing-pages" element={<LandingPages />} />
           <Route path="/painel-executivo" element={<PainelExecutivo />} />
           <Route path="/importar" element={<ImportarLeads />} />
-          <Route path="/heatmap" element={<Heatmap />} />
           <Route path="/transferencias" element={<Transferencias />} />
           <Route path="/auditoria" element={<Auditoria />} />
           <Route path="/bolsoes" element={<Bolsoes />} />
