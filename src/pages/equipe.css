@@ -609,37 +609,56 @@
   padding: 2px;
 }
 .equipe__org-canvas {
-  padding: 30px;
-  min-height: 200px;
+  padding: 36px 30px;
+  min-height: 140px;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  background: rgba(0, 0, 0, 0.015);
 }
+[data-theme="dark"] .equipe__org-canvas { background: rgba(255, 255, 255, 0.015); }
 
-/* Node card no organograma */
+/* Node pill no organograma — VAI style */
 .org-node__card {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px 8px 8px;
+  gap: 0;
+  padding: 5px 14px 5px 5px;
   background: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: 999px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
-.org-node__nome { font-weight: 600; font-size: 13px; }
-.org-node__nivel {
+.org-node__card .equipe__avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+  margin-right: 10px;
+}
+.org-node__card .equipe__online-dot {
+  width: 8px; height: 8px;
+}
+.org-node__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border-light);
+  margin: 0 10px;
+}
+.org-node__star {
+  color: #EAB308;
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-secondary);
+  margin-right: 5px;
 }
-.org-node__nivel .icon { color: #EAB308; }
+.org-node__nome {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
 
 /* Lista por nível embaixo */
-.equipe__level-group { margin-top: 18px; }
+.equipe__level-group { margin-top: 22px; }
 .equipe__level-group-head {
   display: flex;
   align-items: center;
@@ -648,15 +667,18 @@
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
   padding: 0 4px;
+  opacity: 0.85;
 }
 .equipe__level-group-head .count {
   background: rgba(0,0,0,0.05);
-  padding: 1px 8px;
+  padding: 1px 9px;
   border-radius: 999px;
   font-size: 11px;
+  font-weight: 700;
+  opacity: 0.7;
 }
 [data-theme="dark"] .equipe__level-group-head .count { background: rgba(255,255,255,0.06); }
 
@@ -664,13 +686,14 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 18px;
+  padding: 14px 20px;
   background: var(--bg-card);
   border: 1px solid var(--border-light);
-  border-radius: 12px;
+  border-radius: 14px;
 }
-.equipe__user-row + .equipe__user-row { margin-top: 6px; }
+.equipe__user-row + .equipe__user-row { margin-top: 8px; }
 .equipe__user-row .equipe__nivel-badge { margin-left: auto; }
+.equipe__user-row .equipe__avatar { width: 36px; height: 36px; }
 
 /* ── Modal Novo Usuário (mesma base, ajustado VAI) ───────────── */
 .novo-user { display: flex; flex-direction: column; gap: 22px; }

@@ -576,26 +576,20 @@ function AbaHierarquia() {
 }
 
 function OrgNode({ node }: { node: any }) {
+  // Pill VAI-style: avatar (compacto) | separador vertical | estrela + nome
   return (
-    <div>
+    <>
       <div className="org-node__card">
-        <div className="equipe__avatar" style={{ width: 28, height: 28, fontSize: 10 }}>
+        <div className="equipe__avatar">
           {node.avatarUrl ? <img src={node.avatarUrl} alt={node.name} /> : <span>{node.initials}</span>}
-          {node.online && <span className="equipe__online-dot equipe__online-dot--on" />}
+          <span className={'equipe__online-dot' + (node.online ? ' equipe__online-dot--on' : '')} />
         </div>
-        <div className="org-node__nome">{node.name}</div>
-        {node.nivel && (
-          <div className="org-node__nivel">
-            <Icon name="star" size={11} /> {node.nivel.nome}
-          </div>
-        )}
+        <div className="org-node__sep" />
+        <span className="org-node__star"><Icon name="star" size={12} /></span>
+        <span className="org-node__nome">{node.name}</span>
       </div>
-      {node.children?.length > 0 && (
-        <div style={{ marginLeft: 28, paddingLeft: 12, borderLeft: '2px dashed var(--border-light)', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-          {node.children.map((c: any) => <OrgNode key={c.id} node={c} />)}
-        </div>
-      )}
-    </div>
+      {node.children?.length > 0 && node.children.map((c: any) => <OrgNode key={c.id} node={c} />)}
+    </>
   );
 }
 
