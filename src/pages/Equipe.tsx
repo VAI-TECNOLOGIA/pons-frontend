@@ -175,7 +175,12 @@ function AbaUsuarios() {
                   <td>
                     {u.equipes?.length ? u.equipes.map((e: any) => (
                       <span key={e.id} className="equipe__dept-chip" style={{ background: e.cor + '22', color: e.cor }}>{e.nome}</span>
-                    )) : '—'}
+                    )) : (
+                      // Master = sem equipes vinculadas (vê tudo). Mostra badge dourado.
+                      ['CEO','DIRETOR_COMERCIAL','DIRETOR_FINANCEIRO','GERENTE_EQUIPE'].includes(u.role)
+                        ? <span className="equipe__nivel-badge"><Icon name="star" size={11} /> Master</span>
+                        : '—'
+                    )}
                   </td>
                   <td>
                     <label className="equipe__switch">
@@ -230,6 +235,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
     nome: '', sobrenome: '', email: '', password: '', phone: '',
     role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'DIRETOR_FINANCEIRO',
     hierarchyLevelId: levels.find((l: any) => l.code === 'manager')?.id || null,
+    isMaster: false,            // master = vê TODAS as equipes (não escolhe)
     equipeIds: [] as number[],
     active: true,
   });
@@ -239,8 +245,8 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   const submit = async () => {
     if (!form.nome || !form.email || !form.password) return toast.error('Preencha nome, email e senha.');
     if (form.password !== confirmPass) return toast.error('As senhas não conferem.');
-    if (!form.equipeIds.length) {
-      return toast.error('Selecione pelo menos uma equipe pra esse gestor gerenciar.');
+    if (!form.isMaster && !form.equipeIds.length) {
+      return toast.error('Selecione pelo menos uma equipe — ou marque "Acesso Master".');
     }
     setSaving(true);
     try {
@@ -251,7 +257,8 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
         phone: form.phone || null,
         role: form.role,
         hierarchyLevelId: form.hierarchyLevelId,
-        equipeIds: form.equipeIds,
+        // Master = sem equipes vinculadas → backend interpreta como "vê tudo"
+        equipeIds: form.isMaster ? [] : form.equipeIds,
         active: form.active,
       });
       toast.success('Usuário criado');
@@ -330,37 +337,67 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
           </section>
 
           <section>
-            <p className="user-drawer__sec">EQUIPES QUE VAI GERENCIAR *</p>
+            <p className="user-drawer__sec">ESCOPO DE ACESSO *</p>
             <p className="user-drawer__hint">
               {form.role === 'DIRETOR_FINANCEIRO'
-                ? 'O Gerente Financeiro só vai ver rateios, fechamentos, vendas e relatórios financeiros das equipes selecionadas.'
-                : 'Esse usuário só vai ver dados (leads, atendimento, vendas) das equipes que você selecionar.'}
+                ? 'Master vê rateios, fechamentos e relatórios financeiros de TODAS as equipes. Específico só vê das que você selecionar.'
+                : 'Master vê leads, atendimento, vendas e métricas de TODAS as equipes. Específico só vê das que você selecionar.'}
             </p>
-            <div className="user-drawer__equipes">
-              {(equipes || []).length === 0 ? (
-                <p className="user-drawer__warn">Nenhuma equipe cadastrada ainda. Crie em Administração → Equipes.</p>
-              ) : (
-                (equipes || []).map((e: any) => (
-                  <label key={e.id} className={'user-drawer__equipe' + (form.equipeIds.includes(e.id) ? ' is-selected' : '')}>
-                    <input
-                      type="checkbox"
-                      checked={form.equipeIds.includes(e.id)}
-                      onChange={(ev) => {
-                        const next = ev.target.checked
-                          ? [...form.equipeIds, e.id]
-                          : form.equipeIds.filter((x) => x !== e.id);
-                        setForm({ ...form, equipeIds: next });
-                      }}
-                    />
-                    <span style={{ background: e.cor }} className="user-drawer__equipe-dot" />
-                    <div>
-                      <div className="user-drawer__equipe-nome">{e.nome}</div>
-                      {e.unidade && <div className="user-drawer__equipe-sub">{e.unidade}</div>}
-                    </div>
-                  </label>
-                ))
-              )}
+
+            {/* Toggle Master vs Equipes específicas */}
+            <div className="user-drawer__role-grid" style={{ marginBottom: 12 }}>
+              <button
+                type="button"
+                className={'user-drawer__role' + (form.isMaster ? ' is-active' : '')}
+                onClick={() => setForm({ ...form, isMaster: true, equipeIds: [] })}
+              >
+                <Icon name="star" size={16} />
+                <div className="user-drawer__role-name">Master</div>
+                <div className="user-drawer__role-sub">
+                  {form.role === 'DIRETOR_FINANCEIRO'
+                    ? 'Vê dados financeiros de TODAS as equipes da empresa'
+                    : 'Vê todos os leads e vendas de TODAS as equipes da empresa'}
+                </div>
+              </button>
+              <button
+                type="button"
+                className={'user-drawer__role' + (!form.isMaster ? ' is-active' : '')}
+                onClick={() => setForm({ ...form, isMaster: false })}
+              >
+                <Icon name="users" size={16} />
+                <div className="user-drawer__role-name">Equipes específicas</div>
+                <div className="user-drawer__role-sub">Acesso limitado às equipes que você escolher abaixo</div>
+              </button>
             </div>
+
+            {/* Lista de equipes (só aparece quando NÃO é master) */}
+            {!form.isMaster && (
+              <div className="user-drawer__equipes">
+                {(equipes || []).length === 0 ? (
+                  <p className="user-drawer__warn">Nenhuma equipe cadastrada ainda. Crie em Administração → Equipes.</p>
+                ) : (
+                  (equipes || []).map((e: any) => (
+                    <label key={e.id} className={'user-drawer__equipe' + (form.equipeIds.includes(e.id) ? ' is-selected' : '')}>
+                      <input
+                        type="checkbox"
+                        checked={form.equipeIds.includes(e.id)}
+                        onChange={(ev) => {
+                          const next = ev.target.checked
+                            ? [...form.equipeIds, e.id]
+                            : form.equipeIds.filter((x) => x !== e.id);
+                          setForm({ ...form, equipeIds: next });
+                        }}
+                      />
+                      <span style={{ background: e.cor }} className="user-drawer__equipe-dot" />
+                      <div>
+                        <div className="user-drawer__equipe-nome">{e.nome}</div>
+                        {e.unidade && <div className="user-drawer__equipe-sub">{e.unidade}</div>}
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+            )}
           </section>
 
           <section>
