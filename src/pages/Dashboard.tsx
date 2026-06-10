@@ -179,18 +179,37 @@ export default function Dashboard() {
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 12 }}>
  {(data.alertas || []).map((al: any, i: number) => {
  const [bg, fg, br] = ALERT_COLOR[al.tipo] || ALERT_COLOR.info;
- return (
- <div
- key={i}
- style={{ background: bg, borderLeft: `4px solid ${br}`, borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}
- >
+ // Fallback: deriva href pelo label se backend antigo ainda não tiver `href`
+ const href: string | null = al.href || ({
+ 'Ver contratos':   '/vendas?status=PRE_ANALISE',
+ 'Ver atendimento': '/chat',
+ 'Ver roleta':      '/distribuicao',
+ 'Cobrar cliente':  '/vendas?status=EM_ASSINATURA',
+ } as Record<string, string>)[al.acao] || null;
+ const baseStyle: React.CSSProperties = {
+ background: bg, borderLeft: `4px solid ${br}`, borderRadius: 8,
+ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+ textDecoration: 'none',
+ };
+ const inner = (
+ <>
  <div style={{ flex: 1 }}>
  <div style={{ fontSize: 13, fontWeight: 700, color: fg }}>{al.titulo}</div>
  </div>
  {al.acao && (
  <span style={{ fontSize: 12, fontWeight: 600, color: br, whiteSpace: 'nowrap' }}>{al.acao} →</span>
  )}
- </div>
+ </>
+ );
+ return href ? (
+ <Link key={i} to={href} style={{ ...baseStyle, cursor: 'pointer', transition: 'transform 0.12s ease, box-shadow 0.12s ease' }}
+ onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
+ onMouseLeave={(e) => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
+ >
+ {inner}
+ </Link>
+ ) : (
+ <div key={i} style={baseStyle}>{inner}</div>
  );
  })}
  </div>
