@@ -98,9 +98,9 @@ const GROUPS: NavGroup[] = [
     icon: 'settings',
     items: [
       { to: '/configuracoes', label: 'Configurações', icon: 'settings', roles: ['CEO'] },
-      { to: '/equipe', label: 'Equipe', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO'] },
+      { to: '/equipe', label: 'Equipe', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
       { to: '/agente-ia', label: 'Agentes IA', icon: 'bot', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
-      { to: '/auditoria', label: 'Auditoria', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO'] },
+      { to: '/auditoria', label: 'Auditoria', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
     ],
   },
 ];
