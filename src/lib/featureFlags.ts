@@ -4,4 +4,4 @@
 // Integração Google Calendar — desligada enquanto o app OAuth tá aguardando
 // verificação do Google. Quando aprovado, trocar pra `true` aqui e tudo
 // (UI de conectar, sync de eventos, CTAs) volta automaticamente.
-export const GOOGLE_CALENDAR_ENABLED = true;
+export const GOOGLE_CALENDAR_ENABLED = false;
