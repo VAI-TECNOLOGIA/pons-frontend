@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Auth } from '../lib/auth';
 import { Icon } from './Icon';
 import { BirthdayGreeter } from './BirthdayGreeter';
+import { WelcomeSplash } from './WelcomeSplash';
 import { AssistantChat } from './AssistantChat';
 
 export function AppLayout() {
@@ -46,6 +47,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <WelcomeSplash />
       <BirthdayGreeter />
       <AssistantChat />
     </>

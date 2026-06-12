@@ -35,6 +35,8 @@ export default function Login() {
  // até o próximo reload do browser.
  Auth.set(token, user);
  setUser(user);
+ // Boas-vindas: o WelcomeSplash (Layout) abre 100% das vezes ao logar
+ sessionStorage.setItem('pons.welcome.show', '1');
  navigate(user.role === 'DEV' ? '/dev/mensagens' : '/dashboard', { replace: true });
  } catch (err) {
  const msg =

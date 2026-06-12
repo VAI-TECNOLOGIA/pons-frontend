@@ -1,0 +1,191 @@
+/* WelcomeSplash — boas-vindas cinematográficas pós-login (Grupo Pons · F1) */
+
+.welcome {
+ position: fixed;
+ inset: 0;
+ z-index: 9999;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding: 24px;
+ background:
+ radial-gradient(60% 50% at 78% 18%, rgba(225, 6, 0, 0.18), transparent 65%),
+ radial-gradient(50% 45% at 15% 85%, rgba(93, 143, 224, 0.14), transparent 65%),
+ rgba(3, 5, 11, 0.82);
+ backdrop-filter: blur(14px) saturate(1.2);
+ -webkit-backdrop-filter: blur(14px) saturate(1.2);
+ animation: wlc-fade 0.45s ease both;
+ cursor: pointer; /* sinaliza: clique fora fecha */
+}
+
+.welcome__card {
+ position: relative;
+ width: min(640px, 94vw);
+ border-radius: 26px;
+ padding: 52px 54px 44px;
+ text-align: center;
+ cursor: default;
+ overflow: hidden;
+ color: #fff;
+ background:
+ radial-gradient(120% 90% at 85% -10%, rgba(225, 6, 0, 0.22), transparent 55%),
+ radial-gradient(90% 70% at -10% 110%, rgba(93, 143, 224, 0.16), transparent 60%),
+ linear-gradient(150deg, #101a31 0%, #0c1322 52%, #131f3a 100%);
+ border: 1px solid rgba(255, 255, 255, 0.09);
+ box-shadow:
+ 0 40px 120px rgba(0, 0, 0, 0.65),
+ 0 0 90px rgba(225, 6, 0, 0.22),
+ inset 0 1px 0 rgba(255, 255, 255, 0.08);
+ animation: wlc-pop 0.6s cubic-bezier(0.22, 1.2, 0.36, 1) 0.08s both;
+}
+
+/* faixa de velocidade no topo do card */
+.welcome__speed {
+ position: absolute;
+ top: 0;
+ left: 0;
+ right: 0;
+ height: 4px;
+ background: linear-gradient(90deg, #e10600 0%, #f2b544 35%, #88c559 70%, #5d8fe0 100%);
+ background-size: 220% 100%;
+ animation: wlc-speed 3.2s linear infinite;
+}
+
+/* grade quadriculada (bandeirada) decorativa no canto */
+.welcome__flag {
+ position: absolute;
+ top: 22px;
+ right: 26px;
+ display: grid;
+ grid-template-columns: repeat(4, 11px);
+ grid-auto-rows: 11px;
+ gap: 3px;
+ opacity: 0.9;
+}
+.welcome__flag span {
+ background: #fff;
+ border-radius: 2px;
+ animation: wlc-flag 1.6s ease-in-out infinite;
+}
+
+.welcome__logo img {
+ height: 56px;
+ filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.5));
+}
+
+.welcome__eyebrow {
+ margin-top: 30px;
+ font-size: 12px;
+ font-weight: 800;
+ letter-spacing: 0.34em;
+ text-transform: uppercase;
+ color: #e10600;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: 10px;
+}
+.welcome__eyebrow::before,
+.welcome__eyebrow::after {
+ content: '';
+ width: 34px;
+ height: 2px;
+ background: linear-gradient(90deg, transparent, rgba(225, 6, 0, 0.9));
+ border-radius: 2px;
+}
+.welcome__eyebrow::after {
+ background: linear-gradient(270deg, transparent, rgba(225, 6, 0, 0.9));
+}
+
+.welcome__title {
+ margin: 14px 0 6px;
+ font-size: clamp(34px, 6vw, 52px);
+ line-height: 1.02;
+ font-weight: 900;
+ font-style: italic;
+ letter-spacing: -0.02em;
+ text-transform: uppercase;
+}
+.welcome__title small {
+ display: block;
+ font-size: 0.42em;
+ font-weight: 800;
+ font-style: normal;
+ letter-spacing: 0.18em;
+ color: rgba(255, 255, 255, 0.66);
+ margin-bottom: 8px;
+}
+.welcome__title .grad {
+ background: linear-gradient(95deg, #ffffff 18%, #ffd9d6 38%, #e10600 62%, #ff5a45 82%);
+ background-size: 200% 100%;
+ -webkit-background-clip: text;
+ background-clip: text;
+ -webkit-text-fill-color: transparent;
+ animation: wlc-shine 4.5s ease-in-out infinite;
+}
+
+.welcome__hello {
+ margin-top: 14px;
+ font-size: 17px;
+ color: #d4dae6;
+}
+.welcome__hello b {
+ color: #fff;
+}
+
+.welcome__tagline {
+ margin-top: 6px;
+ font-size: 13.5px;
+ letter-spacing: 0.02em;
+ color: rgba(255, 255, 255, 0.55);
+}
+
+.welcome__divider {
+ width: 86px;
+ height: 5px;
+ border-radius: 4px;
+ margin: 26px auto 0;
+ background: linear-gradient(90deg, #e10600, #ff8a3d);
+ box-shadow: 0 0 18px rgba(225, 6, 0, 0.55);
+}
+
+.welcome__hint {
+ margin-top: 26px;
+ font-size: 12px;
+ font-weight: 700;
+ letter-spacing: 0.22em;
+ text-transform: uppercase;
+ color: rgba(255, 255, 255, 0.4);
+ animation: wlc-hint 2.4s ease-in-out infinite;
+ user-select: none;
+}
+
+@keyframes wlc-fade {
+ from { opacity: 0; }
+ to { opacity: 1; }
+}
+@keyframes wlc-pop {
+ from { opacity: 0; transform: translateY(26px) scale(0.94); }
+ to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes wlc-speed {
+ from { background-position: 0% 0; }
+ to { background-position: 220% 0; }
+}
+@keyframes wlc-flag {
+ 0%, 100% { opacity: 1; }
+ 50% { opacity: 0.25; }
+}
+@keyframes wlc-shine {
+ 0%, 100% { background-position: 0% 0; }
+ 50% { background-position: 100% 0; }
+}
+@keyframes wlc-hint {
+ 0%, 100% { opacity: 0.4; }
+ 50% { opacity: 0.85; }
+}
+
+@media (max-width: 560px) {
+ .welcome__card { padding: 42px 26px 36px; }
+ .welcome__flag { display: none; }
+}
