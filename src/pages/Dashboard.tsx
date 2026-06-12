@@ -101,6 +101,8 @@ export default function Dashboard() {
 
  const a = data.avanco;
  const ritmoCor = a?.noRitmo ? '#88C559' : '#F2B544';
+ // Só mostra "avanço da meta" quando há meta cadastrada (evita meta-fantasma com a casa zerada)
+ const temMeta = a?.temMeta ?? ((a?.metaCasa ?? 0) > 0);
 
  return (
  <>
@@ -128,7 +130,8 @@ export default function Dashboard() {
  }}
  >
  <div className="speed-line" style={{ position: 'absolute' }} />
- <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: temMeta ? '1fr 1fr' : '1fr', gap: 32 }}>
+ {temMeta && (
  <div>
  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
  Avanço da meta · mês
@@ -152,6 +155,7 @@ export default function Dashboard() {
  />
  </div>
  </div>
+ )}
  <div>
  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
  Avanço do mês · tempo
