@@ -262,8 +262,8 @@ export default function Corretores() {
  </div>
  <div className="field field--span-2">
  <label className="field__label">Senha inicial</label>
- <input name="password" className="field__input" defaultValue="pons123" />
- <div className="field__hint">O corretor pode trocar no primeiro acesso</div>
+ <input name="password" type="password" className="field__input" required minLength={6} placeholder="mínimo 6 caracteres" autoComplete="new-password" />
+ <div className="field__hint">Defina uma senha única — o corretor troca no primeiro acesso</div>
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
