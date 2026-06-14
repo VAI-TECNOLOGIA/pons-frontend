@@ -90,6 +90,8 @@ function KpiPills({ users }: { users: any[] }) {
 
 function AbaUsuarios() {
   const [search, setSearch] = useState('');
+  const [filtroNivel, setFiltroNivel] = useState('');   // code do nível, 'sem' (sem nível) ou '' (todos)
+  const [filtroStatus, setFiltroStatus] = useState(''); // '' | 'ativo' | 'inativo'
   const [novoOpen, setNovoOpen] = useState(false);
   const { data: users, loading, reload } = useApi<any[]>(() => Api.equipeUsers(search), [search]);
   const { data: levels } = useApi<any[]>(() => Api.equipeLevels());
@@ -100,7 +102,14 @@ function AbaUsuarios() {
     catch (e: any) { toast.error('Erro: ' + e.message); }
   };
 
-  const lista = users || [];
+  const base = users || [];
+  const lista = base.filter((u) => {
+    if (filtroNivel === 'sem' && u.nivel) return false;
+    if (filtroNivel && filtroNivel !== 'sem' && u.nivel?.code !== filtroNivel) return false;
+    if (filtroStatus === 'ativo' && !u.active) return false;
+    if (filtroStatus === 'inativo' && u.active) return false;
+    return true;
+  });
 
   return (
     <div>
@@ -119,15 +128,23 @@ function AbaUsuarios() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="equipe__filter">Todos <Icon name="arrow_down" size={12} /></button>
-        <button className="equipe__filter">Todos <Icon name="arrow_down" size={12} /></button>
+        <select className="equipe__filter" value={filtroNivel} onChange={(e) => setFiltroNivel(e.target.value)} title="Filtrar por nível">
+          <option value="">Todos os níveis</option>
+          {(levels || []).map((l) => <option key={l.id} value={l.code}>{l.nome}</option>)}
+          <option value="sem">Sem nível</option>
+        </select>
+        <select className="equipe__filter" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} title="Filtrar por status">
+          <option value="">Todos os status</option>
+          <option value="ativo">Ativos</option>
+          <option value="inativo">Inativos</option>
+        </select>
         <div className="equipe__count">{lista.length} usuário{lista.length !== 1 ? 's' : ''}</div>
         <button className="btn-novo" onClick={() => setNovoOpen(true)}>
           <Icon name="plus" size={14} /> Novo
         </button>
       </div>
 
-      <KpiPills users={lista} />
+      <KpiPills users={base} />
 
       {loading ? (
         <div className="equipe__empty-state"><div className="equipe__empty-sub">Carregando…</div></div>
@@ -480,8 +497,14 @@ function AbaHierarquia() {
         </div>
       </div>
 
-      {/* Lista agrupada por nível */}
-      {Object.entries(byLevel).map(([code, members]) => {
+      {/* Lista agrupada por nível — ordenada pela hierarquia (Dono primeiro), sem nível por último */}
+      {Object.entries(byLevel)
+        .sort(([, a], [, b]) => {
+          const oa = a[0]?.nivel?.ordem ?? Infinity;
+          const ob = b[0]?.nivel?.ordem ?? Infinity;
+          return oa - ob;
+        })
+        .map(([code, members]) => {
         const lv = members[0]?.nivel;
         return (
           <div key={code} className="equipe__level-group">
