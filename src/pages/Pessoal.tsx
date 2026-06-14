@@ -313,7 +313,7 @@ function FinancasTab() {
               </tr>
             ))}
             {cats.length === 0 && (
-              <tr><td colSpan={visibleMonths.length + 2} style={{ textAlign: 'center', padding: 28, color: 'var(--text-muted)' }}>Nenhuma categoria ainda. Adicione a primeira abaixo.</td></tr>
+              <tr><td colSpan={visibleMonths.length + 2} style={{ textAlign: 'center', padding: 28, color: 'var(--text-secondary)' }}>Nenhuma categoria ainda. Adicione a primeira abaixo.</td></tr>
             )}
           </tbody>
           {cats.length > 0 && (
@@ -351,11 +351,11 @@ function FinancasTab() {
 
 const gridCss = `
 .pessoal-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 14px 0 12px; }
-.pessoal-toolbar__hint { flex: 1; font-size: 12.5px; color: var(--text-muted, #94a3b8); min-width: 120px; }
-.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface-2, #f1f4fb); border: 1px solid var(--border, #e5e7eb); }
-.seg__btn { border: none; background: none; padding: 5px 14px; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--text-muted, #64748b); cursor: pointer; transition: background .12s, color .12s; }
-.seg__btn:hover { color: var(--text, #1e293b); }
-.seg__btn.is-active { background: var(--surface, #fff); color: var(--brand, #1258CA); box-shadow: 0 1px 2px rgba(16,24,40,.1); }
+.pessoal-toolbar__hint { flex: 1; font-size: 12.5px; color: var(--text-secondary); min-width: 120px; }
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--bg-app); border: 1px solid var(--border-light); }
+.seg__btn { border: none; background: none; padding: 5px 14px; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: background .12s, color .12s; }
+.seg__btn:hover { color: var(--text-primary); }
+.seg__btn.is-active { background: var(--bg-card); color: var(--pons-blue); box-shadow: var(--shadow-xs); }
 
 /* .card tem padding !important no responsive.css; sem zerar aqui, as colunas
    roláveis vazam pros 14px de padding e aparecem ao lado da coluna fixa. */
@@ -363,35 +363,35 @@ const gridCss = `
 .pessoal-grid { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
 .pessoal-grid th, .pessoal-grid td { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pessoal-grid .num { text-align: right; }
-.pessoal-grid thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-2, #f8fafc); color: var(--text-muted, #64748b); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; padding: 11px 14px; border-bottom: 1px solid var(--border, #e5e7eb); min-width: 88px; }
-.pessoal-grid tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border-soft, #f1f5f9); }
+.pessoal-grid thead th { position: sticky; top: 0; z-index: 1; background: var(--bg-app); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; padding: 11px 14px; border-bottom: 1px solid var(--border-light); min-width: 88px; }
+.pessoal-grid tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); }
 .pessoal-grid tbody tr:last-child td { border-bottom: none; }
-.pessoal-grid tbody tr:hover td { background: var(--surface-2, #f6f8ff); }
+.pessoal-grid tbody tr:hover td { background: var(--bg-card-hover); }
 
-.pessoal-grid .sticky-col { position: sticky; left: 0; z-index: 2; background: var(--surface, #fff); box-shadow: 1px 0 0 var(--border, #e5e7eb); }
-.pessoal-grid thead .sticky-col { z-index: 3; background: var(--surface-2, #f8fafc); }
-.pessoal-grid tbody tr:hover .sticky-col { background: var(--surface-2, #f6f8ff); }
+.pessoal-grid .sticky-col { position: sticky; left: 0; z-index: 2; background: var(--bg-card); box-shadow: 1px 0 0 var(--border-light); }
+.pessoal-grid thead .sticky-col { z-index: 3; background: var(--bg-app); }
+.pessoal-grid tbody tr:hover .sticky-col { background: var(--bg-card-hover); }
 .pessoal-grid .cat-head, .pessoal-grid .cat-cell { min-width: 220px; max-width: 220px; }
 .cat-cell__inner { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.cat-cell__nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: var(--text, #1e293b); }
+.cat-cell__nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: var(--text-primary); }
 .cat-cell__acoes { display: inline-flex; gap: 2px; opacity: 0; transition: opacity .12s; flex-shrink: 0; }
 .pessoal-grid tbody tr:hover .cat-cell__acoes { opacity: 1; }
-.pessoal-grid .iconbtn { background: none; border: none; cursor: pointer; color: var(--text-muted, #94a3b8); padding: 3px; border-radius: 5px; display: inline-flex; }
-.pessoal-grid .iconbtn:hover { background: rgba(18,88,202,.1); color: var(--brand, #1258CA); }
+.pessoal-grid .iconbtn { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 3px; border-radius: 5px; display: inline-flex; }
+.pessoal-grid .iconbtn:hover { background: var(--color-info-bg); color: var(--pons-blue); }
 
-.pessoal-grid .cell { cursor: text; color: var(--text, #334155); }
+.pessoal-grid .cell { cursor: text; color: var(--text-primary); }
 .pessoal-grid .cell.is-editing { padding: 3px 4px; }
-.pessoal-grid .cell:hover { background: rgba(18,88,202,.07); box-shadow: inset 0 0 0 1px rgba(18,88,202,.18); }
-.pessoal-grid .cell__empty { color: var(--text-muted, #cbd5e1); }
-.pessoal-grid .cell__input { width: 100%; text-align: right; padding: 5px 7px; border: 1px solid var(--brand, #1258CA); border-radius: 5px; font-size: 13px; box-shadow: 0 0 0 3px rgba(18,88,202,.12); outline: none; }
-.pessoal-grid .col-total { font-weight: 700; color: var(--text, #1e293b); background: var(--surface-2, #fafbff); box-shadow: inset 1px 0 0 var(--border-soft, #eef2f7); }
-.pessoal-grid thead .col-total { background: var(--surface-2, #f1f4fb); }
+.pessoal-grid .cell:hover { background: var(--color-info-bg); box-shadow: inset 0 0 0 1px var(--color-info-border); }
+.pessoal-grid .cell__empty { color: var(--text-disabled); }
+.pessoal-grid .cell__input { width: 100%; text-align: right; padding: 5px 7px; background: var(--field-bg); color: var(--text-primary); border: 1px solid var(--pons-blue); border-radius: 5px; font-size: 13px; box-shadow: var(--shadow-focus); outline: none; }
+.pessoal-grid .col-total { font-weight: 700; color: var(--text-primary); background: var(--bg-app); box-shadow: inset 1px 0 0 var(--border-light); }
+.pessoal-grid thead .col-total { background: var(--bg-app); }
 
-.pessoal-grid tfoot td { padding: 12px 14px; font-weight: 700; color: var(--text, #1e293b); border-top: 2px solid var(--border, #e5e7eb); background: var(--surface-2, #fafbff); }
-.pessoal-grid tfoot .sticky-col { background: var(--surface-2, #f1f4fb); }
+.pessoal-grid tfoot td { padding: 12px 14px; font-weight: 700; color: var(--text-primary); border-top: 2px solid var(--border-light); background: var(--bg-app); }
+.pessoal-grid tfoot .sticky-col { background: var(--bg-app); }
 
-.pessoal-addcat { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; max-width: 480px; border: 1px dashed var(--border, #d8dee9); border-radius: 12px; color: var(--text-muted, #94a3b8); }
-.pessoal-addcat .field__input { flex: 1; border: none; background: none; padding: 4px 0; }
+.pessoal-addcat { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 12px; max-width: 480px; border: 1px dashed var(--border-medium); border-radius: 12px; color: var(--text-secondary); }
+.pessoal-addcat .field__input { flex: 1; border: none; background: none; padding: 4px 0; color: var(--text-primary); }
 .pessoal-addcat .field__input:focus { outline: none; box-shadow: none; }
 
 @media (max-width: 640px) {
