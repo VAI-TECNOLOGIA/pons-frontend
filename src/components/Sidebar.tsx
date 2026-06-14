@@ -91,6 +91,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: '/avisos', label: 'Avisos', icon: 'bell' },
       { to: '/videos', label: 'Vídeos', icon: 'video' },
+      { to: '/reuniao', label: 'Reunião', icon: 'video', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/painel-tv', label: 'Painel TV', icon: 'tv', blank: true, roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
     ],
   },
@@ -102,7 +103,6 @@ const GROUPS: NavGroup[] = [
       { to: '/configuracoes', label: 'Configurações', icon: 'settings', roles: ['CEO'] },
       { to: '/equipe', label: 'Equipe', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
       { to: '/agente-ia', label: 'Agentes IA', icon: 'bot', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
-      { to: '/reuniao', label: 'Reunião', icon: 'video', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/auditoria', label: 'Auditoria', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
     ],
   },

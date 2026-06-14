@@ -141,14 +141,6 @@ function GravarTab({ onEnviado }: { onEnviado: () => void }) {
           {enviando ? 'Enviando…' : 'Enviar e gerar resumo'}
         </button>
       </div>
-
-      <div className="reuniao__card reuniao__soon">
-        <Icon name="clock" size={18} />
-        <div>
-          <b>Gravar pela plataforma</b>
-          <span>Em breve você poderá gravar a reunião direto pelo sistema. Por enquanto, envie o arquivo acima.</span>
-        </div>
-      </div>
     </div>
   );
 }

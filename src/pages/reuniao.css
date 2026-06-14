@@ -78,13 +78,6 @@
 }
 .reuniao__btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.reuniao__soon {
-  display: flex; gap: 12px; align-items: flex-start;
-  color: var(--text-secondary);
-}
-.reuniao__soon b { display: block; font-size: 13px; color: var(--text-primary); }
-.reuniao__soon span { font-size: 12px; }
-
 /* ── Aba Ver resumos ── */
 .reuniao__vazio {
   text-align: center; padding: 48px 24px;
