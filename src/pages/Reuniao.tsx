@@ -86,12 +86,28 @@ export default function ReuniaoPage() {
   );
 }
 
+function formatBytes(b: number): string {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`;
+  return `${(b / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function GravarTab({ onEnviado }: { onEnviado: () => void }) {
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [titulo, setTitulo] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  const isAudio = !!file && /audio|\.(mp3|m4a|wav)$/i.test(file.type || file.name);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) setFile(f);
+  };
 
   const enviar = async () => {
     if (!file) {
@@ -133,12 +149,45 @@ function GravarTab({ onEnviado }: { onEnviado: () => void }) {
           type="file"
           accept="video/*,audio/*,.mp4,.mp3,.m4a,.wav"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="reuniao__file"
+          hidden
         />
-        {file && <div className="reuniao__file-name"><Icon name="check" size={13} /> {file.name}</div>}
+
+        {!file ? (
+          <div
+            className={'reuniao__dropzone' + (dragOver ? ' is-drag' : '')}
+            role="button"
+            tabIndex={0}
+            onClick={() => inputRef.current?.click()}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && inputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+          >
+            <div className="reuniao__dropzone-icon"><Icon name="arrow_up" size={22} /></div>
+            <div className="reuniao__dropzone-main">Arraste o arquivo aqui ou <span>clique para escolher</span></div>
+            <div className="reuniao__dropzone-hint">Vídeo (.mp4) ou áudio (.mp3, .m4a, .wav) · até 200&nbsp;MB</div>
+          </div>
+        ) : (
+          <div className="reuniao__file-chip">
+            <div className="reuniao__file-chip-icon"><Icon name={isAudio ? 'megafone' : 'video'} size={18} /></div>
+            <div className="reuniao__file-chip-info">
+              <div className="reuniao__file-chip-name" title={file.name}>{file.name}</div>
+              <div className="reuniao__file-chip-meta">{formatBytes(file.size)} · {isAudio ? 'Áudio' : 'Vídeo'}</div>
+            </div>
+            <button
+              type="button"
+              className="reuniao__file-chip-del"
+              onClick={() => { setFile(null); if (inputRef.current) inputRef.current.value = ''; }}
+              disabled={enviando}
+              aria-label="Remover arquivo"
+            >
+              <Icon name="x" size={16} />
+            </button>
+          </div>
+        )}
 
         <button className="reuniao__btn-primary" onClick={enviar} disabled={enviando || !file}>
-          {enviando ? 'Enviando…' : 'Enviar e gerar resumo'}
+          {enviando ? 'Enviando…' : <><Icon name="send" size={15} /> Enviar e gerar resumo</>}
         </button>
       </div>
     </div>
