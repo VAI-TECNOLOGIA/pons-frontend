@@ -42,6 +42,8 @@ export default function Login() {
  const msg =
  err instanceof ApiError && err.message === 'credenciais_invalidas'
  ? 'E-mail ou senha incorretos.'
+ : err instanceof ApiError && err.message === 'conta_desativada'
+ ? 'Conta desativada — fale com o administrador.'
  : 'Erro ao entrar: ' + (err instanceof Error ? err.message : 'desconhecido');
  setError(msg);
  setBusy(false);

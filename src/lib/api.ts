@@ -59,10 +59,14 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
   }
 
   if (res.status === 401) {
-    Auth.clear();
-    if (!window.location.pathname.startsWith('/login')) {
-      window.location.href = '/login';
+    // Na tela de login um 401 é credencial errada — repassa o código cru pro
+    // Login.tsx traduzir, sem derrubar/redirecionar. Fora dela, 401 = sessão expirada.
+    if (window.location.pathname.startsWith('/login')) {
+      const details = await res.json().catch(() => ({}));
+      throw new ApiError(details.error || 'credenciais_invalidas', 401, details);
     }
+    Auth.clear();
+    window.location.href = '/login';
     throw new ApiError('unauthorized', 401, null);
   }
 
