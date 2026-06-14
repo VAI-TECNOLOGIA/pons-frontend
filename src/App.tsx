@@ -77,7 +77,9 @@ const Auditoria       = lazyRetry(() => import('./pages/Auditoria'));
 const Bolsoes         = lazyRetry(() => import('./pages/Bolsoes'));
 const FinanceiroPons  = lazyRetry(() => import('./pages/FinanceiroPons'));
 const AgenteIA        = lazyRetry(() => import('./pages/AgenteIA'));
+const Reuniao         = lazyRetry(() => import('./pages/Reuniao'));
 const Equipe          = lazyRetry(() => import('./pages/Equipe'));
+const Pessoal         = lazyRetry(() => import('./pages/Pessoal'));
 // DEV panel
 const DevMensagens    = lazyRetry(() => import('./pages/DevMensagens'));
 const DevFeedback     = lazyRetry(() => import('./pages/DevFeedback'));
@@ -137,7 +139,9 @@ export default function App() {
           <Route path="/bolsoes" element={<Bolsoes />} />
           <Route path="/financeiro-pons" element={<FinanceiroPons />} />
           <Route path="/agente-ia" element={<AgenteIA />} />
+          <Route path="/reuniao" element={<Reuniao />} />
           <Route path="/equipe" element={<Equipe />} />
+          <Route path="/pessoal" element={<Pessoal />} />
           {/* DEV panel — CEO + DEV */}
           <Route path="/dev/mensagens" element={<DevMensagens />} />
           <Route path="/dev/feedback" element={<DevFeedback />} />

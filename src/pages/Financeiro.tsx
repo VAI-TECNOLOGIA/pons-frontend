@@ -214,7 +214,9 @@ export default function Financeiro() {
  </div>
  )}
 
- {(tab === 'fluxo' || tab === 'contas' || tab === 'planejamento' || tab === 'comissoes' || tab === 'sicredi') && (
+ {tab === 'comissoes' && <ComissoesTab />}
+
+      {(tab === 'fluxo' || tab === 'contas' || tab === 'planejamento' || tab === 'sicredi') && (
  <div className="card">
  <h3 className="card__title">Em desenvolvimento</h3>
  <p className="text-secondary">
@@ -321,4 +323,76 @@ function DreRow({ label, value, strong = false }: { label: string; value: number
  <span className="money" style={{ color }}>{formatted}</span>
  </div>
  );
+}
+
+function ComissoesTab() {
+  const hoje = new Date();
+  const [from, setFrom] = useState(`${hoje.getFullYear()}-01-01`);
+  const [to, setTo] = useState(hoje.toISOString().slice(0, 10));
+  const { data, loading, error } = useApi<any>(() => Api.finComissoesPorCorretor({ from, to }), [from, to]);
+  const [baixando, setBaixando] = useState<number | null>(null);
+  const toast = useToast();
+
+  const baixar = async (corretorId: number) => {
+    setBaixando(corretorId);
+    try {
+      await Api.finComprovantePdf(corretorId, { from, to });
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível gerar o comprovante');
+    } finally {
+      setBaixando(null);
+    }
+  };
+
+  return (
+    <div className="card">
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <h3 className="card__title" style={{ margin: 0 }}>Comissões por corretor</h3>
+        <div className="flex gap-2" style={{ alignItems: 'flex-end' }}>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field__label">De</label>
+            <input type="date" className="field__input" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field__label">Até</label>
+            <input type="date" className="field__input" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <div className="flex gap-2" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
+            <span className="text-secondary text-sm">Total bruto: <strong>{formatCurrency(data.totais?.valorTotal || 0)}</strong></span>
+            <span className="text-secondary text-sm">· Pago: <strong>{formatCurrency(data.totais?.valorPago || 0)}</strong></span>
+            <span className="text-secondary text-sm">· A receber: <strong style={{ color: '#4D7A26' }}>{formatCurrency(data.totais?.aReceber || 0)}</strong></span>
+          </div>
+          <table className="table">
+            <thead><tr><th>Corretor</th><th>Unidade</th><th className="text-right">Total</th><th className="text-right">Pago</th><th className="text-right">A receber</th><th></th></tr></thead>
+            <tbody>
+              {(data.corretores || []).map((c: any) => (
+                <tr key={c.corretorId}>
+                  <td>{c.nome}</td>
+                  <td className="text-sm text-secondary">{c.unidade || '—'}</td>
+                  <td className="text-right money">{formatCurrency(c.valorTotal)}</td>
+                  <td className="text-right money">{formatCurrency(c.valorPago)}</td>
+                  <td className="text-right money" style={{ color: '#4D7A26' }}>{formatCurrency(c.aReceber)}</td>
+                  <td className="text-right">
+                    <button className="btn btn--ghost btn--sm" disabled={baixando === c.corretorId} onClick={() => baixar(c.corretorId)}>
+                      {baixando === c.corretorId ? '...' : 'PDF'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {!data.corretores?.length && (
+                <tr><td colSpan={6} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nenhuma comissão no período.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
 }

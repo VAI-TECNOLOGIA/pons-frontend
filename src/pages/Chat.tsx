@@ -65,11 +65,16 @@ export default function Chat() {
   const [liberarOpen, setLiberarOpen] = useState(false);
   const [liberarJustif, setLiberarJustif] = useState('');
   const [liberarSending, setLiberarSending] = useState(false);
+  const [tabularOpen, setTabularOpen] = useState(false);
+  const [tabularMotivo, setTabularMotivo] = useState('');
+  const [tabularObs, setTabularObs] = useState('');
+  const [tabularSending, setTabularSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations());
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
+  const { data: tabMotivos } = useApi<Array<{ codigo: string; label: string; devolveBase?: boolean }>>(() => Api.tabulacaoMotivos());
   const { data: conv, reload: reloadConv } = useApi<ConversationDetail>(
     () => (activeId ? Api.conversationGet(activeId) : Promise.resolve(null as any)),
     [activeId],
@@ -220,6 +225,30 @@ export default function Chat() {
       toast.error('Erro: ' + (err?.message || 'falha'));
     } finally {
       setLiberarSending(false);
+    }
+  };
+
+  const abrirTabular = () => {
+    if (!activeId) return;
+    setTabularMotivo(tabMotivos?.[0]?.codigo || '');
+    setTabularObs('');
+    setTabularOpen(true);
+  };
+
+  const confirmarTabular = async () => {
+    if (!activeId || !tabularMotivo || tabularSending) return;
+    setTabularSending(true);
+    try {
+      const r: any = await Api.leadTabular(activeId, tabularMotivo, tabularObs.trim() || undefined);
+      toast.success(r?.devolveBase ? 'Lead tabulado e devolvido à base.' : 'Lead tabulado.');
+      setTabularOpen(false);
+      setActiveId(null);
+      reloadConv();
+      reloadInbox();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setTabularSending(false);
     }
   };
 
@@ -414,6 +443,15 @@ export default function Chat() {
                         <Icon name="phone" size={12} /> Liberar contato
                       </button>
                     )}
+                    {conv.reservado && (
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={abrirTabular}
+                        title="Registrar desfecho do lead (motivo). Pode devolver à base."
+                      >
+                        <Icon name="warn" size={12} /> Tabular
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -523,6 +561,50 @@ export default function Chat() {
                 <p className="text-xs text-secondary" style={{ marginTop: 8 }}>
                   Motivo entra no audit log e na notificação enviada aos admins.
                 </p>
+              </Modal>
+              <Modal
+                open={tabularOpen}
+                onClose={() => !tabularSending && setTabularOpen(false)}
+                title="Tabular lead"
+                subtitle={`Registrar o desfecho de ${conv?.nome || 'lead'}. Conforme o motivo, o lead volta pra base de marketing.`}
+                size="sm"
+                footer={
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button className="btn btn--ghost" onClick={() => setTabularOpen(false)} disabled={tabularSending}>
+                      Cancelar
+                    </button>
+                    <button className="btn btn--primary" onClick={confirmarTabular} disabled={tabularSending || !tabularMotivo}>
+                      {tabularSending ? 'Tabulando…' : 'Tabular'}
+                    </button>
+                  </div>
+                }
+              >
+                <label className="field__label" style={{ fontSize: 12, marginBottom: 6, display: 'block' }}>
+                  Motivo
+                </label>
+                <select
+                  className="field__select"
+                  value={tabularMotivo}
+                  onChange={(e) => setTabularMotivo(e.target.value)}
+                  style={{ width: '100%' }}
+                >
+                  {(tabMotivos || []).map((m) => (
+                    <option key={m.codigo} value={m.codigo}>
+                      {m.label}{m.devolveBase ? ' (volta à base)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <label className="field__label" style={{ fontSize: 12, margin: '12px 0 6px', display: 'block' }}>
+                  Observação (opcional)
+                </label>
+                <textarea
+                  className="field__textarea"
+                  rows={3}
+                  placeholder="Detalhe do desfecho"
+                  value={tabularObs}
+                  onChange={(e) => setTabularObs(e.target.value)}
+                  style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
+                />
               </Modal>
             </>
           )}

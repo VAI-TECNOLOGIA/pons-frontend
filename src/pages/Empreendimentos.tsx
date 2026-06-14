@@ -41,6 +41,7 @@ export default function Empreendimentos() {
   const { data: construtoras } = useApi<Construtora[]>(() => Api.construtoras());
   const [showNew, setShowNew] = useState(false);
   const [gallery, setGallery] = useState<Empreendimento | null>(null);
+  const [unidadesEmp, setUnidadesEmp] = useState<Empreendimento | null>(null);
 
   const userRole = Auth.user?.role || '';
   const canEdit = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'].includes(userRole);
@@ -149,6 +150,13 @@ export default function Empreendimentos() {
                       <div className="property-card__stat-label">a partir</div>
                     </div>
                   </div>
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    style={{ width: '100%', marginTop: 12 }}
+                    onClick={() => setUnidadesEmp(e)}
+                  >
+                    <Icon name="building" size={13} /> Unidades / disponibilidade
+                  </button>
                 </div>
               </div>
             );
@@ -176,7 +184,238 @@ export default function Empreendimentos() {
           }}
         />
       )}
+
+      {unidadesEmp && (
+        <UnidadesModal
+          empreendimento={unidadesEmp}
+          canEdit={canEdit}
+          onClose={() => setUnidadesEmp(null)}
+          onChanged={() => reload()}
+        />
+      )}
     </>
+  );
+}
+
+// ── Modal: gestão de unidades (inventário) ───────────────────────────────
+const UNIDADE_STATUS_BADGE: Record<string, [string, string]> = {
+  DISPONIVEL: ['launch', 'Disponível'],
+  RESERVADO: ['analysis', 'Reservado'],
+  VENDIDO: ['paid', 'Vendido'],
+  BLOQUEADO: ['cancelled', 'Bloqueado'],
+};
+const UNIDADE_STATUS_LIST = ['DISPONIVEL', 'RESERVADO', 'VENDIDO', 'BLOQUEADO'];
+
+function UnidadesModal({
+  empreendimento,
+  canEdit,
+  onClose,
+  onChanged,
+}: {
+  empreendimento: Empreendimento;
+  canEdit: boolean;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  const refetch = async () => {
+    setLoading(true);
+    try {
+      setData(await Api.empreendimentoUnidades(empreendimento.id));
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao carregar unidades');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empreendimento.id]);
+
+  const mudarStatus = async (u: any, status: string) => {
+    setBusy(true);
+    try {
+      await Api.empreendimentoUnidadeUpdate(empreendimento.id, u.id, { status });
+      await refetch();
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao atualizar');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remover = async (u: any) => {
+    const ok = await confirm({ title: 'Remover unidade', message: `Remover "${u.identificacao}"?`, confirmText: 'Remover', tone: 'danger' });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await Api.empreendimentoUnidadeDelete(empreendimento.id, u.id);
+      await refetch();
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao remover');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const addUnidade = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const num = (k: string) => { const v = fd.get(k); return v ? Number(v) : null; };
+    setBusy(true);
+    try {
+      await Api.empreendimentoUnidadeCreate(empreendimento.id, {
+        identificacao: String(fd.get('identificacao') || '').trim(),
+        torre: String(fd.get('torre') || '') || null,
+        andar: num('andar'),
+        tipologia: String(fd.get('tipologia') || '') || null,
+        areaPrivativa: num('areaPrivativa'),
+        quartos: num('quartos'),
+        vagas: num('vagas'),
+        valor: num('valor'),
+        status: String(fd.get('status') || 'DISPONIVEL'),
+      });
+      setAddOpen(false);
+      await refetch();
+      onChanged();
+      toast.success('Unidade adicionada');
+    } catch (err: any) {
+      toast.error(err?.message || 'Falha ao adicionar');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const addBulk = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const num = (k: string) => { const v = fd.get(k); return v ? Number(v) : null; };
+    setBusy(true);
+    try {
+      const r: any = await Api.empreendimentoUnidadesBulk(empreendimento.id, {
+        torre: String(fd.get('torre') || '') || null,
+        andarInicio: Number(fd.get('andarInicio')),
+        andarFim: Number(fd.get('andarFim')),
+        unidadesPorAndar: Number(fd.get('unidadesPorAndar')),
+        prefixo: String(fd.get('prefixo') || '') || null,
+        tipologia: String(fd.get('tipologia') || '') || null,
+        valor: num('valor'),
+      });
+      setBulkOpen(false);
+      await refetch();
+      onChanged();
+      toast.success(`${r.criadas} unidades geradas`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Falha ao gerar lote');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resumo = data?.resumo || {};
+
+  return (
+    <Modal open onClose={onClose} title={`Unidades · ${empreendimento.nome}`} subtitle="Inventário, andares e disponibilidade" size="lg">
+      <div className="flex gap-2" style={{ flexWrap: 'wrap', marginBottom: 12 }}>
+        {UNIDADE_STATUS_LIST.map((s) => (
+          <span key={s} className={`badge badge--${UNIDADE_STATUS_BADGE[s][0]}`}>
+            {UNIDADE_STATUS_BADGE[s][1]}: {resumo[s] || 0}
+          </span>
+        ))}
+        <span className="text-secondary text-sm" style={{ marginLeft: 'auto' }}>Total: {data?.total || 0}</span>
+      </div>
+
+      {canEdit && !addOpen && !bulkOpen && (
+        <div className="flex gap-2" style={{ marginBottom: 16 }}>
+          <button className="btn btn--primary btn--sm" onClick={() => setAddOpen(true)}><Icon name="plus" size={13} /> Adicionar unidade</button>
+          <button className="btn btn--secondary btn--sm" onClick={() => setBulkOpen(true)}><Icon name="building" size={13} /> Gerar em lote</button>
+        </div>
+      )}
+
+      {addOpen && (
+        <form onSubmit={addUnidade} className="card" style={{ marginBottom: 16 }}>
+          <div className="form-grid">
+            <div className="field"><label className="field__label">Identificação *</label><input name="identificacao" className="field__input" required placeholder="Apt 1207" /></div>
+            <div className="field"><label className="field__label">Torre/Bloco</label><input name="torre" className="field__input" placeholder="A" /></div>
+            <div className="field"><label className="field__label">Andar</label><input name="andar" type="number" className="field__input" /></div>
+            <div className="field"><label className="field__label">Tipologia</label><input name="tipologia" className="field__input" placeholder="3 quartos" /></div>
+            <div className="field"><label className="field__label">Área (m²)</label><input name="areaPrivativa" type="number" step="0.01" className="field__input" /></div>
+            <div className="field"><label className="field__label">Quartos</label><input name="quartos" type="number" className="field__input" /></div>
+            <div className="field"><label className="field__label">Vagas</label><input name="vagas" type="number" className="field__input" /></div>
+            <div className="field"><label className="field__label">Valor (R$)</label><input name="valor" type="number" step="0.01" className="field__input" /></div>
+            <div className="field"><label className="field__label">Status</label><select name="status" className="field__select" defaultValue="DISPONIVEL">{UNIDADE_STATUS_LIST.map((s) => <option key={s} value={s}>{UNIDADE_STATUS_BADGE[s][1]}</option>)}</select></div>
+          </div>
+          <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => setAddOpen(false)}>Cancelar</button>
+            <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Salvar</button>
+          </div>
+        </form>
+      )}
+
+      {bulkOpen && (
+        <form onSubmit={addBulk} className="card" style={{ marginBottom: 16 }}>
+          <p className="text-secondary text-sm" style={{ marginBottom: 8 }}>Gera unidades por faixa de andares. Identificação = prefixo + andar + nº (ex: andar 12, unidade 1 → 1201).</p>
+          <div className="form-grid">
+            <div className="field"><label className="field__label">Torre/Bloco</label><input name="torre" className="field__input" placeholder="A" /></div>
+            <div className="field"><label className="field__label">Prefixo</label><input name="prefixo" className="field__input" placeholder="(opcional)" /></div>
+            <div className="field"><label className="field__label">Andar inicial *</label><input name="andarInicio" type="number" className="field__input" required defaultValue={1} /></div>
+            <div className="field"><label className="field__label">Andar final *</label><input name="andarFim" type="number" className="field__input" required defaultValue={10} /></div>
+            <div className="field"><label className="field__label">Unidades por andar *</label><input name="unidadesPorAndar" type="number" className="field__input" required defaultValue={4} /></div>
+            <div className="field"><label className="field__label">Tipologia</label><input name="tipologia" className="field__input" placeholder="2 quartos" /></div>
+            <div className="field"><label className="field__label">Valor base (R$)</label><input name="valor" type="number" step="0.01" className="field__input" /></div>
+          </div>
+          <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => setBulkOpen(false)}>Cancelar</button>
+            <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Gerar</button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <LoadingBlock />
+      ) : !data?.unidades?.length ? (
+        <p className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nenhuma unidade cadastrada.</p>
+      ) : (
+        <table className="table">
+          <thead><tr><th>Unidade</th><th>Torre</th><th>Andar</th><th>Tipologia</th><th className="text-right">Valor</th><th>Status</th>{canEdit && <th></th>}</tr></thead>
+          <tbody>
+            {data.unidades.map((u: any) => (
+              <tr key={u.id}>
+                <td>{u.identificacao}</td>
+                <td className="text-sm">{u.torre || '—'}</td>
+                <td className="text-sm">{u.andar ?? '—'}</td>
+                <td className="text-sm">{u.tipologia || '—'}</td>
+                <td className="text-right money">{u.valor ? formatCurrencyShort(u.valor) : '—'}</td>
+                <td>
+                  {canEdit ? (
+                    <select className="field__select field__select--sm" value={u.status} disabled={busy} onChange={(ev) => mudarStatus(u, ev.target.value)}>
+                      {UNIDADE_STATUS_LIST.map((s) => <option key={s} value={s}>{UNIDADE_STATUS_BADGE[s][1]}</option>)}
+                    </select>
+                  ) : (
+                    <span className={`badge badge--${UNIDADE_STATUS_BADGE[u.status]?.[0] || 'neutral'}`}>{UNIDADE_STATUS_BADGE[u.status]?.[1] || u.status}</span>
+                  )}
+                </td>
+                {canEdit && (
+                  <td className="text-right">
+                    <button className="btn btn--ghost btn--sm" disabled={busy} onClick={() => remover(u)} title="Remover"><Icon name="trash" size={13} /></button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Modal>
   );
 }
 
@@ -229,6 +468,7 @@ function NovoEmpreendimentoModal({
       unidadesVendidas: Number(fd.get('unidadesVendidas') || 0),
       valorInicial: fd.get('valorInicial') ? Number(fd.get('valorInicial')) : null,
       descricao: (fd.get('descricao') ? String(fd.get('descricao')) : null) || null,
+      publicado: fd.get('publicado') === 'on',
     };
     if (!payload.nome || !payload.construtoraId || !payload.cidade) {
       toast.error('Nome, construtora e cidade são obrigatórios.');
@@ -239,14 +479,9 @@ function NovoEmpreendimentoModal({
       const created: any = await Api.empreendimentoCreate(payload);
       // Upload das fotos selecionadas (se houver) — usa endpoint dedicado
       if (pendingFiles.length) {
-        const form = new FormData();
-        for (const f of pendingFiles.slice(0, 8)) form.append('files', f);
-        const r = await fetch(`/api/empreendimentos/${created.id}/fotos`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${Auth.token}` },
-          body: form,
-        });
-        if (!r.ok) {
+        try {
+          await Api.empreendimentoFotoUpload(created.id, pendingFiles);
+        } catch {
           toast.info('Empreendimento criado, mas algumas fotos falharam ao enviar.');
         }
       }
@@ -333,6 +568,17 @@ function NovoEmpreendimentoModal({
               rows={3}
               placeholder="Resumo, diferenciais, plantas..."
             />
+          </div>
+          <div className="field field--span-2">
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+              <input name="publicado" type="checkbox" style={{ marginTop: 3 }} />
+              <span>
+                <span className="field__label" style={{ margin: 0 }}>Subir no site / landing pública</span>
+                <span className="text-xs text-secondary" style={{ display: 'block' }}>
+                  Pré-lançamento normalmente fica desmarcado — só publica quando liberar a divulgação.
+                </span>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -543,15 +789,7 @@ function GaleriaFotosModal({
     if (!list.length) return;
     setBusy(true);
     try {
-      const form = new FormData();
-      for (const f of list) form.append('files', f);
-      const r = await fetch(`/api/empreendimentos/${emp.id}/fotos`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${Auth.token}` },
-        body: form,
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data?.message || 'upload_failed');
+      const data = await Api.empreendimentoFotoUpload(emp.id, list);
       toast.success(`${data.fotos?.length || 0} foto(s) enviada(s).`);
       await refetch();
       onChanged();

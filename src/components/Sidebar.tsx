@@ -22,6 +22,7 @@ type NavItem = {
   badge?: number;
   blank?: boolean;
   roles?: Role[];
+  emails?: string[]; // gate por pessoa (área privada) — tem prioridade sobre roles
 };
 
 type NavGroup = {
@@ -41,6 +42,7 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/empreendimentos', label: 'Empreendimentos', icon: 'building' },
   { to: '/ranking', label: 'Ranking', icon: 'trophy' },
   { to: '/executivo', label: 'Agenda', icon: 'calendar', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA'] },
+  { to: '/pessoal', label: 'Meu Espaço', icon: 'crown', emails: ['paulo@grupopons.com.br'] },
 ];
 
 // ── GRUPOS COLAPSÁVEIS ────────────────────────────────────────────────────
@@ -100,6 +102,7 @@ const GROUPS: NavGroup[] = [
       { to: '/configuracoes', label: 'Configurações', icon: 'settings', roles: ['CEO'] },
       { to: '/equipe', label: 'Equipe', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
       { to: '/agente-ia', label: 'Agentes IA', icon: 'bot', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
+      { to: '/reuniao', label: 'Reunião', icon: 'video', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/auditoria', label: 'Auditoria', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
     ],
   },
@@ -114,7 +117,8 @@ const DEV_ITEMS: NavItem[] = [
 
 // Adiciona chevron-right ao Icon component lá embaixo só pra esse Sidebar.
 
-function canSee(it: NavItem, role: Role): boolean {
+function canSee(it: NavItem, role: Role, email?: string): boolean {
+  if (it.emails) return !!email && it.emails.includes(email);
   if (!it.roles) return true;
   return it.roles.includes(role);
 }
@@ -161,13 +165,13 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
         ) : (
           <>
             {/* Top items sem header — primeiro contato é direto */}
-            {TOP_ITEMS.filter((it) => canSee(it, role)).map((it) => (
+            {TOP_ITEMS.filter((it) => canSee(it, role, user.email)).map((it) => (
               <NavItemLink key={it.to} item={it} />
             ))}
 
             {/* Grupos colapsáveis */}
             {GROUPS.map((g) => {
-              const visible = g.items.filter((it) => canSee(it, role));
+              const visible = g.items.filter((it) => canSee(it, role, user.email));
               if (visible.length === 0) return null;
               const open = !!openGroups[g.key];
               return (

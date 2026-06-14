@@ -125,7 +125,10 @@ export const Api = {
   leadUpdate: (id: number, data: any) => request<any>(`/leads/${id}`, { method: 'PATCH', body: data }),
   leadConversas: (id: number) => request<any>(`/leads/${id}/conversas`),
   inbox: () => request<any>('/leads/inbox'),
-  tracking: () => request<any>('/leads/tracking'),
+  tracking: (params?: { from?: string; to?: string }) => {
+    const qs = new URLSearchParams(params as Record<string, string>).toString();
+    return request<any>(`/leads/tracking${qs ? `?${qs}` : ''}`);
+  },
   leadsSourcesStats: () =>
     request<{
       total: number;
@@ -144,6 +147,10 @@ export const Api = {
   leadAtivarNegociacao: (id: number) => request<any>(`/leads/${id}/ativar-negociacao`, { method: 'POST' }),
   leadObservacao: (id: number, texto: string) =>
     request<any>(`/leads/${id}/observacao`, { method: 'POST', body: { texto } }),
+  tabulacaoMotivos: () =>
+    request<Array<{ codigo: string; label: string; devolveBase?: boolean }>>('/leads/tabulacao-motivos'),
+  leadTabular: (id: number, motivo: string, observacao?: string) =>
+    request<any>(`/leads/${id}/tabular`, { method: 'POST', body: { motivo, observacao } }),
 
   // Empreendimentos
   empreendimentos: () => request<any[]>('/empreendimentos'),
@@ -151,18 +158,63 @@ export const Api = {
   empreendimentoCreate: (data: any) => request<any>('/empreendimentos', { method: 'POST', body: data }),
   empreendimentoUpdate: (id: number, data: any) =>
     request<any>(`/empreendimentos/${id}`, { method: 'PATCH', body: data }),
+  empreendimentoFotoUpload: async (id: number, files: File[]) => {
+    const form = new FormData();
+    for (const f of files.slice(0, 8)) form.append('files', f);
+    const r = await fetch(`${BASE}/empreendimentos/${id}/fotos`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.error || j.message || 'upload_failed');
+    }
+    return r.json();
+  },
   empreendimentoFotoDelete: (id: number, fotoId: number) =>
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
   empreendimentoFotoCapa: (id: number, fotoId: number) =>
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}/capa`, { method: 'POST' }),
+  empreendimentoUnidades: (id: number) => request<any>(`/empreendimentos/${id}/unidades`),
+  empreendimentoUnidadeCreate: (id: number, data: any) =>
+    request<any>(`/empreendimentos/${id}/unidades`, { method: 'POST', body: data }),
+  empreendimentoUnidadesBulk: (id: number, data: any) =>
+    request<any>(`/empreendimentos/${id}/unidades/bulk`, { method: 'POST', body: data }),
+  empreendimentoUnidadeUpdate: (id: number, unidadeId: number, data: any) =>
+    request<any>(`/empreendimentos/${id}/unidades/${unidadeId}`, { method: 'PATCH', body: data }),
+  empreendimentoUnidadeDelete: (id: number, unidadeId: number) =>
+    request<any>(`/empreendimentos/${id}/unidades/${unidadeId}`, { method: 'DELETE' }),
   construtoras: () => request<any[]>('/empreendimentos/construtoras'),
 
   // Vendas
   vendas: () => request<any[]>('/vendas'),
+  vendaKanban: () => request<{ colunas: any[] }>('/vendas/kanban'),
   venda: (id: number) => request<any>(`/vendas/${id}`),
   vendaCreate: (data: any) => request<any>('/vendas', { method: 'POST', body: data }),
   vendaUpdateStatus: (id: number, status: string) =>
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
+  vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
+  parcelasAtrasadas: () => request<any[]>('/vendas/parcelas/atrasadas'),
+  vendaParcelaStatus: (vendaId: number, pagamentoId: number, status: string) =>
+    request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}`, { method: 'PATCH', body: { status } }),
+  vendaDocumentos: (id: number) => request<any[]>(`/vendas/${id}/documentos`),
+  vendaDocumentoDelete: (id: number, docId: number) =>
+    request<any>(`/vendas/${id}/documentos/${docId}`, { method: 'DELETE' }),
+  vendaDocumentoUpload: async (id: number, files: File[]) => {
+    const form = new FormData();
+    for (const f of files.slice(0, 12)) form.append('files', f);
+    const r = await fetch(`${BASE}/vendas/${id}/documentos`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.error || j.message || 'upload_failed');
+    }
+    return r.json();
+  },
 
   // Tarefas
   tarefas: (params: any = {}) => request<any[]>(`/tarefas${qs(params)}`),
@@ -212,8 +264,20 @@ export const Api = {
   finDre: (params: any = {}) => request<any>(`/financeiro/dre${qs(params)}`),
   finFluxoCaixa: (meses = 6) => request<any>(`/financeiro/fluxo-caixa?meses=${meses}`),
   finContas: (tipo = 'PAGAR') => request<any>(`/financeiro/contas?tipo=${tipo}`),
+  finComissoesPorCorretor: (params: any = {}) => request<any>(`/financeiro/comissoes-por-corretor${qs(params)}`),
+  finAtrasados: () => request<any>('/financeiro/atrasados'),
   finSicrediStatus: () => request<any>('/financeiro/sicredi/status'),
   finSicrediEnviar: () => request<any>('/financeiro/sicredi/enviar', { method: 'POST' }),
+  finComprovantePdf: async (corretorId: number, params: any = {}) => {
+    const r = await fetch(`${BASE}/financeiro/comissoes-por-corretor/${corretorId}/comprovante.pdf${qs(params)}`, {
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+    });
+    if (!r.ok) throw new Error(`Falha ao gerar comprovante (${r.status})`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
 
   // Relatórios
   relKpis: (params: any = {}) => request<any>(`/relatorios/kpis${qs(params)}`),
@@ -418,8 +482,10 @@ export const Api = {
   rateioSimular: (data: any) => request<any>('/rateio/simular', { method: 'POST', body: data }),
   rateioVenda:   (id: number) => request<any>(`/rateio/venda/${id}`),
   rateioAplicar: (id: number) => request<any>(`/rateio/aplicar/${id}`, { method: 'POST' }),
-  rateioPoliticaDefault: () => request<any>('/rateio/politica-default'),
-  rateioPoliticas: () => request<any[]>('/rateio/politica'),
+  rateioPoliticaDefault: (unidadeId?: number) =>
+    request<any>(`/rateio/politica-default${unidadeId ? `?unidadeId=${unidadeId}` : ''}`),
+  rateioPoliticas: (unidadeId?: number) =>
+    request<any[]>(`/rateio/politica${unidadeId ? `?unidadeId=${unidadeId}` : ''}`),
   rateioPoliticaCreate: (data: any) => request<any>('/rateio/politica', { method: 'POST', body: data }),
   rateioPoliticaUpdate: (id: number, data: any) => request<any>(`/rateio/politica/${id}`, { method: 'PATCH', body: data }),
 
@@ -427,6 +493,11 @@ export const Api = {
   socioCreate: (data: any) => request<any>('/socios', { method: 'POST', body: data }),
   socioUpdate: (id: number, data: any) => request<any>(`/socios/${id}`, { method: 'PATCH', body: data }),
   socioDelete: (id: number) => request<{ ok: boolean }>(`/socios/${id}`, { method: 'DELETE' }),
+
+  unidadesList: () => request<any[]>('/unidades'),
+  unidadeCreate: (data: any) => request<any>('/unidades', { method: 'POST', body: data }),
+  unidadeUpdate: (id: number, data: any) => request<any>(`/unidades/${id}`, { method: 'PATCH', body: data }),
+  unidadeDelete: (id: number) => request<{ ok: boolean }>(`/unidades/${id}`, { method: 'DELETE' }),
 
   fechamentoList: () => request<any[]>('/fechamento'),
   fechamentoMes:  (ano: number, mes: number) => request<any>(`/fechamento/${ano}/${mes}`),
@@ -450,6 +521,29 @@ export const Api = {
   agenteIaStatus: () => request<{ configurado: boolean; provider: string; model: string; tom: string; temBaseConhecimento: boolean }>('/ia/agente/status'),
   agenteIaConfig:  () => request<Record<string, string>>('/ia/agente/config'),
   agenteIaSave:    (data: Record<string, string>) => request<{ ok: boolean }>('/ia/agente/config', { method: 'PUT', body: data }),
+
+  // ─── Agente IA (resumidor de reuniões) ───────────────────────────
+  agenteReuniaoStatus: () => request<{ configurado: boolean; provider: string; model: string; tom: string; temBaseConhecimento: boolean }>('/ia/agente/reuniao/status'),
+  agenteReuniaoConfig: () => request<Record<string, string>>('/ia/agente/reuniao/config'),
+  agenteReuniaoSave:   (data: Record<string, string>) => request<{ ok: boolean }>('/ia/agente/reuniao/config', { method: 'PUT', body: data }),
+
+  // ─── Reuniões (upload .mp4 → transcrição + resumo) ───────────────
+  reunioes:       () => request<any[]>('/reunioes'),
+  reuniao:        (id: number) => request<any>(`/reunioes/${id}`),
+  reuniaoRenomear:(id: number, titulo: string) => request<any>(`/reunioes/${id}`, { method: 'PATCH', body: { titulo } }),
+  reuniaoDelete:  (id: number) => request<{ ok: boolean }>(`/reunioes/${id}`, { method: 'DELETE' }),
+  reuniaoUpload:  async (file: File, titulo: string) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    if (titulo) fd.append('titulo', titulo);
+    const r = await fetch(`${BASE}/reunioes/upload`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: fd,
+    });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || `upload_${r.status}`);
+    return r.json();
+  },
 
   // ─── Equipe (hierarquia, departamentos, usuários, níveis) ───────
   equipeUsers:         (q = '') => request<any[]>(`/equipe/users${q ? '?q=' + encodeURIComponent(q) : ''}`),
@@ -522,6 +616,18 @@ export const Api = {
     }
     return res.json() as Promise<{ ok: boolean; adminsNotified: number; screenshotUrl: string | null }>;
   },
+
+  // Área pessoal (privada — gate por e-mail no backend)
+  pessoalFinancas: () =>
+    request<{ categorias: any[]; meses: { ano: number; mes: number }[] }>('/pessoal/financas'),
+  pessoalCategoriaCreate: (data: { nome: string; grupo?: string | null; ordem?: number }) =>
+    request<any>('/pessoal/financas/categorias', { method: 'POST', body: data }),
+  pessoalCategoriaUpdate: (id: number, data: { nome?: string; grupo?: string | null; ordem?: number }) =>
+    request<any>(`/pessoal/financas/categorias/${id}`, { method: 'PATCH', body: data }),
+  pessoalCategoriaDelete: (id: number) =>
+    request<any>(`/pessoal/financas/categorias/${id}`, { method: 'DELETE' }),
+  pessoalValorSet: (data: { categoriaId: number; ano: number; mes: number; valor: number | null }) =>
+    request<any>('/pessoal/financas/valores', { method: 'PUT', body: data }),
 };
 
 /**

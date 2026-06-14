@@ -1,13 +1,8 @@
-// Agente IA do Atendimento WhatsApp — configura o bot que responde leads em
-// PENDENTE até o corretor aceitar. Roda durante as 3 primeiras respostas
-// automáticas (limite configurável em Settings "ia.limiteRespostas").
-//
-// Layout split:
-//   header        — breadcrumb · botão Salvar
-//   sidebar       — avatar bot · nome · provider · menu (Instruções, Integrações)
-//   main          — aba ativa
-//     Instruções  — Tom + Descrição do comportamento + Instruções + Base de Conhecimento
-//     Integrações — Provider (Anthropic/OpenAI) + Modelo + API Key
+// Área de Agentes IA — duas abas:
+//   · Atendimento WhatsApp   — bot que responde leads PENDENTE até o corretor aceitar.
+//   · Resumidor de Reuniões  — perfil do agente que transcreve/resume reuniões (Settings ia.reuniao.*).
+// As duas abas usam EXATAMENTE o mesmo formulário (tom, descrição, instruções,
+// base de conhecimento, provider/modelo/API key), só mudam as Settings de destino.
 
 import { useEffect, useState } from 'react';
 import { Topbar } from '../components/PageHeader';
@@ -16,8 +11,6 @@ import { useApi, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { Icon } from '../components/Icon';
 import './agente-ia.css';
-
-// 1 aba só — Integrações virou um dropdown na própria pill da sidebar.
 
 const TONS: Array<{ id: 'formal' | 'equilibrado' | 'descontraido' | 'criativo'; label: string; sub: string; icon: string }> = [
   { id: 'formal',       label: 'Formal',       sub: 'Direto, preciso e profissional.', icon: 'shield' },
@@ -29,15 +22,104 @@ const TONS: Array<{ id: 'formal' | 'equilibrado' | 'descontraido' | 'criativo'; 
 type ProviderOpt = { id: string; label: string; model: string; provider: 'anthropic' | 'openai' };
 
 const PROVIDER_OPTIONS: ProviderOpt[] = [
-  { id: 'claude-opus-4-7',        label: 'Anthropic · Claude Opus 4.7',   model: 'claude-opus-4-7',           provider: 'anthropic' },
-  { id: 'claude-sonnet-4-6',      label: 'Anthropic · Claude Sonnet 4.6', model: 'claude-sonnet-4-6',         provider: 'anthropic' },
-  { id: 'claude-haiku-4-5',       label: 'Anthropic · Claude Haiku 4.5',  model: 'claude-haiku-4-5-20251001', provider: 'anthropic' },
-  { id: 'gpt-4o',                 label: 'OpenAI · GPT-4o',               model: 'gpt-4o',                    provider: 'openai' },
-  { id: 'gpt-4o-mini',            label: 'OpenAI · GPT-4o mini',          model: 'gpt-4o-mini',               provider: 'openai' },
+  { id: 'claude-opus-4-7',   label: 'Anthropic · Claude Opus 4.7',   model: 'claude-opus-4-7',           provider: 'anthropic' },
+  { id: 'claude-sonnet-4-6', label: 'Anthropic · Claude Sonnet 4.6', model: 'claude-sonnet-4-6',         provider: 'anthropic' },
+  { id: 'claude-haiku-4-5',  label: 'Anthropic · Claude Haiku 4.5',  model: 'claude-haiku-4-5-20251001', provider: 'anthropic' },
+  { id: 'gpt-4o',            label: 'OpenAI · GPT-4o',               model: 'gpt-4o',                    provider: 'openai' },
+  { id: 'gpt-4o-mini',       label: 'OpenAI · GPT-4o mini',          model: 'gpt-4o-mini',               provider: 'openai' },
 ];
 
+type Variant = 'atendimento' | 'reuniao';
+
+type VariantCfg = {
+  prefix: string;
+  load: () => Promise<Record<string, string>>;
+  save: (data: Record<string, string>) => Promise<{ ok: boolean }>;
+  // Provedores disponíveis no dropdown. Reunião usa só OpenAI: a transcrição
+  // depende do Whisper, que não tem equivalente na Anthropic.
+  allowedProviders: Array<'anthropic' | 'openai'>;
+  defaultProvider: 'anthropic' | 'openai';
+  defaultModel: string;
+  defaultNome: string;
+  nameSub: string;
+  nameTag: { icon: string; label: string };
+  avatarIcon: string;
+  banner: { icon: string; titulo: string; texto: string };
+  subtitle: string;
+};
+
+const VARIANTS: Record<Variant, VariantCfg> = {
+  atendimento: {
+    prefix: 'ia.atendimento',
+    load: Api.agenteIaConfig,
+    save: Api.agenteIaSave,
+    allowedProviders: ['anthropic', 'openai'],
+    defaultProvider: 'anthropic',
+    defaultModel: 'claude-haiku-4-5-20251001',
+    defaultNome: 'Pons IA',
+    nameSub: 'Atendimento WhatsApp · Pendente',
+    nameTag: { icon: 'whatsapp', label: 'WhatsApp Cloud Meta' },
+    avatarIcon: 'bot',
+    banner: {
+      icon: 'whatsapp',
+      titulo: 'Canal: WhatsApp Cloud API (Meta)',
+      texto: ' · este agente responde leads na aba Atendimento › Pendente. Quando o corretor clica em Aceitar, a IA para automaticamente.',
+    },
+    subtitle:
+      'Configure o agente que responde leads no WhatsApp enquanto o corretor não aceita o atendimento. Limite padrão: 3 respostas automáticas por lead.',
+  },
+  reuniao: {
+    prefix: 'ia.reuniao',
+    load: Api.agenteReuniaoConfig,
+    save: Api.agenteReuniaoSave,
+    allowedProviders: ['openai'],
+    defaultProvider: 'openai',
+    defaultModel: 'gpt-4o-mini',
+    defaultNome: 'Resumidor de Reuniões',
+    nameSub: 'Reuniões · Transcrição + Resumo',
+    nameTag: { icon: 'sparkles', label: 'Whisper + LLM' },
+    avatarIcon: 'bot',
+    banner: {
+      icon: 'video',
+      titulo: 'Canal: Reuniões (upload de .mp4)',
+      texto: ' · este perfil define o tom e as regras com que a IA resume as reuniões enviadas na seção Reunião. A API key é usada para transcrever (Whisper) e resumir.',
+    },
+    subtitle:
+      'Configure como a IA deve transcrever e resumir as reuniões. O modelo e a API key abaixo são usados na seção Reunião ao processar cada arquivo enviado.',
+  },
+};
+
 export default function AgenteIA() {
-  const { data, loading, reload } = useApi<Record<string, string>>(() => Api.agenteIaConfig());
+  const [aba, setAba] = useState<Variant>('atendimento');
+  return (
+    <>
+      <Topbar title="Agentes IA" />
+      <div className="agente">
+        <div className="agente__tabs">
+          <button
+            className={'agente__tab' + (aba === 'atendimento' ? ' is-active' : '')}
+            onClick={() => setAba('atendimento')}
+          >
+            <Icon name="whatsapp" size={15} /> Atendimento WhatsApp
+          </button>
+          <button
+            className={'agente__tab' + (aba === 'reuniao' ? ' is-active' : '')}
+            onClick={() => setAba('reuniao')}
+          >
+            <Icon name="video" size={15} /> Resumidor de Reuniões
+          </button>
+        </div>
+        <AgenteConfig key={aba} variant={aba} />
+      </div>
+    </>
+  );
+}
+
+function AgenteConfig({ variant }: { variant: Variant }) {
+  const v = VARIANTS[variant];
+  const k = (campo: string) => `${v.prefix}.${campo}`;
+  const providerOptions = PROVIDER_OPTIONS.filter((p) => v.allowedProviders.includes(p.provider));
+  const { data, loading, reload } = useApi<Record<string, string>>(() => v.load());
   const toast = useToast();
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -47,14 +129,14 @@ export default function AgenteIA() {
   useEffect(() => {
     if (data && Object.keys(form).length === 0) {
       setForm({
-        'ia.atendimento.provider':         data['ia.atendimento.provider'] || 'anthropic',
-        'ia.atendimento.apiKey':           '',
-        'ia.atendimento.model':            data['ia.atendimento.model'] || 'claude-haiku-4-5-20251001',
-        'ia.atendimento.tom':              data['ia.atendimento.tom'] || 'equilibrado',
-        'ia.atendimento.descricao':        data['ia.atendimento.descricao'] || '',
-        'ia.atendimento.instrucoes':       data['ia.atendimento.instrucoes'] || '',
-        'ia.atendimento.baseConhecimento': data['ia.atendimento.baseConhecimento'] || '',
-        'ia.atendimento.nome':             data['ia.atendimento.nome'] || 'Pons IA',
+        [k('provider')]:         data[k('provider')] || v.defaultProvider,
+        [k('apiKey')]:           '',
+        [k('model')]:            data[k('model')] || v.defaultModel,
+        [k('tom')]:              data[k('tom')] || 'equilibrado',
+        [k('descricao')]:        data[k('descricao')] || '',
+        [k('instrucoes')]:       data[k('instrucoes')] || '',
+        [k('baseConhecimento')]: data[k('baseConhecimento')] || '',
+        [k('nome')]:             data[k('nome')] || v.defaultNome,
       });
     }
   }, [data, form]);
@@ -62,14 +144,14 @@ export default function AgenteIA() {
   if (loading) return <LoadingBlock />;
 
   const upd = (campo: string, valor: string) => setForm((f) => ({ ...f, [campo]: valor }));
-  const apiKeyPreview = data?.['ia.atendimento.apiKey'] || '';
+  const apiKeyPreview = data?.[k('apiKey')] || '';
 
   const salvar = async () => {
     setSaving(true);
     try {
       const payload = { ...form };
-      if (!payload['ia.atendimento.apiKey']) delete payload['ia.atendimento.apiKey'];
-      await Api.agenteIaSave(payload);
+      if (!payload[k('apiKey')]) delete payload[k('apiKey')];
+      await v.save(payload);
       toast.success('Configuração salva');
       reload();
     } catch (e: any) {
@@ -79,37 +161,34 @@ export default function AgenteIA() {
     }
   };
 
-  const nome = form['ia.atendimento.nome'] || 'Novo Agente';
-  const tomSelecionado = form['ia.atendimento.tom'] || 'equilibrado';
-  const modeloAtual = form['ia.atendimento.model'] || '';
+  const nome = form[k('nome')] || v.defaultNome;
+  const tomSelecionado = form[k('tom')] || 'equilibrado';
+  const modeloAtual = form[k('model')] || '';
   const selecionado = PROVIDER_OPTIONS.find((p) => p.model === modeloAtual);
   const labelAtual = selecionado?.label || 'Selecione um modelo';
 
   function escolherModelo(opt: ProviderOpt) {
-    upd('ia.atendimento.provider', opt.provider);
-    upd('ia.atendimento.model', opt.model);
+    upd(k('provider'), opt.provider);
+    upd(k('model'), opt.model);
     setProviderDropdownOpen(false);
-    // Se ainda não tem chave salva pra esse provider, abre o campo de chave
     if (!apiKeyPreview) setEditandoKey(true);
   }
 
   function confirmarKey() {
-    const k = (form['ia.atendimento.apiKey'] || '').trim();
-    if (!k) {
+    const key = (form[k('apiKey')] || '').trim();
+    if (!key) {
       toast.info('Cola a API key antes de confirmar.');
       return;
     }
-    // Salva agora pra "confirmar" o campo
-    Api.agenteIaSave({
-      'ia.atendimento.provider': form['ia.atendimento.provider'],
-      'ia.atendimento.model':    form['ia.atendimento.model'],
-      'ia.atendimento.apiKey':   k,
+    v.save({
+      [k('provider')]: form[k('provider')],
+      [k('model')]:    form[k('model')],
+      [k('apiKey')]:   key,
     })
       .then(() => {
         toast.success('API key confirmada');
         setEditandoKey(false);
-        // Limpa o input pra não mostrar a chave plain
-        setForm((f) => ({ ...f, 'ia.atendimento.apiKey': '' }));
+        setForm((f) => ({ ...f, [k('apiKey')]: '' }));
         reload();
       })
       .catch((e) => toast.error('Erro: ' + (e?.message || 'falha')));
@@ -117,243 +196,193 @@ export default function AgenteIA() {
 
   return (
     <>
-      <Topbar title="Agente IA · Atendimento WhatsApp" />
-      <div className="agente">
-        {/* Breadcrumb + ações no topo */}
-        <div className="agente__topbar">
-          <a className="agente__crumb" href="/agente-ia">
-            <Icon name="arrow_left" size={14} /> Agente IA · WhatsApp
-          </a>
-          <div className="agente__topbar-right">
-            <button className="agente__save-btn" onClick={salvar} disabled={saving}>
-              {saving ? 'Salvando…' : 'Salvar'}
-            </button>
-          </div>
+      <div className="agente__topbar">
+        <span className="agente__crumb">
+          <Icon name={v.nameTag.icon} size={14} /> {v.defaultNome}
+        </span>
+        <div className="agente__topbar-right">
+          <button className="agente__save-btn" onClick={salvar} disabled={saving}>
+            {saving ? 'Salvando…' : 'Salvar'}
+          </button>
         </div>
+      </div>
 
-        {/* Body em split */}
-        <div className="agente__body">
-          {/* Coluna esquerda — perfil + menu */}
-          <aside className="agente__side">
-            <div className="agente__avatar-wrap">
-              <div className="agente__avatar">
-                <Icon name="bot" size={42} />
-              </div>
-              <button className="agente__avatar-cam" title="Trocar avatar" aria-label="Trocar avatar">
-                <Icon name="search" size={12} />
-              </button>
+      <div className="agente__body">
+        <aside className="agente__side">
+          <div className="agente__avatar-wrap">
+            <div className="agente__avatar">
+              <Icon name={v.avatarIcon} size={42} />
             </div>
-            <input
-              className="agente__name"
-              value={nome}
-              onChange={(e) => upd('ia.atendimento.nome', e.target.value)}
-              placeholder="Novo Agente"
-            />
-            <div className="agente__name-sub">
-              Atendimento WhatsApp · Pendente
-            </div>
-            <div className="agente__name-tag">
-              <Icon name="whatsapp" size={11} /> WhatsApp Cloud Meta
-            </div>
+          </div>
+          <input
+            className="agente__name"
+            value={nome}
+            onChange={(e) => upd(k('nome'), e.target.value)}
+            placeholder={v.defaultNome}
+          />
+          <div className="agente__name-sub">{v.nameSub}</div>
+          <div className="agente__name-tag">
+            <Icon name={v.nameTag.icon} size={11} /> {v.nameTag.label}
+          </div>
 
-            {/* Provider Pill — clica pra abrir dropdown de modelos */}
-            <div className="agente__pill-wrap">
-              <button
-                type="button"
-                className="agente__provider-pill"
-                onClick={() => setProviderDropdownOpen((v) => !v)}
-              >
-                <Icon name="bot" size={14} />
-                <span>{labelAtual}</span>
-                <Icon name="arrow_down" size={12} className={'agente__provider-arrow' + (providerDropdownOpen ? ' is-open' : '')} />
-              </button>
-              {providerDropdownOpen && (
-                <div className="agente__provider-dropdown" onMouseLeave={() => setProviderDropdownOpen(false)}>
-                  {PROVIDER_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => escolherModelo(opt)}
-                      className={'agente__provider-option' + (selecionado?.id === opt.id ? ' is-selected' : '')}
-                    >
-                      <Icon name={opt.provider === 'anthropic' ? 'sparkles' : 'bot'} size={14} />
-                      <span>{opt.label}</span>
-                      {selecionado?.id === opt.id && <Icon name="check" size={14} className="agente__provider-check" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Campo de API key inline. Some quando key está confirmada,
-                volta a aparecer ao clicar em "Trocar chave". */}
-            {modeloAtual && (
-              <div className="agente__key-area">
-                {!editandoKey && apiKeyPreview ? (
-                  <div className="agente__key-confirmed">
-                    <Icon name="check" size={13} />
-                    <span>Chave salva: <code>{apiKeyPreview}</code></span>
-                    <button
-                      type="button"
-                      className="agente__key-edit-btn"
-                      onClick={() => setEditandoKey(true)}
-                    >
-                      Trocar
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <input
-                      type="password"
-                      className="agente__key-input"
-                      value={form['ia.atendimento.apiKey'] || ''}
-                      onChange={(e) => upd('ia.atendimento.apiKey', e.target.value)}
-                      placeholder={selecionado?.provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
-                      autoFocus
-                    />
-                    <div className="agente__key-actions">
-                      {apiKeyPreview && (
-                        <button
-                          type="button"
-                          className="agente__key-cancel"
-                          onClick={() => {
-                            setEditandoKey(false);
-                            upd('ia.atendimento.apiKey', '');
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="agente__key-confirm"
-                        onClick={confirmarKey}
-                      >
-                        Confirmar
-                      </button>
-                    </div>
-                  </>
-                )}
+          <div className="agente__pill-wrap">
+            <button
+              type="button"
+              className="agente__provider-pill"
+              onClick={() => setProviderDropdownOpen((s) => !s)}
+            >
+              <Icon name="bot" size={14} />
+              <span>{labelAtual}</span>
+              <Icon name="arrow_down" size={12} className={'agente__provider-arrow' + (providerDropdownOpen ? ' is-open' : '')} />
+            </button>
+            {providerDropdownOpen && (
+              <div className="agente__provider-dropdown" onMouseLeave={() => setProviderDropdownOpen(false)}>
+                {providerOptions.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => escolherModelo(opt)}
+                    className={'agente__provider-option' + (selecionado?.id === opt.id ? ' is-selected' : '')}
+                  >
+                    <Icon name={opt.provider === 'anthropic' ? 'sparkles' : 'bot'} size={14} />
+                    <span>{opt.label}</span>
+                    {selecionado?.id === opt.id && <Icon name="check" size={14} className="agente__provider-check" />}
+                  </button>
+                ))}
               </div>
             )}
+          </div>
 
-          </aside>
+          {modeloAtual && (
+            <div className="agente__key-area">
+              {!editandoKey && apiKeyPreview ? (
+                <div className="agente__key-confirmed">
+                  <Icon name="check" size={13} />
+                  <span>Chave salva: <code>{apiKeyPreview}</code></span>
+                  <button type="button" className="agente__key-edit-btn" onClick={() => setEditandoKey(true)}>
+                    Trocar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="password"
+                    className="agente__key-input"
+                    value={form[k('apiKey')] || ''}
+                    onChange={(e) => upd(k('apiKey'), e.target.value)}
+                    placeholder={selecionado?.provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
+                    autoFocus
+                  />
+                  <div className="agente__key-actions">
+                    {apiKeyPreview && (
+                      <button
+                        type="button"
+                        className="agente__key-cancel"
+                        onClick={() => {
+                          setEditandoKey(false);
+                          upd(k('apiKey'), '');
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                    <button type="button" className="agente__key-confirm" onClick={confirmarKey}>
+                      Confirmar
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </aside>
 
-          {/* Coluna direita — header + conteúdo */}
-          <main className="agente__main">
-            <div className="agente__channel-banner">
-              <Icon name="whatsapp" size={18} />
-              <div>
-                <b>Canal: WhatsApp Cloud API (Meta)</b>
-                <span> · este agente responde leads na aba Atendimento &rsaquo; Pendente. Quando o corretor clica em <i>Aceitar</i>, a IA para automaticamente.</span>
-              </div>
+        <main className="agente__main">
+          <div className="agente__channel-banner">
+            <Icon name={v.banner.icon} size={18} />
+            <div>
+              <b>{v.banner.titulo}</b>
+              <span>{v.banner.texto}</span>
+            </div>
+          </div>
+
+          <header className="agente__head">
+            <h1 className="agente__title">{nome}</h1>
+            <p className="agente__subtitle">{v.subtitle}</p>
+          </header>
+
+          <section className="agente__section">
+            <h2 className="agente__sec-title">Comportamento</h2>
+            <p className="agente__sec-sub">Personalize o tom de comunicação do agente.</p>
+
+            <div className="agente__field-label">Tom de comunicação</div>
+            <div className="agente__tons">
+              {TONS.map((tom) => {
+                const selected = tomSelecionado === tom.id;
+                return (
+                  <button
+                    key={tom.id}
+                    type="button"
+                    onClick={() => upd(k('tom'), tom.id)}
+                    className={'agente__tom' + (selected ? ' is-active' : '')}
+                  >
+                    <Icon name={tom.icon} size={16} />
+                    <div className="agente__tom-name">{tom.label}</div>
+                    <div className="agente__tom-sub">{tom.sub}</div>
+                  </button>
+                );
+              })}
             </div>
 
-            <header className="agente__head">
-              <h1 className="agente__title">{nome}</h1>
-              <p className="agente__subtitle">
-                Configure o agente que responde leads no WhatsApp enquanto o corretor não aceita o atendimento.
-                Limite padrão: <b>3 respostas automáticas</b> por lead. Depois, a conversa fica esperando humano.
-              </p>
-            </header>
+            <div className="agente__field-label" style={{ marginTop: 24 }}>Descrição do comportamento</div>
+            <div className="agente__textarea-wrap">
+              <textarea
+                className="agente__textarea"
+                rows={6}
+                value={form[k('descricao')] || ''}
+                onChange={(e) => upd(k('descricao'), e.target.value)}
+                placeholder="Descreva como o agente deve se comportar."
+              />
+              <div className="agente__textarea-footer">
+                <button className="agente__ai-btn" type="button" title="Em breve" disabled>
+                  <Icon name="sparkles" size={12} /> Gerar com IA
+                </button>
+                <span className="agente__char-count">{(form[k('descricao')] || '').length}</span>
+              </div>
+            </div>
+          </section>
 
-            {/* Conteúdo único — Instruções (Comportamento + Resposta + Base) */}
-            <>
-                {/* Comportamento */}
-                <section className="agente__section">
-                  <h2 className="agente__sec-title">Comportamento</h2>
-                  <p className="agente__sec-sub">Personalize o tom de comunicação do agente.</p>
-
-                  <div className="agente__field-label">Tom de comunicação</div>
-                  <div className="agente__tons">
-                    {TONS.map((tom) => {
-                      const selected = tomSelecionado === tom.id;
-                      return (
-                        <button
-                          key={tom.id}
-                          type="button"
-                          onClick={() => upd('ia.atendimento.tom', tom.id)}
-                          className={'agente__tom' + (selected ? ' is-active' : '')}
-                        >
-                          <Icon name={tom.icon} size={16} />
-                          <div className="agente__tom-name">{tom.label}</div>
-                          <div className="agente__tom-sub">{tom.sub}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="agente__field-label" style={{ marginTop: 24 }}>
-                    Descrição do comportamento
-                  </div>
-                  <div className="agente__textarea-wrap">
-                    <textarea
-                      className="agente__textarea"
-                      rows={6}
-                      value={form['ia.atendimento.descricao'] || ''}
-                      onChange={(e) => upd('ia.atendimento.descricao', e.target.value)}
-                      placeholder="Descreva como o agente deve se comportar durante a conversa."
-                    />
-                    <div className="agente__textarea-footer">
-                      <button className="agente__ai-btn" type="button" title="Em breve — gera descrição com IA" disabled>
-                        <Icon name="sparkles" size={12} /> Gerar com IA
-                      </button>
-                      <span className="agente__char-count">
-                        {(form['ia.atendimento.descricao'] || '').length}
-                      </span>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Instruções de Resposta */}
-                <section className="agente__section">
-                  <h2 className="agente__sec-title">Instruções de Resposta</h2>
-                  <p className="agente__sec-sub">Regras específicas sobre como o agente deve responder.</p>
-                  <div className="agente__textarea-wrap">
-                    <textarea
-                      className="agente__textarea"
-                      rows={8}
-                      value={form['ia.atendimento.instrucoes'] || ''}
-                      onChange={(e) => upd('ia.atendimento.instrucoes', e.target.value)}
-                      placeholder={`Exemplo:
+          <section className="agente__section">
+            <h2 className="agente__sec-title">Instruções</h2>
+            <p className="agente__sec-sub">Regras específicas para o agente seguir.</p>
+            <div className="agente__textarea-wrap">
+              <textarea
+                className="agente__textarea"
+                rows={8}
+                value={form[k('instrucoes')] || ''}
+                onChange={(e) => upd(k('instrucoes'), e.target.value)}
+                placeholder={`Exemplo:
 - Sempre responda em português
-- Seja objetivo e claro
-- Use emojis com moderação`}
-                    />
-                  </div>
-                </section>
+- Seja objetivo e claro`}
+              />
+            </div>
+          </section>
 
-                {/* Base de Conhecimento */}
-                <section className="agente__section">
-                  <h2 className="agente__sec-title">Base de Conhecimento</h2>
-                  <p className="agente__sec-sub">
-                    Contexto sobre Pons, empreendimentos, valores e política comercial. Tudo que o agente precisa pra responder bem.
-                  </p>
-                  <div className="agente__textarea-wrap">
-                    <textarea
-                      className="agente__textarea"
-                      rows={14}
-                      value={form['ia.atendimento.baseConhecimento'] || ''}
-                      onChange={(e) => upd('ia.atendimento.baseConhecimento', e.target.value)}
-                      placeholder={`Sobre o Grupo Pons:
-- Imobiliária com atuação em SC (Itapema, Balneário, Itajaí, Bombinhas)
-- 30+ anos no mercado
-
-Empreendimentos em destaque:
-- Palm Beach Residence (Itapema, R$ 850k a 2.4M, 2-3 dorms)
-- Park View (Balneário Camboriú, R$ 1.2M a 3.8M, 3-4 suítes)
-
-Política comercial:
-- Reserva mediante sinal de R$ 5.000 reembolsável em 30 dias
-- Visitas: agendar com corretor, preferencialmente sábado de manhã`}
-                    />
-                  </div>
-                </section>
-            </>
-
-
-          </main>
-        </div>
+          <section className="agente__section">
+            <h2 className="agente__sec-title">Base de Conhecimento</h2>
+            <p className="agente__sec-sub">
+              Contexto sobre Pons, empreendimentos, valores e política comercial — tudo que o agente precisa pra responder bem.
+            </p>
+            <div className="agente__textarea-wrap">
+              <textarea
+                className="agente__textarea"
+                rows={14}
+                value={form[k('baseConhecimento')] || ''}
+                onChange={(e) => upd(k('baseConhecimento'), e.target.value)}
+                placeholder="Contexto sobre o Grupo Pons, produtos e política comercial."
+              />
+            </div>
+          </section>
+        </main>
       </div>
     </>
   );

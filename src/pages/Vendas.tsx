@@ -1,28 +1,36 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Auth } from '../lib/auth';
+import { Icon } from '../components/Icon';
 import { formatCurrencyShort, initials } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { useKanbanDnd } from '../lib/useKanbanDnd';
 
 const STATUS_MAP: Record<string, [string, string]> = {
- PRE_ANALISE: ['analysis', 'Pré-análise'],
+ PRE_ANALISE: ['analysis', 'Contrato em análise'],
  ANALISE_JURIDICA: ['analysis', 'Análise jurídica'],
  EM_ASSINATURA: ['signature', 'Em assinatura'],
  ASSINADO: ['signed', 'Assinado'],
+ ASSINADO_AGUARDANDO_PAGAMENTO: ['signature', 'Assinado — aguardando pagamento'],
+ INADIMPLENTE: ['cancelled', 'Inadimplente'],
+ PAGO: ['signed', 'Pago'],
+ AGUARDANDO_REPASSE: ['analysis', 'Aguardando repasse'],
  CANCELADO: ['cancelled', 'Cancelado'],
 };
 
 export default function Vendas() {
  const [selected, setSelected] = useState<number | null>(null);
  const [openNew, setOpenNew] = useState(false);
+ const [view, setView] = useState<'lista' | 'kanban'>('lista');
  const { data: vendas, loading, error, reload } = useApi<any[]>(() => Api.vendas());
  const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
  const toast = useToast();
  const role = Auth.user?.role;
+ const isCorretor = role === 'CORRETOR';
  const podeEditarStatus = role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
 
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -53,8 +61,11 @@ export default function Vendas() {
  lazaroEstrategia: String(fd.get('lazaroEstrategia') || 'CAMPANHA'),
  splitVariante: String(fd.get('splitVariante') || '55_45'),
  percentualGestor: Number(fd.get('percentualGestorPons') || 10),
+ aplicarGestorTrafego: fd.get('aplicarGestorTrafego') === 'on',
  });
- toast.success('Venda registrada');
+ toast.success(r?.aguardandoAprovacao
+ ? 'Venda registrada — parcelamento 4x+ enviado pro Paulo aprovar.'
+ : 'Venda registrada');
  setOpenNew(false);
  await reload();
  if (r?.id) setSelected(r.id);
@@ -95,6 +106,26 @@ export default function Vendas() {
  subtitle="Clique numa venda para ver comissão, rateio e plano de recebimento"
  />
 
+ <ParcelasAtrasadas onSelect={setSelected} />
+
+ <div className="flex gap-2" style={{ marginBottom: 12 }}>
+ <button
+ className={`btn btn--sm ${view === 'lista' ? 'btn--primary' : 'btn--secondary'}`}
+ onClick={() => setView('lista')}
+ >
+ Lista
+ </button>
+ <button
+ className={`btn btn--sm ${view === 'kanban' ? 'btn--primary' : 'btn--secondary'}`}
+ onClick={() => setView('kanban')}
+ >
+ Kanban
+ </button>
+ </div>
+
+ {view === 'kanban' ? (
+ <VendaKanban onSelect={setSelected} podeMover={podeEditarStatus} />
+ ) : (
  <div className="card" style={{ padding: 0 }}>
  <table className="table">
  <thead>
@@ -138,6 +169,7 @@ export default function Vendas() {
  </tbody>
  </table>
  </div>
+ )}
 
  {sel && (
  <div
@@ -198,6 +230,38 @@ export default function Vendas() {
  <div className="text-xs text-secondary">Somente Financeiro/CEO altera o status.</div>
  )}
  </div>
+
+ {sel.aguardandoAprovacao && (
+ <div style={{ margin: '16px 0', padding: '14px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10 }}>
+ <div style={{ fontWeight: 700, fontSize: 13, color: '#B45309', marginBottom: 4 }}>
+ Parcelamento {sel.entradaParcelas}x aguardando aprovação do Paulo
+ </div>
+ {role === 'CEO' ? (
+ <button
+ className="btn btn--primary btn--sm"
+ style={{ marginTop: 6 }}
+ onClick={async () => {
+ try {
+ await Api.vendaAprovar(sel.id);
+ toast.success('Parcelamento aprovado.');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ }}
+ >
+ Aprovar parcelamento
+ </button>
+ ) : (
+ <div className="text-xs text-secondary">Só o Paulo (CEO) libera esse parcelamento.</div>
+ )}
+ </div>
+ )}
+
+ <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} />
+
+ <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
+
  <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 24 }}>
  <button className="btn btn--secondary" onClick={() => setSelected(null)}>
  Fechar
@@ -274,6 +338,16 @@ export default function Vendas() {
  </div>
  </div>
 
+ {isCorretor ? (
+ /* Corretor não tem visão de rateio/comissão — manda só os defaults */
+ <>
+ <input type="hidden" name="percentualComissao" value="5" />
+ <input type="hidden" name="splitVariante" value="55_45" />
+ <input type="hidden" name="percentualGestorPons" value="10" />
+ <input type="hidden" name="lazaroEstrategia" value="CAMPANHA" />
+ </>
+ ) : (
+ <>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comissão & rateio Pons</div>
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 12 }}>
  <div className="field">
@@ -301,14 +375,19 @@ export default function Vendas() {
  </select>
  </div>
  </div>
- <div className="flex" style={{ gap: 16, marginBottom: 16 }}>
+ <div className="flex" style={{ gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
  <label style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="temNotaFiscal" /> Tem Nota Fiscal (-16%)</label>
  <label style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="isLead" /> Veio de Lead</label>
+ <label style={{ display: 'flex', gap: 6 }} title="6,5% sobre o que sobra pra imobiliária (encadeado, não sobre o valor cheio)">
+ <input type="checkbox" name="aplicarGestorTrafego" /> Gestor de tráfego (-6,5% s/ saldo imob.)
+ </label>
  </div>
  {/* Legacy fields (mantidos como hidden pra não quebrar legado) */}
  <input type="hidden" name="splitCorretor" value="55" />
  <input type="hidden" name="splitGerente" value="15" />
  <input type="hidden" name="splitCasa" value="30" />
+ </>
+ )}
 
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
  <button type="button" className="btn btn--secondary" onClick={() => setOpenNew(false)}>Cancelar</button>
@@ -318,6 +397,294 @@ export default function Vendas() {
  </Modal>
  </div>
  </>
+ );
+}
+
+// Kanban comercial/financeiro: colunas por fase da venda (contrato em análise →
+// assinatura → assinado aguardando pagamento → inadimplente → pago → repasse).
+function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; podeMover: boolean }) {
+ // Hooks ANTES de qualquer return condicional (Rules of Hooks).
+ const { data, loading, error } = useApi<{ colunas: any[] }>(() => Api.vendaKanban());
+ const [colunas, setColunas] = useState<any[]>([]);
+ const toast = useToast();
+ useEffect(() => { if (data) setColunas(data.colunas); }, [data]);
+
+ // Move otimista: tira o card da coluna de origem, joga na de destino, ajusta
+ // totais. Em erro, reverte. Só dispara pra quem pode editar status.
+ const moveVenda = async (id: number, toFase: string) => {
+ let card: any = null;
+ let fromFase: string | undefined;
+ for (const col of colunas) {
+ const found = col.cards.find((c: any) => c.id === id);
+ if (found) { card = found; fromFase = col.fase; break; }
+ }
+ if (!card || fromFase === toFase) return;
+ const prev = colunas;
+ const valor = card.valorVenda || 0;
+ setColunas((cur) => cur.map((col) => {
+ if (col.fase === fromFase) return { ...col, cards: col.cards.filter((c: any) => c.id !== id), total: col.total - 1, valorTotal: col.valorTotal - valor };
+ if (col.fase === toFase) return { ...col, cards: [card, ...col.cards], total: col.total + 1, valorTotal: col.valorTotal + valor };
+ return col;
+ }));
+ try {
+ await Api.vendaUpdateStatus(id, toFase);
+ toast.success(`Venda movida para "${STATUS_MAP[toFase]?.[1] || toFase}"`);
+ } catch (err: any) {
+ setColunas(prev);
+ toast.error('Erro ao mover: ' + (err?.message || 'falha'));
+ }
+ };
+
+ const dnd = useKanbanDnd(moveVenda);
+
+ if (loading) return <LoadingBlock />;
+ if (error) return <ErrorBlock error={error} />;
+ return (
+ <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+ {colunas.map((col) => {
+ const [k] = STATUS_MAP[col.fase] || ['neutral'];
+ const isDropTarget = podeMover && dnd.hoverCol === col.fase;
+ return (
+ <div
+ key={col.fase}
+ style={{
+ minWidth: 260,
+ flex: '0 0 260px',
+ borderRadius: 10,
+ padding: 4,
+ outline: isDropTarget ? '2px dashed var(--pons-blue, #2563eb)' : '2px dashed transparent',
+ background: isDropTarget ? 'var(--bg-card-hover)' : 'transparent',
+ transition: 'outline-color .12s, background .12s',
+ }}
+ onDragOver={podeMover ? dnd.onDragOver(col.fase) : undefined}
+ onDragLeave={podeMover ? dnd.onDragLeave(col.fase) : undefined}
+ onDrop={podeMover ? dnd.onDrop(col.fase) : undefined}
+ >
+ <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+ <span className={`badge badge--${k}`}>{col.label}</span>
+ <span className="text-xs text-secondary">
+ {col.total} · {formatCurrencyShort(col.valorTotal)}
+ </span>
+ </div>
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 40 }}>
+ {col.cards.map((c: any) => (
+ <div
+ key={c.id}
+ className="card"
+ draggable={podeMover}
+ onDragStart={podeMover ? dnd.onDragStart(c.id) : undefined}
+ onDragEnd={podeMover ? dnd.onDragEnd : undefined}
+ style={{
+ padding: 12,
+ cursor: podeMover ? 'grab' : 'pointer',
+ opacity: dnd.draggingId === c.id ? 0.45 : 1,
+ }}
+ onClick={() => onSelect(c.id)}
+ >
+ <div className="font-semibold">{c.clienteNome}</div>
+ <div className="text-xs text-secondary">
+ #{c.codigo} · {c.empreendimento}
+ </div>
+ <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+ <span className="money">{formatCurrencyShort(c.valorVenda)}</span>
+ <div className="avatar avatar--sm" title={c.corretor?.nome}>
+ {c.corretor?.initials || initials(c.corretor?.nome || '')}
+ </div>
+ </div>
+ {c.aguardandoAprovacao && (
+ <div className="text-xs" style={{ color: 'var(--warning, #b45309)', marginTop: 6 }}>
+ Aguardando aprovação {c.entradaParcelas}x
+ </div>
+ )}
+ </div>
+ ))}
+ {!col.cards.length && (
+ <div className="text-xs text-secondary" style={{ textAlign: 'center', padding: 8 }}>
+ {isDropTarget ? 'Soltar aqui' : '—'}
+ </div>
+ )}
+ </div>
+ </div>
+ );
+ })}
+ </div>
+ );
+}
+
+// Documentos do protocolo (fotos/PDFs) anexados à venda.
+function VendaDocumentos({ vendaId, podeRemover }: { vendaId: number; podeRemover?: boolean }) {
+ const toast = useToast();
+ const [docs, setDocs] = useState<any[]>([]);
+ const [busy, setBusy] = useState(false);
+ const fileRef = useRef<HTMLInputElement>(null);
+
+ const load = async () => {
+ try { setDocs(await Api.vendaDocumentos(vendaId)); } catch { /* ignore */ }
+ };
+ useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [vendaId]);
+
+ const upload = async (files: FileList | File[]) => {
+ const list = Array.from(files);
+ if (!list.length) return;
+ setBusy(true);
+ try {
+ await Api.vendaDocumentoUpload(vendaId, list);
+ toast.success(`${list.length} arquivo(s) anexado(s).`);
+ await load();
+ } catch (err: any) {
+ toast.error('Erro ao anexar: ' + (err?.message || 'falha'));
+ } finally {
+ setBusy(false);
+ if (fileRef.current) fileRef.current.value = '';
+ }
+ };
+
+ const remover = async (docId: number) => {
+ try {
+ await Api.vendaDocumentoDelete(vendaId, docId);
+ await load();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ }
+ };
+
+ return (
+ <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
+ <div className="flex-between" style={{ marginBottom: 8, alignItems: 'center' }}>
+ <div className="uppercase-tag">Documentos do protocolo</div>
+ <label className="btn btn--secondary btn--sm" style={{ cursor: busy ? 'wait' : 'pointer' }}>
+ <Icon name="plus" size={13} /> {busy ? 'Enviando…' : 'Anexar'}
+ <input
+ ref={fileRef}
+ type="file"
+ multiple
+ accept="image/*,application/pdf"
+ style={{ display: 'none' }}
+ disabled={busy}
+ onChange={(e) => e.target.files && upload(e.target.files)}
+ />
+ </label>
+ </div>
+ {docs.length === 0 ? (
+ <div className="text-xs text-secondary">Nenhum documento anexado. Fotos e PDFs até 15MB.</div>
+ ) : (
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+ {docs.map((d) => (
+ <div key={d.id} className="flex-between" style={{ alignItems: 'center', padding: '6px 8px', background: 'var(--bg-card)', borderRadius: 8 }}>
+ <a href={d.url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--pons-blue, #2563eb)', textDecoration: 'none', overflow: 'hidden' }}>
+ <Icon name="doc" size={14} />
+ <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome}</span>
+ </a>
+ {podeRemover && (
+ <button className="btn btn--ghost btn--sm" onClick={() => remover(d.id)} title="Remover">
+ <Icon name="trash" size={12} />
+ </button>
+ )}
+ </div>
+ ))}
+ </div>
+ )}
+ </div>
+ );
+}
+
+function ParcelasAtrasadas({ onSelect }: { onSelect: (id: number) => void }) {
+ const { data, loading } = useApi<any[]>(() => Api.parcelasAtrasadas());
+ const [aberto, setAberto] = useState(false);
+ if (loading || !data || data.length === 0) return null;
+ const totalValor = data.reduce((s, p) => s + (p.valor || 0), 0);
+ return (
+ <div style={{ margin: '0 0 12px', padding: '12px 16px', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.35)', borderRadius: 10 }}>
+ <div className="flex-between" style={{ alignItems: 'center', cursor: 'pointer' }} onClick={() => setAberto((v) => !v)}>
+ <div style={{ fontWeight: 700, fontSize: 13, color: '#B91C1C' }}>
+ {data.length} parcela(s) em atraso · {formatCurrencyShort(totalValor)}
+ </div>
+ <button className="btn btn--ghost btn--sm">{aberto ? 'Ocultar' : 'Ver'}</button>
+ </div>
+ {aberto && (
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+ {data.map((p) => (
+ <div key={p.id} className="flex-between" style={{ alignItems: 'center', padding: '6px 8px', background: 'var(--bg-card)', borderRadius: 8, cursor: 'pointer' }} onClick={() => onSelect(p.vendaId)}>
+ <div style={{ fontSize: 13 }}>
+ <strong>#{p.codigo}</strong> · {p.clienteNome} · parcela {p.numero}/{p.total}
+ <div className="text-xs text-secondary">{p.corretor || '—'} · {p.unidade}</div>
+ </div>
+ <div style={{ textAlign: 'right' }}>
+ <div style={{ fontSize: 13, fontWeight: 700 }}>{formatCurrencyShort(p.valor)}</div>
+ <div className="text-xs" style={{ color: '#B91C1C' }}>{p.diasAtraso} dia(s)</div>
+ </div>
+ </div>
+ ))}
+ </div>
+ )}
+ </div>
+ );
+}
+
+const PARCELA_BADGE: Record<string, [string, string]> = {
+ AGENDADO: ['neutral', 'Agendado'],
+ ABERTO: ['analysis', 'Aberto'],
+ PAGO: ['signed', 'Pago'],
+ ATRASADO: ['cancelled', 'Atrasado'],
+};
+
+function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; podeConfirmar?: boolean }) {
+ const toast = useToast();
+ const [parcelas, setParcelas] = useState<any[]>([]);
+ const [busy, setBusy] = useState<number | null>(null);
+
+ const load = async () => {
+ try {
+ const v = await Api.venda(vendaId);
+ setParcelas(v?.pagamentos || []);
+ } catch { /* ignore */ }
+ };
+ useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [vendaId]);
+
+ const mudarStatus = async (pagamentoId: number, status: string) => {
+ setBusy(pagamentoId);
+ try {
+ await Api.vendaParcelaStatus(vendaId, pagamentoId, status);
+ toast.success(status === 'PAGO' ? 'Pagamento confirmado.' : 'Parcela atualizada.');
+ await load();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setBusy(null);
+ }
+ };
+
+ if (parcelas.length === 0) return null;
+ return (
+ <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Plano de recebimento (entrada)</div>
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+ {parcelas.map((p) => {
+ const [k, lbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
+ const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
+ return (
+ <div key={p.id} className="flex-between" style={{ alignItems: 'center', padding: '6px 8px', background: 'var(--bg-card)', borderRadius: 8 }}>
+ <div style={{ fontSize: 13 }}>
+ <strong>{p.numero}/{p.total}</strong> · {formatCurrencyShort(p.valor)} · vence {venc}
+ </div>
+ <div className="flex gap-2" style={{ alignItems: 'center' }}>
+ <span className={`badge badge--${k}`}>{lbl}</span>
+ {podeConfirmar && p.status !== 'PAGO' && (
+ <button className="btn btn--primary btn--sm" disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
+ {busy === p.id ? '…' : 'Confirmar'}
+ </button>
+ )}
+ {podeConfirmar && p.status === 'PAGO' && (
+ <button className="btn btn--ghost btn--sm" disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer">
+ Desfazer
+ </button>
+ )}
+ </div>
+ </div>
+ );
+ })}
+ </div>
+ </div>
  );
 }
 
