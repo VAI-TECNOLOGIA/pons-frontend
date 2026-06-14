@@ -162,6 +162,8 @@ export const Api = {
   empreendimentoCreate: (data: any) => request<any>('/empreendimentos', { method: 'POST', body: data }),
   empreendimentoUpdate: (id: number, data: any) =>
     request<any>(`/empreendimentos/${id}`, { method: 'PATCH', body: data }),
+  empreendimentoDelete: (id: number) =>
+    request<any>(`/empreendimentos/${id}`, { method: 'DELETE' }),
   empreendimentoFotoUpload: async (id: number, files: File[]) => {
     const form = new FormData();
     for (const f of files.slice(0, 8)) form.append('files', f);

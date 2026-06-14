@@ -835,6 +835,32 @@ function GaleriaFotosModal({
     }
   };
 
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: 'Deletar empreendimento?',
+      message: `"${emp.nome}" será removido permanentemente, junto com suas fotos e unidades. Esta ação não pode ser desfeita.`,
+      confirmText: 'Deletar',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await Api.empreendimentoDelete(emp.id);
+      toast.success('Empreendimento deletado.');
+      onChanged();
+      onClose();
+    } catch (err: any) {
+      if (err?.message === 'tem_vendas') {
+        const n = err?.details?.count;
+        toast.error(`Não dá pra deletar: há ${n ?? ''} venda(s) vinculada(s) a este empreendimento.`);
+      } else {
+        toast.error('Erro: ' + (err?.message || 'falha'));
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Modal
       open
@@ -844,6 +870,9 @@ function GaleriaFotosModal({
       size="lg"
       footer={
         <>
+          <button className="btn btn--danger" onClick={handleDelete} disabled={busy} style={{ marginRight: 'auto' }}>
+            <Icon name="trash" size={14} /> Deletar empreendimento
+          </button>
           <button className="btn btn--primary" onClick={onClose}>Fechar</button>
         </>
       }
