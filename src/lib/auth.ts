@@ -5,6 +5,7 @@ export type Role =
   | 'CEO'
   | 'DIRETOR_COMERCIAL'
   | 'DIRETOR_FINANCEIRO'
+  | 'FINANCEIRO'
   | 'DIRETOR_JURIDICO'
   | 'MARKETING'
   | 'ASSESSORA'
@@ -61,6 +62,7 @@ export function formatRole(role: Role | string): string {
     CEO: 'CEO Executivo',
     DIRETOR_COMERCIAL: 'Diretor Comercial',
     DIRETOR_FINANCEIRO: 'Diretor Financeiro',
+    FINANCEIRO: 'Financeiro',
     DIRETOR_JURIDICO: 'Diretor Jurídico/Admin',
     MARKETING: 'Diretor de Marketing',
     ASSESSORA: 'Assessora',

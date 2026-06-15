@@ -189,7 +189,7 @@ function AbaUsuarios() {
                       <span key={e.id} className="equipe__dept-chip" style={{ background: e.cor + '22', color: e.cor }}>{e.nome}</span>
                     )) : (
                       // Master = sem equipes vinculadas (vê tudo). Mostra badge dourado.
-                      ['CEO','DIRETOR_COMERCIAL','DIRETOR_FINANCEIRO','GERENTE_EQUIPE'].includes(u.role)
+                      ['CEO','DIRETOR_COMERCIAL','DIRETOR_FINANCEIRO','FINANCEIRO','GERENTE_EQUIPE'].includes(u.role)
                         ? <span className="equipe__nivel-badge"><Icon name="star" size={11} /> Master</span>
                         : '—'
                     )}
@@ -245,7 +245,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   const { data: equipes } = useApi<any[]>(() => Api.equipeEquipesList());
   const [form, setForm] = useState({
     nome: '', sobrenome: '', email: '', password: '', phone: '',
-    role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'DIRETOR_FINANCEIRO',
+    role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'FINANCEIRO',
     hierarchyLevelId: levels.find((l: any) => l.code === 'manager')?.id || null,
     isMaster: false,            // master = vê TODAS as equipes (não escolhe)
     equipeIds: [] as number[],
@@ -338,12 +338,12 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
               </button>
               <button
                 type="button"
-                className={'user-drawer__role' + (form.role === 'DIRETOR_FINANCEIRO' ? ' is-active' : '')}
-                onClick={() => setForm({ ...form, role: 'DIRETOR_FINANCEIRO' })}
+                className={'user-drawer__role' + (form.role === 'FINANCEIRO' ? ' is-active' : '')}
+                onClick={() => setForm({ ...form, role: 'FINANCEIRO' })}
               >
                 <Icon name="wallet" size={16} />
-                <div className="user-drawer__role-name">Gerente Financeiro</div>
-                <div className="user-drawer__role-sub">Acesso aos rateios, fechamentos e relatórios financeiros</div>
+                <div className="user-drawer__role-name">Financeiro</div>
+                <div className="user-drawer__role-sub">Acesso a caixa, lançamentos e relatórios financeiros</div>
               </button>
             </div>
           </section>
@@ -351,7 +351,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
           <section>
             <p className="user-drawer__sec">ESCOPO DE ACESSO *</p>
             <p className="user-drawer__hint">
-              {form.role === 'DIRETOR_FINANCEIRO'
+              {form.role === 'FINANCEIRO'
                 ? 'Master vê rateios, fechamentos e relatórios financeiros de TODAS as equipes. Específico só vê das que você selecionar.'
                 : 'Master vê leads, atendimento, vendas e métricas de TODAS as equipes. Específico só vê das que você selecionar.'}
             </p>
@@ -366,7 +366,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
                 <Icon name="star" size={16} />
                 <div className="user-drawer__role-name">Master</div>
                 <div className="user-drawer__role-sub">
-                  {form.role === 'DIRETOR_FINANCEIRO'
+                  {form.role === 'FINANCEIRO'
                     ? 'Vê dados financeiros de TODAS as equipes da empresa'
                     : 'Vê todos os leads e vendas de TODAS as equipes da empresa'}
                 </div>

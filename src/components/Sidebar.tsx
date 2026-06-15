@@ -11,8 +11,11 @@ import { ReportarProblemaModal } from './ReportarProblemaModal';
 // Permissões: cada item declara seus roles; sem roles = todos veem.
 
 const COMERCIAL: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'];
-const FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO'];
-const RELATORIOS: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO'];
+// Finanças de diretoria (rateio entre sócios, painel executivo) — só CEO + Diretor Financeiro.
+const DIR_FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO'];
+// Finanças operacionais (caixa, lançamentos, relatórios) — inclui a equipe financeira.
+const FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'];
+const RELATORIOS: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'];
 const SOCIO: Role = 'SOCIO_UNIDADE';
 
 type NavItem = {
@@ -38,10 +41,10 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/chat', label: 'Atendimento', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/leads', label: 'Leads', icon: 'users', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/pipeline', label: 'Funil', icon: 'pipeline', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
-  { to: '/vendas', label: 'Vendas', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },
+  { to: '/vendas', label: 'Vendas', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },
   { to: '/empreendimentos', label: 'Empreendimentos', icon: 'building' },
   { to: '/ranking', label: 'Ranking', icon: 'trophy' },
-  { to: '/executivo', label: 'Agenda', icon: 'calendar', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA'] },
+  { to: '/executivo', label: 'Agenda', icon: 'calendar', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA'] },
   { to: '/pessoal', label: 'Meu Espaço', icon: 'crown', emails: ['paulo@grupopons.com.br'] },
 ];
 
@@ -65,11 +68,11 @@ const GROUPS: NavGroup[] = [
     label: 'Financeiro',
     icon: 'wallet',
     items: [
-      { to: '/financeiro-pons', label: 'Rateio & Sócios', icon: 'wallet', roles: FINANCE },
+      { to: '/financeiro-pons', label: 'Rateio & Sócios', icon: 'wallet', roles: DIR_FINANCE },
       { to: '/financeiro', label: 'Caixa & Lançamentos', icon: 'dollar', roles: FINANCE },
-      { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
+      { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'MARKETING'] },
       { to: '/relatorios', label: 'Relatórios', icon: 'chart', roles: RELATORIOS },
-      { to: '/painel-executivo', label: 'Painel Executivo', icon: 'activity', roles: RELATORIOS },
+      { to: '/painel-executivo', label: 'Painel Executivo', icon: 'activity', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO'] },
     ],
   },
   {
