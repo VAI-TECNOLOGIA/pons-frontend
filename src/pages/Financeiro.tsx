@@ -61,6 +61,24 @@ export default function Financeiro() {
  }
  };
 
+ const marcarPago = async (id: number) => {
+ const ok = await confirm({
+ title: 'Marcar como pago?',
+ message: 'O lançamento será registrado como PAGO na data de hoje e entra no saldo realizado.',
+ confirmText: 'Marcar pago',
+ tone: 'primary',
+ });
+ if (!ok) return;
+ try {
+ await Api.finLancamentoUpdate(id, { status: 'PAGO' });
+ toast.success('Lançamento marcado como pago');
+ reloadLanc();
+ reloadResumo();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
  const enviarSicredi = async () => {
  const ok = await confirm({
  title: 'Enviar ao Sicredi?',
@@ -218,9 +236,14 @@ export default function Financeiro() {
  <span className={`badge badge--${k}`}>{lbl}</span>
  </td>
  <td>
+ <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
  {l.status === 'AGUARDANDO_APROVACAO' && (
  <button className="btn btn--secondary btn--sm" onClick={() => aprovar(l.id)}>Aprovar</button>
  )}
+ {l.status !== 'PAGO' && l.status !== 'CANCELADO' && (
+ <button className="btn btn--ghost btn--sm" onClick={() => marcarPago(l.id)}>Marcar pago</button>
+ )}
+ </div>
  </td>
  </tr>
  );
@@ -241,14 +264,7 @@ export default function Financeiro() {
  {tab === 'comissoes' && <ComissoesTab />}
  {tab === 'importar' && <ImportarTab onDone={() => { reloadLanc(); reloadResumo(); }} />}
 
- {tab === 'sicredi' && (
- <div className="card">
- <h3 className="card__title">Sicredi — em desenvolvimento</h3>
- <p className="text-secondary">
- A integração de pagamento em lote PIX está aguardando o Sicredi liberar/criar a conta e as credenciais (token). Assim que o banco entregar, esta aba é habilitada.
- </p>
- </div>
- )}
+ {tab === 'sicredi' && <SicrediTab onEnviar={enviarSicredi} />}
  </div>
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Novo lançamento" subtitle="Entrada ou saída a registrar no caixa">
  <form onSubmit={submit}>
@@ -351,6 +367,19 @@ function DreRow({ label, value, strong = false }: { label: string; value: number
 }
 
 function ComissoesTab() {
+  const [view, setView] = useState<'corretor' | 'plano'>('corretor');
+  return (
+    <>
+      <div className="tabs" style={{ marginBottom: 12 }}>
+        <button className={'tab ' + (view === 'corretor' ? 'tab--active' : '')} onClick={() => setView('corretor')}>Por corretor</button>
+        <button className={'tab ' + (view === 'plano' ? 'tab--active' : '')} onClick={() => setView('plano')}>Plano de recebimento</button>
+      </div>
+      {view === 'corretor' ? <ComissoesPorCorretor /> : <ComissoesPlano />}
+    </>
+  );
+}
+
+function ComissoesPorCorretor() {
   const hoje = new Date();
   const [from, setFrom] = useState(`${hoje.getFullYear()}-01-01`);
   const [to, setTo] = useState(hoje.toISOString().slice(0, 10));
@@ -416,6 +445,149 @@ function ComissoesTab() {
               )}
             </tbody>
           </table>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ───────────── Plano de recebimento de comissões (cronograma mensal) ─────────────
+function ComissoesPlano() {
+  const { data, loading, error } = useApi<any>(() => Api.finComissoesPlano());
+  const [aberta, setAberta] = useState<number | null>(null);
+  return (
+    <div className="card">
+      <h3 className="card__title">Plano de recebimento de comissões</h3>
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <div className="kpi-grid" style={{ margin: '12px 0 16px' }}>
+            <div className="kpi"><div className="kpi__label">A receber</div><div className="kpi__value" style={{ color: '#4D7A26' }}>{formatCurrencyShort(data.totalAReceber || 0)}</div></div>
+            <div className="kpi"><div className="kpi__label">Já recebido</div><div className="kpi__value">{formatCurrencyShort(data.totalRecebido || 0)}</div></div>
+            <div className="kpi"><div className="kpi__label">Corretor</div><div className="kpi__value">{formatCurrencyShort(data.porGrupo?.corretor || 0)}</div></div>
+            <div className="kpi"><div className="kpi__label">Gestor / Casa</div><div className="kpi__value">{formatCurrencyShort((data.porGrupo?.gestor || 0) + (data.porGrupo?.casa || 0))}</div></div>
+          </div>
+
+          {!!(data.resumoMensal || []).length && (
+            <>
+              <h4 style={{ margin: '8px 0 6px' }}>A receber por mês</h4>
+              <table className="table" style={{ marginBottom: 20 }}>
+                <thead><tr><th>Mês</th><th className="text-right">Corretor</th><th className="text-right">Gestor</th><th className="text-right">Casa</th><th className="text-right">Total</th></tr></thead>
+                <tbody>
+                  {data.resumoMensal.map((m: any, i: number) => (
+                    <tr key={i}>
+                      <td>{m.label}</td>
+                      <td className="text-right money">{formatCurrency(m.corretor)}</td>
+                      <td className="text-right money">{formatCurrency(m.gestor)}</td>
+                      <td className="text-right money">{formatCurrency(m.casa)}</td>
+                      <td className="text-right money" style={{ fontWeight: 700 }}>{formatCurrency(m.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          <h4 style={{ margin: '8px 0 6px' }}>Por venda</h4>
+          <table className="table">
+            <thead><tr><th>Venda</th><th>Cliente</th><th className="text-right">Comissão total</th><th className="text-right">Parcelas</th><th>Próx. receb.</th><th></th></tr></thead>
+            <tbody>
+              {(data.vendas || []).map((v: any) => (
+                <FragmentRow key={v.id} v={v} aberta={aberta} setAberta={setAberta} />
+              ))}
+              {!data.vendas?.length && (
+                <tr><td colSpan={6} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nenhuma venda com comissão.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FragmentRow({ v, aberta, setAberta }: { v: any; aberta: number | null; setAberta: (n: number | null) => void }) {
+  const open = aberta === v.id;
+  return (
+    <>
+      <tr style={{ cursor: 'pointer' }} onClick={() => setAberta(open ? null : v.id)}>
+        <td className="font-semibold">{v.codigo || `#${v.id}`}<div className="text-sm text-secondary">{v.empreendimento}</div></td>
+        <td>{v.cliente}</td>
+        <td className="text-right money">{formatCurrency(v.comissaoTotal)}</td>
+        <td className="text-right text-sm">{v.parcelasPagas}/{v.parcelas}</td>
+        <td className="text-sm">{formatDate(v.proximoRecebimento)}</td>
+        <td className="text-right text-sm text-secondary">{open ? '▲' : '▼'}</td>
+      </tr>
+      {open && (
+        <tr>
+          <td colSpan={6} style={{ background: 'var(--bg-app)' }}>
+            <div style={{ padding: '4px 0 8px' }}>
+              <strong className="text-sm">Rateio</strong>
+              <table className="table" style={{ margin: '4px 0 12px' }}>
+                <thead><tr><th>Papel</th><th>Nome</th><th className="text-right">Total</th><th className="text-right">Pago</th><th className="text-right">A receber</th></tr></thead>
+                <tbody>
+                  {(v.rateio || []).map((r: any, i: number) => (
+                    <tr key={i}>
+                      <td className="text-sm">{r.papelLabel}</td>
+                      <td className="text-sm">{r.nome}</td>
+                      <td className="text-right money">{formatCurrency(r.valorTotal)}</td>
+                      <td className="text-right money">{formatCurrency(r.valorPago)}</td>
+                      <td className="text-right money" style={{ color: '#4D7A26' }}>{formatCurrency(r.valorAReceber)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <strong className="text-sm">Cronograma</strong>
+              <table className="table" style={{ marginTop: 4 }}>
+                <thead><tr><th>Parcela</th><th>Vencimento</th><th className="text-right">Valor</th><th>Status</th></tr></thead>
+                <tbody>
+                  {(v.cronograma || []).map((c: any, i: number) => (
+                    <tr key={i}>
+                      <td className="text-sm">{c.numero}</td>
+                      <td className="text-sm">{formatDate(c.vencimento)}</td>
+                      <td className="text-right money">{formatCurrency(c.valor)}</td>
+                      <td><span className={'badge badge--' + (c.status === 'RECEBIDO' ? 'paid' : 'neutral')}>{c.status === 'RECEBIDO' ? 'RECEBIDO' : 'A RECEBER'}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+// ───────────────────────── Sicredi (status real + envio) ─────────────────────────
+function SicrediTab({ onEnviar }: { onEnviar: () => void }) {
+  const { data, loading, error } = useApi<any>(() => Api.finSicrediStatus());
+  const configurado = data?.configurado;
+  return (
+    <div className="card">
+      <h3 className="card__title">Sicredi — pagamento em lote PIX</h3>
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <div className="flex gap-2" style={{ alignItems: 'center', margin: '12px 0 14px' }}>
+            <span className={'badge badge--' + (configurado ? 'paid' : 'analysis')}>
+              {configurado ? 'Credenciais configuradas' : 'Não configurado'}
+            </span>
+          </div>
+          {configurado ? (
+            <>
+              <p className="text-secondary text-sm" style={{ marginBottom: 14 }}>
+                As credenciais Sicredi estão presentes. Os lançamentos de saída <strong>APROVADOS</strong> são enviados em lote PIX para pagamento. Revise valores e beneficiários antes de enviar.
+              </p>
+              <button className="btn btn--primary" onClick={onEnviar}>Enviar lote ao Sicredi</button>
+            </>
+          ) : (
+            <p className="text-secondary">
+              A integração está aguardando o Sicredi liberar/criar a conta e as credenciais (token). Sem credenciais nas Settings, o envio roda em modo simulado.
+            </p>
+          )}
         </>
       )}
     </div>
