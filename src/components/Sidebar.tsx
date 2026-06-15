@@ -11,8 +11,8 @@ import { ReportarProblemaModal } from './ReportarProblemaModal';
 // Permissões: cada item declara seus roles; sem roles = todos veem.
 
 const COMERCIAL: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'];
-const FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO'];
-const RELATORIOS: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO'];
+const FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'];
+const RELATORIOS: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'];
 const SOCIO: Role = 'SOCIO_UNIDADE';
 
 type NavItem = {
@@ -67,7 +67,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: '/financeiro-pons', label: 'Rateio & Sócios', icon: 'wallet', roles: FINANCE },
       { to: '/financeiro', label: 'Caixa & Lançamentos', icon: 'dollar', roles: FINANCE },
-      { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
+      { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'MARKETING'] },
       { to: '/relatorios', label: 'Relatórios', icon: 'chart', roles: RELATORIOS },
       { to: '/painel-executivo', label: 'Painel Executivo', icon: 'activity', roles: RELATORIOS },
     ],
@@ -119,6 +119,8 @@ const DEV_ITEMS: NavItem[] = [
 
 function canSee(it: NavItem, role: Role, email?: string): boolean {
   if (it.emails) return !!email && it.emails.includes(email);
+  // Equipe Financeiro = perfil restrito: vê só o Dashboard + os itens do Financeiro.
+  if (role === 'FINANCEIRO') return it.to === '/dashboard' || (!!it.roles && it.roles.includes('FINANCEIRO'));
   if (!it.roles) return true;
   return it.roles.includes(role);
 }

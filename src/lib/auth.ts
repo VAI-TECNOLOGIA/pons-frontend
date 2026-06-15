@@ -5,6 +5,7 @@ export type Role =
   | 'CEO'
   | 'DIRETOR_COMERCIAL'
   | 'DIRETOR_FINANCEIRO'
+  | 'FINANCEIRO'
   | 'DIRETOR_JURIDICO'
   | 'MARKETING'
   | 'ASSESSORA'
