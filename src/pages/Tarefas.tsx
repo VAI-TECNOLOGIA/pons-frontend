@@ -111,6 +111,7 @@ export default function Tarefas() {
                           <div className="kanban-card__title">{t.titulo}</div>
                           <div className="kanban-card__meta">
                             {t.area}
+                            {t.createdAt && ' · solicitada ' + new Date(t.createdAt).toLocaleDateString('pt-BR')}
                             {t.prazo && ' · até ' + new Date(t.prazo).toLocaleDateString('pt-BR')}
                           </div>
                         </div>
@@ -159,6 +160,7 @@ export default function Tarefas() {
                 <option value="FINANCEIRO">Financeiro</option>
                 <option value="JURIDICO">Jurídico</option>
                 <option value="COMERCIAL">Comercial</option>
+                <option value="ASSESSORIA">Assessoria</option>
                 <option value="GERAL">Geral</option>
               </select>
             </div>
