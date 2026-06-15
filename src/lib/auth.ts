@@ -62,6 +62,7 @@ export function formatRole(role: Role | string): string {
     CEO: 'CEO Executivo',
     DIRETOR_COMERCIAL: 'Diretor Comercial',
     DIRETOR_FINANCEIRO: 'Diretor Financeiro',
+    FINANCEIRO: 'Administrativo',
     DIRETOR_JURIDICO: 'Diretor Jurídico/Admin',
     MARKETING: 'Diretor de Marketing',
     ASSESSORA: 'Assessora',
