@@ -39,7 +39,7 @@ export default function CadastroColaborador() {
   const [erros, setErros] = useState<Record<string, string>>({});
   const [formErr, setFormErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ msg: string } | null>(null);
+  const [done, setDone] = useState<{ msg: string; novo: boolean; nome: string; funcao: string; equipe: string } | null>(null);
   const [hp, setHp] = useState(''); // honeypot
 
   const set = (k: string, v: string) => { setF((p) => ({ ...p, [k]: v })); setErros((e) => ({ ...e, [k]: '' })); };
@@ -79,7 +79,13 @@ export default function CadastroColaborador() {
         setBusy(false);
         return;
       }
-      setDone({ msg: j?.message || 'Cadastro enviado com sucesso. Obrigado por atualizar seus dados no Grupo Pons.' });
+      setDone({
+        msg: j?.message || 'Cadastro enviado com sucesso. Obrigado por atualizar seus dados no Grupo Pons.',
+        novo: j?.novo !== false,
+        nome: f.nomeCompleto.trim(),
+        funcao: f.funcao,
+        equipe: f.equipe,
+      });
     } catch {
       setFormErr('Não foi possível enviar seu cadastro. Verifique sua conexão e tente novamente.');
       setBusy(false);
@@ -87,13 +93,35 @@ export default function CadastroColaborador() {
   }
 
   if (done) {
+    const primeiro = done.nome.split(' ')[0] || '';
+    const reset = () => {
+      setF({ funcao: '', equipe: '', nomeCompleto: '', telefone: '', email: '', senha: '', dataEntrada: '', endereco: '', pix: '', creci: '' });
+      setErros({}); setFormErr(''); setBusy(false); setHp(''); setDone(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
     return (
       <div className="cad">
-        <div className="cad__success">
-          <div className="cad__success-card">
-            <div className="cad__check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
-            <h2>Cadastro enviado com sucesso!</h2>
-            <p>{done.msg}</p>
+        <div className="cad-wel">
+          <div className="cad-wel__card">
+            <div className="cad-wel__speed" />
+            <img className="cad-wel__logo" src="/assets/logo_white.png" alt="Grupo Pons Imobiliário" />
+            <div className="cad-wel__check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
+            <div className="cad-wel__eyebrow">{done.novo ? 'Cadastro confirmado' : 'Cadastro atualizado'}</div>
+            <h1 className="cad-wel__title">Bem-vindo(a)<br/><span>{primeiro}!</span></h1>
+            <p className="cad-wel__msg">{done.msg}</p>
+
+            <div className="cad-wel__resumo">
+              <div className="cad-wel__row"><span>Função</span><b>{done.funcao}</b></div>
+              <div className="cad-wel__row"><span>Equipe</span><b>{done.equipe}</b></div>
+            </div>
+
+            {done.novo && (
+              <div className="cad-wel__note">
+                ⏳ Seu acesso será liberado assim que for aprovado pela administração do Grupo Pons. Você receberá a confirmação em breve.
+              </div>
+            )}
+
+            <button type="button" className="cad-wel__again" onClick={reset}>+ Cadastrar outra pessoa</button>
           </div>
           <div className="cad__footer">Grupo Pons Imobiliário · Sistema Oficial</div>
         </div>
