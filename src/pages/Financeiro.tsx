@@ -148,13 +148,13 @@ export default function Financeiro() {
  {([
  ['extrato', 'Extrato'],
  ['semana', 'Pagamentos da semana'],
- ['dre', ' DRE'],
- ['fluxo', ' Fluxo de Caixa'],
- ['contas', ' Contas a Pagar/Receber'],
- ['planejamento', '️ Planejamento'],
- ['comissoes', ' Comissões & Plano'],
+ ['dre', 'DRE'],
+ ['fluxo', 'Fluxo de caixa'],
+ ['contas', 'Contas a pagar/receber'],
+ ['planejamento', 'Planejamento'],
+ ['comissoes', 'Comissões & plano'],
  ['importar', 'Importar base'],
- ['sicredi', ' Sicredi'],
+ ['sicredi', 'Sicredi'],
  ] as const).map(([key, label]) => (
  <button
  key={key}
