@@ -62,7 +62,7 @@ export default function ReuniaoPage() {
 
         <div className="reuniao__tabs">
           <button className={'reuniao__tab' + (aba === 'gravar' ? ' is-active' : '')} onClick={() => setAba('gravar')}>
-            <Icon name="video" size={15} /> Gravar
+            <Icon name="send" size={15} /> Enviar
           </button>
           <button className={'reuniao__tab' + (aba === 'resumos' ? ' is-active' : '')} onClick={() => setAba('resumos')}>
             <Icon name="scroll" size={15} /> Ver resumos
@@ -252,7 +252,7 @@ function ResumosTab({ lista, reload }: { lista: Reuniao[]; reload: () => void })
     return (
       <div className="reuniao__vazio">
         <Icon name="scroll" size={28} />
-        <p>Nenhuma reunião ainda. Envie um arquivo na aba "Gravar".</p>
+        <p>Nenhuma reunião ainda. Envie um arquivo na aba "Enviar".</p>
       </div>
     );
   }

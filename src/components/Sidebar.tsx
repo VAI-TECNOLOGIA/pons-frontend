@@ -91,7 +91,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: '/avisos', label: 'Avisos', icon: 'bell' },
       { to: '/videos', label: 'Vídeos', icon: 'video' },
-      { to: '/reuniao', label: 'Reunião', icon: 'video', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
+      { to: '/reuniao', label: 'Reunião', icon: 'users', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/painel-tv', label: 'Painel TV', icon: 'tv', blank: true, roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
     ],
   },

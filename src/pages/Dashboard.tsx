@@ -112,9 +112,7 @@ export default function Dashboard() {
  <div className="page-header">
  <div>
  <div className="page-header__breadcrumb">Visão geral</div>
- <h2 className="page-header__title">Bom dia, {user.name.split(' ')[0]}.</h2>
- <p className="page-header__subtitle">Sistema real conectado ao banco de dados</p>
- </div>
+ <h2 className="page-header__title">Bom dia, {user.name.split(' ')[0]}.</h2> </div>
  </div>
 
  {/* Avanço */}
@@ -382,9 +380,7 @@ function DashboardShell({ user, children }: { user: { name: string; role: string
  <div className="page-header">
  <div>
  <div className="page-header__breadcrumb">Visão geral</div>
- <h2 className="page-header__title">Bom dia, {user.name.split(' ')[0]}.</h2>
- <p className="page-header__subtitle">Sistema real conectado ao banco de dados</p>
- </div>
+ <h2 className="page-header__title">Bom dia, {user.name.split(' ')[0]}.</h2> </div>
  </div>
  {children}
  </div>
