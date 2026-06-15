@@ -44,6 +44,7 @@ function lazyRetry<T extends ComponentType<any>>(factory: () => Promise<{ defaul
 // Demais páginas: lazy. Cada uma vira chunk separado, carregado só quando navega.
 // Bundle inicial cai de ~787KB pra ~150KB; cada página posterior baixa só seu chunk
 // (10-40KB) e fica em cache. Effect: navegação fica quase instantânea.
+const CadastroColaborador = lazyRetry(() => import('./pages/CadastroColaborador'));
 const Dashboard       = lazyRetry(() => import('./pages/Dashboard'));
 const Leads           = lazyRetry(() => import('./pages/Leads'));
 const Pipeline        = lazyRetry(() => import('./pages/Pipeline'));
@@ -100,6 +101,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/painel-tv" element={<PainelTV />} />
         <Route path="/lp/:slug" element={<LPPublica />} />
+        <Route path="/atualizacao-cadastral" element={<CadastroColaborador />} />
+        <Route path="/cadastro-grupo-pons" element={<CadastroColaborador />} />
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/politica-de-seguranca" element={<Privacidade />} />
         <Route path="/excluir-conta" element={<ExcluirConta />} />
