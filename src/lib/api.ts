@@ -272,6 +272,9 @@ export const Api = {
   finContas: (tipo = 'PAGAR') => request<any>(`/financeiro/contas?tipo=${tipo}`),
   finComissoesPorCorretor: (params: any = {}) => request<any>(`/financeiro/comissoes-por-corretor${qs(params)}`),
   finAtrasados: () => request<any>('/financeiro/atrasados'),
+  finPlanejamento: () => request<any>('/financeiro/planejamento'),
+  finPagamentosSemana: (semana = 0) => request<any>(`/financeiro/pagamentos-semana?semana=${semana}`),
+  finImportar: (lancamentos: any[]) => request<any>('/financeiro/importar', { method: 'POST', body: { lancamentos } }),
   finSicrediStatus: () => request<any>('/financeiro/sicredi/status'),
   finSicrediEnviar: () => request<any>('/financeiro/sicredi/enviar', { method: 'POST' }),
   finComprovantePdf: async (corretorId: number, params: any = {}) => {

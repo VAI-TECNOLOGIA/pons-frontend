@@ -16,11 +16,13 @@ const STATUS_BADGE: Record<string, [string, string]> = {
  CANCELADO: ['cancelled', 'CANCELADO'],
 };
 
-type Tab = 'extrato' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'sicredi';
+type Tab = 'extrato' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
 
 export default function Financeiro() {
  const [tab, setTab] = useState<Tab>('extrato');
  const [openNew, setOpenNew] = useState(false);
+ const [filtroBenef, setFiltroBenef] = useState('');
+ const [filtroStatus, setFiltroStatus] = useState('');
  const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => Api.finResumo());
  const { data: lancamentos, reload: reloadLanc } = useApi<any[]>(() => Api.finLancamentos());
  const toast = useToast();
@@ -126,12 +128,14 @@ export default function Financeiro() {
 
  <div className="tabs">
  {([
- ['extrato', ' Extrato'],
+ ['extrato', 'Extrato'],
+ ['semana', 'Pagamentos da semana'],
  ['dre', ' DRE'],
  ['fluxo', ' Fluxo de Caixa'],
  ['contas', ' Contas a Pagar/Receber'],
  ['planejamento', '️ Planejamento'],
  ['comissoes', ' Comissões & Plano'],
+ ['importar', 'Importar base'],
  ['sicredi', ' Sicredi'],
  ] as const).map(([key, label]) => (
  <button
@@ -144,7 +148,36 @@ export default function Financeiro() {
  ))}
  </div>
 
- {tab === 'extrato' && (
+ {tab === 'extrato' && (() => {
+ const q = filtroBenef.trim().toLowerCase();
+ const filtrados = (lancamentos || []).filter((l: any) => {
+ if (filtroStatus && l.status !== filtroStatus) return false;
+ if (!q) return true;
+ return [l.beneficiario, l.descricao, l.categoria].some((v: any) => String(v || '').toLowerCase().includes(q));
+ });
+ return (
+ <>
+ <div className="card flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 12 }}>
+ <div className="field" style={{ margin: 0, flex: 1, minWidth: 200 }}>
+ <label className="field__label">Buscar (beneficiário, descrição, categoria)</label>
+ <input className="field__input" value={filtroBenef} onChange={(e) => setFiltroBenef(e.target.value)} placeholder="Ex.: João, aluguel, comissão..." />
+ </div>
+ <div className="field" style={{ margin: 0, minWidth: 170 }}>
+ <label className="field__label">Status</label>
+ <select className="field__select" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+ <option value="">Todos</option>
+ <option value="PENDENTE">Pendente</option>
+ <option value="AGUARDANDO_APROVACAO">Aguardando aprovação</option>
+ <option value="APROVADO">Aprovado</option>
+ <option value="PAGO">Pago</option>
+ <option value="AGENDADO">Agendado</option>
+ <option value="CANCELADO">Cancelado</option>
+ </select>
+ </div>
+ {(filtroBenef || filtroStatus) && (
+ <button className="btn btn--secondary btn--sm" onClick={() => { setFiltroBenef(''); setFiltroStatus(''); }}>Limpar</button>
+ )}
+ </div>
  <div className="card" style={{ padding: 0 }}>
  <table className="table">
  <thead>
@@ -159,14 +192,14 @@ export default function Financeiro() {
  </tr>
  </thead>
  <tbody>
- {(lancamentos || []).length === 0 ? (
+ {filtrados.length === 0 ? (
  <tr>
  <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
- Nenhum lançamento ainda
+ {(lancamentos || []).length === 0 ? 'Nenhum lançamento ainda' : 'Nenhum lançamento para o filtro'}
  </td>
  </tr>
  ) : (
- (lancamentos || []).map((l: any) => {
+ filtrados.map((l: any) => {
  const [k, lbl] = STATUS_BADGE[l.status] || ['neutral', l.status];
  const isOut = l.tipo === 'SAIDA';
  return (
@@ -196,31 +229,23 @@ export default function Financeiro() {
  </tbody>
  </table>
  </div>
- )}
+ </>
+ );
+ })()}
 
- {tab === 'dre' && (
- <div className="card">
- <h3 className="card__title">DRE — Demonstrativo de Resultado</h3>
- <div style={{ marginTop: 16 }}>
- <DreRow label="Receita bruta" value={5_800_000} />
- <DreRow label="Comissões pagas" value={-580_000} />
- <DreRow label="Folha de pagamento" value={-420_000} />
- <DreRow label="Aluguel & infraestrutura" value={-48_000} />
- <DreRow label="Marketing" value={-46_000} />
- <DreRow label="Impostos & taxas" value={-220_000} />
- <DreRow label="Outras despesas" value={-86_000} />
- <DreRow label="Resultado líquido" value={4_400_000} strong />
- </div>
- </div>
- )}
-
+ {tab === 'dre' && <DreTab />}
+ {tab === 'semana' && <SemanaTab />}
+ {tab === 'fluxo' && <FluxoTab />}
+ {tab === 'contas' && <ContasTab />}
+ {tab === 'planejamento' && <PlanejamentoTab />}
  {tab === 'comissoes' && <ComissoesTab />}
+ {tab === 'importar' && <ImportarTab onDone={() => { reloadLanc(); reloadResumo(); }} />}
 
-      {(tab === 'fluxo' || tab === 'contas' || tab === 'planejamento' || tab === 'sicredi') && (
+ {tab === 'sicredi' && (
  <div className="card">
- <h3 className="card__title">Em desenvolvimento</h3>
+ <h3 className="card__title">Sicredi — em desenvolvimento</h3>
  <p className="text-secondary">
- Esta aba será habilitada quando o backend financeiro estiver plugado. Por enquanto, use o resumo no topo e a aba Extrato.
+ A integração de pagamento em lote PIX está aguardando o Sicredi liberar/criar a conta e as credenciais (token). Assim que o banco entregar, esta aba é habilitada.
  </p>
  </div>
  )}
@@ -393,6 +418,369 @@ function ComissoesTab() {
           </table>
         </>
       )}
+    </div>
+  );
+}
+
+// ───────────────────────── DRE (real) ─────────────────────────
+function DreTab() {
+  const hoje = new Date();
+  const [from, setFrom] = useState(`${hoje.getFullYear()}-01-01`);
+  const [to, setTo] = useState(hoje.toISOString().slice(0, 10));
+  const [regime, setRegime] = useState<'competencia' | 'caixa'>('competencia');
+  const [unidadeId, setUnidadeId] = useState('');
+  const { data: unidades } = useApi<any[]>(() => Api.unidadesList());
+  const { data, loading, error } = useApi<any>(
+    () => Api.finDre({ from, to, regime, ...(unidadeId && { unidadeId }) }),
+    [from, to, regime, unidadeId],
+  );
+
+  return (
+    <div className="card">
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <h3 className="card__title" style={{ margin: 0 }}>DRE — Demonstrativo de Resultado</h3>
+        <div className="flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field__label">Unidade</label>
+            <select className="field__select" value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)}>
+              <option value="">Todas</option>
+              {(unidades || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field__label">Regime</label>
+            <select className="field__select" value={regime} onChange={(e) => setRegime(e.target.value as any)}>
+              <option value="competencia">Competência</option>
+              <option value="caixa">Caixa</option>
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field__label">De</label>
+            <input type="date" className="field__input" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field__label">Até</label>
+            <input type="date" className="field__input" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <div style={{ marginTop: 4 }}>
+          {(data.linhas || []).map((l: any) => (
+            <DreRow
+              key={l.ordem}
+              label={l.rotulo}
+              value={l.valor}
+              strong={l.tipo === 'resultado'}
+            />
+          ))}
+          <div className="text-sm text-secondary" style={{ marginTop: 12 }}>
+            Margem líquida: <strong>{((data.margemLiquida || 0) * 100).toFixed(1)}%</strong>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────── Pagamentos da semana ─────────────────────────
+function SemanaTab() {
+  const [semana, setSemana] = useState(0);
+  const { data, loading, error } = useApi<any>(() => Api.finPagamentosSemana(semana), [semana]);
+  return (
+    <div className="card">
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <h3 className="card__title" style={{ margin: 0 }}>Pagamentos a realizar na semana</h3>
+        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+          <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s - 1)}>‹ Anterior</button>
+          {semana !== 0 && <button className="btn btn--secondary btn--sm" onClick={() => setSemana(0)}>Hoje</button>}
+          <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s + 1)}>Próxima ›</button>
+        </div>
+      </div>
+
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <div className="flex gap-2" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
+            <span className="text-secondary text-sm">{formatDate(data.periodo?.inicio)} – {formatDate(data.periodo?.fim)}</span>
+            <span className="text-secondary text-sm">· Total da semana: <strong>{formatCurrency(data.totalSemana || 0)}</strong></span>
+            {data.totalAtrasado > 0 && (
+              <span className="text-sm" style={{ color: 'var(--color-danger)' }}>· Atrasado em aberto: <strong>{formatCurrency(data.totalAtrasado)}</strong></span>
+            )}
+          </div>
+
+          {data.totalAtrasado > 0 && (
+            <div className="card" style={{ borderColor: 'var(--color-danger)', marginBottom: 14 }}>
+              <h4 style={{ margin: '0 0 8px', color: 'var(--color-danger)' }}>Atrasados (não pagos)</h4>
+              <table className="table">
+                <thead><tr><th>Descrição</th><th>Beneficiário</th><th>Venceu</th><th className="text-right">Valor</th></tr></thead>
+                <tbody>
+                  {(data.atrasados || []).map((i: any) => (
+                    <tr key={i.id}>
+                      <td>{i.descricao}</td>
+                      <td className="text-sm text-secondary">{i.beneficiario || '—'}</td>
+                      <td className="text-sm">{formatDate(i.vencimento)}</td>
+                      <td className="text-right money">{formatCurrency(i.valor)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {(data.porDia || []).map((d: any) => (
+            <div key={d.label} style={{ marginBottom: 12 }}>
+              <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '6px 2px' }}>
+                <strong>{d.label} · {formatDate(d.data)}</strong>
+                <span className="money text-secondary">{formatCurrency(d.total || 0)}</span>
+              </div>
+              {d.itens.length === 0 ? (
+                <div className="text-sm text-secondary" style={{ padding: '2px 4px 8px' }}>Sem pagamentos.</div>
+              ) : (
+                <table className="table">
+                  <tbody>
+                    {d.itens.map((i: any) => (
+                      <tr key={i.id}>
+                        <td>{i.descricao} <span className="badge badge--neutral">{i.categoria}</span></td>
+                        <td className="text-sm text-secondary">{i.beneficiario || '—'}</td>
+                        <td className="text-right money">{formatCurrency(i.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────── Fluxo de Caixa ─────────────────────────
+function FluxoTab() {
+  const [meses, setMeses] = useState(6);
+  const { data, loading, error } = useApi<any>(() => Api.finFluxoCaixa(meses), [meses]);
+  return (
+    <div className="card">
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <h3 className="card__title" style={{ margin: 0 }}>Fluxo de Caixa — realizado x projetado</h3>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field__label">Histórico (meses)</label>
+          <select className="field__select" value={meses} onChange={(e) => setMeses(Number(e.target.value))}>
+            {[3, 6, 12, 18].map((m) => <option key={m} value={m}>{m} meses</option>)}
+          </select>
+        </div>
+      </div>
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th className="text-right">Entradas (real)</th>
+              <th className="text-right">Saídas (real)</th>
+              <th className="text-right">Líquido real</th>
+              <th className="text-right">Líquido projetado</th>
+              <th className="text-right">Saldo acumulado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(data.meses || []).map((m: any, idx: number) => (
+              <tr key={idx} style={m.futuro ? { opacity: 0.7, fontStyle: 'italic' } : undefined}>
+                <td>{m.label}{m.futuro ? ' (proj.)' : ''}</td>
+                <td className="text-right money" style={{ color: 'var(--money-positive)' }}>{formatCurrencyShort(m.entradasReal)}</td>
+                <td className="text-right money" style={{ color: 'var(--money-negative)' }}>{formatCurrencyShort(m.saidasReal)}</td>
+                <td className="text-right money" style={{ color: m.liquidoReal >= 0 ? 'var(--money-positive)' : 'var(--money-negative)' }}>{formatCurrencyShort(m.liquidoReal)}</td>
+                <td className="text-right money" style={{ color: m.liquidoProjetado >= 0 ? 'var(--money-positive)' : 'var(--money-negative)' }}>{formatCurrencyShort(m.liquidoProjetado)}</td>
+                <td className="text-right money" style={{ fontWeight: 700, color: m.saldoAcumulado >= 0 ? 'var(--money-positive)' : 'var(--money-negative)' }}>{formatCurrencyShort(m.saldoAcumulado)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────── Contas a Pagar/Receber (aging) ─────────────────────────
+const FAIXA_LABEL: Record<string, string> = { aVencer: 'A vencer', d1_30: '1–30 dias', d31_60: '31–60 dias', d60: '60+ dias' };
+function ContasTab() {
+  const [tipo, setTipo] = useState<'PAGAR' | 'RECEBER'>('PAGAR');
+  const { data, loading, error } = useApi<any>(() => Api.finContas(tipo), [tipo]);
+  return (
+    <div className="card">
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <h3 className="card__title" style={{ margin: 0 }}>Contas a {tipo === 'PAGAR' ? 'Pagar' : 'Receber'}</h3>
+        <div className="tabs" style={{ margin: 0 }}>
+          <button className={'tab ' + (tipo === 'PAGAR' ? 'tab--active' : '')} onClick={() => setTipo('PAGAR')}>A Pagar</button>
+          <button className={'tab ' + (tipo === 'RECEBER' ? 'tab--active' : '')} onClick={() => setTipo('RECEBER')}>A Receber</button>
+        </div>
+      </div>
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <div className="kpi-grid" style={{ marginBottom: 16 }}>
+            {(['aVencer', 'd1_30', 'd31_60', 'd60'] as const).map((f) => (
+              <div className="kpi" key={f}>
+                <div className="kpi__label">{FAIXA_LABEL[f]}</div>
+                <div className="kpi__value" style={{ color: f === 'aVencer' ? 'var(--text-primary)' : 'var(--money-negative)' }}>
+                  {formatCurrencyShort(data.aging?.[f] || 0)}
+                </div>
+              </div>
+            ))}
+          </div>
+          <table className="table">
+            <thead>
+              <tr><th>Descrição</th><th>Categoria</th><th>Beneficiário</th><th>Vencimento</th><th>Faixa</th><th className="text-right">Valor</th></tr>
+            </thead>
+            <tbody>
+              {(data.itens || []).map((i: any) => (
+                <tr key={i.id}>
+                  <td>{i.descricao}</td>
+                  <td><span className="badge badge--neutral">{i.categoria}</span></td>
+                  <td className="text-sm text-secondary">{i.beneficiario || '—'}</td>
+                  <td className="text-sm">{formatDate(i.vencimento)}{i.diasAtraso ? <span style={{ color: 'var(--color-danger)' }}> ({i.diasAtraso}d)</span> : null}</td>
+                  <td className="text-sm">{FAIXA_LABEL[i.faixa] || i.faixa}</td>
+                  <td className="text-right money">{formatCurrency(i.valor)}</td>
+                </tr>
+              ))}
+              {!data.itens?.length && (
+                <tr><td colSpan={6} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nada em aberto.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────── Planejamento (pago x pendente) ─────────────────────────
+function PlanejamentoTab() {
+  const { data, loading, error } = useApi<any>(() => Api.finPlanejamento());
+  return (
+    <div className="card">
+      <h3 className="card__title">Planejamento — pago x pendente</h3>
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <h4 style={{ margin: '12px 0 6px' }}>Por status</h4>
+          <table className="table">
+            <thead><tr><th>Status</th><th>Tipo</th><th className="text-right">Qtde</th><th className="text-right">Valor</th></tr></thead>
+            <tbody>
+              {(data.porStatus || []).map((s: any, i: number) => (
+                <tr key={i}>
+                  <td><span className="badge badge--neutral">{s.status}</span></td>
+                  <td className="text-sm" style={{ color: s.tipo === 'SAIDA' ? 'var(--money-negative)' : 'var(--money-positive)' }}>{s.tipo}</td>
+                  <td className="text-right">{s.count}</td>
+                  <td className="text-right money">{formatCurrency(s.valor)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h4 style={{ margin: '20px 0 6px' }}>Saídas por categoria</h4>
+          <table className="table">
+            <thead><tr><th>Categoria</th><th className="text-right">Valor</th></tr></thead>
+            <tbody>
+              {(data.saidasPorCategoria || []).map((c: any, i: number) => (
+                <tr key={i}><td>{c.categoria}</td><td className="text-right money">{formatCurrency(c.valor)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────── Importar base antiga ─────────────────────────
+function ImportarTab({ onDone }: { onDone: () => void }) {
+  const [texto, setTexto] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState<string | null>(null);
+  const toast = useToast();
+
+  const parseCsv = (raw: string): any[] => {
+    const linhas = raw.trim().split(/\r?\n/).filter((l) => l.trim());
+    if (!linhas.length) return [];
+    const head = linhas[0].split(/[;,]/).map((h) => h.trim().toLowerCase());
+    const tem = (k: string) => head.includes(k);
+    // Se a 1ª linha não tem cabeçalho conhecido, assume ordem fixa.
+    const temHeader = tem('tipo') || tem('valor') || tem('descricao') || tem('descrição');
+    const body = temHeader ? linhas.slice(1) : linhas;
+    const col = (cells: string[], names: string[]) => {
+      for (const n of names) { const idx = head.indexOf(n); if (idx >= 0) return cells[idx]; }
+      return undefined;
+    };
+    return body.map((l) => {
+      const cells = l.split(/[;,]/).map((c) => c.trim());
+      const v = temHeader ? {
+        tipo: (col(cells, ['tipo']) || 'SAIDA').toUpperCase(),
+        categoria: col(cells, ['categoria']) || 'OUTRO',
+        descricao: col(cells, ['descricao', 'descrição']) || 'Importado',
+        valor: col(cells, ['valor']),
+        status: (col(cells, ['status']) || 'PAGO').toUpperCase(),
+        vencimento: col(cells, ['vencimento']) || null,
+        pagoEm: col(cells, ['pagoem', 'pago_em', 'pagamento']) || null,
+        beneficiario: col(cells, ['beneficiario', 'beneficiário']) || null,
+      } : {
+        // ordem fixa: tipo;categoria;descricao;valor;status;vencimento;beneficiario
+        tipo: (cells[0] || 'SAIDA').toUpperCase(), categoria: cells[1] || 'OUTRO',
+        descricao: cells[2] || 'Importado', valor: cells[3],
+        status: (cells[4] || 'PAGO').toUpperCase(), vencimento: cells[5] || null, beneficiario: cells[6] || null,
+      };
+      const num = Number(String(v.valor || '').replace(/[^0-9.,-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.'));
+      return { ...v, valor: num || 0, vencimento: v.vencimento || null };
+    }).filter((r) => r.valor && r.descricao);
+  };
+
+  const enviar = async () => {
+    const items = parseCsv(texto);
+    if (!items.length) { toast.error('Nada para importar — verifique o formato.'); return; }
+    setEnviando(true); setResultado(null);
+    try {
+      const r: any = await Api.finImportar(items);
+      setResultado(`${r.importados} lançamento(s) importado(s).`);
+      toast.success(`${r.importados} importado(s)`);
+      setTexto('');
+      onDone();
+    } catch (e: any) {
+      toast.error('Erro ao importar: ' + (e?.message || 'falha'));
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const prev = parseCsv(texto);
+  return (
+    <div className="card">
+      <h3 className="card__title">Importar base antiga (parcelas / comissões / lançamentos)</h3>
+      <p className="text-secondary text-sm" style={{ margin: '6px 0 14px' }}>
+        Cole os dados em CSV (separados por <code>;</code> ou <code>,</code>). Cabeçalho aceito:
+        <code> tipo;categoria;descricao;valor;status;vencimento;beneficiario</code>. Sem cabeçalho, usa essa ordem.
+        Valores em reais (ex.: <code>1.500,00</code>). Status padrão: <strong>PAGO</strong>.
+      </p>
+      <textarea
+        className="field__input"
+        style={{ width: '100%', minHeight: 180, fontFamily: 'monospace', fontSize: 13 }}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        placeholder={'SAIDA;COMISSAO;Comissão venda 102;1.500,00;PAGO;2025-03-10;João Silva\nENTRADA;VENDA;Entrada apto 51;25.000,00;PAGO;2025-02-01;'}
+      />
+      <div className="flex gap-2" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: 12, flexWrap: 'wrap' }}>
+        <span className="text-secondary text-sm">{prev.length} linha(s) válida(s) detectada(s){resultado ? ` · ${resultado}` : ''}</span>
+        <button className="btn btn--primary" disabled={enviando || !prev.length} onClick={enviar}>
+          {enviando ? 'Importando...' : `Importar ${prev.length || ''}`}
+        </button>
+      </div>
     </div>
   );
 }
