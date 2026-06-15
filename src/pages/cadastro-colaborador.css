@@ -63,6 +63,7 @@
 .cad__field--full { grid-column: 1 / -1; }
 .cad__label { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 7px; }
 .cad__label .req { color: var(--err); margin-left: 2px; }
+.cad__opcional { color: var(--muted); font-weight: 500; font-size: 12px; }
 .cad__input, .cad__select, .cad__textarea {
  border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px;
  font-size: 15px; color: var(--ink); background: #fff; width: 100%;

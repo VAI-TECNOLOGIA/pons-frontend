@@ -44,7 +44,6 @@ export default function CadastroColaborador() {
 
   const set = (k: string, v: string) => { setF((p) => ({ ...p, [k]: v })); setErros((e) => ({ ...e, [k]: '' })); };
   const pw = pwChecks(f.senha);
-  const isCorretor = f.funcao === 'Corretor';
 
   function validar(): boolean {
     const e: Record<string, string> = {};
@@ -57,7 +56,7 @@ export default function CadastroColaborador() {
     if (!f.dataEntrada) e.dataEntrada = 'Informe a data de entrada.';
     if (f.endereco.trim().length < 3) e.endereco = 'Informe seu endereço.';
     if (f.pix.trim().length < 2) e.pix = 'Informe sua chave PIX.';
-    if (isCorretor && !f.creci.trim()) e.creci = 'CRECI obrigatório para corretores.';
+    // CRECI é opcional para todos (inclusive corretores).
     setErros(e);
     return Object.keys(e).length === 0;
   }
@@ -177,8 +176,8 @@ export default function CadastroColaborador() {
                 {erros.dataEntrada && <div className="cad__err">{erros.dataEntrada}</div>}
               </div>
               <div className="cad__field">
-                <label className="cad__label">CRECI {isCorretor && <span className="req">*</span>}</label>
-                <input className={inCls('creci')} value={f.creci} onChange={(e) => set('creci', e.target.value)} placeholder={isCorretor ? 'Obrigatório p/ corretor' : 'Opcional'} />
+                <label className="cad__label">CRECI <span className="cad__opcional">(opcional)</span></label>
+                <input className={inCls('creci')} value={f.creci} onChange={(e) => set('creci', e.target.value)} placeholder="Se tiver, informe seu CRECI" />
                 {erros.creci && <div className="cad__err">{erros.creci}</div>}
               </div>
             </div>
