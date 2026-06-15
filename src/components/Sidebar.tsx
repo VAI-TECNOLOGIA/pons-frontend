@@ -122,6 +122,8 @@ const DEV_ITEMS: NavItem[] = [
 
 function canSee(it: NavItem, role: Role, email?: string): boolean {
   if (it.emails) return !!email && it.emails.includes(email);
+  // Equipe Financeiro = perfil restrito: vê só o Dashboard + os itens do Financeiro.
+  if (role === 'FINANCEIRO') return it.to === '/dashboard' || (!!it.roles && it.roles.includes('FINANCEIRO'));
   if (!it.roles) return true;
   return it.roles.includes(role);
 }

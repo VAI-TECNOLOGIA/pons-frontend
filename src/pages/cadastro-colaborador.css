@@ -1,0 +1,198 @@
+/* LP Atualização Cadastral Grupo Pons — corporativo premium (navy/branco/cinza) */
+.cad {
+ --navy: #0F1729;
+ --navy2: #1A2546;
+ --ink: #1A2233;
+ --muted: #6B7588;
+ --line: #E4E8EF;
+ --soft: #F5F7FA;
+ --blue: #2B4C8C;
+ --ok: #16A34A;
+ --err: #DC2626;
+ min-height: 100vh;
+ background: var(--soft);
+ color: var(--ink);
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+ padding-bottom: 60px;
+}
+
+/* ---------- HERO ---------- */
+.cad__hero {
+ background: radial-gradient(120% 140% at 80% -20%, #21366b 0%, var(--navy) 60%);
+ color: #fff;
+ padding: 44px 24px 56px;
+ text-align: center;
+ position: relative;
+ overflow: hidden;
+}
+.cad__hero::after {
+ content: '';
+ position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+ background: linear-gradient(90deg, #2B4C8C, #4F7BD0, #2B4C8C);
+}
+.cad__logo { height: 52px; margin-bottom: 26px; filter: drop-shadow(0 4px 16px rgba(0,0,0,.4)); }
+.cad__h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -.02em; margin: 0 auto; max-width: 760px; line-height: 1.12; }
+.cad__sub { margin: 14px auto 0; max-width: 600px; font-size: 16px; line-height: 1.55; color: #C7D0E0; }
+
+/* ---------- CARD ---------- */
+.cad__wrap { max-width: 760px; margin: -32px auto 0; padding: 0 16px; position: relative; z-index: 2; }
+.cad__inst {
+ background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--blue);
+ border-radius: 12px; padding: 16px 20px; font-size: 14.5px; color: var(--muted); line-height: 1.55;
+ box-shadow: 0 8px 30px rgba(15,23,41,.06); margin-bottom: 20px;
+}
+.cad__inst b { color: var(--ink); }
+.cad__card {
+ background: #fff; border: 1px solid var(--line); border-radius: 16px;
+ box-shadow: 0 12px 44px rgba(15,23,41,.08); overflow: hidden;
+}
+
+/* ---------- BLOCOS ---------- */
+.cad__block { padding: 26px 28px; }
+.cad__block + .cad__block { border-top: 1px solid var(--line); }
+.cad__block-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.cad__block-num {
+ width: 30px; height: 30px; border-radius: 9px; background: var(--navy); color: #fff;
+ display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex: none;
+}
+.cad__block-title { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+
+/* ---------- GRID DE CAMPOS ---------- */
+.cad__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+.cad__field { display: flex; flex-direction: column; }
+.cad__field--full { grid-column: 1 / -1; }
+.cad__label { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 7px; }
+.cad__label .req { color: var(--err); margin-left: 2px; }
+.cad__opcional { color: var(--muted); font-weight: 500; font-size: 12px; }
+.cad__input, .cad__select, .cad__textarea {
+ border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px;
+ font-size: 15px; color: var(--ink); background: #fff; width: 100%;
+ transition: border-color .15s, box-shadow .15s; font-family: inherit;
+}
+.cad__input:focus, .cad__select:focus, .cad__textarea:focus {
+ outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(43,76,140,.12);
+}
+.cad__input--err, .cad__select--err, .cad__textarea--err { border-color: var(--err); }
+.cad__textarea { resize: vertical; min-height: 64px; }
+.cad__hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+.cad__err { font-size: 12.5px; color: var(--err); margin-top: 6px; font-weight: 600; }
+
+/* requisitos de senha */
+.cad__pwreqs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; margin-top: 9px; }
+.cad__pwreq { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.cad__pwreq::before { content: '○'; font-size: 11px; }
+.cad__pwreq--ok { color: var(--ok); font-weight: 600; }
+.cad__pwreq--ok::before { content: '✓'; }
+
+/* ---------- AÇÃO ---------- */
+.cad__actions { padding: 24px 28px 28px; }
+.cad__submit {
+ width: 100%; border: none; border-radius: 12px; padding: 16px;
+ font-size: 16px; font-weight: 800; color: #fff; cursor: pointer;
+ background: linear-gradient(135deg, #2B4C8C, #16284f);
+ box-shadow: 0 10px 26px rgba(43,76,140,.35); transition: transform .1s, box-shadow .15s;
+}
+.cad__submit:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(43,76,140,.42); }
+.cad__submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.cad__formerr {
+ background: #FEF2F2; border: 1px solid #FECACA; color: var(--err);
+ border-radius: 10px; padding: 12px 16px; font-size: 14px; font-weight: 600; margin: 0 28px 4px;
+}
+.cad__footer { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 26px; }
+
+/* honeypot — escondido de humanos */
+.cad__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* ---------- SUCESSO ---------- */
+.cad__success { max-width: 560px; margin: 60px auto; padding: 0 20px; text-align: center; }
+.cad__success-card {
+ background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 48px 36px;
+ box-shadow: 0 16px 50px rgba(15,23,41,.1);
+}
+.cad__check {
+ width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 24px;
+ background: linear-gradient(135deg, #16A34A, #15803D); display: flex; align-items: center; justify-content: center;
+ box-shadow: 0 10px 26px rgba(22,163,74,.4); animation: cad-pop .5s cubic-bezier(.22,1.2,.36,1) both;
+}
+.cad__check svg { width: 38px; height: 38px; stroke: #fff; stroke-width: 3; fill: none; }
+.cad__success-card h2 { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+.cad__success-card p { font-size: 15.5px; color: var(--muted); line-height: 1.6; }
+@keyframes cad-pop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ---------- TEMPLATE DE BOAS-VINDAS (pós-cadastro) ---------- */
+.cad-wel {
+ min-height: 100vh;
+ display: flex; flex-direction: column; align-items: center; justify-content: center;
+ padding: 32px 18px;
+ background: radial-gradient(120% 130% at 80% -10%, #21366b 0%, #0F1729 60%);
+}
+.cad-wel__card {
+ position: relative; overflow: hidden;
+ width: min(560px, 96vw);
+ background: linear-gradient(160deg, #16223f 0%, #0e1626 60%, #131f3a 100%);
+ border: 1px solid rgba(255,255,255,.1);
+ border-radius: 22px;
+ padding: 52px 40px 40px;
+ text-align: center;
+ color: #fff;
+ box-shadow: 0 40px 110px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+ animation: cad-pop .55s cubic-bezier(.22,1.2,.36,1) both;
+}
+.cad-wel__speed {
+ position: absolute; top: 0; left: 0; right: 0; height: 4px;
+ background: linear-gradient(90deg, #2B4C8C, #4F7BD0, #2B4C8C);
+}
+.cad-wel__logo { height: 44px; margin-bottom: 30px; filter: drop-shadow(0 4px 16px rgba(0,0,0,.5)); }
+.cad-wel__check {
+ width: 78px; height: 78px; border-radius: 50%; margin: 0 auto 22px;
+ background: linear-gradient(135deg, #16A34A, #15803D);
+ display: flex; align-items: center; justify-content: center;
+ box-shadow: 0 12px 30px rgba(22,163,74,.45);
+ animation: cad-pop .5s cubic-bezier(.22,1.2,.36,1) .15s both;
+}
+.cad-wel__check svg { width: 40px; height: 40px; stroke: #fff; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cad-wel__eyebrow {
+ font-size: 12px; font-weight: 800; letter-spacing: .24em; text-transform: uppercase;
+ color: #6FCF97; margin-bottom: 10px;
+}
+.cad-wel__title { font-size: clamp(30px, 5vw, 42px); font-weight: 900; line-height: 1.04; letter-spacing: -.02em; }
+.cad-wel__title span { color: #4F7BD0; }
+.cad-wel__msg { margin: 18px auto 0; max-width: 440px; font-size: 15px; line-height: 1.6; color: #C7D0E0; }
+.cad-wel__resumo {
+ margin: 26px auto 0; max-width: 380px;
+ background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px;
+ overflow: hidden;
+}
+.cad-wel__row {
+ display: flex; align-items: center; justify-content: space-between;
+ padding: 13px 18px; font-size: 14px;
+}
+.cad-wel__row + .cad-wel__row { border-top: 1px solid rgba(255,255,255,.08); }
+.cad-wel__row span { color: #95A0B5; }
+.cad-wel__row b { color: #fff; font-weight: 700; }
+.cad-wel__note {
+ margin: 22px auto 0; max-width: 440px;
+ background: rgba(242,181,68,.1); border: 1px solid rgba(242,181,68,.3); border-radius: 12px;
+ padding: 13px 16px; font-size: 13px; line-height: 1.5; color: #F2D49A;
+}
+.cad-wel__again {
+ margin-top: 28px; background: transparent; border: 1.5px solid rgba(255,255,255,.25);
+ color: #fff; border-radius: 10px; padding: 12px 24px; font-size: 14px; font-weight: 700; cursor: pointer;
+ transition: background .15s, border-color .15s;
+}
+.cad-wel__again:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.5); }
+.cad-wel .cad__footer { color: #6B7588; margin-top: 22px; }
+
+@media (max-width: 560px) {
+ .cad-wel__card { padding: 40px 24px 32px; }
+}
+
+/* ---------- RESPONSIVO ---------- */
+@media (max-width: 640px) {
+ .cad__grid { grid-template-columns: 1fr; }
+ .cad__pwreqs { grid-template-columns: 1fr; }
+ .cad__block { padding: 22px 18px; }
+ .cad__actions { padding: 20px 18px 24px; }
+ .cad__formerr { margin: 0 18px 4px; }
+ .cad__hero { padding: 36px 20px 50px; }
+}
