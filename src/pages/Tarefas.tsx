@@ -46,6 +46,7 @@ export default function Tarefas() {
         prioridade: String(fd.get('prioridade') || 'NORMAL'),
         responsavelId: fd.get('responsavelId') ? Number(fd.get('responsavelId')) : null,
         prazo: fd.get('prazo') ? String(fd.get('prazo')) : null,
+        solicitadoEm: fd.get('solicitadoEm') ? String(fd.get('solicitadoEm')) : null,
       });
       toast.success('Tarefa criada');
       setOpen(false);
@@ -111,7 +112,7 @@ export default function Tarefas() {
                           <div className="kanban-card__title">{t.titulo}</div>
                           <div className="kanban-card__meta">
                             {t.area}
-                            {t.createdAt && ' · solicitada ' + new Date(t.createdAt).toLocaleDateString('pt-BR')}
+                            {(t.solicitadoEm || t.createdAt) && ' · solicitada ' + new Date(t.solicitadoEm || t.createdAt).toLocaleDateString('pt-BR')}
                             {t.prazo && ' · até ' + new Date(t.prazo).toLocaleDateString('pt-BR')}
                           </div>
                         </div>
@@ -181,6 +182,10 @@ export default function Tarefas() {
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Data da Solicitação</label>
+              <input name="solicitadoEm" type="date" className="field__input" defaultValue={new Date().toISOString().slice(0, 10)} />
             </div>
             <div className="field">
               <label className="field__label">Prazo</label>
