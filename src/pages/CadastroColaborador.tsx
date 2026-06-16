@@ -13,7 +13,7 @@ const API_BASE =
     : 'https://web-production-e420b.up.railway.app');
 
 const FUNCOES = ['CEO', 'Corretor', 'Gestor Unidade', 'Sócio', 'Marketing', 'Gestor Tráfego', 'Administrativo', 'Financeiro'];
-const EQUIPES = ['GPI DELAS BC', 'GPI BC', 'GPI 2ª AVENIDA', 'GPI DALLO 703', 'GPI DALLO 803', 'GPI CAPÃO DA CANOA', 'GPI TRAMANDAÍ', 'GPI DELAS ITAJAÍ', 'GPI ITAJAÍ'];
+const EQUIPES = ['GPI DELAS BC', 'GPI BC', 'GPI 2ª AVENIDA', 'GPI DALLO 703', 'GPI DALLO 803', 'GPI CAPÃO DA CANOA', 'GPI TRAMANDAÍ', 'GPI DELAS ITAJAÍ', 'GPI ITAJAÍ', 'Financeiro', 'Administrativo', 'CEO', 'Assessoria'];
 
 function maskTelefone(v: string): string {
   const d = v.replace(/\D/g, '').slice(0, 11);
@@ -41,14 +41,16 @@ export default function CadastroColaborador() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ msg: string; novo: boolean; nome: string; funcao: string; equipe: string } | null>(null);
   const [hp, setHp] = useState(''); // honeypot
+  const [equipesSel, setEquipesSel] = useState<string[]>([]); // Sócio: várias equipes
 
   const set = (k: string, v: string) => { setF((p) => ({ ...p, [k]: v })); setErros((e) => ({ ...e, [k]: '' })); };
   const pw = pwChecks(f.senha);
+  const isSocio = f.funcao === 'Sócio'; // Sócio pode supervisionar várias equipes
 
   function validar(): boolean {
     const e: Record<string, string> = {};
     if (!f.funcao) e.funcao = 'Selecione sua função.';
-    if (!f.equipe) e.equipe = 'Selecione sua equipe.';
+    if (isSocio ? equipesSel.length === 0 : !f.equipe) e.equipe = isSocio ? 'Selecione ao menos uma equipe.' : 'Selecione sua equipe.';
     if (f.nomeCompleto.trim().length < 3) e.nomeCompleto = 'Preencha seu nome completo.';
     if (f.telefone.replace(/\D/g, '').length < 10) e.telefone = 'Informe um telefone válido.';
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email.trim())) e.email = 'Informe um e-mail válido.';
@@ -70,7 +72,7 @@ export default function CadastroColaborador() {
       const r = await fetch(`${API_BASE}/api/grupo-pons/cadastro-colaborador`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...f, website: hp }),
+        body: JSON.stringify({ ...f, equipe: isSocio ? equipesSel : f.equipe, website: hp }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
@@ -83,7 +85,7 @@ export default function CadastroColaborador() {
         novo: j?.novo !== false,
         nome: f.nomeCompleto.trim(),
         funcao: f.funcao,
-        equipe: f.equipe,
+        equipe: isSocio ? equipesSel.join(', ') : f.equipe,
       });
     } catch {
       setFormErr('Não foi possível enviar seu cadastro. Verifique sua conexão e tente novamente.');
@@ -95,7 +97,7 @@ export default function CadastroColaborador() {
     const primeiro = done.nome.split(' ')[0] || '';
     const reset = () => {
       setF({ funcao: '', equipe: '', nomeCompleto: '', telefone: '', email: '', senha: '', dataEntrada: '', endereco: '', pix: '', creci: '' });
-      setErros({}); setFormErr(''); setBusy(false); setHp(''); setDone(null);
+      setErros({}); setFormErr(''); setBusy(false); setHp(''); setDone(null); setEquipesSel([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
     return (
@@ -162,12 +164,36 @@ export default function CadastroColaborador() {
                 </select>
                 {erros.funcao && <div className="cad__err">{erros.funcao}</div>}
               </div>
-              <div className="cad__field">
-                <label className="cad__label">Equipe / Unidade<span className="req">*</span></label>
-                <select className={selCls('equipe')} value={f.equipe} onChange={(e) => set('equipe', e.target.value)}>
-                  <option value="">Selecione…</option>
-                  {EQUIPES.map((o) => <option key={o} value={o}>{o}</option>)}
-                </select>
+              <div className={'cad__field' + (isSocio ? ' cad__field--full' : '')}>
+                <label className="cad__label">{isSocio ? 'Equipes / Unidades' : 'Equipe / Unidade'}<span className="req">*</span></label>
+                {isSocio ? (
+                  <>
+                    <div className="cad__hint" style={{ marginTop: 0, marginBottom: 8 }}>Marque todas as unidades que ficam abaixo de você.</div>
+                    <div className="cad__multi">
+                      {EQUIPES.map((o) => {
+                        const on = equipesSel.includes(o);
+                        return (
+                          <label key={o} className={'cad__chk' + (on ? ' is-on' : '')}>
+                            <input
+                              type="checkbox"
+                              checked={on}
+                              onChange={() => {
+                                setErros((er) => ({ ...er, equipe: '' }));
+                                setEquipesSel((prev) => (on ? prev.filter((x) => x !== o) : [...prev, o]));
+                              }}
+                            />
+                            <span>{o}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <select className={selCls('equipe')} value={f.equipe} onChange={(e) => set('equipe', e.target.value)}>
+                    <option value="">Selecione…</option>
+                    {EQUIPES.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                )}
                 {erros.equipe && <div className="cad__err">{erros.equipe}</div>}
               </div>
               <div className="cad__field">
