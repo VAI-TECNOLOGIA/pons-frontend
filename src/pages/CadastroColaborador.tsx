@@ -13,7 +13,7 @@ const API_BASE =
     : 'https://web-production-e420b.up.railway.app');
 
 const FUNCOES = ['CEO', 'Corretor', 'Gestor Unidade', 'Sócio', 'Marketing', 'Gestor Tráfego', 'Administrativo', 'Financeiro'];
-const EQUIPES = ['GPI DELAS BC', 'GPI BC', 'GPI 2ª AVENIDA', 'GPI DALLO 703', 'GPI DALLO 803', 'GPI CAPÃO DA CANOA', 'GPI TRAMANDAÍ', 'GPI DELAS ITAJAÍ', 'GPI ITAJAÍ'];
+const EQUIPES = ['GPI DELAS BC', 'GPI BC', 'GPI 2ª AVENIDA', 'GPI DALLO 703', 'GPI DALLO 803', 'GPI CAPÃO DA CANOA', 'GPI TRAMANDAÍ', 'GPI DELAS ITAJAÍ', 'GPI ITAJAÍ', 'Financeiro', 'Administrativo', 'CEO', 'Assessoria'];
 
 function maskTelefone(v: string): string {
   const d = v.replace(/\D/g, '').slice(0, 11);
