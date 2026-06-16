@@ -243,12 +243,14 @@ function AbaUsuarios() {
 function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   const toast = useToast();
   const { data: equipes } = useApi<any[]>(() => Api.equipeEquipesList());
+  const { data: unidades } = useApi<any[]>(() => Api.unidadesList());
   const [form, setForm] = useState({
     nome: '', sobrenome: '', email: '', password: '', phone: '',
-    role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'FINANCEIRO',
+    role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'FINANCEIRO' | 'SOCIO_UNIDADE',
     hierarchyLevelId: levels.find((l: any) => l.code === 'manager')?.id || null,
     isMaster: false,            // master = vê TODAS as equipes (não escolhe)
     equipeIds: [] as number[],
+    unidadeId: null as number | null,  // sócio → filial que ele enxerga
     active: true,
   });
   const [confirmPass, setConfirmPass] = useState('');
@@ -257,7 +259,11 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   const submit = async () => {
     if (!form.nome || !form.email || !form.password) return toast.error('Preencha nome, email e senha.');
     if (form.password !== confirmPass) return toast.error('As senhas não conferem.');
-    if (!form.isMaster && !form.equipeIds.length) {
+    const isSocio = form.role === 'SOCIO_UNIDADE';
+    if (isSocio && !form.unidadeId) {
+      return toast.error('Selecione a filial do sócio.');
+    }
+    if (!isSocio && !form.isMaster && !form.equipeIds.length) {
       return toast.error('Selecione pelo menos uma equipe — ou marque "Acesso Master".');
     }
     setSaving(true);
@@ -268,9 +274,11 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
         password: form.password,
         phone: form.phone || null,
         role: form.role,
-        hierarchyLevelId: form.hierarchyLevelId,
+        // Sócio: escopo é por filial (unidadeId), não por árvore de hierarquia.
+        hierarchyLevelId: isSocio ? null : form.hierarchyLevelId,
+        unidadeId: isSocio ? form.unidadeId : null,
         // Master = sem equipes vinculadas → backend interpreta como "vê tudo"
-        equipeIds: form.isMaster ? [] : form.equipeIds,
+        equipeIds: isSocio ? [] : (form.isMaster ? [] : form.equipeIds),
         active: form.active,
       });
       toast.success('Usuário criado');
@@ -345,11 +353,45 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
                 <div className="user-drawer__role-name">Financeiro</div>
                 <div className="user-drawer__role-sub">Acesso a caixa, lançamentos e relatórios financeiros</div>
               </button>
+              <button
+                type="button"
+                className={'user-drawer__role' + (form.role === 'SOCIO_UNIDADE' ? ' is-active' : '')}
+                onClick={() => setForm({ ...form, role: 'SOCIO_UNIDADE' })}
+              >
+                <Icon name="building" size={16} />
+                <div className="user-drawer__role-name">Sócio</div>
+                <div className="user-drawer__role-sub">Vê as equipes e o financeiro só da própria filial</div>
+              </button>
             </div>
           </section>
 
           <section>
             <p className="user-drawer__sec">ESCOPO DE ACESSO *</p>
+
+            {/* Sócio: escopo é a filial. Vê todas as equipes e o financeiro dela. */}
+            {form.role === 'SOCIO_UNIDADE' ? (
+              <>
+                <p className="user-drawer__hint">
+                  O sócio enxerga todas as equipes, leads, vendas e o financeiro da filial selecionada.
+                </p>
+                <label className="user-drawer__field">
+                  <span>Filial *</span>
+                  <select
+                    value={form.unidadeId ?? ''}
+                    onChange={(e) => setForm({ ...form, unidadeId: e.target.value ? Number(e.target.value) : null })}
+                  >
+                    <option value="">Selecione a filial…</option>
+                    {(unidades || []).map((u: any) => (
+                      <option key={u.id} value={u.id}>{u.nome}{u.cidade ? ` — ${u.cidade}` : ''}</option>
+                    ))}
+                  </select>
+                </label>
+                {(unidades || []).length === 0 && (
+                  <p className="user-drawer__warn">Nenhuma filial cadastrada ainda. Crie em Administração → Filiais.</p>
+                )}
+              </>
+            ) : (
+            <>
             <p className="user-drawer__hint">
               {form.role === 'FINANCEIRO'
                 ? 'Master vê rateios, fechamentos e relatórios financeiros de TODAS as equipes. Específico só vê das que você selecionar.'
@@ -409,6 +451,8 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
                   ))
                 )}
               </div>
+            )}
+            </>
             )}
           </section>
 
