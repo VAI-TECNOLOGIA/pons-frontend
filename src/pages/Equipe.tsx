@@ -250,7 +250,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
     hierarchyLevelId: levels.find((l: any) => l.code === 'manager')?.id || null,
     isMaster: false,            // master = vê TODAS as equipes (não escolhe)
     equipeIds: [] as number[],
-    unidadeId: null as number | null,  // sócio → filial que ele enxerga
+    unidadeIds: [] as number[],  // sócio → filiais que ele enxerga (multi-filial)
     active: true,
   });
   const [confirmPass, setConfirmPass] = useState('');
@@ -260,8 +260,8 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
     if (!form.nome || !form.email || !form.password) return toast.error('Preencha nome, email e senha.');
     if (form.password !== confirmPass) return toast.error('As senhas não conferem.');
     const isSocio = form.role === 'SOCIO_UNIDADE';
-    if (isSocio && !form.unidadeId) {
-      return toast.error('Selecione a filial do sócio.');
+    if (isSocio && !form.unidadeIds.length) {
+      return toast.error('Selecione ao menos uma filial do sócio.');
     }
     if (!isSocio && !form.isMaster && !form.equipeIds.length) {
       return toast.error('Selecione pelo menos uma equipe — ou marque "Acesso Master".');
@@ -274,9 +274,10 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
         password: form.password,
         phone: form.phone || null,
         role: form.role,
-        // Sócio: escopo é por filial (unidadeId), não por árvore de hierarquia.
+        // Sócio: escopo é por filial (unidadeIds), não por árvore de hierarquia.
         hierarchyLevelId: isSocio ? null : form.hierarchyLevelId,
-        unidadeId: isSocio ? form.unidadeId : null,
+        unidadeId: isSocio ? (form.unidadeIds[0] ?? null) : null,
+        unidadeIds: isSocio ? form.unidadeIds : [],
         // Master = sem equipes vinculadas → backend interpreta como "vê tudo"
         equipeIds: isSocio ? [] : (form.isMaster ? [] : form.equipeIds),
         active: form.active,
@@ -372,20 +373,31 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
             {form.role === 'SOCIO_UNIDADE' ? (
               <>
                 <p className="user-drawer__hint">
-                  O sócio enxerga todas as equipes, leads, vendas e o financeiro da filial selecionada.
+                  O sócio enxerga todas as equipes, leads, vendas e o financeiro das filiais selecionadas. Pode marcar mais de uma.
                 </p>
-                <label className="user-drawer__field">
-                  <span>Filial *</span>
-                  <select
-                    value={form.unidadeId ?? ''}
-                    onChange={(e) => setForm({ ...form, unidadeId: e.target.value ? Number(e.target.value) : null })}
-                  >
-                    <option value="">Selecione a filial…</option>
-                    {(unidades || []).map((u: any) => (
-                      <option key={u.id} value={u.id}>{u.nome}{u.cidade ? ` — ${u.cidade}` : ''}</option>
-                    ))}
-                  </select>
-                </label>
+                <div className="user-drawer__field">
+                  <span>Filiais *</span>
+                  {(unidades || []).map((u: any) => {
+                    const checked = form.unidadeIds.includes(u.id);
+                    return (
+                      <label key={u.id} className="user-drawer__check">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              unidadeIds: e.target.checked
+                                ? [...form.unidadeIds, u.id]
+                                : form.unidadeIds.filter((id) => id !== u.id),
+                            })
+                          }
+                        />
+                        <span>{u.nome}{u.cidade ? ` — ${u.cidade}` : ''}</span>
+                      </label>
+                    );
+                  })}
+                </div>
                 {(unidades || []).length === 0 && (
                   <p className="user-drawer__warn">Nenhuma filial cadastrada ainda. Crie em Administração → Filiais.</p>
                 )}
