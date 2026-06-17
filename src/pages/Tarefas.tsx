@@ -143,7 +143,9 @@ export default function Tarefas() {
       </div>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Nova Tarefa" subtitle="Atribua a um responsável e defina prazo">
-        <form onSubmit={submit}>
+        {/* key amarrada ao open: o <dialog> mantém os filhos no DOM mesmo fechado,
+            então remontamos o form a cada abertura pra limpar os campos não-controlados. */}
+        <form key={open ? 'open' : 'closed'} onSubmit={submit}>
           <div className="form-grid">
             <div className="field field--span-2">
               <label className="field__label">Título <span className="field__required">*</span></label>
