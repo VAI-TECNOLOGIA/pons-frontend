@@ -23,6 +23,8 @@ export interface User {
   phone?: string | null;
   dataNascimento?: string | null;
   avatarUrl?: string | null;
+  onboardingStatus?: string | null; // null/ATIVO = sem gating; PENDENTE_DOCS, AGUARDANDO_* prendem em /onboarding
+  modalidade?: string | null; // ESTAGIARIO | CORRETOR
   unidade?: { id: number; nome: string } | null;
   corretor?: {
     id: number;
