@@ -23,8 +23,8 @@ export default function Executivo() {
   const [openEv, setOpenEv] = useState(false);
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | null>(null);
-  // Assessora pode visualizar/gerenciar a agenda de um executivo. '' = própria.
-  const [verAgendaDe, setVerAgendaDe] = useState<number | ''>('');
+  // A assessoria atende somente o Paulo (id 1) — sem seletor, abre a agenda dele direto.
+  const verAgendaDe: number | '' = user.role === 'ASSESSORA' ? 1 : '';
 
   // Bump pra forçar o AgendaKpisBar a recontar após mutações (criar/editar/excluir).
   const [kpiVersion, setKpiVersion] = useState(0);
@@ -38,9 +38,6 @@ export default function Executivo() {
     setKpiVersion((v) => v + 1);
   };
   const { data: tarefas } = useApi<any[]>(() => Api.tarefas());
-  const { data: executivos } = useApi<any[]>(() => Api.agendaExecutivos().catch(() => []));
-  // Só a assessora tem permissão no backend (alvoPermitido) de ver agenda alheia.
-  const podeVerOutras = user.role === 'ASSESSORA' && (executivos || []).length > 0;
   const { data: settings, reload: reloadSettings } = useApi<Record<string, string>>(() => Api.settings());
   const toast = useToast();
   const navigate = useNavigate();
@@ -168,7 +165,8 @@ export default function Executivo() {
       inicio: toIso(fd.get('inicio')) || '',
       fim: toIso(fd.get('fim')),
       local: fd.get('local') ? String(fd.get('local')) : undefined,
-      paraUserId: fd.get('paraUserId') ? Number(fd.get('paraUserId')) : undefined,
+      // Assessoria lança sempre pro Paulo (verAgendaDe); os demais, pra si mesmos.
+      paraUserId: verAgendaDe || undefined,
       notas: fd.get('notas') ? String(fd.get('notas')) : undefined,
     };
     try {
@@ -304,23 +302,6 @@ export default function Executivo() {
 
         <AgendaKpisBar userId={verAgendaDe || undefined} refreshKey={kpiVersion} />
 
-        {podeVerOutras && (
-          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <label className="field__label" style={{ margin: 0, whiteSpace: 'nowrap' }}>Agenda de:</label>
-            <select
-              className="field__select"
-              style={{ maxWidth: 320 }}
-              value={verAgendaDe}
-              onChange={(e) => setVerAgendaDe(e.target.value ? Number(e.target.value) : '')}
-            >
-              <option value="">Minha agenda</option>
-              {(executivos || []).map((u: any) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {GOOGLE_CALENDAR_ENABLED && !googleConectado && (
           <div className="card google-cta">
             <div className="google-cta__icon">
@@ -414,17 +395,6 @@ export default function Executivo() {
                 placeholder="Sede Itajaí, Online…"
                 defaultValue={editing?.local || ''}
               />
-            </div>
-            <div className="field field--span-2">
-              <label className="field__label">Executivo</label>
-              <select name="paraUserId" className="field__select" defaultValue={verAgendaDe ? String(verAgendaDe) : ''}>
-                <option value="">— Eu mesmo —</option>
-                {(executivos || []).map((u: any) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
             </div>
             <div className="field field--span-2">
               <label className="field__label">Notas</label>
