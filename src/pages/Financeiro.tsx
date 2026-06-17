@@ -21,6 +21,7 @@ type Tab = 'extrato' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 
 export default function Financeiro() {
  const [tab, setTab] = useState<Tab>('extrato');
  const [openNew, setOpenNew] = useState(false);
+ const [metodoForm, setMetodoForm] = useState('PIX');
  const [filtroBenef, setFiltroBenef] = useState('');
  const [filtroStatus, setFiltroStatus] = useState('');
  const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => Api.finResumo());
@@ -40,6 +41,12 @@ export default function Financeiro() {
  vencimento: fd.get('vencimento') ? String(fd.get('vencimento')) : null,
  beneficiario: fd.get('beneficiario') ? String(fd.get('beneficiario')) : undefined,
  metodo: String(fd.get('metodo') || 'PIX'),
+ favorecidoDocumento: fd.get('favorecidoDocumento') ? String(fd.get('favorecidoDocumento')) : undefined,
+ favorecidoChavePix: fd.get('favorecidoChavePix') ? String(fd.get('favorecidoChavePix')) : undefined,
+ favorecidoBanco: fd.get('favorecidoBanco') ? String(fd.get('favorecidoBanco')) : undefined,
+ favorecidoAgencia: fd.get('favorecidoAgencia') ? String(fd.get('favorecidoAgencia')) : undefined,
+ favorecidoConta: fd.get('favorecidoConta') ? String(fd.get('favorecidoConta')) : undefined,
+ favorecidoTipoConta: fd.get('favorecidoTipoConta') ? String(fd.get('favorecidoTipoConta')) : undefined,
  });
  toast.success('Lançamento criado');
  setOpenNew(false);
@@ -307,12 +314,48 @@ export default function Financeiro() {
  </div>
  <div className="field">
  <label className="field__label">Método</label>
- <select name="metodo" className="field__select" defaultValue="PIX">
+ <select name="metodo" className="field__select" value={metodoForm} onChange={(e) => setMetodoForm(e.target.value)}>
  <option>PIX</option>
  <option>TED</option>
+ <option>DOC</option>
  <option>BOLETO</option>
  </select>
  </div>
+ {metodoForm !== 'BOLETO' && (
+ <div className="field field--span-2">
+ <label className="field__label">Documento do favorecido (CPF/CNPJ)</label>
+ <input name="favorecidoDocumento" className="field__input" placeholder="000.000.000-00" />
+ </div>
+ )}
+ {metodoForm === 'PIX' && (
+ <div className="field field--span-2">
+ <label className="field__label">Chave Pix</label>
+ <input name="favorecidoChavePix" className="field__input" placeholder="CPF/CNPJ, e-mail, telefone ou aleatória" />
+ </div>
+ )}
+ {(metodoForm === 'TED' || metodoForm === 'DOC') && (
+ <>
+ <div className="field">
+ <label className="field__label">Banco (código/ISPB)</label>
+ <input name="favorecidoBanco" className="field__input" placeholder="748" />
+ </div>
+ <div className="field">
+ <label className="field__label">Agência</label>
+ <input name="favorecidoAgencia" className="field__input" placeholder="0101" />
+ </div>
+ <div className="field">
+ <label className="field__label">Conta</label>
+ <input name="favorecidoConta" className="field__input" placeholder="12345-6" />
+ </div>
+ <div className="field">
+ <label className="field__label">Tipo de conta</label>
+ <select name="favorecidoTipoConta" className="field__select" defaultValue="CORRENTE">
+ <option value="CORRENTE">Corrente</option>
+ <option value="POUPANCA">Poupança</option>
+ </select>
+ </div>
+ </>
+ )}
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
  <button type="button" className="btn btn--secondary" onClick={() => setOpenNew(false)}>Cancelar</button>
