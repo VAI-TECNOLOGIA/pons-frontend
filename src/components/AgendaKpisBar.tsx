@@ -2,8 +2,12 @@ import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 
 // Sprint 1 M16 — 5 cards de KPI da agenda (Imobilead-style)
-export function AgendaKpisBar() {
-  const { data } = useApi<any>(() => Api.agendaKpis().catch(() => null));
+// userId: agenda de um executivo (assessora). Sem prop = própria agenda.
+export function AgendaKpisBar({ userId }: { userId?: number }) {
+  const { data } = useApi<any>(
+    () => Api.agendaKpis(userId ? { userId } : {}).catch(() => null),
+    [userId],
+  );
   if (!data) return null;
 
   const cards = [

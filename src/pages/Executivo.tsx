@@ -295,7 +295,7 @@ export default function Executivo() {
           subtitle={dateLabel}
         />
 
-        <AgendaKpisBar />
+        <AgendaKpisBar userId={verAgendaDe || undefined} />
 
         {podeVerOutras && (
           <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>

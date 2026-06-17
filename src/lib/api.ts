@@ -103,6 +103,44 @@ export const Api = {
   // Warmup (acorda Neon)
   warmup: () => request<{ ok: boolean; ms: number }>('/warmup', { auth: false }),
 
+  // LP pública de nova contratação → cria login já em onboarding.
+  novaContratacao: (data: any) =>
+    request<{ ok: boolean; token: string; user: import('./auth').User }>('/contratacao', { method: 'POST', body: data, auth: false }),
+
+  // ─── Onboarding de contratação (gating Documentos/Contrato) ──────────────
+  onbMe: () => request<any>('/onboarding-colaborador/me'),
+  onbSaveCadastro: (data: any) =>
+    request<any>('/onboarding-colaborador/me/cadastro', { method: 'PUT', body: data }),
+  onbAddDoc: (data: any) =>
+    request<{ ok: boolean; id: number }>('/onboarding-colaborador/me/documentos', { method: 'POST', body: data }),
+  onbDeleteDoc: (id: number) =>
+    request<{ ok: boolean }>(`/onboarding-colaborador/me/documentos/${id}`, { method: 'DELETE' }),
+  onbEnviar: () => request<any>('/onboarding-colaborador/me/enviar', { method: 'POST' }),
+  onbContratoAssinado: (data: any) =>
+    request<any>('/onboarding-colaborador/me/contrato-assinado', { method: 'POST', body: data }),
+  // Financeiro
+  onbPendentes: () => request<any[]>('/onboarding-colaborador/pendentes'),
+  onbDetalhe: (userId: number) => request<any>(`/onboarding-colaborador/${userId}`),
+  onbDecisaoDocs: (userId: number, body: any) =>
+    request<any>(`/onboarding-colaborador/${userId}/docs/decisao`, { method: 'POST', body }),
+  onbDecisaoContrato: (userId: number, body: any) =>
+    request<any>(`/onboarding-colaborador/${userId}/contrato/decisao`, { method: 'POST', body }),
+  // Upload genérico → R2 (prefixo documentos). Retorna { url, key, size, contentType }.
+  uploadDocumento: async (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await fetch(`${BASE}/uploads?prefix=documentos`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.error || j.message || 'upload_failed');
+    }
+    return r.json() as Promise<{ url: string; key: string; size: number; contentType: string }>;
+  },
+
   // Dashboard
   dashboard: () => request<any>('/dashboard'),
 
@@ -447,7 +485,7 @@ export const Api = {
   transferir: (data: { leadId: number; paraCorretorId?: number | null; motivo?: string; observacao?: string | null }) =>
     request<any>('/transferencias', { method: 'POST', body: data }),
   // M16: KPIs Agendamento
-  agendaKpis: () => request<{ hoje: number; semana: number; atrasados: number; concluidos: number; proximos: number }>('/agenda/kpis'),
+  agendaKpis: (params: any = {}) => request<{ hoje: number; semana: number; atrasados: number; concluidos: number; proximos: number }>(`/agenda/kpis${qs(params)}`),
   // M21: Preferences
   preferencesMe: () => request<any>('/preferences/me'),
   preferencesUpdate: (data: any) => request<any>('/preferences/me', { method: 'PUT', body: data }),
