@@ -33,9 +33,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [setUser]);
 
-  // Ao montar (e ao receber novo token), carrega perfil fresco do backend
+  // Ao montar (e ao receber novo token), carrega perfil fresco do backend.
+  // Colaborador em onboarding é bloqueado em /users/me pelo gate — não busca.
   useEffect(() => {
-    if (Auth.token && !user?.dataNascimento && user) {
+    const onb = user?.onboardingStatus;
+    const gated = !!onb && onb !== 'ATIVO';
+    if (Auth.token && user && !gated && !user.dataNascimento) {
       reload();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

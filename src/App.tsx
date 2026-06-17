@@ -45,6 +45,9 @@ function lazyRetry<T extends ComponentType<any>>(factory: () => Promise<{ defaul
 // Bundle inicial cai de ~787KB pra ~150KB; cada página posterior baixa só seu chunk
 // (10-40KB) e fica em cache. Effect: navegação fica quase instantânea.
 const CadastroColaborador = lazyRetry(() => import('./pages/CadastroColaborador'));
+const NovaContratacao = lazyRetry(() => import('./pages/NovaContratacao'));
+const OnboardingDocumentos = lazyRetry(() => import('./pages/OnboardingDocumentos'));
+const OnboardingAprovacoes = lazyRetry(() => import('./pages/OnboardingAprovacoes'));
 const Dashboard       = lazyRetry(() => import('./pages/Dashboard'));
 const Leads           = lazyRetry(() => import('./pages/Leads'));
 const Pipeline        = lazyRetry(() => import('./pages/Pipeline'));
@@ -109,6 +112,9 @@ export default function App() {
         <Route path="/excluir-dados" element={<ExcluirDados />} />
         <Route path="/termos" element={<Termos />} />
         <Route path="/integracoes/fb-callback" element={<FbCallback />} />
+        <Route path="/contratacao" element={<NovaContratacao />} />
+        <Route path="/nova-contratacao" element={<NovaContratacao />} />
+        <Route path="/onboarding" element={<OnboardingDocumentos />} />
 
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -141,6 +147,7 @@ export default function App() {
           <Route path="/auditoria" element={<Auditoria />} />
           <Route path="/bolsoes" element={<Bolsoes />} />
           <Route path="/financeiro-pons" element={<FinanceiroPons />} />
+          <Route path="/onboarding-aprovacoes" element={<OnboardingAprovacoes />} />
           <Route path="/agente-ia" element={<AgenteIA />} />
           <Route path="/reuniao" element={<Reuniao />} />
           <Route path="/equipe" element={<Equipe />} />

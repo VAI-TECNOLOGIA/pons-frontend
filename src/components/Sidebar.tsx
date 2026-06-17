@@ -69,6 +69,7 @@ const GROUPS: NavGroup[] = [
     icon: 'wallet',
     items: [
       { to: '/financeiro-pons', label: 'Rateio & Sócios', icon: 'wallet', roles: [...DIR_FINANCE, 'FINANCEIRO'] },
+      { to: '/onboarding-aprovacoes', label: 'Contratações', icon: 'users', roles: FINANCE },
       { to: '/financeiro', label: 'Caixa & Lançamentos', icon: 'dollar', roles: FINANCE },
       { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'MARKETING'] },
       { to: '/relatorios', label: 'Relatórios', icon: 'chart', roles: RELATORIOS },

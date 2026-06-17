@@ -16,7 +16,7 @@ import { timeAgo } from '../lib/format';
 
 import './configuracoes.css';
 
-type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas';
+type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas';
 
 const GROUPS: { label: string; items: { value: Tab; label: string; icon: string; sub: string }[] }[] = [
  {
@@ -30,6 +30,7 @@ const GROUPS: { label: string; items: { value: Tab; label: string; icon: string;
  label: 'Comercial',
  items: [
  { value: 'equipes', label: 'Equipes', icon: 'shield', sub: 'Escuderias e cores' },
+ { value: 'filiais', label: 'Filiais & CNPJ', icon: 'building', sub: 'Vincular cada sala ao CNPJ' },
  { value: 'corretores', label: 'Corretores', icon: 'users', sub: 'Acessos e CRECIs' },
  { value: 'politicas', label: 'Políticas de comissão', icon: 'dollar', sub: 'Rateios, splits' },
  ],
@@ -111,6 +112,7 @@ export default function Configuracoes() {
  {tab === 'integracoes' && <PanelIntegracoes />}
  {tab === 'acessos' && <PanelAcessos />}
  {tab === 'equipes' && <PanelEquipes />}
+ {tab === 'filiais' && <PanelFiliais />}
  {tab === 'corretores' && (
  <div className="card">
  <p className="text-secondary">Use a página principal <strong>/corretores</strong> para gerenciar (criar, editar, desativar).</p>
@@ -1164,6 +1166,87 @@ function PanelEquipes() {
  </form>
  )}
  </Modal>
+ </>
+ );
+}
+
+// Vincula cada filial (Unidade) a um dos CNPJs do grupo. O CNPJ define qual
+// contrato (cabeçalho) o colaborador lotado na filial assina no onboarding.
+function PanelFiliais() {
+ const { data, loading, error, reload } = useApi<any[]>(() => Api.unidadesList());
+ const { data: empresas } = useApi<{ key: string; razaoSocial: string; cnpj: string }[]>(() => Api.unidadeEmpresas());
+ const [saving, setSaving] = useState<number | null>(null);
+ const toast = useToast();
+
+ const vincular = async (unidade: any, empresaKey: string) => {
+ setSaving(unidade.id);
+ try {
+ await Api.unidadeUpdate(unidade.id, { empresaKey: empresaKey || null });
+ toast.success('Filial vinculada ao CNPJ');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ } finally {
+ setSaving(null);
+ }
+ };
+
+ if (loading) return <LoadingBlock />;
+ if (error) return <ErrorBlock error={error} />;
+ const unidades = data || [];
+ const opts = empresas || [];
+ const semVinculo = unidades.filter((u: any) => !u.empresaKey).length;
+
+ return (
+ <>
+ <div className="card" style={{ marginBottom: 12 }}>
+ <p className="text-sm text-secondary" style={{ margin: 0 }}>
+ Conecte cada sala/filial ao CNPJ que assina os contratos. É esse vínculo
+ que libera o contrato certo (estágio ou corretor, com o cabeçalho da
+ empresa correta) no onboarding de novos colaboradores.
+ {semVinculo > 0 && (
+ <> <strong>{semVinculo}</strong> {semVinculo === 1 ? 'filial ainda sem CNPJ' : 'filiais ainda sem CNPJ'} — nesses casos o Financeiro escolhe a empresa manualmente.</>
+ )}
+ </p>
+ </div>
+
+ <div className="card" style={{ padding: 0 }}>
+ <table className="table">
+ <thead>
+ <tr>
+ <th>Filial</th>
+ <th>Cidade</th>
+ <th className="numeric">Corretores</th>
+ <th style={{ minWidth: 240 }}>CNPJ (empresa do contrato)</th>
+ </tr>
+ </thead>
+ <tbody>
+ {unidades.map((u: any) => (
+ <tr key={u.id}>
+ <td className="font-semibold">{u.nome}{!u.ativo && <span className="text-secondary"> (inativa)</span>}</td>
+ <td>{u.cidade || '—'}</td>
+ <td className="numeric">{u.corretores ?? 0}</td>
+ <td>
+ <select
+ className="field__input"
+ value={u.empresaKey || ''}
+ disabled={saving === u.id}
+ onChange={(ev) => vincular(u, ev.target.value)}
+ >
+ <option value="">— Sem vínculo (Financeiro decide) —</option>
+ {opts.map((emp) => (
+ <option key={emp.key} value={emp.key}>{emp.razaoSocial} · {emp.cnpj}</option>
+ ))}
+ </select>
+ </td>
+ </tr>
+ ))}
+ {unidades.length === 0 && (
+ <tr><td colSpan={4} className="text-secondary" style={{ padding: 16 }}>Nenhuma filial cadastrada.</td></tr>
+ )}
+ </tbody>
+ </table>
+ </div>
  </>
  );
 }

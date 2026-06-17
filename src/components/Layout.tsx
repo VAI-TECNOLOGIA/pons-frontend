@@ -13,6 +13,11 @@ export function AppLayout() {
 
   if (!Auth.token) return <Navigate to="/login" replace />;
 
+  // Gate de onboarding: colaborador em contratação fica preso em /onboarding
+  // (só a aba Documentos) até onboardingStatus virar ATIVO.
+  const onbStatus = Auth.user?.onboardingStatus;
+  if (onbStatus && onbStatus !== 'ATIVO') return <Navigate to="/onboarding" replace />;
+
   // Persona guard: DEV só vê /dev/*; demais NÃO vêem /dev/*.
   const role = Auth.user?.role;
   const onDev = loc.pathname.startsWith('/dev');
