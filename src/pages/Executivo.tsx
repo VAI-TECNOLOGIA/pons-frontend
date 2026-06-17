@@ -144,11 +144,15 @@ export default function Executivo() {
   const submitEvento = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    // datetime-local devolve horário de parede sem fuso ("2026-06-17T13:30").
+    // O backend roda em UTC, então new Date(string) lá interpretaria como UTC e
+    // gravaria 3h adiantado. Convertemos pra ISO completo (com offset local) aqui.
+    const toIso = (v: FormDataEntryValue | null) => (v ? new Date(String(v)).toISOString() : undefined);
     const payload = {
       titulo: String(fd.get('titulo') || ''),
       tipo: String(fd.get('tipo') || 'REUNIAO'),
-      inicio: String(fd.get('inicio') || ''),
-      fim: fd.get('fim') ? String(fd.get('fim')) : undefined,
+      inicio: toIso(fd.get('inicio')) || '',
+      fim: toIso(fd.get('fim')),
       local: fd.get('local') ? String(fd.get('local')) : undefined,
       executivoId: fd.get('executivoId') ? Number(fd.get('executivoId')) : undefined,
       notas: fd.get('notas') ? String(fd.get('notas')) : undefined,
@@ -235,11 +239,13 @@ export default function Executivo() {
 
   const tks = tarefas || [];
 
-  // Para o input datetime-local, valor inicial
+  // datetime-local espera horário de parede LOCAL. toISOString() devolve UTC, o
+  // que mostraria 3h a menos ao editar — descontamos o offset pra exibir o local.
+  const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
   const initialInicio = editing
-    ? new Date(editing.inicio).toISOString().slice(0, 16)
+    ? toLocalInput(new Date(editing.inicio))
     : defaultDate
-    ? new Date(defaultDate.getTime() - defaultDate.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
+    ? toLocalInput(defaultDate)
     : '';
 
   return (
@@ -356,7 +362,7 @@ export default function Executivo() {
                 name="fim"
                 type="datetime-local"
                 className="field__input"
-                defaultValue={editing?.fim ? new Date(editing.fim).toISOString().slice(0, 16) : ''}
+                defaultValue={editing?.fim ? toLocalInput(new Date(editing.fim)) : ''}
               />
             </div>
             <div className="field">
