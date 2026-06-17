@@ -264,6 +264,8 @@ export const Api = {
   tarefas: (params: any = {}) => request<any[]>(`/tarefas${qs(params)}`),
   tarefaCreate: (data: any) => request<any>('/tarefas', { method: 'POST', body: data }),
   tarefaUpdate: (id: number, data: any) => request<any>(`/tarefas/${id}`, { method: 'PATCH', body: data }),
+  tarefaAnexoAdd: (id: number, data: any) => request<any>(`/tarefas/${id}/anexos`, { method: 'POST', body: data }),
+  tarefaAnexoDelete: (id: number, anexoId: number) => request<{ ok: boolean }>(`/tarefas/${id}/anexos/${anexoId}`, { method: 'DELETE' }),
 
   // Roletas
   roletas: () => request<any[]>('/roletas'),
@@ -541,6 +543,7 @@ export const Api = {
   socioDelete: (id: number) => request<{ ok: boolean }>(`/socios/${id}`, { method: 'DELETE' }),
 
   unidadesList: () => request<any[]>('/unidades'),
+  unidadeEmpresas: () => request<{ key: string; razaoSocial: string; cnpj: string }[]>('/unidades/empresas'),
   unidadeCreate: (data: any) => request<any>('/unidades', { method: 'POST', body: data }),
   unidadeUpdate: (id: number, data: any) => request<any>(`/unidades/${id}`, { method: 'PATCH', body: data }),
   unidadeDelete: (id: number) => request<{ ok: boolean }>(`/unidades/${id}`, { method: 'DELETE' }),

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -34,6 +35,37 @@ export default function Tarefas() {
   };
 
   const dnd = useKanbanDnd(moveStatus);
+
+  // Anexos (orçamentos, NFs, boletos…). Guardamos só o id e derivamos a tarefa
+  // viva de `tarefas`, pra lista no modal acompanhar o reload após upload/remoção.
+  const [anexoTarefaId, setAnexoTarefaId] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const anexoTarefa = tarefas.find((t) => t.id === anexoTarefaId) || null;
+
+  const addAnexo = async (tarefaId: number, file: File) => {
+    setUploading(true);
+    try {
+      const up = await Api.uploadDocumento(file);
+      await Api.tarefaAnexoAdd(tarefaId, {
+        url: up.url, key: up.key, nome: file.name, tipo: up.contentType || file.type || null, tamanho: up.size,
+      });
+      toast.success('Anexo adicionado');
+      reload();
+    } catch (err: any) {
+      toast.error('Erro ao anexar: ' + (err.message || 'falha'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAnexo = async (tarefaId: number, anexoId: number) => {
+    try {
+      await Api.tarefaAnexoDelete(tarefaId, anexoId);
+      reload();
+    } catch (err: any) {
+      toast.error('Erro ao remover: ' + (err.message || 'falha'));
+    }
+  };
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -122,16 +154,34 @@ export default function Tarefas() {
                         <span className="text-xs text-secondary">
                           {t.responsavel?.nome || t.atribuidoA || '—'}
                         </span>
-                        <select
-                          value={t.status}
-                          onChange={(e) => moveStatus(t.id, e.target.value)}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          style={{ fontSize: 11, padding: '2px 6px', border: '1px solid var(--border-light)', borderRadius: 4 }}
-                        >
-                          {Object.entries(COLS).map(([s, c]) => (
-                            <option value={s} key={s}>{c.titulo}</option>
-                          ))}
-                        </select>
+                        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            title="Anexos (orçamentos, NFs, boletos)"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={() => setAnexoTarefaId(t.id)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              fontSize: 11, padding: '2px 7px', cursor: 'pointer',
+                              border: '1px solid var(--border-light)', borderRadius: 4,
+                              background: t.anexos?.length ? 'var(--surface-alt, #f1f5f9)' : 'transparent',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            <Icon name="paperclip" size={13} />
+                            {t.anexos?.length || 0}
+                          </button>
+                          <select
+                            value={t.status}
+                            onChange={(e) => moveStatus(t.id, e.target.value)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            style={{ fontSize: 11, padding: '2px 6px', border: '1px solid var(--border-light)', borderRadius: 4 }}
+                          >
+                            {Object.entries(COLS).map(([s, c]) => (
+                              <option value={s} key={s}>{c.titulo}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -199,6 +249,58 @@ export default function Tarefas() {
             <button type="submit" className="btn btn--primary">Criar</button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={!!anexoTarefa}
+        onClose={() => setAnexoTarefaId(null)}
+        title="Anexos da Tarefa"
+        subtitle={anexoTarefa?.titulo}
+      >
+        {anexoTarefa && (
+          <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {(anexoTarefa.anexos || []).length === 0 && (
+                <div className="text-sm text-secondary">Nenhum anexo ainda. Adicione orçamentos, NFs ou boletos abaixo.</div>
+              )}
+              {(anexoTarefa.anexos || []).map((a: any) => (
+                <div
+                  key={a.id}
+                  className="flex gap-2"
+                  style={{ alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border-light)', borderRadius: 6, padding: '8px 10px' }}
+                >
+                  <a
+                    href={a.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}
+                  >
+                    <Icon name="doc" size={15} style={{ flexShrink: 0 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.nome}</span>
+                  </a>
+                  <button type="button" className="btn btn--secondary btn--sm" onClick={() => removeAnexo(anexoTarefa.id, a.id)}>
+                    Remover
+                  </button>
+                </div>
+              ))}
+            </div>
+            <label className="btn btn--primary btn--sm" style={{ cursor: uploading ? 'progress' : 'pointer' }}>
+              {uploading ? 'Enviando…' : '+ Adicionar arquivo'}
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                style={{ display: 'none' }}
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) addAnexo(anexoTarefa.id, f);
+                  e.currentTarget.value = '';
+                }}
+              />
+            </label>
+          </div>
+        )}
       </Modal>
     </>
   );
