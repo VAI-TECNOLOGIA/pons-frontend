@@ -3,10 +3,10 @@ import { useApi } from '../lib/useApi';
 
 // Sprint 1 M16 — 5 cards de KPI da agenda (Imobilead-style)
 // userId: agenda de um executivo (assessora). Sem prop = própria agenda.
-export function AgendaKpisBar({ userId }: { userId?: number }) {
+export function AgendaKpisBar({ userId, refreshKey }: { userId?: number; refreshKey?: number }) {
   const { data } = useApi<any>(
     () => Api.agendaKpis(userId ? { userId } : {}).catch(() => null),
-    [userId],
+    [userId, refreshKey],
   );
   if (!data) return null;
 

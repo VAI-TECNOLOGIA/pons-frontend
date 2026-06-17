@@ -26,10 +26,17 @@ export default function Executivo() {
   // Assessora pode visualizar/gerenciar a agenda de um executivo. '' = própria.
   const [verAgendaDe, setVerAgendaDe] = useState<number | ''>('');
 
+  // Bump pra forçar o AgendaKpisBar a recontar após mutações (criar/editar/excluir).
+  const [kpiVersion, setKpiVersion] = useState(0);
   const { data: eventos, loading, error, reload: reloadEv } = useApi<any[]>(
     () => Api.agenda(verAgendaDe ? { userId: verAgendaDe } : {}),
     [verAgendaDe],
   );
+  // Recarrega calendário E KPIs juntos (usar após qualquer mutação na agenda).
+  const reloadAgenda = () => {
+    reloadEv();
+    setKpiVersion((v) => v + 1);
+  };
   const { data: tarefas } = useApi<any[]>(() => Api.tarefas());
   const { data: executivos } = useApi<any[]>(() => Api.agendaExecutivos().catch(() => []));
   // Só a assessora tem permissão no backend (alvoPermitido) de ver agenda alheia.
@@ -60,7 +67,7 @@ export default function Executivo() {
   const toggleConcluido = async (ev: CalendarEvent, concluido: boolean) => {
     try {
       await Api.agendaUpdate(Number(ev.id), { concluido } as any);
-      reloadEv();
+      reloadAgenda();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
     }
@@ -77,7 +84,7 @@ export default function Executivo() {
     try {
       const r = await Api.agendaLimparConcluidos();
       toast.success(`${r.removidos} compromisso(s) removido(s)`);
-      reloadEv();
+      reloadAgenda();
       reloadSettings();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
@@ -121,7 +128,7 @@ export default function Executivo() {
         .then((r) => {
           if (r.removidos > 0) {
             toast.info(`Auto-limpeza: ${r.removidos} concluída(s) removida(s)`);
-            reloadEv();
+            reloadAgenda();
             reloadSettings();
           }
         })
@@ -173,7 +180,7 @@ export default function Executivo() {
         toast.success('Compromisso agendado');
       }
       fechar();
-      reloadEv();
+      reloadAgenda();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
     }
@@ -192,7 +199,7 @@ export default function Executivo() {
       await Api.agendaDelete(Number(editing.id));
       toast.success('Compromisso excluído');
       fechar();
-      reloadEv();
+      reloadAgenda();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
     }
@@ -215,7 +222,7 @@ export default function Executivo() {
           if (win.closed) {
             clearInterval(check);
             reloadSettings();
-            reloadEv();
+            reloadAgenda();
           }
         }, 800);
       } else if (r?.faltaConfig) {
@@ -295,7 +302,7 @@ export default function Executivo() {
           subtitle={dateLabel}
         />
 
-        <AgendaKpisBar userId={verAgendaDe || undefined} />
+        <AgendaKpisBar userId={verAgendaDe || undefined} refreshKey={kpiVersion} />
 
         {podeVerOutras && (
           <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
