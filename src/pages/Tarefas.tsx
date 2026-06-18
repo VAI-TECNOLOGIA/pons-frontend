@@ -42,6 +42,10 @@ export default function Tarefas() {
   const [uploading, setUploading] = useState(false);
   const anexoTarefa = tarefas.find((t) => t.id === anexoTarefaId) || null;
 
+  // Edição de tarefa: guarda só o id e deriva a tarefa viva de `tarefas`.
+  const [editId, setEditId] = useState<number | null>(null);
+  const editTarefa = tarefas.find((t) => t.id === editId) || null;
+
   const addAnexo = async (tarefaId: number, file: File) => {
     setUploading(true);
     try {
@@ -82,6 +86,28 @@ export default function Tarefas() {
       });
       toast.success('Tarefa criada');
       setOpen(false);
+      reload();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'falha'));
+    }
+  };
+
+  const submitEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarefa) return;
+    const fd = new FormData(e.currentTarget);
+    try {
+      await Api.tarefaUpdate(editTarefa.id, {
+        titulo: String(fd.get('titulo') || ''),
+        descricao: fd.get('descricao') ? String(fd.get('descricao')) : null,
+        area: String(fd.get('area') || 'GERAL'),
+        prioridade: String(fd.get('prioridade') || 'NORMAL'),
+        responsavelId: fd.get('responsavelId') ? Number(fd.get('responsavelId')) : null,
+        prazo: fd.get('prazo') ? String(fd.get('prazo')) : null,
+        solicitadoEm: fd.get('solicitadoEm') ? String(fd.get('solicitadoEm')) : null,
+      });
+      toast.success('Tarefa atualizada');
+      setEditId(null);
       reload();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
@@ -138,6 +164,9 @@ export default function Tarefas() {
                       draggable
                       onDragStart={dnd.onDragStart(t.id)}
                       onDragEnd={dnd.onDragEnd}
+                      onClick={() => setEditId(t.id)}
+                      style={{ cursor: 'pointer' }}
+                      title="Clique para editar"
                     >
                       <div className="kanban-card__header">
                         <div>
@@ -148,7 +177,23 @@ export default function Tarefas() {
                             {t.prazo && ' · até ' + new Date(t.prazo).toLocaleDateString('pt-BR')}
                           </div>
                         </div>
-                        {priorityBadge(t.prioridade)}
+                        <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
+                          {priorityBadge(t.prioridade)}
+                          <button
+                            type="button"
+                            title="Editar tarefa"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); setEditId(t.id); }}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center',
+                              padding: 3, cursor: 'pointer', borderRadius: 4,
+                              border: '1px solid var(--border-light)', background: 'transparent',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            <Icon name="pencil" size={13} />
+                          </button>
+                        </div>
                       </div>
                       <div className="kanban-card__footer">
                         <span className="text-xs text-secondary">
@@ -159,7 +204,7 @@ export default function Tarefas() {
                             type="button"
                             title="Anexos (orçamentos, NFs, boletos)"
                             onMouseDown={(e) => e.stopPropagation()}
-                            onClick={() => setAnexoTarefaId(t.id)}
+                            onClick={(e) => { e.stopPropagation(); setAnexoTarefaId(t.id); }}
                             style={{
                               display: 'inline-flex', alignItems: 'center', gap: 4,
                               fontSize: 11, padding: '2px 7px', cursor: 'pointer',
@@ -174,6 +219,7 @@ export default function Tarefas() {
                           <select
                             value={t.status}
                             onChange={(e) => moveStatus(t.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
                             style={{ fontSize: 11, padding: '2px 6px', border: '1px solid var(--border-light)', borderRadius: 4 }}
                           >
@@ -249,6 +295,65 @@ export default function Tarefas() {
             <button type="submit" className="btn btn--primary">Criar</button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={!!editTarefa} onClose={() => setEditId(null)} title="Editar Tarefa" subtitle={editTarefa?.titulo}>
+        {editTarefa && (
+          <form key={editTarefa.id} onSubmit={submitEdit}>
+            <div className="form-grid">
+              <div className="field field--span-2">
+                <label className="field__label">Título <span className="field__required">*</span></label>
+                <input name="titulo" className="field__input" required defaultValue={editTarefa.titulo || ''} />
+              </div>
+              <div className="field field--span-2">
+                <label className="field__label">Descrição</label>
+                <textarea name="descricao" className="field__textarea" rows={2} defaultValue={editTarefa.descricao || ''} />
+              </div>
+              <div className="field">
+                <label className="field__label">Área</label>
+                <select name="area" className="field__select" defaultValue={editTarefa.area || 'GERAL'}>
+                  <option value="MARKETING">Marketing</option>
+                  <option value="ADM">ADM</option>
+                  <option value="FINANCEIRO">Financeiro</option>
+                  <option value="JURIDICO">Jurídico</option>
+                  <option value="COMERCIAL">Comercial</option>
+                  <option value="ASSESSORIA">Assessoria</option>
+                  <option value="GERAL">Geral</option>
+                </select>
+              </div>
+              <div className="field">
+                <label className="field__label">Prioridade</label>
+                <select name="prioridade" className="field__select" defaultValue={editTarefa.prioridade || 'NORMAL'}>
+                  <option value="BAIXA">Baixa</option>
+                  <option value="NORMAL">Normal</option>
+                  <option value="ALTA">Alta</option>
+                  <option value="URGENTE">Urgente</option>
+                </select>
+              </div>
+              <div className="field">
+                <label className="field__label">Responsável</label>
+                <select name="responsavelId" className="field__select" defaultValue={editTarefa.responsavelId ?? ''}>
+                  <option value="">— Sem atribuir —</option>
+                  {(users || []).map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field__label">Data da Solicitação</label>
+                <input name="solicitadoEm" type="date" className="field__input" defaultValue={editTarefa.solicitadoEm ? new Date(editTarefa.solicitadoEm).toISOString().slice(0, 10) : ''} />
+              </div>
+              <div className="field">
+                <label className="field__label">Prazo</label>
+                <input name="prazo" type="date" className="field__input" defaultValue={editTarefa.prazo ? new Date(editTarefa.prazo).toISOString().slice(0, 10) : ''} />
+              </div>
+            </div>
+            <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+              <button type="button" className="btn btn--secondary" onClick={() => setEditId(null)}>Cancelar</button>
+              <button type="submit" className="btn btn--primary">Salvar</button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       <Modal
