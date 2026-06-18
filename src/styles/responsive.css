@@ -112,7 +112,7 @@
    ============================================================ */
 @media (hover: none) and (pointer: coarse) {
   .btn { min-height: 44px; }
-  a, button { -webkit-tap-highlight-color: rgba(18, 88, 202, 0.18); }
+  a, button { -webkit-tap-highlight-color: rgba(14, 124, 155, 0.18); }
 }
 
 /* ============================================================

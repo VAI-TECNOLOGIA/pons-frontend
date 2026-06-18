@@ -62,8 +62,8 @@
 }
 
 [data-theme="dark"] .cfg-nav__item--active {
-  background: rgba(18, 88, 202, 0.18);
-  border-color: rgba(18, 88, 202, 0.4);
+  background: rgba(14, 124, 155, 0.18);
+  border-color: rgba(14, 124, 155, 0.4);
 }
 
 .cfg-nav__icon {

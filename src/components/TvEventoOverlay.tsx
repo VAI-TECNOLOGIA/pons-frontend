@@ -111,7 +111,7 @@ function CarroAnim() {
 }
 
 function Confetes() {
-  const cores = ['#E10600', '#FFD700', '#88C559', '#5D8FE0', '#F2B544', '#fff'];
+  const cores = ['#E10600', '#FFD700', '#88C559', '#3FB6D4', '#F2B544', '#fff'];
   return (
     <>
       {Array.from({ length: 60 }).map((_, i) => (

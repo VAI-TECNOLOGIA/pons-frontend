@@ -257,7 +257,7 @@
   position: absolute;
   left: 2px;
   right: 2px;
-  background: rgba(18, 88, 202, 0.14);
+  background: rgba(14, 124, 155, 0.14);
   border: none;
   border-left: 3px solid var(--pons-blue);
   border-radius: 6px;
@@ -455,7 +455,7 @@
   border-color: var(--pons-blue);
   background: var(--blue-50);
 }
-[data-theme="dark"] .cal-check__radio.is-active { background: rgba(18, 88, 202, 0.18); }
+[data-theme="dark"] .cal-check__radio.is-active { background: rgba(14, 124, 155, 0.18); }
 .cal-check__radio input[type="radio"] {
   accent-color: var(--pons-blue);
   width: 14px;

@@ -79,7 +79,7 @@ export default function Empreendimentos() {
             const coverStyle: React.CSSProperties = cover
               ? { backgroundImage: `url(${cover})`, backgroundSize: 'cover', backgroundPosition: 'center' }
               : {
-                  background: 'linear-gradient(135deg,#263654,#1258CA)',
+                  background: 'linear-gradient(135deg,#263654,#0E7C9B)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

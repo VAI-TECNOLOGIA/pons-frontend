@@ -9,7 +9,7 @@ Chart.register(...registerables);
 
 import './relatorios.css';
 
-const PALETTE = ['#1258CA', '#88C559', '#F2B544', '#5D8FE0', '#263654', '#C70A1A', '#8493B4'];
+const PALETTE = ['#0E7C9B', '#88C559', '#F2B544', '#3FB6D4', '#263654', '#C70A1A', '#8493B4'];
 
 function computePeriodo(p: string) {
  const now = new Date();
@@ -62,7 +62,7 @@ export default function Relatorios() {
  data: {
  labels: serie.meses.map((m: any) => m.label),
  datasets: [
- { type: 'bar', label: 'VGV realizado', data: serie.meses.map((m: any) => m.vgv), backgroundColor: '#1258CA', borderRadius: 6, maxBarThickness: 46, order: 2 },
+ { type: 'bar', label: 'VGV realizado', data: serie.meses.map((m: any) => m.vgv), backgroundColor: '#0E7C9B', borderRadius: 6, maxBarThickness: 46, order: 2 },
  { type: 'line', label: 'Meta da casa', data: serie.meses.map(() => serie.metaCasa), borderColor: '#88C559', borderWidth: 2, borderDash: [6, 4], pointRadius: 0, order: 1 } as any,
  ],
  },

@@ -9,7 +9,18 @@ import { AssistantChat } from './AssistantChat';
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('pons.sidebarCollapsed') === '1'; } catch { return false; }
+  });
   const loc = useLocation();
+
+  const toggleCollapse = () => {
+    setCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem('pons.sidebarCollapsed', next ? '1' : '0'); } catch { /* noop */ }
+      return next;
+    });
+  };
 
   if (!Auth.token) return <Navigate to="/login" replace />;
 
@@ -45,9 +56,13 @@ export function AppLayout() {
       >
         <Icon name="menu" size={22} />
       </button>
-      <div className={'app-shell' + (menuOpen ? ' app-shell--menu-open' : '')}>
+      <div className={'app-shell' + (menuOpen ? ' app-shell--menu-open' : '') + (collapsed ? ' app-shell--collapsed' : '')}>
         {menuOpen && <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
-        <Sidebar onClose={menuOpen ? () => setMenuOpen(false) : undefined} />
+        <Sidebar
+          onClose={menuOpen ? () => setMenuOpen(false) : undefined}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapse}
+        />
         <main className="main">
           <Outlet />
         </main>

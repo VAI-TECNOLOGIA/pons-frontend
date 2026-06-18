@@ -39,7 +39,7 @@ export function OnboardingProgress() {
         <div style={{
           height: '100%',
           width: `${data.percentual}%`,
-          background: 'linear-gradient(90deg, var(--color-success), var(--color-info, #1258CA))',
+          background: 'linear-gradient(90deg, var(--color-success), var(--color-info, #0E7C9B))',
           transition: 'width 0.5s',
         }} />
       </div>

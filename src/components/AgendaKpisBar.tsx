@@ -11,7 +11,7 @@ export function AgendaKpisBar({ userId, refreshKey }: { userId?: number; refresh
   if (!data) return null;
 
   const cards = [
-    { label: 'Hoje',       value: data.hoje,       cor: 'var(--color-info, #1258CA)' },
+    { label: 'Hoje',       value: data.hoje,       cor: 'var(--color-info, #0E7C9B)' },
     { label: 'Esta semana', value: data.semana,    cor: 'var(--text-primary)' },
     { label: 'Atrasados',  value: data.atrasados,  cor: 'var(--color-danger)' },
     { label: 'Concluídos', value: data.concluidos, cor: 'var(--color-success)' },

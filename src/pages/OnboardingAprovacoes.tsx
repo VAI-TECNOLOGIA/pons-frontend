@@ -62,7 +62,7 @@ export default function OnboardingAprovacoes() {
         <h1>Aprovações de Contratação</h1>
         <p className="muted">Confira documentação e contrato dos novos colaboradores.</p>
       </div>
-      {err && <div style={{ color: '#dc2626', marginBottom: 12 }}>{err}</div>}
+      {err && <div style={{ color: 'var(--color-danger-fg)', marginBottom: 12 }}>{err}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18, alignItems: 'start' }}>
         {/* Lista */}
@@ -71,11 +71,11 @@ export default function OnboardingAprovacoes() {
           {lista.map((p) => (
             <button key={p.id} onClick={() => abrir(p.id)} style={{
               textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
-              border: `1px solid ${selId === p.id ? '#1258CA' : '#e2e8f0'}`, background: selId === p.id ? '#eef4ff' : '#fff',
+              border: `1px solid ${selId === p.id ? 'var(--pons-blue)' : 'var(--border-light)'}`, background: selId === p.id ? 'var(--color-info-bg)' : 'var(--bg-card)',
             }}>
-              <div style={{ fontWeight: 700, color: '#0b2545' }}>{p.name}</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>{p.modalidade || '—'} · {p.unidade?.nome || 'sem filial'}</div>
-              <div style={{ fontSize: 12, marginTop: 4, color: STATUS_COR[p.onboardingStatus] || '#64748b', fontWeight: 600 }}>
+              <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{p.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{p.modalidade || '—'} · {p.unidade?.nome || 'sem filial'}</div>
+              <div style={{ fontSize: 12, marginTop: 4, color: STATUS_COR[p.onboardingStatus] || 'var(--text-secondary)', fontWeight: 600 }}>
                 {STATUS_LABEL[p.onboardingStatus] || p.onboardingStatus}
               </div>
             </button>
@@ -85,9 +85,9 @@ export default function OnboardingAprovacoes() {
         {/* Detalhe */}
         <div>
           {!sel ? <p className="muted">Selecione um colaborador.</p> : (
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 22 }}>
-              <h2 style={{ margin: '0 0 4px', color: '#0b2545' }}>{sel.cadastro?.nome}</h2>
-              <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 14, padding: 22 }}>
+              <h2 style={{ margin: '0 0 4px', color: 'var(--text-primary)' }}>{sel.cadastro?.nome}</h2>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
                 {sel.cadastro?.email} · {sel.modalidade || '—'} · {sel.cadastro?.unidade?.nome || 'sem filial'}
               </div>
 
@@ -98,20 +98,20 @@ export default function OnboardingAprovacoes() {
                 ['Contato 2º', sel.cadastro?.contatoSecNome && `${sel.cadastro.contatoSecNome} ${sel.cadastro.contatoSecCelular || ''}`],
               ]} />
 
-              <h3 style={{ margin: '18px 0 8px', fontSize: 14, color: '#0b2545' }}>Documentos</h3>
+              <h3 style={{ margin: '18px 0 8px', fontSize: 14, color: 'var(--text-primary)' }}>Documentos</h3>
               {sel.documentos?.length ? sel.documentos.map((d: any) => (
-                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f4f6fb', borderRadius: 8, padding: '8px 12px', marginBottom: 6, fontSize: 13 }}>
-                  <a href={d.url} target="_blank" rel="noreferrer" style={{ color: '#1258CA', textDecoration: 'none' }}>
+                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', borderRadius: 8, padding: '8px 12px', marginBottom: 6, fontSize: 13 }}>
+                  <a href={d.url} target="_blank" rel="noreferrer" style={{ color: 'var(--pons-blue)', textDecoration: 'none' }}>
                     {TIPO_LABEL[d.tipo] || d.tipo}{d.nomeArquivo ? ` — ${d.nomeArquivo}` : ''}
                   </a>
-                  <span style={{ fontSize: 12, color: d.status === 'APROVADO' ? '#16a34a' : d.status === 'REPROVADO' ? '#dc2626' : '#64748b' }}>{d.status}</span>
+                  <span style={{ fontSize: 12, color: d.status === 'APROVADO' ? 'var(--color-success-fg)' : d.status === 'REPROVADO' ? 'var(--color-danger-fg)' : 'var(--text-secondary)' }}>{d.status}</span>
                 </div>
               )) : <p className="muted">Sem documentos anexados.</p>}
 
               {(sel.onboardingStatus === 'AGUARDANDO_APROV_DOCS' || sel.onboardingStatus === 'AGUARDANDO_APROV_CONTRATO') && (
                 <div style={{ marginTop: 16 }}>
                   <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (obrigatória ao reprovar)"
-                    style={{ width: '100%', minHeight: 60, padding: 10, borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, boxSizing: 'border-box' }} />
+                    style={{ width: '100%', minHeight: 60, padding: 10, borderRadius: 8, border: '1px solid var(--border-light)', background: 'var(--field-bg)', color: 'var(--text-primary)', fontSize: 13, boxSizing: 'border-box' }} />
                   <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
                     {sel.onboardingStatus === 'AGUARDANDO_APROV_DOCS' ? (
                       <>
@@ -142,12 +142,12 @@ function Grid({ dados }: { dados: [string, any][] }) {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
       {dados.filter(([, v]) => v).map(([k, v]) => (
         <div key={k} style={{ fontSize: 13 }}>
-          <span style={{ color: '#64748b' }}>{k}: </span><b style={{ color: '#1e293b' }}>{v}</b>
+          <span style={{ color: 'var(--text-secondary)' }}>{k}: </span><b style={{ color: 'var(--text-primary)' }}>{v}</b>
         </div>
       ))}
     </div>
   );
 }
 
-const btnOk: React.CSSProperties = { padding: '10px 18px', borderRadius: 9, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' };
-const btnNo: React.CSSProperties = { padding: '10px 18px', borderRadius: 9, border: '1px solid #e2e8f0', background: '#fff', color: '#dc2626', fontWeight: 700, fontSize: 14, cursor: 'pointer' };
+const btnOk: React.CSSProperties = { padding: '10px 18px', borderRadius: 9, border: 'none', background: 'var(--color-success)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' };
+const btnNo: React.CSSProperties = { padding: '10px 18px', borderRadius: 9, border: '1px solid var(--border-light)', background: 'var(--bg-card)', color: 'var(--color-danger-fg)', fontWeight: 700, fontSize: 14, cursor: 'pointer' };

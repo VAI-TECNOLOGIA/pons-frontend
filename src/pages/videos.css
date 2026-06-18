@@ -1,6 +1,6 @@
 .video-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); overflow: hidden; transition: transform var(--transition-base), box-shadow var(--transition-base); }
 .video-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.video-thumb { aspect-ratio: 16/9; background: linear-gradient(135deg,#263654,#1258CA); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+.video-thumb { aspect-ratio: 16/9; background: linear-gradient(135deg,#263654,#0E7C9B); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
 .video-thumb__play { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; }
 
 /* ─── Picker de capa no modal "Adicionar vídeo" ─────────────────────── */

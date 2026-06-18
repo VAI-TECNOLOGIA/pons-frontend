@@ -25,8 +25,9 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 const C = {
-  navy: '#0b2545', blue: '#1258CA', bg: '#f4f6fb', card: '#fff',
-  border: '#e2e8f0', text: '#1e293b', muted: '#64748b', ok: '#16a34a', warn: '#d97706', err: '#dc2626',
+  navy: 'var(--text-primary)', blue: 'var(--pons-blue)', bg: 'var(--bg-app)', chip: 'var(--bg-elevated)', card: 'var(--bg-card)',
+  border: 'var(--border-light)', text: 'var(--text-primary)', muted: 'var(--text-secondary)',
+  ok: 'var(--color-success-fg)', warn: 'var(--color-warning-fg)', err: 'var(--color-danger-fg)',
 };
 
 export default function OnboardingDocumentos() {
@@ -194,7 +195,7 @@ export default function OnboardingDocumentos() {
           <div style={card}>
             <h2 style={h2}>2. Assine seu contrato</h2>
             {st.contrato.empresaDefinida && st.contrato.empresa ? (
-              <div style={{ background: C.bg, borderRadius: 10, padding: 14, marginBottom: 14, fontSize: 14 }}>
+              <div style={{ background: C.chip, borderRadius: 10, padding: 14, marginBottom: 14, fontSize: 14 }}>
                 <div style={{ fontWeight: 700, color: C.navy }}>
                   {st.contrato.modelo === 'ESTAGIO' ? 'Contrato de Estágio' : 'Contrato de Corretor'}
                 </div>
@@ -252,7 +253,7 @@ function Radio({ checked, onClick, label }: { checked: boolean; onClick: () => v
   return (
     <button type="button" onClick={onClick} style={{
       flex: 1, padding: '12px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-      border: `2px solid ${checked ? C.blue : C.border}`, background: checked ? '#eef4ff' : '#fff',
+      border: `2px solid ${checked ? C.blue : C.border}`, background: checked ? 'var(--color-info-bg)' : C.card,
       color: checked ? C.navy : C.text, fontWeight: checked ? 700 : 500, fontSize: 14,
     }}>{label}</button>
   );
@@ -263,7 +264,7 @@ function DocList({ docs, onRemove, busy }: { docs: Doc[]; onRemove: (id: number)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: '8px 0' }}>
       {docs.map((d) => (
-        <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.bg, borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
+        <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.chip, borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
           <a href={d.url} target="_blank" rel="noreferrer" style={{ color: C.blue, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {TIPO_LABEL[d.tipo] || d.tipo}{d.nomeArquivo ? ` — ${d.nomeArquivo}` : ''}
           </a>
@@ -302,8 +303,8 @@ const card: React.CSSProperties = { background: C.card, borderRadius: 14, paddin
 const h2: React.CSSProperties = { margin: '0 0 6px', fontSize: 17, color: C.navy };
 const pMuted: React.CSSProperties = { margin: '0 0 12px', color: C.muted, fontSize: 14, lineHeight: 1.5 };
 const lbl: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, margin: '0 0 4px' };
-const input: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 14, boxSizing: 'border-box' };
+const input: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'var(--field-bg)', color: C.text, fontSize: 14, boxSizing: 'border-box' };
 const grid2: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 };
 const btnPrimary: React.CSSProperties = { padding: '11px 20px', borderRadius: 9, border: 'none', background: C.blue, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' };
-const btnGhost: React.CSSProperties = { padding: '11px 16px', borderRadius: 9, border: `1px solid ${C.border}`, background: '#fff', color: C.text, fontWeight: 600, fontSize: 14, cursor: 'pointer' };
-const alert = (cor: string): React.CSSProperties => ({ background: cor === C.ok ? '#ecfdf5' : '#fef2f2', color: cor, border: `1px solid ${cor}33`, borderRadius: 9, padding: '10px 14px', fontSize: 14, marginBottom: 14 });
+const btnGhost: React.CSSProperties = { padding: '11px 16px', borderRadius: 9, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontWeight: 600, fontSize: 14, cursor: 'pointer' };
+const alert = (cor: string): React.CSSProperties => ({ background: cor === C.ok ? 'var(--color-success-bg)' : 'var(--color-danger-bg)', color: cor, border: `1px solid ${cor === C.ok ? 'var(--color-success-border)' : 'var(--color-danger-border)'}`, borderRadius: 9, padding: '10px 14px', fontSize: 14, marginBottom: 14 });

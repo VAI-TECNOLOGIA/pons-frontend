@@ -49,9 +49,9 @@
 .bday__confetti span:nth-child(6n + 1) { --cor: #E10600; }
 .bday__confetti span:nth-child(6n + 2) { --cor: #F2B544; }
 .bday__confetti span:nth-child(6n + 3) { --cor: #88C559; }
-.bday__confetti span:nth-child(6n + 4) { --cor: #5D8FE0; }
+.bday__confetti span:nth-child(6n + 4) { --cor: #3FB6D4; }
 .bday__confetti span:nth-child(6n + 5) { --cor: #C53FA8; }
-.bday__confetti span:nth-child(6n) { --cor: #1258CA; }
+.bday__confetti span:nth-child(6n) { --cor: #0E7C9B; }
 
 @keyframes fall {
   0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }

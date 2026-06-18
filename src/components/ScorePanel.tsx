@@ -32,7 +32,7 @@ export function ScorePanel({ corretorId, scoreMes, scoreAno, scoreAtual, posicao
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
         <Big label="Mês" value={scoreMes ?? 0} cor="var(--color-success)" />
-        <Big label="Ano" value={scoreAno ?? 0} cor="var(--color-info, #1258CA)" />
+        <Big label="Ano" value={scoreAno ?? 0} cor="var(--color-info, #0E7C9B)" />
         <Big label="Total" value={scoreAtual ?? 0} cor="var(--text-primary)" />
       </div>
 

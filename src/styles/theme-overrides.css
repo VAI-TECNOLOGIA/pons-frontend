@@ -60,24 +60,6 @@
 [data-theme="dark"] .kanban-card__meta { color: var(--text-secondary); }
 [data-theme="dark"] .kanban__col-header { color: var(--text-primary); }
 
-/* Sidebar user → link para /perfil */
-.sidebar__user-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-  text-decoration: none;
-  color: inherit;
-  padding: 6px;
-  margin: -6px;
-  border-radius: 10px;
-  transition: background var(--transition-base);
-}
-.sidebar__user-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
 /* ============================================================
    User chip no topbar (greeting + avatar + theme toggle)
    ============================================================ */
@@ -156,8 +138,8 @@
   object-fit: cover;
 }
 [data-theme="dark"] .user-chip__avatar {
-  background: rgba(18, 88, 202, 0.28);
-  color: #88B0F0;
+  background: rgba(82, 247, 254, 0.20);
+  color: #9DE8F0;
 }
 
 @media (max-width: 900px) {
@@ -170,13 +152,13 @@
 .kanban-card[draggable="true"]:active { cursor: grabbing; }
 .kanban-card--dragging { opacity: 0.35; transform: scale(0.98); }
 .kanban__col--drop-target {
-  background: rgba(18, 88, 202, 0.10);
+  background: rgba(14, 124, 155, 0.10);
   outline: 2px dashed var(--pons-blue);
   outline-offset: -4px;
 }
 [data-theme="dark"] .kanban__col--drop-target {
-  background: rgba(93, 143, 224, 0.12);
-  outline: 2px dashed #5D8FE0;
+  background: rgba(82, 247, 254, 0.12);
+  outline: 2px dashed #3FB6D4;
 }
 .kanban__cards--empty-hint {
   min-height: 60px;

@@ -50,7 +50,7 @@ export default function PainelTV() {
   const corPorEquipe = useMemo(() => {
     const m = new Map<number, string>();
     (corretores || []).forEach((c: any) => {
-      if (c.equipe?.id) m.set(c.equipe.id, c.equipe.cor || '#5D8FE0');
+      if (c.equipe?.id) m.set(c.equipe.id, c.equipe.cor || '#3FB6D4');
     });
     return m;
   }, [corretores]);
@@ -61,7 +61,7 @@ export default function PainelTV() {
     nome: r.nome,
     initials: r.initials,
     equipe: '',     // a equipe vem implícita pelo filtro (todo o painel é dessa equipe)
-    equipeCor: corPorEquipe.get(r.equipeId) || state?.equipeCor || '#5D8FE0',
+    equipeCor: corPorEquipe.get(r.equipeId) || state?.equipeCor || '#3FB6D4',
     scoreMes: r.scoreMes,
   }));
   const top3 = rankingTV.slice(0, 3);
@@ -193,7 +193,7 @@ export default function PainelTV() {
             {/* IMPORTANTE: o cliente proibiu mostrar valor faturado por corretor no painel TV.
                 Aqui exibimos APENAS score do mês — sem VGV, sem volume, sem faturamento. */}
             {resto.map((c: any, i: number) => (
-              <div className="grid-row" key={c.id} style={{ ['--tc' as any]: c.equipeCor || '#5D8FE0' }}>
+              <div className="grid-row" key={c.id} style={{ ['--tc' as any]: c.equipeCor || '#3FB6D4' }}>
                 <div className="grid-row__pos">P{i + 4}</div>
                 <div className="grid-row__lane" />
                 <div className="grid-row__avatar">{c.initials}</div>

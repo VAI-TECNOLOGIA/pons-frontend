@@ -1156,7 +1156,7 @@ function PanelEquipes() {
  </div>
  <div className="field">
  <label className="field__label">Cor</label>
- <input name="cor" type="color" className="field__input" defaultValue={editing.cor || '#1258CA'} style={{ height: 44, padding: 4 }} />
+ <input name="cor" type="color" className="field__input" defaultValue={editing.cor || '#0E7C9B'} style={{ height: 44, padding: 4 }} />
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>

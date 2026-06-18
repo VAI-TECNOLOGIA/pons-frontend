@@ -208,9 +208,9 @@ export default function Distribuicao() {
                         onClick={() => toggleEquipe(eq.id)}
                         className="btn btn--sm"
                         style={{
-                          background: sel ? eq.cor || '#1258CA' : 'transparent',
+                          background: sel ? eq.cor || '#0E7C9B' : 'transparent',
                           color: sel ? '#fff' : 'var(--text-primary)',
-                          border: `1px solid ${sel ? (eq.cor || '#1258CA') : 'var(--border-light)'}`,
+                          border: `1px solid ${sel ? (eq.cor || '#0E7C9B') : 'var(--border-light)'}`,
                         }}
                       >
                         {sel && '✓ '}{eq.nome}

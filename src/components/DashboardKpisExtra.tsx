@@ -33,7 +33,7 @@ export function DashboardKpisExtra() {
       {isCorretor && rankingMe && (
         <>
           <MiniCard label="Minha posição" value={`${rankingMe.posicao}º`} cor="var(--color-warning)" link="/ranking" />
-          <MiniCard label="Meu score (mês)" value={rankingMe.score} cor="var(--color-info, #1258CA)" link="/perfil" />
+          <MiniCard label="Meu score (mês)" value={rankingMe.score} cor="var(--color-info, #0E7C9B)" link="/perfil" />
         </>
       )}
     </div>

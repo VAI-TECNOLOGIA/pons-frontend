@@ -188,7 +188,7 @@ export default function Vendas() {
  }}
  >
  <div style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', borderRadius: 14, maxWidth: 720, width: '96%', boxShadow: 'var(--shadow-xl)' }}>
- <div style={{ background: 'linear-gradient(135deg,#0F1729,#1A2444)', color: '#fff', padding: '24px 28px', borderRadius: '14px 14px 0 0' }}>
+ <div style={{ background: 'linear-gradient(135deg,#15171C,#0B0C10)', color: '#fff', padding: '24px 28px', borderRadius: '14px 14px 0 0' }}>
  <div className="flex-between" style={{ alignItems: 'flex-start' }}>
  <div>
  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)' }}>

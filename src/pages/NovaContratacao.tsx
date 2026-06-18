@@ -17,7 +17,16 @@ function maskTelefone(v: string): string {
 }
 const pwChecks = (s: string) => ({ len: s.length >= 8, upper: /[A-Z]/.test(s), lower: /[a-z]/.test(s), num: /[0-9]/.test(s), spec: /[^A-Za-z0-9]/.test(s) });
 
-const C = { navy: '#0b2545', blue: '#1258CA', bg: '#f4f6fb', border: '#e2e8f0', text: '#1e293b', muted: '#64748b', err: '#dc2626' };
+const C = {
+  bg: '#050607',
+  surface: '#0E0F13',
+  border: 'rgba(255,255,255,0.10)',
+  text: '#ffffff',
+  muted: '#8c8c8c',
+  accent: '#52f7fe',
+  blue: '#0E7C9B',
+  err: '#ff6b6b',
+};
 
 export default function NovaContratacao() {
   const nav = useNavigate();
@@ -59,15 +68,19 @@ export default function NovaContratacao() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '32px 16px' }}>
-      <form onSubmit={enviar} style={{ width: '100%', maxWidth: 520, background: '#fff', borderRadius: 16, padding: 28, border: `1px solid ${C.border}`, boxShadow: '0 8px 40px rgba(11,37,69,.08)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div style={{ fontSize: 13, color: C.muted }}>Grupo Pons Imobiliário</div>
-          <h1 style={{ margin: '4px 0 0', fontSize: 24, color: C.navy }}>Nova Contratação</h1>
-          <p style={{ color: C.muted, fontSize: 14, marginTop: 6 }}>Crie seu acesso para iniciar o processo de contratação.</p>
-        </div>
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '40px 16px', color: C.text }}>
+      <style>{ncCss}</style>
+      <form onSubmit={enviar} className="nc-card" style={{ width: '100%', maxWidth: 520, background: C.surface, borderRadius: 18, padding: 0, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 30px 90px rgba(0,0,0,.6), 0 0 60px rgba(82,247,254,.06)' }}>
+        <div className="nc-speed" />
+        <div style={{ padding: 32 }}>
+          <div style={{ textAlign: 'center', marginBottom: 22 }}>
+            <img src="/assets/logo_white.png" alt="Grupo Pons" style={{ height: 40, marginBottom: 16, opacity: 0.95 }} />
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.28em', textTransform: 'uppercase', color: C.accent }}>Grupo Pons Imobiliário</div>
+            <h1 style={{ margin: '8px 0 0', fontSize: 30, fontFamily: 'var(--font-display)', fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Nova Contratação</h1>
+            <p style={{ color: C.muted, fontSize: 14, marginTop: 8 }}>Crie seu acesso para iniciar o processo de contratação.</p>
+          </div>
 
-        {formErr && <div style={{ background: '#fef2f2', color: C.err, border: `1px solid ${C.err}33`, borderRadius: 9, padding: '10px 14px', fontSize: 14, marginBottom: 14 }}>{formErr}</div>}
+        {formErr && <div style={{ background: 'rgba(255,107,107,.12)', color: C.err, border: `1px solid ${C.err}55`, borderRadius: 9, padding: '10px 14px', fontSize: 14, marginBottom: 14 }}>{formErr}</div>}
 
         <label style={lbl}>Você está entrando como</label>
         <div style={{ display: 'flex', gap: 10, marginBottom: erros.modalidade ? 4 : 14 }}>
@@ -99,9 +112,10 @@ export default function NovaContratacao() {
         {/* honeypot */}
         <input type="text" value={hp} onChange={(e) => setHp(e.target.value)} tabIndex={-1} autoComplete="off" style={{ position: 'absolute', left: '-9999px' }} aria-hidden />
 
-        <button type="submit" disabled={busy} style={{ width: '100%', padding: 13, borderRadius: 10, border: 'none', background: C.blue, color: '#fff', fontWeight: 700, fontSize: 15, cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}>
+        <button type="submit" disabled={busy} className="nc-submit" style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: C.blue, color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: '0.02em', cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}>
           {busy ? 'Enviando…' : 'Criar acesso e continuar'}
         </button>
+        </div>
       </form>
     </div>
   );
@@ -111,17 +125,28 @@ function Field({ label, v, on, err, type = 'text' }: { label: string; v: string;
   return (
     <div style={{ marginBottom: err ? 4 : 14 }}>
       <label style={lbl}>{label}</label>
-      <input type={type} value={v} onChange={(e) => on(e.target.value)} style={{ ...input, borderColor: err ? C.err : C.border }} />
+      <input className="nc-input" type={type} value={v} onChange={(e) => on(e.target.value)} style={{ ...input, borderColor: err ? C.err : C.border }} />
       {err && <Err t={err} />}
     </div>
   );
 }
 function Radio({ checked, onClick, label }: { checked: boolean; onClick: () => void; label: string }) {
   return (
-    <button type="button" onClick={onClick} style={{ flex: 1, padding: '12px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', border: `2px solid ${checked ? C.blue : C.border}`, background: checked ? '#eef4ff' : '#fff', color: checked ? C.navy : C.text, fontWeight: checked ? 700 : 500, fontSize: 13 }}>{label}</button>
+    <button type="button" onClick={onClick} style={{ flex: 1, padding: '12px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', border: `2px solid ${checked ? C.accent : C.border}`, background: checked ? 'rgba(82,247,254,.10)' : 'rgba(255,255,255,.02)', color: checked ? '#fff' : C.muted, fontWeight: checked ? 700 : 500, fontSize: 13, transition: 'border-color .15s, background .15s, color .15s' }}>{label}</button>
   );
 }
 function Err({ t }: { t: string }) { return <div style={{ color: C.err, fontSize: 12, margin: '0 0 10px' }}>{t}</div>; }
 
-const lbl: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, margin: '0 0 4px' };
-const input: React.CSSProperties = { width: '100%', padding: '11px 12px', borderRadius: 9, border: `1px solid ${C.border}`, fontSize: 14, boxSizing: 'border-box' };
+const lbl: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em' };
+const input: React.CSSProperties = { width: '100%', padding: '11px 12px', borderRadius: 9, border: `1px solid ${C.border}`, fontSize: 14, boxSizing: 'border-box', background: 'rgba(255,255,255,.03)', color: '#fff' };
+
+const ncCss = `
+.nc-speed { height: 4px; background: linear-gradient(90deg, #e10600 0%, #f2b544 35%, #88c559 70%, #52f7fe 100%); background-size: 220% 100%; animation: nc-speed 3.2s linear infinite; }
+@keyframes nc-speed { from { background-position: 0 0; } to { background-position: 220% 0; } }
+.nc-input, .nc-card select { background: rgba(255,255,255,.03); color: #fff; }
+.nc-input:focus, .nc-card select:focus { outline: none; border-color: #52f7fe !important; box-shadow: 0 0 0 3px rgba(82,247,254,.15); }
+.nc-card select { width: 100%; padding: 11px 12px; border-radius: 9px; border: 1px solid rgba(255,255,255,.10); font-size: 14px; box-sizing: border-box; }
+.nc-card select option { background: #0E0F13; color: #fff; }
+.nc-input::placeholder { color: #5a5a5e; }
+.nc-submit:hover:not(:disabled) { background: #0a6580; }
+`;

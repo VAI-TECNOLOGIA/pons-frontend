@@ -64,7 +64,7 @@
   color: #fff;
 }
 .equipe__nav-item:hover .icon {
-  color: var(--pons-blue, #5d8fe0);
+  color: var(--pons-blue, #3FB6D4);
 }
 /* Ativo: barrinha mais forte + ícone azul + texto branco */
 .equipe__nav-item.is-active {
@@ -73,7 +73,7 @@
   font-weight: 600;
 }
 .equipe__nav-item.is-active .icon {
-  color: var(--pons-blue, #5d8fe0);
+  color: var(--pons-blue, #3FB6D4);
 }
 
 /* ── Main ─────────────────────────────────────────────────────── */

@@ -5,15 +5,12 @@ import { useUser } from '../lib/userContext';
 import { Icon } from './Icon';
 import { ReportarProblemaModal } from './ReportarProblemaModal';
 
-// Sidebar minimalista — inspirada em CRMs modernos (Kairos / Chatwoot).
-// Top level: 8-9 itens essenciais sempre visíveis (operação diária).
-// Grupos colapsáveis pra menos atrito visual.
-// Permissões: cada item declara seus roles; sem roles = todos veem.
+// Sidebar estilo BRK: perfil no topo, favoritos com estrela, grupos
+// colapsáveis e modo recolhido (só-ícones). Mantém as rotas/permissões da Pons.
+// Cores do sistema: cinza #8c8c8c (texto neutro) + azul-ciano #52f7fe (acento).
 
 const COMERCIAL: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'];
-// Finanças de diretoria (rateio entre sócios, painel executivo) — só CEO + Diretor Financeiro.
 const DIR_FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO'];
-// Finanças operacionais (caixa, lançamentos, relatórios) — inclui a equipe financeira.
 const FINANCE: Role[] = ['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'];
 const RELATORIOS: Role[] = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'];
 const SOCIO: Role = 'SOCIO_UNIDADE';
@@ -119,7 +116,7 @@ const DEV_ITEMS: NavItem[] = [
   { to: '/dev/metrics', label: 'Métricas', icon: 'gauge' },
 ];
 
-// Adiciona chevron-right ao Icon component lá embaixo só pra esse Sidebar.
+const TODOS_ITENS: NavItem[] = [...TOP_ITEMS, ...GROUPS.flatMap((g) => g.items)];
 
 function canSee(it: NavItem, role: Role, email?: string): boolean {
   if (it.emails) return !!email && it.emails.includes(email);
@@ -129,11 +126,33 @@ function canSee(it: NavItem, role: Role, email?: string): boolean {
   return it.roles.includes(role);
 }
 
-export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
+// ── Favoritos (persistidos em localStorage) ────────────────────────────────
+const FAV_KEY = 'pons.sidebarFavoritos';
+function useFavoritos() {
+  const [favoritos, setFavoritos] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch { return []; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(favoritos)); } catch { /* noop */ }
+  }, [favoritos]);
+  const toggleFav = (to: string) =>
+    setFavoritos((cur) => (cur.includes(to) ? cur.filter((x) => x !== to) : [...cur, to]));
+  return { favoritos, toggleFav };
+}
+
+export function Sidebar({
+  onClose,
+  collapsed = false,
+  onToggleCollapse,
+}: {
+  onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+} = {}) {
   const navigate = useNavigate();
   const { user: ctxUser, setUser } = useUser();
+  const { favoritos, toggleFav } = useFavoritos();
   const [reportOpen, setReportOpen] = useState(false);
-  // Estado de quais grupos estão expandidos. Persiste em localStorage.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     try {
       return JSON.parse(localStorage.getItem('pons.sidebarGroups') || '{}');
@@ -159,20 +178,71 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
 
   const toggleGroup = (key: string) => setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  // Itens visíveis ao usuário (pra resolver favoritos e o modo recolhido).
+  const itensVisiveis = isDev
+    ? DEV_ITEMS
+    : TODOS_ITENS.filter((it) => canSee(it, role, user.email));
+  const favItems = favoritos
+    .map((to) => itensVisiveis.find((i) => i.to === to))
+    .filter(Boolean) as NavItem[];
+
   return (
-    <aside className="sidebar">
+    <aside className={'sidebar' + (collapsed ? ' sidebar--collapsed' : '')}>
       <div className="sidebar__logo">
-        <img src="/assets/logo_white.png" alt="Grupo Pons Imobiliário" />
+        <img className="sidebar__logo-dark" src="/assets/logo_white.png" alt="Grupo Pons Imobiliário" />
+        <img className="sidebar__logo-light" src="/assets/logo_black.png" alt="Grupo Pons Imobiliário" />
       </div>
+
+      {/* Perfil no topo (estilo BRK) */}
+      <NavLink to="/perfil" className="sidebar__profile" title="Meu perfil">
+        <div className="sidebar__profile-avatar">
+          {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} /> : <span>{user.initials || '?'}</span>}
+          <span className="sidebar__profile-status" title="Online" />
+        </div>
+        {!collapsed && (
+          <div className="sidebar__profile-info">
+            <span className="sidebar__profile-name">{user.name}</span>
+            <span className="sidebar__profile-role">
+              {formatRole(user.role)}
+              {user.unidade ? ' · ' + user.unidade.nome : ''}
+            </span>
+          </div>
+        )}
+      </NavLink>
 
       <nav className="sidebar__nav">
         {isDev ? (
-          DEV_ITEMS.map((it) => <NavItemLink key={it.to} item={it} />)
+          DEV_ITEMS.map((it) => (
+            <NavItemLink key={it.to} item={it} collapsed={collapsed} />
+          ))
+        ) : collapsed ? (
+          // Modo recolhido: tudo plano, só-ícones.
+          itensVisiveis.map((it) => <NavItemLink key={it.to} item={it} collapsed />)
         ) : (
           <>
-            {/* Top items sem header — primeiro contato é direto */}
+            {/* Favoritos */}
+            {favItems.length > 0 && (
+              <div className="sidebar__group sidebar__group--fav">
+                <span className="sidebar__group-label sidebar__group-label--standalone">Favoritos</span>
+                {favItems.map((it) => (
+                  <NavItemLink
+                    key={it.to}
+                    item={it}
+                    favorito
+                    onToggleFav={() => toggleFav(it.to)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Top items sem header */}
             {TOP_ITEMS.filter((it) => canSee(it, role, user.email)).map((it) => (
-              <NavItemLink key={it.to} item={it} />
+              <NavItemLink
+                key={it.to}
+                item={it}
+                favorito={favoritos.includes(it.to)}
+                onToggleFav={() => toggleFav(it.to)}
+              />
             ))}
 
             {/* Grupos colapsáveis */}
@@ -194,7 +264,13 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
                   {open && (
                     <div className="sidebar__group-children">
                       {visible.map((it) => (
-                        <NavItemLink key={it.to} item={it} nested />
+                        <NavItemLink
+                          key={it.to}
+                          item={it}
+                          nested
+                          favorito={favoritos.includes(it.to)}
+                          onToggleFav={() => toggleFav(it.to)}
+                        />
                       ))}
                     </div>
                   )}
@@ -205,36 +281,33 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
         )}
       </nav>
 
-      <AppDownloadBlock />
+      {!collapsed && <AppDownloadBlock />}
 
       <div className="sidebar__footer">
-        <NavLink to="/perfil" className="sidebar__user-link" title="Meu perfil">
-          <div className="sidebar__user-avatar">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.name} />
-            ) : (
-              <span>{user.initials || '?'}</span>
-            )}
-          </div>
-          <div className="sidebar__user-info">
-            <div className="sidebar__user-name">{user.name}</div>
-            <div className="sidebar__user-role">
-              {formatRole(user.role)}
-              {user.unidade ? ' · ' + user.unidade.nome : ''}
-            </div>
-          </div>
-        </NavLink>
-        <button
-          onClick={() => setReportOpen(true)}
-          className="sidebar__footer-btn"
-          title="Reportar problema"
-          aria-label="Reportar problema"
-        >
-          <Icon name="bug" />
-        </button>
+        {onToggleCollapse && (
+          <button
+            type="button"
+            className="sidebar__collapse-toggle"
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            <Icon name="chevron-right" className={'sidebar__collapse-chevron' + (collapsed ? '' : ' flip')} />
+            {!collapsed && <span className="sidebar__footer-label">Recolher</span>}
+          </button>
+        )}
+        {!collapsed && (
+          <button
+            onClick={() => setReportOpen(true)}
+            className="sidebar__footer-btn"
+            title="Reportar problema"
+            aria-label="Reportar problema"
+          >
+            <Icon name="bug" />
+          </button>
+        )}
         <button
           onClick={handleLogout}
-          className="sidebar__footer-btn"
+          className={'sidebar__footer-btn' + (collapsed ? ' sidebar__footer-btn--block' : '')}
           title="Sair"
           aria-label="Sair"
         >
@@ -252,39 +325,65 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   );
 }
 
-function NavItemLink({ item, nested }: { item: NavItem; nested?: boolean }) {
-  if (item.blank) {
-    return (
-      <a
-        className={'sidebar__item' + (nested ? ' sidebar__item--nested' : '')}
-        href={item.to}
-        target="_blank"
-        rel="noopener"
-      >
-        <Icon name={item.icon} />
-        <span className="sidebar__item-label">{item.label}</span>
-        <Icon name="external" className="sidebar__item-meta" />
-      </a>
-    );
-  }
-  return (
-    <NavLink
-      to={item.to}
-      className={({ isActive }) =>
-        'sidebar__item' + (nested ? ' sidebar__item--nested' : '') + (isActive ? ' sidebar__item--active' : '')
-      }
-    >
+function NavItemLink({
+  item,
+  nested,
+  collapsed,
+  favorito,
+  onToggleFav,
+}: {
+  item: NavItem;
+  nested?: boolean;
+  collapsed?: boolean;
+  favorito?: boolean;
+  onToggleFav?: () => void;
+}) {
+  const inner = (
+    <>
       <Icon name={item.icon} />
-      <span className="sidebar__item-label">{item.label}</span>
-      {typeof item.badge === 'number' && item.badge > 0 && (
+      {!collapsed && <span className="sidebar__item-label">{item.label}</span>}
+      {!collapsed && item.blank && <Icon name="external" className="sidebar__item-meta" />}
+      {!collapsed && typeof item.badge === 'number' && item.badge > 0 && (
         <span className="sidebar__item-badge">{item.badge}</span>
       )}
+    </>
+  );
+
+  const cls = (active = false) =>
+    'sidebar__item' +
+    (nested ? ' sidebar__item--nested' : '') +
+    (collapsed ? ' sidebar__item--icon' : '') +
+    (active ? ' sidebar__item--active' : '');
+
+  const link = item.blank ? (
+    <a className={cls()} href={item.to} target="_blank" rel="noopener" title={item.label}>
+      {inner}
+    </a>
+  ) : (
+    <NavLink to={item.to} className={({ isActive }) => cls(isActive)} title={item.label}>
+      {inner}
     </NavLink>
+  );
+
+  // No modo recolhido não há wrapper de favorito (sem espaço pra estrela).
+  if (collapsed || !onToggleFav) return collapsed ? link : <div className="sidebar__item-wrap">{link}</div>;
+
+  return (
+    <div className="sidebar__item-wrap">
+      {link}
+      <button
+        type="button"
+        className={'sidebar__fav' + (favorito ? ' on' : '')}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFav(); }}
+        title={favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+      >
+        <Icon name="star" />
+      </button>
+    </div>
   );
 }
 
 // Bloco "Baixe o aplicativo" — Google Play + App Store em cinza com tooltip "Em breve".
-// Aparece no rodapé da sidebar antes do user-chip.
 function AppDownloadBlock() {
   return (
     <div className="sidebar__app-download">

@@ -39,15 +39,15 @@ const MONTH_NAME = [
 ];
 
 const TIPO_COR: Record<string, string> = {
-  REUNIAO: '#1258CA',
+  REUNIAO: '#0E7C9B',
   VISITA: '#88C559',
   EVENTO: '#D9B45B',
   LIGACAO: '#F2B544',
-  PESSOAL: '#5D8FE0',
+  PESSOAL: '#3FB6D4',
 };
 
 function tipoColor(t?: string) {
-  return (t && TIPO_COR[t]) || '#5D8FE0';
+  return (t && TIPO_COR[t]) || '#3FB6D4';
 }
 
 function sameDay(a: Date, b: Date) {

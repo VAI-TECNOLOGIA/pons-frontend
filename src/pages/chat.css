@@ -248,9 +248,9 @@
   --chat-bubble-lead-color: var(--text-primary);
   --chat-bubble-self-bg: #1F4D3A;
   --chat-bubble-self-color: #E8F4DC;
-  --chat-chip-bg: rgba(93, 143, 224, 0.16);
-  --chat-chip-color: #9DBDF0;
-  --chat-chip-hover: rgba(93, 143, 224, 0.28);
+  --chat-chip-bg: rgba(63, 182, 212, 0.16);
+  --chat-chip-color: #9DE8F0;
+  --chat-chip-hover: rgba(63, 182, 212, 0.28);
 }
 
 /* Botão de voltar (mobile) — escondido por padrão */

@@ -254,7 +254,7 @@ function FilterChip({
         border: active
           ? `1px solid ${color || 'var(--blue-500)'}`
           : '1px solid var(--border-light)',
-        background: active ? (color ? color + '20' : 'rgba(18,88,202,.1)') : 'transparent',
+        background: active ? (color ? color + '20' : 'rgba(14, 124, 155,.1)') : 'transparent',
         color: active ? color || 'var(--blue-600)' : 'var(--text-secondary)',
         cursor: 'pointer',
       }}

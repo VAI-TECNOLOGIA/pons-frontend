@@ -47,7 +47,7 @@ export function BirthdayGreeter() {
             <path d="M8 38 Q14 32 20 38 T32 38 T44 38 T56 38 V42 H8 Z" fill="#fff" opacity="0.95" />
             <rect x="14" y="22" width="3" height="12" rx="1" fill="#88C559" />
             <rect x="30" y="22" width="3" height="12" rx="1" fill="#F2B544" />
-            <rect x="46" y="22" width="3" height="12" rx="1" fill="#5D8FE0" />
+            <rect x="46" y="22" width="3" height="12" rx="1" fill="#3FB6D4" />
             <path d="M15.5 22 q-3 -4 0 -8 q3 4 0 8z" fill="#F2B544" />
             <path d="M31.5 22 q-3 -4 0 -8 q3 4 0 8z" fill="#E10600" />
             <path d="M47.5 22 q-3 -4 0 -8 q3 4 0 8z" fill="#88C559" />

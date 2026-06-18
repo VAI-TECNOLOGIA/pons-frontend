@@ -34,6 +34,20 @@ interface Props {
 
 const SHEET_HEIGHT_RESERVE = 320; // espaço do tooltip+padding pra calcular scroll do target
 
+// Acha o ancestral que realmente rola (a página usa um container interno com
+// overflow, não a window). Cai pra window se nenhum for encontrado.
+function getScrollParent(el: HTMLElement): HTMLElement | Window {
+  let node: HTMLElement | null = el.parentElement;
+  while (node) {
+    const oy = getComputedStyle(node).overflowY;
+    if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return window;
+}
+
 function storageDone(key: string): boolean {
   try {
     return localStorage.getItem(`tour:${key}`) === '1';
@@ -67,51 +81,48 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
     }
   }, [forceOpen, storageKey, steps]);
 
-  // ── Posiciona highlight + scroll do target ──────────────────────
-  // Estratégia: pré-calcula o rect FINAL (left+width+height vêm do elemento, top
-  // vai pra posição desejada) e usa CSS transition pro halo "viajar" enquanto a
-  // página rola. Isso evita problemas de timing do scroll smooth.
+  // ── Posiciona highlight ──────────────────────────────────────────
+  // O halo sempre mede a posição REAL do alvo (getBoundingClientRect) e é
+  // re-medido a cada scroll/resize/frame, então fica colado no elemento
+  // independentemente de quanto a página conseguiu rolar.
   const reposition = useCallback(() => {
     if (!open || !steps[idx]) return;
     const el = document.querySelector(steps[idx].target) as HTMLElement | null;
-    if (!el) {
-      setRect(null);
-      return;
-    }
+    setRect(el ? el.getBoundingClientRect() : null);
+  }, [open, idx, steps]);
+
+  // Ao trocar de passo: rola o alvo para uma posição confortável (acima do
+  // bottom sheet) e mede de imediato. O scroll pode estar num container interno
+  // (não na window), então rolamos o ancestral scrollável correto.
+  useEffect(() => {
+    if (!open || !steps[idx]) return;
+    const el = document.querySelector(steps[idx].target) as HTMLElement | null;
+    if (!el) { setRect(null); return; }
     const r0 = el.getBoundingClientRect();
     const availableSpace = window.innerHeight - SHEET_HEIGHT_RESERVE;
     const finalTop = Math.max(80, availableSpace / 2 - r0.height / 2);
     const delta = r0.top - finalTop;
-    if (Math.abs(delta) > 4) {
-      window.scrollBy({ top: delta, behavior: 'smooth' });
-    }
-    // Rect previsto: left/width/height idênticos ao atual, top vai pro alvo final.
-    // Usa um DOMRect-like pra não precisar esperar scroll terminar.
-    const predicted = {
-      top: finalTop,
-      left: r0.left,
-      width: r0.width,
-      height: r0.height,
-      right: r0.left + r0.width,
-      bottom: finalTop + r0.height,
-      x: r0.left,
-      y: finalTop,
-      toJSON: () => ({}),
-    } as DOMRect;
-    setRect(predicted);
-  }, [open, idx, steps]);
-
-  useEffect(() => {
+    if (Math.abs(delta) > 4) getScrollParent(el).scrollBy({ top: delta, behavior: 'smooth' });
     reposition();
-  }, [reposition]);
+  }, [open, idx, steps, reposition]);
 
+  // Mantém o halo colado no alvo durante o scroll suave, scroll do usuário e resize.
   useEffect(() => {
     if (!open) return;
-    // Só reposiciona em resize (scroll mantém highlight estático no rect previsto).
-    const onResize = () => reposition();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [open, reposition]);
+    let raf = 0;
+    const onMove = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(reposition); };
+    window.addEventListener('scroll', onMove, true);
+    window.addEventListener('resize', onMove);
+    // Acompanha a animação do scroll suave (~700ms) re-medindo a cada frame.
+    const start = performance.now();
+    const follow = () => { reposition(); if (performance.now() - start < 800) raf = requestAnimationFrame(follow); };
+    raf = requestAnimationFrame(follow);
+    return () => {
+      window.removeEventListener('scroll', onMove, true);
+      window.removeEventListener('resize', onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, [open, idx, reposition]);
 
   function close(markDone = true) {
     setOpen(false);
@@ -160,10 +171,9 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
             zIndex: 9999,
             pointerEvents: 'none',
             borderRadius: 12,
-            border: '3px solid rgba(96,165,250,1)',
-            boxShadow: '0 0 0 4px rgba(96,165,250,0.25), 0 0 40px rgba(96,165,250,0.4)',
+            border: '3px solid rgba(82,247,254,1)',
+            boxShadow: '0 0 0 4px rgba(82,247,254,0.22), 0 0 40px rgba(82,247,254,0.4)',
             background: 'transparent',
-            transition: 'top 240ms cubic-bezier(0.4,0,0.2,1), left 240ms cubic-bezier(0.4,0,0.2,1), width 240ms cubic-bezier(0.4,0,0.2,1), height 240ms cubic-bezier(0.4,0,0.2,1)',
             animation: 'tourPulse 2.2s ease-in-out infinite',
           }}
         />
@@ -181,11 +191,12 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
           width: 'min(calc(100% - 32px), 540px)',
           zIndex: 10000,
           pointerEvents: 'auto',
-          background: '#1E40AF',
+          background: '#0E0F13',
           color: '#fff',
+          border: '1px solid rgba(82,247,254,0.28)',
           borderRadius: 14,
           padding: 20,
-          boxShadow: '0 16px 48px rgba(0,0,0,0.45)',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.55), 0 0 40px rgba(82,247,254,0.08)',
           fontSize: 14,
           lineHeight: 1.5,
           maxHeight: '50vh',
@@ -203,7 +214,7 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
                 width: i === idx ? 22 : 6,
                 height: 6,
                 borderRadius: 3,
-                background: i === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                background: i === idx ? '#52f7fe' : 'rgba(255,255,255,0.28)',
                 transition: 'width 220ms',
                 flexShrink: 0,
               }}
@@ -266,8 +277,8 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
             onClick={next}
             style={{
               minWidth: 140,
-              background: '#fff',
-              color: '#1E40AF',
+              background: '#52f7fe',
+              color: '#04222b',
               border: 'none',
               padding: '11px 20px',
               borderRadius: 8,
@@ -299,8 +310,8 @@ export function GuidedTour({ steps, storageKey, forceOpen, onDone }: Props) {
           to { transform: translate(-50%, 0); opacity: 1; }
         }
         @keyframes tourPulse {
-          0%, 100% { box-shadow: 0 0 0 4px rgba(96,165,250,0.25), 0 0 40px rgba(96,165,250,0.4); }
-          50% { box-shadow: 0 0 0 8px rgba(96,165,250,0.18), 0 0 60px rgba(96,165,250,0.55); }
+          0%, 100% { box-shadow: 0 0 0 4px rgba(82,247,254,0.22), 0 0 40px rgba(82,247,254,0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(82,247,254,0.16), 0 0 60px rgba(82,247,254,0.55); }
         }
         @media (max-width: 600px) {
           [role="dialog"][aria-label="Tour guiado"] {

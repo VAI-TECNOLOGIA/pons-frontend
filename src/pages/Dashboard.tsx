@@ -54,7 +54,7 @@ export default function Dashboard() {
  type: 'bar',
  label: 'VGV vendido',
  data: serie.meses.map((m: any) => m.vgv),
- backgroundColor: '#1258CA',
+ backgroundColor: '#0E7C9B',
  borderRadius: 6,
  maxBarThickness: 48,
  order: 2,
@@ -120,7 +120,7 @@ export default function Dashboard() {
  <div
  className="card mb-6"
  style={{
- background: 'linear-gradient(135deg,#0F1729,#1A2444)',
+ background: 'linear-gradient(135deg,#15171C,#0B0C10)',
  color: 'white',
  border: 'none',
  overflow: 'hidden',
@@ -149,7 +149,7 @@ export default function Dashboard() {
  <div className="progress progress--speed" style={{ height: 10, background: 'rgba(255,255,255,0.1)' }}>
  <div
  className="progress__fill"
- style={{ width: `${a.progressoMeta}%`, background: `linear-gradient(90deg,${ritmoCor},#5D8FE0)` }}
+ style={{ width: `${a.progressoMeta}%`, background: `linear-gradient(90deg,${ritmoCor},#3FB6D4)` }}
  />
  </div>
  </div>

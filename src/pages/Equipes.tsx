@@ -19,7 +19,7 @@ export default function Equipes() {
  await Api.equipeCreate({
  nome: String(fd.get('nome') || ''),
  descricao: fd.get('descricao') ? String(fd.get('descricao')) : undefined,
- cor: String(fd.get('cor') || '#1258CA'),
+ cor: String(fd.get('cor') || '#0E7C9B'),
  });
  toast.success('Equipe criada');
  setOpen(false);
@@ -177,7 +177,7 @@ export default function Equipes() {
  </div>
  <div className="field">
  <label className="field__label">Cor da equipe</label>
- <input name="cor" type="color" className="field__input" defaultValue="#1258CA" style={{ height: 44, padding: 4 }} />
+ <input name="cor" type="color" className="field__input" defaultValue="#0E7C9B" style={{ height: 44, padding: 4 }} />
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>

@@ -109,22 +109,22 @@ export default function Roletas() {
  <SLAStatusPanel />
 
  <div className="mb-6">
- <div className="card" style={{ background: 'linear-gradient(135deg,#0F1729,#1A2444)', color: 'white', border: 'none' }}>
- <div className="flex-between" style={{ marginBottom: 16 }}>
+ <div className="card">
+ <div className="flex-between" style={{ marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
  <div>
- <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
+ <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
  Funil completo da empresa
  </div>
- <div style={{ fontSize: 32, fontWeight: 900, fontStyle: 'italic' }}>
+ <div style={{ fontFamily: 'var(--font-display)', fontSize: 34, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
  {totalLeadsBase.toLocaleString('pt-BR')}{' '}
- <span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>leads na base</span>
+ <span style={{ fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>leads na base</span>
  </div>
  </div>
  <div style={{ textAlign: 'right' }}>
- <div style={{ fontSize: 28, fontWeight: 900, fontStyle: 'italic', color: '#88C559' }}>
+ <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--color-success)', lineHeight: 1.1 }}>
  {movimentando}
  </div>
- <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)' }}>
+ <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)' }}>
  movimentando
  </div>
  </div>
@@ -134,22 +134,23 @@ export default function Roletas() {
  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
  {estagios.map((e: any) => (
  <div key={e.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
- <div style={{ width: 90, fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
+ <div style={{ width: 90, fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
  {e.label}
  </div>
- <div style={{ flex: 1, height: 24, background: 'rgba(255,255,255,0.07)', borderRadius: 6, overflow: 'hidden' }}>
+ <div style={{ flex: 1, height: 26, background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: 7, overflow: 'hidden' }}>
  <div
  style={{
  height: '100%',
  width: `${Math.max(6, (e.n / maxEst) * 100)}%`,
- background: 'linear-gradient(90deg,#1258CA,#5D8FE0)',
+ background: 'linear-gradient(90deg,#0E7C9B,#3FB6D4)',
  borderRadius: 6,
  display: 'flex',
  alignItems: 'center',
  padding: '0 10px',
  fontSize: 12,
  fontWeight: 800,
- fontStyle: 'italic',
+ color: '#fff',
+ fontFamily: 'var(--font-display)',
  }}
  >
  {(e.n || 0).toLocaleString('pt-BR')}
@@ -160,13 +161,13 @@ export default function Roletas() {
  </div>
 
  <div>
- <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>
+ <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 10 }}>
  De onde estão entrando
  </div>
  {porOrigem.map((o: any) => (
- <div className="flex-between" key={o.origem} style={{ padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 13 }}>
- <span style={{ color: 'rgba(255,255,255,0.8)' }}>{o.origem}</span>
- <span style={{ fontWeight: 800, fontStyle: 'italic' }}>{(o.n || 0).toLocaleString('pt-BR')}</span>
+ <div className="flex-between" key={o.origem} style={{ padding: '7px 0', borderBottom: '1px solid var(--border-light)', fontSize: 13 }}>
+ <span style={{ color: 'var(--text-secondary)' }}>{o.origem}</span>
+ <span style={{ fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{(o.n || 0).toLocaleString('pt-BR')}</span>
  </div>
  ))}
  </div>
@@ -352,14 +353,14 @@ export default function Roletas() {
  {simResult && (
  <div style={{ marginTop: 16 }}>
  {simResult.corretorId ? (
- <div className="card" style={{ background: 'var(--color-success-bg)', borderColor: '#88C559', padding: 14 }}>
- <div className="font-bold">{simResult.corretorNome}</div>
- <div className="text-sm" style={{ color: '#4D7A26' }}>via roleta "{simResult.roletaNome}"</div>
+ <div className="card" style={{ background: 'var(--color-success-bg)', borderColor: 'var(--color-success-border)', padding: 14 }}>
+ <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{simResult.corretorNome}</div>
+ <div className="text-sm" style={{ color: 'var(--color-success-fg)' }}>via roleta "{simResult.roletaNome}"</div>
  </div>
  ) : (
- <div className="card" style={{ background: 'var(--color-warning-bg)', borderColor: '#F2D88A', padding: 14 }}>
- <div className="font-bold" style={{ color: '#8A6914' }}>Sem distribuição automática</div>
- <div className="text-sm" style={{ color: '#8A6914' }}>
+ <div className="card" style={{ background: 'var(--color-warning-bg)', borderColor: 'var(--color-warning-border)', padding: 14 }}>
+ <div className="font-bold" style={{ color: 'var(--color-warning-fg)' }}>Sem distribuição automática</div>
+ <div className="text-sm" style={{ color: 'var(--color-warning-fg)' }}>
  {simResult.motivo === 'sem_roleta'
  ? 'Nenhuma roleta casou — iria para o bolsão.'
  : 'Nenhum corretor elegível agora (roleta manual ou todos pausados).'}

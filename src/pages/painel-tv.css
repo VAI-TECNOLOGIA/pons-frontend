@@ -7,7 +7,7 @@ body:has(.tv) {
   background:
     radial-gradient(1200px 700px at 12% -10%, rgba(225, 6, 0, 0.18), transparent 60%),
     radial-gradient(1200px 700px at 90% 110%, rgba(136, 197, 89, 0.10), transparent 60%),
-    radial-gradient(900px 600px at 50% 50%, rgba(18, 88, 202, 0.08), transparent 70%),
+    radial-gradient(900px 600px at 50% 50%, rgba(14, 124, 155, 0.08), transparent 70%),
     linear-gradient(160deg, #04060C 0%, #0A1020 55%, #05080F 100%);
   color: #fff;
   overflow: hidden;
@@ -64,7 +64,7 @@ body:has(.tv) {
 .tv::after {
   top: 76%;
   animation-delay: 1.2s;
-  background: linear-gradient(90deg, transparent, rgba(93, 143, 224, 0.45), transparent);
+  background: linear-gradient(90deg, transparent, rgba(63, 182, 212, 0.45), transparent);
 }
 @keyframes tv-streak {
   0% { transform: translateX(-25%); opacity: 0; }
@@ -183,7 +183,7 @@ body:has(.tv) {
   width: 3px;
   background: linear-gradient(180deg, #E10600, transparent);
 }
-.kcard--hero::before { background: linear-gradient(180deg, #88C559, #5D8FE0); width: 4px; }
+.kcard--hero::before { background: linear-gradient(180deg, #88C559, #3FB6D4); width: 4px; }
 .kcard__l {
   font-size: 11px;
   text-transform: uppercase;
@@ -396,7 +396,7 @@ body:has(.tv) {
 .grid-row__lane {
   width: 4px;
   height: 28px;
-  background: var(--tc, #5D8FE0);
+  background: var(--tc, #3FB6D4);
   border-radius: 2px;
 }
 .grid-row__avatar {
