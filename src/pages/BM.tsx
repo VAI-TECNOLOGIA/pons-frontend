@@ -44,6 +44,20 @@ export default function BMPage() {
     await Api.bmDelete(bm.id); toast.success('BM desativada'); reload();
   };
 
+  const excluirPermanente = async (bm: any) => {
+    const ok = await confirm({ title: 'Excluir permanentemente?', message: `"${bm.nome}" será removida de vez. Esta ação não pode ser desfeita.`, tone: 'danger' });
+    if (!ok) return;
+    try {
+      await Api.bmDeletePermanente(bm.id); toast.success('BM excluída'); reload();
+    } catch (err: any) {
+      toast.error(err?.message?.includes('tem_leads') ? 'BM tem leads vinculados — desative em vez de excluir.' : 'Erro ao excluir');
+    }
+  };
+
+  const reativar = async (bm: any) => {
+    await Api.bmUpdate(bm.id, { ativa: true }); toast.success('BM reativada'); reload();
+  };
+
   const verDashboard = async (bm: any) => {
     try {
       const dash = await Api.bmDashboard(bm.id);
@@ -68,36 +82,88 @@ export default function BMPage() {
 
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
           {(data || []).map((bm) => (
-            <div key={bm.id} className="card" style={{ position: 'relative' }}>
-              <div className="flex-between" style={{ marginBottom: 8 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700 }}>{bm.nome}</h3>
+            <div
+              key={bm.id}
+              className="card"
+              style={{
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+                padding: 18,
+                opacity: bm.ativa ? 1 : 0.72,
+                borderColor: bm.ativa ? undefined : 'var(--border-medium)',
+              }}
+            >
+              {/* Cabeçalho: ícone + nome + status */}
+              <div className="flex" style={{ alignItems: 'center', gap: 12 }}>
+                <div
+                  style={{
+                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                    display: 'grid', placeItems: 'center',
+                    background: bm.ativa ? 'var(--color-info-bg)' : 'var(--bg-elevated)',
+                    color: 'var(--pons-blue)', fontSize: 18, fontWeight: 700,
+                  }}
+                >
+                  {(bm.nome || '?').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bm.nome}</h3>
+                  <div className="text-xs text-secondary" style={{ fontFamily: 'monospace' }}>BM {bm.bmId}</div>
+                </div>
                 <span className={`badge ${bm.ativa ? 'badge--launch' : 'badge--neutral'}`}>{bm.ativa ? 'Ativa' : 'Inativa'}</span>
               </div>
-              <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>BM ID: {bm.bmId}</div>
+
+              {/* Vínculo */}
               {bm.corretor ? (
-                <div style={{ background: 'var(--bg-elevated)', padding: 8, borderRadius: 6, marginBottom: 8 }}>
-                  <div className="text-xs text-secondary">Vinculada a:</div>
-                  <div style={{ fontWeight: 600 }}>{bm.corretor.nome}</div>
-                  <div className="text-xs" style={{ color: 'var(--color-success)' }}>Leads vão direto (sem roleta)</div>
+                <div className="flex" style={{ alignItems: 'center', gap: 8, background: 'var(--color-success-bg)', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--color-success-border)' }}>
+                  <span style={{ color: 'var(--color-success-fg)', fontSize: 16 }}>→</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{bm.corretor.nome}</div>
+                    <div className="text-xs" style={{ color: 'var(--color-success-fg)' }}>Leads vão direto (bypass roleta)</div>
+                  </div>
                 </div>
               ) : (
-                <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>BM da empresa — leads entram na roleta</div>
+                <div className="text-xs text-secondary" style={{ background: 'var(--bg-elevated)', padding: '8px 10px', borderRadius: 8 }}>
+                  BM da empresa — leads entram na roleta
+                </div>
               )}
-              <div className="text-xs">
-                <div>Leads captados: <strong>{bm.leadsCaptados}</strong></div>
-                <div>IA padrão: {bm.iaHabilitadaPadrao ? 'Sim' : 'Não'}</div>
+
+              {/* Métricas */}
+              <div className="flex" style={{ gap: 10 }}>
+                <div style={{ flex: 1, background: 'var(--bg-elevated)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div className="text-xs text-secondary">Leads captados</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-display)' }}>{bm.leadsCaptados}</div>
+                </div>
+                <div style={{ flex: 1, background: 'var(--bg-elevated)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div className="text-xs text-secondary">IA padrão</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4, color: bm.iaHabilitadaPadrao ? 'var(--color-success-fg)' : 'var(--text-secondary)' }}>
+                    {bm.iaHabilitadaPadrao ? 'Ativada' : 'Desativada'}
+                  </div>
+                </div>
               </div>
-              <div className="flex" style={{ gap: 6, marginTop: 12 }}>
-                <button className="btn btn--ghost btn--sm" onClick={() => verDashboard(bm)}>Dashboard</button>
-                <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(bm); setOpen(true); }}>Editar</button>
-                <button className="btn btn--ghost btn--sm" onClick={() => excluir(bm)}>Desativar</button>
+
+              {/* Ações */}
+              <div className="flex" style={{ gap: 6, marginTop: 'auto', flexWrap: 'wrap' }}>
+                {bm.ativa ? (
+                  <>
+                    <button className="btn btn--ghost btn--sm" onClick={() => verDashboard(bm)}>Dashboard</button>
+                    <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(bm); setOpen(true); }}>Editar</button>
+                    <button className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto', color: 'var(--color-danger-fg)' }} onClick={() => excluir(bm)}>Desativar</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn btn--ghost btn--sm" onClick={() => reativar(bm)}>Reativar</button>
+                    <button className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto', color: 'var(--color-danger-fg)' }} onClick={() => excluirPermanente(bm)}>Excluir</button>
+                  </>
+                )}
               </div>
             </div>
           ))}
           {data?.length === 0 && (
-            <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma BM cadastrada ainda</div>
+            <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Nenhuma BM cadastrada ainda</div>
           )}
         </div>
       </div>
@@ -146,7 +212,7 @@ export default function BMPage() {
         size="lg"
       >
         {selected && (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             <Stat label="Leads Total" value={selected.dash.leadsTotal} />
             <Stat label="Leads (mês)" value={selected.dash.leadsMes} />
             <Stat label="Fechados" value={selected.dash.leadsFechados} />

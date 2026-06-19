@@ -408,6 +408,7 @@ export const Api = {
   bmCreate:  (data: any) => request<any>('/bm', { method: 'POST', body: data }),
   bmUpdate:  (id: number, data: any) => request<any>(`/bm/${id}`, { method: 'PATCH', body: data }),
   bmDelete:  (id: number) => request<{ ok: boolean }>(`/bm/${id}`, { method: 'DELETE' }),
+  bmDeletePermanente: (id: number) => request<{ ok: boolean }>(`/bm/${id}/permanente`, { method: 'DELETE' }),
   bmDashboard: (id: number) => request<any>(`/bm/${id}/dashboard`),
 
   // ─── Fase A — Ranking ────────────────────────────────────────────
