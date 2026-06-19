@@ -65,6 +65,22 @@ export default function Corretores() {
  }
  };
 
+ const reativar = async (id: number) => {
+ const ok = await confirm({
+ title: 'Reativar corretor?',
+ message: 'O corretor volta a ter acesso. Leads de BM pessoal que haviam sido arquivados retornam para ele.',
+ confirmText: 'Reativar',
+ });
+ if (!ok) return;
+ try {
+ await Api.corretorReativar(id);
+ toast.success('Corretor reativado');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
  if (loading) return <Shell onNew={() => setOpen(true)}><LoadingBlock /></Shell>;
  if (error) return <Shell onNew={() => setOpen(true)}><ErrorBlock error={error} /></Shell>;
  if (!corretores) return null;
@@ -194,13 +210,21 @@ export default function Corretores() {
  </span>
  </td>
  <td>
- {isAtivo && (
+ {isAtivo ? (
  <button
  className="btn btn--ghost btn--sm"
  onClick={() => desativar(c.id)}
  title="Desativar"
  >
  Desativar
+ </button>
+ ) : (
+ <button
+ className="btn btn--ghost btn--sm"
+ onClick={() => reativar(c.id)}
+ title="Reativar"
+ >
+ Reativar
  </button>
  )}
  </td>
