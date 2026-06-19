@@ -77,16 +77,17 @@
     linear-gradient(0deg, rgba(5, 6, 7, 0.55) 0%, transparent 45%);
 }
 
-/* ── Wordmark Grupo Pons (topo-esquerda) ─────────────────────────────── */
+/* ── Wordmark Grupo Pons (centralizado na metade esquerda, topo) ──────── */
 .login-logos {
   position: absolute;
-  top: clamp(24px, 4.5vh, 52px);
-  left: clamp(28px, 5vw, 80px);
+  top: clamp(64px, 16vh, 150px);
+  left: 40%;
+  transform: translateX(-50%);
   z-index: 3;
   display: flex;
   align-items: center;
 }
-.login-logos__pons { height: clamp(104px, 13.5vw, 188px); width: auto; }
+.login-logos__pons { height: clamp(148px, 16.5vw, 252px); width: auto; }
 
 /* ── Palco (card + tagline) à direita ────────────────────────────────── */
 .login-stage {
@@ -106,9 +107,11 @@
   width: min(430px, 86vw);
   display: flex;
   justify-content: center;
+  /* Puxa o emblema GPI pra mais perto do card (anula parte do gap do stage). */
+  margin-bottom: clamp(-36px, -3.4vh, -18px);
 }
 .login-stage__emblem {
-  height: clamp(40px, 4.6vw, 62px);
+  height: clamp(46px, 5.2vw, 72px);
   width: auto;
   opacity: 0.95;
 }
@@ -307,8 +310,11 @@
     top: clamp(20px, 4vh, 36px);
     left: 0;
     right: 0;
+    transform: none;
     justify-content: center;
   }
+  /* Logo Grupo Pons maior no celular */
+  .login-logos__pons { height: clamp(132px, 38vw, 168px); }
 
   .login-stage {
     align-items: center;
@@ -316,6 +322,10 @@
     padding: 0 20px clamp(64px, 12vh, 110px);
     gap: 24px;
   }
+  /* Mantém o arranjo original do celular: emblema com o gap normal, sem o
+     "pull" usado no desktop. E aumenta o emblema GPI. */
+  .login-stage__brand { margin-bottom: 0; }
+  .login-stage__emblem { height: clamp(54px, 15vw, 72px); }
 
   /* No celular a tagline polui demais — esconde, deixa só o card. */
   .login-tagline { display: none; }
