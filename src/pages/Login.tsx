@@ -85,12 +85,13 @@ export default function Login() {
       </div>
 
       <header className="login-logos">
-        <img src="/assets/home/gpi_logo.png" alt="Grupo Pons Imobiliário" className="login-logos__gpi" />
-        <span className="login-logos__sep" />
-        <img src="/assets/home/grupopons_logo.png" alt="Grupo Pons" className="login-logos__pons" />
+        <img src="/assets/home/grupopons_logo.png" alt="Grupo Pons Imobiliário" className="login-logos__pons" />
       </header>
 
       <main className="login-stage">
+        <div className="login-stage__brand">
+          <img src="/assets/home/gpi_logo.png" alt="GPI — Grupo Pons Imobiliário" className="login-stage__emblem" />
+        </div>
         <form className="login-card" onSubmit={handleSubmit}>
           <div className="login-card__eyebrow">Grid de Largada</div>
           <h1 className="login-card__title">Acesso do Piloto</h1>
