@@ -88,7 +88,7 @@
   gap: clamp(16px, 2vw, 32px);
 }
 .login-logos__gpi { height: clamp(74px, 9.5vw, 122px); width: auto; }
-.login-logos__pons { height: clamp(64px, 8.3vw, 108px); width: auto; }
+.login-logos__pons { height: clamp(82px, 10.5vw, 134px); width: auto; }
 .login-logos__sep {
   width: 1px;
   height: clamp(34px, 4.5vw, 56px);
