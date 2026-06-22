@@ -12,3 +12,38 @@ dist/
 coverage/
 *.tsbuildinfo
 .vercel
+
+# Capacitor — arquivos sensiveis (NUNCA commitar)
+android/key.properties
+android/app/*.keystore
+android/app/*.jks
+android/app/google-services.json
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+android/captures/
+android/.idea/
+android/app/release/
+
+# iOS — arquivos sensiveis (NUNCA commitar)
+ios/App/App/GoogleService-Info.plist
+ios/App/App/*.entitlements.backup
+ios/App/Pods/
+ios/App/build/
+ios/App/DerivedData/
+ios/App/output/
+ios/App/*.ipa
+ios/App/*.xcarchive
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+ios/capacitor-cordova-ios-plugins/
+*.p8
+*.p12
+*.mobileprovision
+GoogleService-Info.plist
+
+# Build de release mobile (binarios gerados, nao versionar)
+*.aab
+*.apk

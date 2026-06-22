@@ -1,0 +1,11 @@
+<pt-BR>
+Bem-vindo ao VAI Sistema, o app de gestao do Grupo Pons Imobiliario.
+
+Novidades desta versao:
+- CRM completo de leads, do primeiro contato ao fechamento
+- Pipeline visual de negociacoes
+- Dashboard executivo com receita, metas e ranking
+- Controle de vendas, comissoes e rateios
+- Agenda, tarefas e gestao de equipe
+- Aprimoramentos de performance e estabilidade
+</pt-BR>
