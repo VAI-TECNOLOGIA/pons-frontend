@@ -40,7 +40,7 @@ export default function ImportarLeads() {
     try {
       const r = await Api.importLeadsExecutar(file);
       setResultado(r);
-      toast.success(`${r.criados} criados, ${r.duplicados} duplicados, ${r.erros} erros`);
+      toast.success(`${r.criados} criados (${r.distribuidos} na roleta · ${r.bolsao} no bolsão), ${r.duplicados} duplicados, ${r.erros} erros`);
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
     } finally {
@@ -107,6 +107,8 @@ export default function ImportarLeads() {
             <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
               <Stat label="Recebidos" value={resultado.recebidos} />
               <Stat label="Criados" value={resultado.criados} cor="var(--color-success)" />
+              <Stat label="Distribuídos" value={resultado.distribuidos} cor="var(--color-success)" />
+              <Stat label="No bolsão" value={resultado.bolsao} cor="var(--color-warning)" />
               <Stat label="Duplicados" value={resultado.duplicados} cor="var(--color-warning)" />
               <Stat label="Erros" value={resultado.erros} cor="var(--color-danger)" />
             </div>
