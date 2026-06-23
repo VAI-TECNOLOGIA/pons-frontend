@@ -1320,7 +1320,8 @@
 
 .kanban {
   display: grid;
-  grid-template-columns: repeat(5, minmax(260px, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 8px;
