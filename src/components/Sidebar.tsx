@@ -79,6 +79,7 @@ const GROUPS: NavGroup[] = [
     icon: 'megafone',
     items: [
       { to: '/trafego', label: 'Tráfego Pago', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+      { to: '/inteligencia-leads', label: 'Inteligência de Leads', icon: 'chart', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'DIRETOR_FINANCEIRO'] },
       { to: '/bm', label: 'Business Managers', icon: 'facebook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'CORRETOR', 'GERENTE_EQUIPE'] },
       { to: '/remarketing', label: 'Remarketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/distribuicao', label: 'Distribuição', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },

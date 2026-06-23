@@ -431,6 +431,10 @@ export const Api = {
   distribuicaoUpdate:  (id: number, data: any) => request<any>(`/distribuicao/${id}`, { method: 'PATCH', body: data }),
   distribuicaoDelete:  (id: number) => request<{ ok: boolean }>(`/distribuicao/${id}`, { method: 'DELETE' }),
   distribuicaoExecutar:(id: number) => request<any>(`/distribuicao/${id}/executar`, { method: 'POST' }),
+  // Inteligência de Leads (painel marketing)
+  inteligenciaLeads:      (params: Record<string, unknown> = {}) => request<any>(`/distribuicao/inteligencia${qs(params)}`),
+  inteligenciaMapa:       () => request<{ mapa: any; exemplo: any }>('/distribuicao/inteligencia/mapa'),
+  inteligenciaMapaSalvar: (mapa: any) => request<any>('/distribuicao/inteligencia/mapa', { method: 'PUT', body: { mapa } }),
 
   // ─── Fase B — Import Big Data ────────────────────────────────────
   importLeadsPreview:  (file: File) => {
