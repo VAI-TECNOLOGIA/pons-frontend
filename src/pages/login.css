@@ -77,12 +77,12 @@
     linear-gradient(0deg, rgba(5, 6, 7, 0.55) 0%, transparent 45%);
 }
 
-/* ── Wordmark Grupo Pons (centralizado na metade esquerda, topo) ──────── */
+/* ── Wordmark Grupo Pons (ancorado no canto superior esquerdo) ────────── */
 .login-logos {
   position: absolute;
-  top: clamp(64px, 16vh, 150px);
-  left: 40%;
-  transform: translateX(-50%);
+  top: clamp(24px, 4vh, 48px);
+  left: clamp(24px, 4vw, 56px);
+  transform: none;
   z-index: 3;
   display: flex;
   align-items: center;
