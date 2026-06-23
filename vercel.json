@@ -13,7 +13,11 @@
       "destination": "/termos/index.html"
     },
     {
-      "source": "/((?!api/|privacidade|termos).*)",
+      "source": "/suporte",
+      "destination": "/suporte/index.html"
+    },
+    {
+      "source": "/((?!api/|privacidade|termos|suporte).*)",
       "destination": "/index.html"
     }
   ],
