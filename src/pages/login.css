@@ -111,7 +111,7 @@
   margin-bottom: clamp(-36px, -3.4vh, -18px);
 }
 .login-stage__emblem {
-  height: clamp(46px, 5.2vw, 72px);
+  height: clamp(58px, 6.6vw, 92px);
   width: auto;
   opacity: 0.95;
 }
