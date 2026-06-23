@@ -683,6 +683,15 @@ export const Api = {
     request<any>(`/pessoal/financas/categorias/${id}`, { method: 'DELETE' }),
   pessoalValorSet: (data: { categoriaId: number; ano: number; mes: number; valor: number | null }) =>
     request<any>('/pessoal/financas/valores', { method: 'PUT', body: data }),
+
+  // ── Campanhas (Broadcast WhatsApp) ──
+  campanhas: () => request<{ campanhas: any[]; kpis: any }>('/campanhas'),
+  campanha: (id: number) => request<any>(`/campanhas/${id}`),
+  campanhaAudienciaPreview: (data: any) =>
+    request<{ total: number; amostra: string[] }>('/campanhas/audiencia/preview', { method: 'POST', body: data }),
+  campanhaCreate: (data: any) => request<any>('/campanhas', { method: 'POST', body: data }),
+  campanhaEnviar: (id: number) => request<any>(`/campanhas/${id}/enviar`, { method: 'POST' }),
+  campanhaDelete: (id: number) => request<{ ok: boolean }>(`/campanhas/${id}`, { method: 'DELETE' }),
 };
 
 /**

@@ -1,0 +1,83 @@
+/* Campanhas — Broadcast WhatsApp (tema Pons) */
+.campanhas { display: flex; flex-direction: column; gap: 18px; }
+.campanhas .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.campanhas .page-title { font-size: 22px; font-weight: 800; margin: 0; }
+.campanhas .page-sub { color: var(--text-muted, #6b7588); font-size: 14px; margin: 4px 0 0; max-width: 640px; }
+
+.camp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 720px) { .camp-kpis { grid-template-columns: 1fr 1fr; } }
+
+.camp-erro { color: var(--pons-accent-red, #C70A1A); border-left: 3px solid var(--pons-accent-red, #C70A1A); }
+
+/* tabela */
+.camp-table { width: 100%; border-collapse: collapse; }
+.camp-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted, #6b7588); padding: 10px 12px; border-bottom: 1px solid var(--border, #e4e8ef); }
+.camp-table td { padding: 12px; border-bottom: 1px solid var(--border, #eef1f6); font-size: 14px; vertical-align: middle; }
+.camp-muted { color: var(--text-muted, #6b7588); font-size: 12px; }
+.camp-bar { width: 140px; height: 7px; border-radius: 6px; background: var(--border, #e4e8ef); overflow: hidden; }
+.camp-bar__fill { height: 100%; background: var(--pons-blue, #0E7C9B); transition: width .3s; }
+
+.camp-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.camp-badge--rascunho { background: #eef1f6; color: #52607a; }
+.camp-badge--agendada { background: #fff4e0; color: #b5790a; }
+.camp-badge--enviando { background: #e2f3f8; color: #0E7C9B; }
+.camp-badge--concluida { background: #e7f6e0; color: #3f8f23; }
+.camp-badge--cancelada { background: #fde9eb; color: #C70A1A; }
+
+.camp-empty { text-align: center; padding: 48px 20px; color: var(--text-muted, #6b7588); }
+.camp-empty__icon { font-size: 38px; }
+.camp-empty h3 { margin: 12px 0 4px; color: var(--text, #1a2233); }
+
+/* modal */
+.camp-modal__backdrop { position: fixed; inset: 0; background: rgba(15,23,41,.55); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.camp-modal { background: var(--surface, #fff); border-radius: 16px; width: min(860px, 96vw); max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+.camp-modal__head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border, #e4e8ef); }
+.camp-modal__head h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.camp-modal__close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted, #6b7588); }
+
+.camp-steps { display: flex; gap: 6px; padding: 14px 22px 0; flex-wrap: wrap; }
+.camp-step { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--text-muted, #9aa3b2); padding: 4px 8px; }
+.camp-step__num { width: 22px; height: 22px; border-radius: 50%; background: var(--border, #e4e8ef); color: #6b7588; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.camp-step.is-active { color: var(--text, #1a2233); }
+.camp-step.is-active .camp-step__num { background: var(--pons-blue, #0E7C9B); color: #fff; }
+.camp-step.is-done .camp-step__num { background: var(--pons-success, #88C559); color: #fff; }
+
+.camp-modal__body { display: grid; grid-template-columns: 1fr 300px; gap: 20px; padding: 18px 22px; overflow-y: auto; }
+@media (max-width: 720px) { .camp-modal__body { grid-template-columns: 1fr; } .camp-preview { display: none; } }
+.camp-form { display: flex; flex-direction: column; gap: 14px; }
+.camp-hint { color: var(--text-muted, #6b7588); font-size: 12px; }
+
+.camp-radios { display: flex; gap: 10px; }
+.camp-radio { display: flex; align-items: center; gap: 7px; border: 1.5px solid var(--border, #e4e8ef); border-radius: 10px; padding: 9px 14px; cursor: pointer; font-size: 14px; }
+.camp-radio.is-on { border-color: var(--pons-blue, #0E7C9B); background: rgba(14,124,155,.06); font-weight: 700; }
+.camp-check label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.camp-check input { width: 16px; height: 16px; }
+
+.camp-aud-count { background: rgba(14,124,155,.07); border: 1px solid rgba(14,124,155,.2); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+.camp-aud-count strong { font-size: 18px; color: var(--pons-blue, #0E7C9B); }
+
+.camp-var { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.camp-var__tag { font-family: monospace; font-size: 12px; background: #eef1f6; padding: 5px 8px; border-radius: 6px; flex: none; }
+
+/* preview WhatsApp */
+.camp-preview { display: flex; flex-direction: column; gap: 8px; }
+.camp-phone { background: #e5ddd5; border-radius: 14px; overflow: hidden; border: 1px solid var(--border, #e4e8ef); min-height: 240px; display: flex; flex-direction: column; }
+.camp-phone__head { background: #075E54; color: #fff; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.camp-phone__avatar { width: 30px; height: 30px; border-radius: 50%; background: #ffffff35; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.camp-phone__head small { display: block; opacity: .8; font-size: 11px; }
+.camp-phone__body { padding: 14px 10px; flex: 1; }
+.camp-bubble { background: #fff; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 1px 1px rgba(0,0,0,.1); border-top-left-radius: 0; }
+.camp-preview__meta { text-align: center; font-size: 12px; color: var(--text-muted, #6b7588); }
+
+/* resumo / envio */
+.camp-resumo h3 { margin: 0 0 12px; }
+.camp-resumo ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.camp-resumo li { display: flex; justify-content: space-between; padding: 9px 12px; background: #f5f7fa; border-radius: 8px; font-size: 14px; }
+.camp-resumo li span { color: var(--text-muted, #6b7588); }
+.camp-progress { margin-top: 14px; }
+.camp-progress .camp-bar { width: 100%; height: 10px; }
+.camp-done { text-align: center; padding: 16px; }
+.camp-done__icon { font-size: 40px; }
+
+.camp-modal__foot { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-top: 1px solid var(--border, #e4e8ef); }
+.camp-foot__right { display: flex; gap: 10px; }
