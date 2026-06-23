@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Icon } from './Icon';
 import { Api } from '../lib/api';
 import { useUser } from '../lib/userContext';
@@ -64,6 +65,10 @@ const HISTORY_MAX = 50;
 
 export function AssistantChat() {
   const { user } = useUser();
+  const location = useLocation();
+  // No Atendimento (/chat) o FAB cobre o botão Enviar do composer e é redundante
+  // (a tela já tem o botão "IA" próprio), então some lá.
+  const ocultarFab = location.pathname.startsWith('/chat');
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(() => loadHistory());
   const [draft, setDraft] = useState('');
@@ -130,7 +135,7 @@ export function AssistantChat() {
 
   return (
     <>
-      {!open && (
+      {!open && !ocultarFab && (
         <button
           className="assistant-fab"
           onClick={() => setOpen(true)}
