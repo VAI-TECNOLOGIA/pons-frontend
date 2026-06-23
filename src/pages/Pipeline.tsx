@@ -9,7 +9,9 @@ import { useToast } from '../lib/toast';
 const COLS = [
  { status: 'NOVO', titulo: 'Novo Lead', klass: '' },
  { status: 'SDR', titulo: 'SDR / IA', klass: 'kanban__col--accent' },
+ { status: 'QUALIFICANDO', titulo: 'Qualificando', klass: '' },
  { status: 'NEGOCIANDO', titulo: 'Negociando', klass: '' },
+ { status: 'VISITA', titulo: 'Visita Agendada', klass: '' },
  { status: 'PROPOSTA', titulo: 'Proposta Enviada', klass: '' },
  { status: 'FECHADO', titulo: 'Fechado', klass: 'kanban__col--success' },
 ];

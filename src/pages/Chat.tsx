@@ -15,8 +15,10 @@ type Tab = 'pendente' | 'atendendo';
 
 const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
   { codigo: 'NOVO', label: 'Novo', desc: 'Lead recém-chegado, ainda sem contato' },
-  { codigo: 'SDR', label: 'SDR / Qualificação', desc: 'Em pré-atendimento ou qualificação' },
+  { codigo: 'SDR', label: 'SDR / IA', desc: 'Em pré-atendimento automático pela IA' },
+  { codigo: 'QUALIFICANDO', label: 'Qualificando', desc: 'Corretor qualificando o interesse e o perfil' },
   { codigo: 'NEGOCIANDO', label: 'Negociando', desc: 'Conversa ativa de negociação' },
+  { codigo: 'VISITA', label: 'Visita agendada', desc: 'Visita ou reunião marcada com o lead' },
   { codigo: 'PROPOSTA', label: 'Proposta', desc: 'Proposta enviada, aguardando decisão' },
   { codigo: 'FECHADO', label: 'Fechado', desc: 'Negócio ganho' },
   { codigo: 'PERDIDO', label: 'Perdido', desc: 'Negócio perdido' },
