@@ -49,14 +49,27 @@ export function humanizeMetaError(err: any): { code: number | null; kind: MetaEr
   return { code, kind: 'unknown', msg: raw.length > 160 ? raw.slice(0, 160) + '…' : raw };
 }
 
-export function humanizeErrorReason(errorReason: string | null | undefined): string {
-  if (!errorReason) return '';
+export function humanizeErrorReasonFull(
+  errorReason: string | null | undefined,
+): { kind: MetaErrKind; msg: string } {
+  if (!errorReason) return { kind: 'unknown', msg: '' };
   try {
     const obj = JSON.parse(errorReason);
     const h = humanizeMetaError(obj);
-    return h.msg;
+    return { kind: h.kind, msg: h.msg };
   } catch {
-    if (errorReason.length > 160) return errorReason.slice(0, 160) + '…';
-    return errorReason;
+    // O backend grava muitos erros como string pura no formato "131047: Re-engagement message".
+    // Extrai o código numérico e usa o mapa pra não vazar o texto técnico do Meta na UI.
+    const codeMatch = errorReason.match(/^\s*(\d{5,6})\b/);
+    if (codeMatch) {
+      const known = META_ERRORS[Number(codeMatch[1])];
+      if (known) return { kind: known.kind, msg: known.msg };
+    }
+    const msg = errorReason.length > 160 ? errorReason.slice(0, 160) + '…' : errorReason;
+    return { kind: 'unknown', msg };
   }
+}
+
+export function humanizeErrorReason(errorReason: string | null | undefined): string {
+  return humanizeErrorReasonFull(errorReason).msg;
 }

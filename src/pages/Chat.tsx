@@ -7,7 +7,7 @@ import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useSSE } from '../lib/useSSE';
-import { humanizeErrorReason } from '../lib/meta-errors';
+import { humanizeErrorReasonFull } from '../lib/meta-errors';
 
 import './chat.css';
 
@@ -869,8 +869,17 @@ function BannerRedistribuicao({ info }: { info: any }) {
 
 function StatusTicks({ m }: { m: Mensagem }) {
   if (m.errorReason) {
-    const human = humanizeErrorReason(m.errorReason);
-    return <span title={human || m.errorReason} style={{ color: 'var(--money-negative)', fontSize: 11 }}>! {human || 'falha'}</span>;
+    const { kind, msg } = humanizeErrorReasonFull(m.errorReason);
+    // Janela de 24h fechada / re-engajamento não é falha do sistema — é regra do
+    // WhatsApp. Mostra como aviso âmbar discreto em vez de erro vermelho.
+    if (kind === 'reengagement') {
+      return (
+        <span title={msg} style={{ color: '#D97706', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          <Icon name="clock" size={11} /> Janela 24h fechada
+        </span>
+      );
+    }
+    return <span title={msg || m.errorReason || undefined} style={{ color: 'var(--money-negative)', fontSize: 11 }}>! {msg || 'falha'}</span>;
   }
   if (m.readAt) {
     return (
