@@ -17,9 +17,21 @@ export default function FbCallback() {
         ? { kind: 'fb-oauth-success', code }
         : { kind: 'fb-oauth-error', error: 'no_code' };
 
+    // O app pai pode estar num domínio DIFERENTE do redirect_uri (ex: app roda
+    // em app.grupopons.com.br mas o callback do FB volta pra pons-frontend.vercel.app).
+    // postMessage com o próprio origin nunca chega no pai cross-domain — então
+    // dispara pra todos os origins conhecidos do app; o navegador entrega só no que casar.
+    const parentOrigins = [
+      'https://app.grupopons.com.br',
+      'https://pons-frontend.vercel.app',
+      'https://www.grupopons.com.br',
+      'http://localhost:5173',
+    ];
     try {
       if (window.opener) {
-        window.opener.postMessage(msg, window.location.origin);
+        for (const origin of parentOrigins) {
+          try { window.opener.postMessage(msg, origin); } catch {}
+        }
       }
     } catch {}
     setTimeout(() => window.close(), 600);

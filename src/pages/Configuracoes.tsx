@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
@@ -679,9 +679,21 @@ function FacebookBMCard() {
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [bmName, setBmName] = useState('Facebook Leads 1');
 
+  const popupRef = useRef<Window | null>(null);
+
   useEffect(() => {
+    // O popup do FB pode voltar num domínio diferente (redirect_uri fixo em
+    // pons-frontend.vercel.app), então aceita os origins conhecidos do app —
+    // não só o atual. Sem isso a mensagem é rejeitada e a tela trava em "Conectando".
+    const allowedOrigins = new Set([
+      window.location.origin,
+      'https://app.grupopons.com.br',
+      'https://pons-frontend.vercel.app',
+      'https://www.grupopons.com.br',
+      'http://localhost:5173',
+    ]);
     function onMsg(ev: MessageEvent) {
-      if (ev.origin !== window.location.origin) return;
+      if (!allowedOrigins.has(ev.origin)) return;
       const m = ev.data;
       if (!m || typeof m !== 'object') return;
       if (m.kind === 'fb-oauth-success' && m.code) {
@@ -718,7 +730,24 @@ function FacebookBMCard() {
       const w = 600, h = 700;
       const left = window.screenX + (window.innerWidth - w) / 2;
       const top = window.screenY + (window.innerHeight - h) / 2;
-      window.open(r.url, 'fb-oauth', `width=${w},height=${h},left=${left},top=${top}`);
+      const win = window.open(r.url, 'fb-oauth', `width=${w},height=${h},left=${left},top=${top}`);
+      popupRef.current = win;
+      if (!win) {
+        toast.error('Popup bloqueado pelo navegador. Libere popups pra este site e tente de novo.');
+        setConnecting(false);
+        return;
+      }
+      // Se o usuário fechar o popup sem concluir, destrava a UI em vez de ficar
+      // "Conectando…" pra sempre. O handler de mensagem zera connecting no sucesso.
+      const poll = setInterval(() => {
+        if (win.closed) {
+          clearInterval(poll);
+          setConnecting((c) => {
+            if (c && !pickerOpen) toast.info('Conexão com o Facebook cancelada.');
+            return false;
+          });
+        }
+      }, 700);
     } catch (err: any) {
       toast.error('Erro: ' + (err?.message || 'falha'));
       setConnecting(false);
