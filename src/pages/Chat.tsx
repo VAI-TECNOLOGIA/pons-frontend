@@ -13,6 +13,18 @@ import './chat.css';
 
 type Tab = 'pendente' | 'atendendo';
 
+const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
+  { codigo: 'NOVO', label: 'Novo', desc: 'Lead recém-chegado, ainda sem contato' },
+  { codigo: 'SDR', label: 'SDR / Qualificação', desc: 'Em pré-atendimento ou qualificação' },
+  { codigo: 'NEGOCIANDO', label: 'Negociando', desc: 'Conversa ativa de negociação' },
+  { codigo: 'PROPOSTA', label: 'Proposta', desc: 'Proposta enviada, aguardando decisão' },
+  { codigo: 'FECHADO', label: 'Fechado', desc: 'Negócio ganho' },
+  { codigo: 'PERDIDO', label: 'Perdido', desc: 'Negócio perdido' },
+];
+
+const statusLabel = (codigo?: string) =>
+  STATUS_OPTIONS.find((s) => s.codigo === codigo)?.label || codigo || 'Novo';
+
 type Mensagem = {
   id: number;
   autor: 'LEAD' | 'IA' | 'CORRETOR' | 'SISTEMA';
@@ -69,6 +81,9 @@ export default function Chat() {
   const [tabularMotivo, setTabularMotivo] = useState('');
   const [tabularObs, setTabularObs] = useState('');
   const [tabularSending, setTabularSending] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [statusValor, setStatusValor] = useState('');
+  const [statusSending, setStatusSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -252,6 +267,32 @@ export default function Chat() {
     }
   };
 
+  const abrirStatus = () => {
+    if (!activeId) return;
+    setStatusValor(conv?.status || 'NOVO');
+    setStatusOpen(true);
+  };
+
+  const confirmarStatus = async () => {
+    if (!activeId || !statusValor || statusSending) return;
+    if (statusValor === conv?.status) {
+      setStatusOpen(false);
+      return;
+    }
+    setStatusSending(true);
+    try {
+      await Api.leadUpdate(activeId, { status: statusValor });
+      toast.success(`Status atualizado para ${statusLabel(statusValor)}.`);
+      setStatusOpen(false);
+      reloadConv();
+      reloadInbox();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setStatusSending(false);
+    }
+  };
+
   const enviarImovel = async (nome: string) => {
     if (!activeId) return;
     setDraft(
@@ -429,6 +470,13 @@ export default function Chat() {
                       </span>
                     )}
                     <Janela24h conv={conv} />
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      onClick={abrirStatus}
+                      title="Atualizar o status da negociação"
+                    >
+                      <Icon name="flag" size={12} /> Status: {statusLabel(conv.status)}
+                    </button>
                     {!conv.reservado && (
                       <button className="btn btn--primary btn--sm" onClick={aceitarLead}>
                         <Icon name="check" size={12} /> Aceitar
@@ -605,6 +653,57 @@ export default function Chat() {
                   onChange={(e) => setTabularObs(e.target.value)}
                   style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
                 />
+              </Modal>
+              <Modal
+                open={statusOpen}
+                onClose={() => !statusSending && setStatusOpen(false)}
+                title="Status da negociação"
+                subtitle={`Atualize o estágio de ${conv?.nome || 'lead'} no funil.`}
+                size="sm"
+                footer={
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button className="btn btn--ghost" onClick={() => setStatusOpen(false)} disabled={statusSending}>
+                      Cancelar
+                    </button>
+                    <button className="btn btn--primary" onClick={confirmarStatus} disabled={statusSending || !statusValor}>
+                      {statusSending ? 'Salvando…' : 'Salvar'}
+                    </button>
+                  </div>
+                }
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {STATUS_OPTIONS.map((s) => {
+                    const ativo = statusValor === s.codigo;
+                    return (
+                      <button
+                        key={s.codigo}
+                        type="button"
+                        onClick={() => setStatusValor(s.codigo)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          textAlign: 'left',
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          border: '1px solid ' + (ativo ? 'var(--pons-accent-red)' : 'var(--border-color, #334155)'),
+                          background: ativo ? 'rgba(220,38,38,0.08)' : 'transparent',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Icon
+                          name={ativo ? 'checkCircle' : 'circle'}
+                          size={16}
+                          style={{ color: ativo ? 'var(--pons-accent-red)' : 'var(--text-secondary)', flexShrink: 0 }}
+                        />
+                        <span style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: 600 }}>{s.label}</span>
+                          <span className="text-xs text-secondary">{s.desc}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </Modal>
             </>
           )}
