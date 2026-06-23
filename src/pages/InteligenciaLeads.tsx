@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Api } from '../lib/api';
+import { formatNome } from '../lib/format';
 import './inteligencia-leads.css';
 
 // Painel de Inteligência de Leads — para o marketing decidir onde investir.
@@ -190,7 +191,7 @@ export default function InteligenciaLeads() {
             <span>Corretor</span>
             <select value={corretorId} onChange={(e) => setCorretorId(e.target.value)}>
               <option value="">Todos os corretores</option>
-              {corretores.map((c) => <option key={c.id} value={c.id}>{c.nome || c.user?.name || `Corretor ${c.id}`}</option>)}
+              {corretores.map((c) => <option key={c.id} value={c.id}>{formatNome(c.nome || c.user?.name) || `Corretor ${c.id}`}</option>)}
             </select>
           </label>
         </div>
@@ -255,7 +256,7 @@ export default function InteligenciaLeads() {
             {/* Por corretor */}
             <section className="il-card">
               <h3>Desempenho por corretor</h3>
-              <TabelaBuckets rows={data!.porCorretor} primeira="Corretor" />
+              <TabelaBuckets rows={data!.porCorretor.map((r) => ({ ...r, label: formatNome(r.label) }))} primeira="Corretor" />
             </section>
           </>
         )}
