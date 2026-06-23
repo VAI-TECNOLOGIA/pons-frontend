@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -137,12 +138,6 @@ export default function BMPage() {
                   <div className="text-xs text-secondary">Leads captados</div>
                   <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-display)' }}>{bm.leadsCaptados}</div>
                 </div>
-                <div style={{ flex: 1, background: 'var(--bg-elevated)', borderRadius: 8, padding: '10px 12px' }}>
-                  <div className="text-xs text-secondary">IA padrão</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4, color: bm.iaHabilitadaPadrao ? 'var(--color-success-fg)' : 'var(--text-secondary)' }}>
-                    {bm.iaHabilitadaPadrao ? 'Ativada' : 'Desativada'}
-                  </div>
-                </div>
               </div>
 
               {/* Ações */}
@@ -211,28 +206,109 @@ export default function BMPage() {
         title={`Dashboard · ${selected?.bm?.nome || ''}`}
         size="lg"
       >
-        {selected && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-            <Stat label="Leads Total" value={selected.dash.leadsTotal} />
-            <Stat label="Leads (mês)" value={selected.dash.leadsMes} />
-            <Stat label="Fechados" value={selected.dash.leadsFechados} />
-            <Stat label="Conversão" value={selected.dash.conversaoPct + '%'} />
-            <Stat label="VGV total" value={(selected.dash.vgvTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })} />
-            <Stat label="Custo (mês)" value={(selected.dash.custoMes || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-            <Stat label="Conversas (mês)" value={selected.dash.conversasMes} />
-            <Stat label="Custo/Lead" value={'R$ ' + (selected.dash.custoPorLead || 0).toFixed(2)} />
-          </div>
-        )}
+        {selected && (() => {
+          const d = selected.dash;
+          const brl = (v: number, frac = 0) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: frac });
+          const conv = Number(d.conversaoPct) || 0;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Hero — destaque de leads + conversão */}
+              <div
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: 14,
+                  padding: '20px 22px',
+                  color: '#fff',
+                  background: 'linear-gradient(135deg, var(--pons-navy) 0%, var(--pons-blue) 100%)',
+                  boxShadow: 'var(--shadow-md)',
+                }}
+              >
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute', top: -40, right: -30, width: 160, height: 160,
+                    borderRadius: '50%', background: 'rgba(255,255,255,.08)',
+                  }}
+                />
+                <div className="flex" style={{ gap: 24, flexWrap: 'wrap', position: 'relative' }}>
+                  <div>
+                    <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', opacity: .8 }}>Leads captados</div>
+                    <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1, fontFamily: 'var(--font-display)' }}>{d.leadsTotal}</div>
+                    <div style={{ fontSize: 12, opacity: .85, marginTop: 4 }}>{d.leadsMes} no mês · {d.leadsFechados} fechados</div>
+                  </div>
+                  <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                    <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em', opacity: .8 }}>Conversão</div>
+                    <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1, fontFamily: 'var(--font-display)' }}>{conv}%</div>
+                    {/* barra de progresso */}
+                    <div style={{ width: 140, height: 6, borderRadius: 3, background: 'rgba(255,255,255,.2)', marginTop: 8, overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(conv, 100)}%`, height: '100%', borderRadius: 3, background: 'var(--pons-cyan)', transition: 'width .6s cubic-bezier(.2,.8,.2,1)' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid de métricas */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                <StatCard icon="users" tone="info" label="Leads Total" value={d.leadsTotal} />
+                <StatCard icon="calendar" tone="info" label="Leads (mês)" value={d.leadsMes} />
+                <StatCard icon="checkCircle" tone="success" label="Fechados" value={d.leadsFechados} />
+                <StatCard icon="target" tone="success" label="Conversão" value={conv + '%'} />
+                <StatCard icon="trophy" tone="warning" label="VGV total" value={brl(d.vgvTotal)} />
+                <StatCard icon="wallet" tone="danger" label="Custo (mês)" value={brl(d.custoMes, 2)} />
+                <StatCard icon="chat" tone="info" label="Conversas (mês)" value={d.conversasMes} />
+                <StatCard icon="gauge" tone="warning" label="Custo/Lead" value={brl(d.custoPorLead, 2)} />
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </>
   );
 }
 
-function Stat({ label, value }: { label: string; value: any }) {
+const TONES: Record<string, { bg: string; fg: string; border: string }> = {
+  info: { bg: 'var(--color-info-bg)', fg: 'var(--color-info-fg)', border: 'var(--color-info-border)' },
+  success: { bg: 'var(--color-success-bg)', fg: 'var(--color-success-fg)', border: 'var(--color-success-border)' },
+  warning: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-fg)', border: 'var(--color-warning-border)' },
+  danger: { bg: 'var(--color-danger-bg)', fg: 'var(--color-danger-fg)', border: 'var(--color-danger-border)' },
+};
+
+function StatCard({ icon, label, value, tone = 'info' }: { icon: string; label: string; value: any; tone?: keyof typeof TONES }) {
+  const [hover, setHover] = useState(false);
+  const t = TONES[tone] || TONES.info;
   return (
-    <div className="card" style={{ padding: 12 }}>
-      <div className="text-xs text-secondary">{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
+    <div
+      className="card"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        padding: 14,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        cursor: 'default',
+        transform: hover ? 'translateY(-3px)' : 'none',
+        boxShadow: hover ? 'var(--shadow-lg)' : 'var(--shadow-xs)',
+        borderColor: hover ? t.border : undefined,
+        transition: 'transform .18s ease, box-shadow .18s ease, border-color .18s ease',
+      }}
+    >
+      <div
+        style={{
+          width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+          display: 'grid', placeItems: 'center',
+          background: t.bg, color: t.fg,
+          transform: hover ? 'scale(1.08)' : 'none',
+          transition: 'transform .18s ease',
+        }}
+      >
+        <Icon name={icon} size={17} />
+      </div>
+      <div>
+        <div className="text-xs text-secondary" style={{ marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 21, fontWeight: 700, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{value}</div>
+      </div>
     </div>
   );
 }
