@@ -13,6 +13,18 @@ import './chat.css';
 
 type Tab = 'pendente' | 'atendendo';
 
+// Respostas rápidas padrão do atendimento (corretor insere e revisa antes de enviar).
+const RESPOSTAS_RAPIDAS = [
+  'Olá! Aqui é da Grupo Pons Imobiliário. Como posso te ajudar?',
+  'Você procura imóvel para morar ou para investir?',
+  'Qual região te interessa — Itapema, Porto Belo ou Balneário Camboriú?',
+  'Posso te enviar a *tabela de valores* e as *plantas*. Pode ser?',
+  'Consigo agendar uma visita. Qual o melhor dia e horário pra você?',
+  'Esse imóvel tem ótima procura. Quer que eu reserve um horário pra te apresentar?',
+  'Perfeito! Vou separar as melhores opções e já te retorno. 👍',
+  'Obrigado pelo contato! Qualquer dúvida, estou à disposição. 🙌',
+];
+
 const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
   { codigo: 'NOVO', label: 'Novo', desc: 'Lead recém-chegado, ainda sem contato' },
   { codigo: 'SDR', label: 'SDR / IA', desc: 'Em pré-atendimento automático pela IA' },
@@ -88,6 +100,14 @@ export default function Chat() {
   const [statusSending, setStatusSending] = useState(false);
   const [anexo, setAnexo] = useState<{ url: string; fileName: string; contentType: string } | null>(null);
   const [uploadingAnexo, setUploadingAnexo] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
+  const [recording, setRecording] = useState(false); // gravando áudio
+  const [recSecs, setRecSecs] = useState(0);
+  const [recSending, setRecSending] = useState(false);
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const recChunksRef = useRef<Blob[]>([]);
+  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recStreamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -346,12 +366,134 @@ export default function Chat() {
     }
   };
 
-  const enviarImovel = async (nome: string) => {
-    if (!activeId) return;
-    setDraft(
-      `Olha esse empreendimento que separei pra você: *${nome}*. Posso te enviar a tabela e as plantas?`,
-    );
+  // Monta uma mensagem de imóvel BEM formatada (WhatsApp-style) e joga no
+  // compositor pro corretor revisar/enviar. Campos opcionais são ignorados.
+  const enviarImovel = async (emp: any) => {
+    if (!activeId || !emp) return;
+    const loc = [emp.bairro, emp.cidade].filter(Boolean).join(' · ');
+    const det = [
+      emp.dormitorios ? `🛏️ ${emp.dormitorios} dorm.` : '',
+      emp.suites ? `🛁 ${emp.suites} suíte(s)` : '',
+      emp.vagas ? `🚗 ${emp.vagas} vaga(s)` : '',
+      emp.area ? `📐 ${emp.area} m²` : '',
+    ].filter(Boolean).join('   ');
+    const linhas = [
+      `🏢 *${emp.nome}*`,
+      loc,
+      det,
+      emp.descricao ? `\n${String(emp.descricao).replace(/\s+/g, ' ').trim().slice(0, 240)}` : '',
+      `\nPosso te enviar a *tabela de valores* e as *plantas*. Quer que eu agende uma visita? 📅`,
+    ].filter(Boolean);
+    setDraft(linhas.join('\n'));
   };
+
+  // Respostas rápidas — insere o texto no compositor (corretor revisa e envia).
+  const inserirRapida = (txt: string) => {
+    setDraft((d) => (d.trim() ? d.trim() + '\n' : '') + txt);
+    setQuickOpen(false);
+  };
+
+  // Ligar — click-to-call. Exige o lead aceito e o contato liberado (nº real).
+  const ligar = () => {
+    if (!conv?.reservado) { toast.info('Aceite o lead antes de ligar.'); return; }
+    const tel = (conv as any)?.telefone as string | undefined;
+    if (!(conv as any)?.telefoneLiberado || !tel) {
+      toast.info('Libere o contato para ver o número e ligar.');
+      return;
+    }
+    window.open(`tel:+${tel.replace(/\D/g, '')}`, '_self');
+  };
+
+  // Marca a negociação (status NEGOCIANDO) em 1 clique.
+  const marcarNegociacao = async () => {
+    if (!activeId) return;
+    try {
+      await Api.leadUpdate(activeId, { status: 'NEGOCIANDO' });
+      toast.success('Marcado como Negociação.');
+      reloadConv(); reloadInbox();
+    } catch (err: any) { toast.error('Erro: ' + (err?.message || 'falha')); }
+  };
+
+  // Rejeita o lead (status PERDIDO) com confirmação.
+  const rejeitarLead = async () => {
+    if (!activeId) return;
+    if (!window.confirm('Rejeitar este lead? Ele sai do atendimento ativo.')) return;
+    try {
+      await Api.leadUpdate(activeId, { status: 'PERDIDO' });
+      toast.success('Lead rejeitado.');
+      reloadConv(); reloadInbox();
+    } catch (err: any) { toast.error('Erro: ' + (err?.message || 'falha')); }
+  };
+
+  // ── Áudio (mensagem de voz) ────────────────────────────────────────────────
+  const pararStreamRec = () => {
+    if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
+    recStreamRef.current?.getTracks().forEach((t) => t.stop());
+    recStreamRef.current = null;
+  };
+  const iniciarGravacao = async () => {
+    if (recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recStreamRef.current = stream;
+      recChunksRef.current = [];
+      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const mr = new MediaRecorder(stream, { mimeType: mime });
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recChunksRef.current.push(e.data); };
+      mediaRecRef.current = mr;
+      mr.start();
+      setRecSecs(0);
+      setRecording(true);
+      recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000);
+    } catch {
+      toast.error('Não consegui acessar o microfone — permita o acesso no navegador.');
+    }
+  };
+  const cancelarGravacao = () => {
+    const mr = mediaRecRef.current;
+    if (mr && mr.state !== 'inactive') { mr.onstop = null; mr.stop(); }
+    mediaRecRef.current = null;
+    recChunksRef.current = [];
+    pararStreamRec();
+    setRecording(false);
+    setRecSecs(0);
+  };
+  const enviarGravacao = async () => {
+    const mr = mediaRecRef.current;
+    if (!mr || !activeId) { cancelarGravacao(); return; }
+    setRecSending(true);
+    const blob: Blob = await new Promise((resolve) => {
+      mr.onstop = () => resolve(new Blob(recChunksRef.current, { type: 'audio/webm' }));
+      if (mr.state !== 'inactive') mr.stop();
+      else resolve(new Blob(recChunksRef.current, { type: 'audio/webm' }));
+    });
+    pararStreamRec();
+    try {
+      const file = new File([blob], `audio-${Date.now()}.webm`, { type: 'audio/webm' });
+      const up = await Api.conversationUploadMedia(file);
+      const r = await Api.conversationSend(activeId, '', 'CORRETOR', { mediaUrl: up.url, mediaType: 'audio', fileName: file.name });
+      if (r.delivery === 'falha') toast.error(`Falha no envio do áudio (${r.canal}).`);
+      reloadConv(); reloadInbox();
+    } catch (err: any) {
+      toast.error('Erro ao enviar áudio: ' + (err?.message || 'falha'));
+    } finally {
+      mediaRecRef.current = null;
+      recChunksRef.current = [];
+      setRecording(false);
+      setRecSecs(0);
+      setRecSending(false);
+    }
+  };
+  // Ao trocar de conversa: descarta gravação em andamento e desliga o microfone.
+  useEffect(() => {
+    if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
+    recStreamRef.current?.getTracks().forEach((t) => t.stop());
+    recStreamRef.current = null;
+    mediaRecRef.current = null;
+    recChunksRef.current = [];
+    setRecording(false);
+    setRecSecs(0);
+  }, [activeId]);
 
   const sincronizar = async () => {
     if (!activeId || syncing) return;
@@ -553,6 +695,19 @@ export default function Chat() {
                         <Icon name="warn" size={12} /> Tabular
                       </button>
                     )}
+                    {conv.reservado && (
+                      <>
+                        <button className="btn btn--ghost btn--sm" onClick={ligar} title="Ligar para o lead (requer contato liberado)">
+                          <Icon name="phone" size={12} /> Ligar
+                        </button>
+                        <button className="btn btn--ghost btn--sm" onClick={marcarNegociacao} title="Marcar como Negociação">
+                          <Icon name="flag" size={12} /> Negociação
+                        </button>
+                        <button className="btn btn--ghost btn--sm" onClick={rejeitarLead} title="Rejeitar lead (marca como Perdido)">
+                          <Icon name="x" size={12} /> Rejeitar
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -561,7 +716,7 @@ export default function Chat() {
                   Enviar imóvel:
                 </span>
                 {(empreendimentos || []).map((e: any) => (
-                  <button className="imovel-chip" key={e.id} onClick={() => enviarImovel(e.nome)}>
+                  <button className="imovel-chip" key={e.id} onClick={() => enviarImovel(e)}>
                     {e.nome}
                   </button>
                 ))}
@@ -627,52 +782,89 @@ export default function Chat() {
                       style={{ display: 'none' }}
                       onChange={onSelecionarArquivo}
                     />
-                    <button
-                      className="btn btn--secondary btn--sm"
-                      title="Anexar imagem"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={sending || uploadingAnexo}
-                    >
-                      <Icon name="paperclip" size={14} />
-                    </button>
-                    {/* Botão IA manual desativado: a IA já responde pelo fluxo SDR configurado;
-                        após o corretor assumir o atendimento este gatilho manual não é necessário.
-                    <button
-                      className="btn btn--secondary btn--sm"
-                      title="IA responder"
-                      onClick={iaResponder}
-                      disabled={sending}
-                    >
-                      IA
-                    </button>
-                    */}
-                    <button
-                      className="btn btn--secondary btn--sm"
-                      title="Enviar template Meta aprovado"
-                      onClick={() => setTemplatePickerOpen(true)}
-                      disabled={sending}
-                    >
-                      <Icon name="doc" size={14} /> Template
-                    </button>
-                    <textarea
-                      placeholder={anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          enviar();
-                        }
-                      }}
-                      disabled={sending}
-                    />
-                    <button
-                      className="btn btn--primary"
-                      onClick={enviar}
-                      disabled={sending || uploadingAnexo || (!draft.trim() && !anexo)}
-                    >
-                      {sending ? 'Enviando…' : 'Enviar'}
-                    </button>
+                    {recording ? (
+                      <div className="rec-bar">
+                        <span className="rec-dot" />
+                        <span className="rec-time">
+                          {Math.floor(recSecs / 60)}:{String(recSecs % 60).padStart(2, '0')}
+                        </span>
+                        <span className="rec-hint">Gravando áudio…</span>
+                        <button className="btn btn--ghost btn--sm" onClick={cancelarGravacao} disabled={recSending} title="Descartar">
+                          <Icon name="trash" size={14} /> Descartar
+                        </button>
+                        <button className="btn btn--primary btn--sm" onClick={enviarGravacao} disabled={recSending} title="Enviar áudio">
+                          {recSending ? 'Enviando…' : (<><Icon name="send" size={14} /> Enviar áudio</>)}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          title="Anexar imagem"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={sending || uploadingAnexo}
+                        >
+                          <Icon name="paperclip" size={14} />
+                        </button>
+                        <div className="quick-wrap">
+                          <button
+                            className="btn btn--secondary btn--sm"
+                            title="Respostas rápidas"
+                            onClick={() => setQuickOpen((o) => !o)}
+                            disabled={sending}
+                          >
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13l0-8Z" /></svg>
+                            Rápidas
+                          </button>
+                          {quickOpen && (
+                            <>
+                              <div className="quick-backdrop" onClick={() => setQuickOpen(false)} />
+                              <div className="quick-pop">
+                                <div className="quick-pop__head">Respostas rápidas</div>
+                                {RESPOSTAS_RAPIDAS.map((r, i) => (
+                                  <button key={i} className="quick-item" onClick={() => inserirRapida(r)}>{r}</button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          title="Enviar template Meta aprovado"
+                          onClick={() => setTemplatePickerOpen(true)}
+                          disabled={sending}
+                        >
+                          <Icon name="doc" size={14} /> Template
+                        </button>
+                        <textarea
+                          placeholder={anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              enviar();
+                            }
+                          }}
+                          disabled={sending}
+                        />
+                        <button
+                          className="btn btn--secondary btn--sm composer__mic"
+                          title="Gravar áudio"
+                          onClick={iniciarGravacao}
+                          disabled={sending || uploadingAnexo}
+                        >
+                          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" /></svg>
+                        </button>
+                        <button
+                          className="btn btn--primary"
+                          onClick={enviar}
+                          disabled={sending || uploadingAnexo || (!draft.trim() && !anexo)}
+                        >
+                          {sending ? 'Enviando…' : 'Enviar'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </>
               )}
