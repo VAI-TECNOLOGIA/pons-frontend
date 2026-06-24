@@ -377,14 +377,34 @@ export const Api = {
       '/conversations',
     ),
   conversationGet: (leadId: number) => request<any>(`/conversations/${leadId}`),
-  conversationSend: (leadId: number, texto: string, autor: 'CORRETOR' | 'IA' = 'CORRETOR') =>
+  conversationSend: (
+    leadId: number,
+    texto: string,
+    autor: 'CORRETOR' | 'IA' = 'CORRETOR',
+    media?: { mediaUrl: string; mediaType: 'image' | 'video' | 'audio' | 'document'; fileName?: string },
+  ) =>
     request<{
       mensagem: any;
       delivery: 'enviado' | 'simulado' | 'falha';
       canal: 'meta' | 'vai' | 'simulado';
       meta?: any;
       vai?: any;
-    }>(`/conversations/${leadId}/messages`, { method: 'POST', body: { texto, autor } }),
+    }>(`/conversations/${leadId}/messages`, { method: 'POST', body: { texto, autor, ...(media || {}) } }),
+  // Upload de mídia do chat → R2 (prefixo uploads). Retorna { url, key, size, contentType }.
+  conversationUploadMedia: async (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await fetch(`${BASE}/uploads?prefix=uploads`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.error || j.message || 'upload_failed');
+    }
+    return r.json() as Promise<{ url: string; key: string; size: number; contentType: string }>;
+  },
   conversationSync: (leadId: number) =>
     request<{ importados: number }>(`/conversations/${leadId}/sync`, { method: 'POST' }),
   vaiHealth: () =>

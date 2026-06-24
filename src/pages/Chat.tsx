@@ -86,6 +86,9 @@ export default function Chat() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [statusValor, setStatusValor] = useState('');
   const [statusSending, setStatusSending] = useState(false);
+  const [anexo, setAnexo] = useState<{ url: string; fileName: string; contentType: string } | null>(null);
+  const [uploadingAnexo, setUploadingAnexo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -163,13 +166,41 @@ export default function Chat() {
     [activeId],
   );
 
+  const onSelecionarArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite reescolher o mesmo arquivo
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Só imagens por enquanto.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Imagem acima de 10MB.');
+      return;
+    }
+    setUploadingAnexo(true);
+    try {
+      const r = await Api.conversationUploadMedia(file);
+      setAnexo({ url: r.url, fileName: file.name, contentType: r.contentType || file.type });
+    } catch (err: any) {
+      toast.error('Erro no upload: ' + (err?.message || 'falha'));
+    } finally {
+      setUploadingAnexo(false);
+    }
+  };
+
   const enviar = async () => {
-    if (!activeId || !draft.trim() || sending) return;
+    if (!activeId || sending || uploadingAnexo) return;
     const texto = draft.trim();
+    if (!texto && !anexo) return;
+    const media = anexo
+      ? { mediaUrl: anexo.url, mediaType: 'image' as const, fileName: anexo.fileName }
+      : undefined;
     setDraft('');
+    setAnexo(null);
     setSending(true);
     try {
-      const r = await Api.conversationSend(activeId, texto, 'CORRETOR');
+      const r = await Api.conversationSend(activeId, texto, 'CORRETOR', media);
       if (r.delivery === 'simulado') {
         if (!anyConfigured) toast.info('Mensagem registrada — configure Meta ou VAI pra enviar de verdade.');
         else toast.info('Mensagem registrada em modo simulado.');
@@ -181,6 +212,7 @@ export default function Chat() {
       reloadInbox();
     } catch (err: any) {
       setDraft(texto);
+      if (media) setAnexo(anexo);
       toast.error('Erro ao enviar: ' + (err?.message || 'falha'));
     } finally {
       setSending(false);
@@ -534,39 +566,93 @@ export default function Chat() {
                   hasInbound={!!conv?.lastInboundAt}
                 />
               ) : (
-                <div className="composer">
-                  <button
-                    className="btn btn--secondary btn--sm"
-                    title="IA responder"
-                    onClick={iaResponder}
-                    disabled={sending}
-                  >
-                    IA
-                  </button>
-                  <button
-                    className="btn btn--secondary btn--sm"
-                    title="Enviar template Meta aprovado"
-                    onClick={() => setTemplatePickerOpen(true)}
-                    disabled={sending}
-                  >
-                    <Icon name="doc" size={14} /> Template
-                  </button>
-                  <textarea
-                    placeholder="Escreva como corretor…"
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        enviar();
-                      }
-                    }}
-                    disabled={sending}
-                  />
-                  <button className="btn btn--primary" onClick={enviar} disabled={sending || !draft.trim()}>
-                    {sending ? 'Enviando…' : 'Enviar'}
-                  </button>
-                </div>
+                <>
+                  {(anexo || uploadingAnexo) && (
+                    <div
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 12px', margin: '0 12px',
+                        background: 'var(--bg-elevated)', borderRadius: 10,
+                        border: '1px solid var(--border-light)',
+                      }}
+                    >
+                      {uploadingAnexo ? (
+                        <span className="text-xs text-secondary">Enviando imagem…</span>
+                      ) : (
+                        <>
+                          <img
+                            src={anexo!.url}
+                            alt={anexo!.fileName}
+                            style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                          />
+                          <span className="text-xs" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {anexo!.fileName}
+                          </span>
+                          <button
+                            className="btn btn--ghost btn--sm"
+                            title="Remover imagem"
+                            onClick={() => setAnexo(null)}
+                            style={{ color: 'var(--color-danger-fg)' }}
+                          >
+                            <Icon name="x" size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <div className="composer">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={onSelecionarArquivo}
+                    />
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      title="Anexar imagem"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sending || uploadingAnexo}
+                    >
+                      <Icon name="paperclip" size={14} />
+                    </button>
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      title="IA responder"
+                      onClick={iaResponder}
+                      disabled={sending}
+                    >
+                      IA
+                    </button>
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      title="Enviar template Meta aprovado"
+                      onClick={() => setTemplatePickerOpen(true)}
+                      disabled={sending}
+                    >
+                      <Icon name="doc" size={14} /> Template
+                    </button>
+                    <textarea
+                      placeholder={anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          enviar();
+                        }
+                      }}
+                      disabled={sending}
+                    />
+                    <button
+                      className="btn btn--primary"
+                      onClick={enviar}
+                      disabled={sending || uploadingAnexo || (!draft.trim() && !anexo)}
+                    >
+                      {sending ? 'Enviando…' : 'Enviar'}
+                    </button>
+                  </div>
+                </>
               )}
               {templatePickerOpen && conv && (
                 <TemplatePickerModal
@@ -737,18 +823,7 @@ function MessageBubble({ m }: { m: Mensagem }) {
 function MessageBody({ m }: { m: Mensagem }) {
   const ct = (m.contentType || 'text').toLowerCase();
   if (ct === 'image' && m.fileUrl) {
-    return (
-      <div>
-        <a href={m.fileUrl} target="_blank" rel="noopener" style={{ display: 'block' }}>
-          <img
-            src={m.fileUrl}
-            alt={m.fileName || 'imagem'}
-            style={{ maxWidth: 240, borderRadius: 8, display: 'block' }}
-          />
-        </a>
-        {m.texto && <div style={{ marginTop: 4 }}>{m.texto}</div>}
-      </div>
-    );
+    return <ImageBody m={m} />;
   }
   if (ct === 'audio' && m.fileUrl) {
     return <audio src={m.fileUrl} controls preload="none" style={{ maxWidth: 260 }} />;
@@ -769,6 +844,52 @@ function MessageBody({ m }: { m: Mensagem }) {
     );
   }
   return <>{m.texto}</>;
+}
+
+// Imagem recolhível: por padrão mostra só um chip "Ver imagem" pra não poluir a
+// conversa quando há muitas mídias. Ao clicar, expande inline; pode recolher de
+// novo. Responsivo: a imagem nunca passa de 75% da largura disponível.
+function ImageBody({ m }: { m: Mensagem }) {
+  const [aberta, setAberta] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setAberta((v) => !v)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '4px 10px',
+          borderRadius: 999,
+          border: '1px solid var(--color-info-border)',
+          background: 'var(--color-info-bg)',
+          color: 'var(--color-info-fg)',
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        <Icon name={aberta ? 'chevron-down' : 'eye'} size={13} />
+        {aberta ? 'Recolher' : 'Ver imagem'}
+      </button>
+      {aberta && (
+        <a
+          href={m.fileUrl!}
+          target="_blank"
+          rel="noopener"
+          style={{ display: 'block', marginTop: 6 }}
+        >
+          <img
+            src={m.fileUrl!}
+            alt={m.fileName || 'imagem'}
+            style={{ width: '100%', maxWidth: 'min(280px, 75vw)', borderRadius: 8, display: 'block' }}
+          />
+        </a>
+      )}
+      {m.texto && <div style={{ marginTop: aberta ? 6 : 4 }}>{m.texto}</div>}
+    </div>
+  );
 }
 
 // Indicador da janela de 24h da Meta. Backend agora envia `lastInboundAt` e
