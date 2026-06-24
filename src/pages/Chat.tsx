@@ -110,6 +110,25 @@ export default function Chat() {
   const lista = tab === 'pendente' ? pendente : atendendo;
   const mensagens: Mensagem[] = conv?.mensagens || [];
 
+  // Janela de 24h derivada AO VIVO do array de mensagens — não do booleano
+  // estático `conv.windowOpen` do fetch. As mensagens atualizam via SSE/refetch,
+  // então assim que um inbound novo do lead aparece o compositor reabre, sem
+  // depender do windowOpen vir recalculado. Tick lento só pra a janela poder
+  // FECHAR sozinha quando os 24h expiram com a tela aberta.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const lastInboundMs = (() => {
+    for (let i = mensagens.length - 1; i >= 0; i--) {
+      const m = mensagens[i];
+      if (m.direction === 'inbound' || m.autor === 'LEAD') return new Date(m.createdAt).getTime();
+    }
+    return conv?.lastInboundAt ? new Date(conv.lastInboundAt).getTime() : 0;
+  })();
+  const janelaAberta = lastInboundMs > 0 && nowTick - lastInboundMs < 24 * 60 * 60 * 1000;
+
   // Auto-scroll ao receber novas mensagens: rola direto via scrollTop (mais robusto
   // que scrollIntoView dentro de overflow:auto). Depende do id da última msg pra
   // capturar caso o length não muda mas o conteúdo sim. Sem smooth: smooth chega
@@ -560,10 +579,10 @@ export default function Chat() {
                   respostasUsadas={(conv as any).iaRespostasCount || 0}
                   limiteAtingido={!!(conv as any).iaLimiteAtingido}
                 />
-              ) : conv?.windowOpen === false ? (
+              ) : !janelaAberta ? (
                 <ComposerJanelaFechada
                   onAbrirTemplates={() => setTemplatePickerOpen(true)}
-                  hasInbound={!!conv?.lastInboundAt}
+                  hasInbound={lastInboundMs > 0}
                 />
               ) : (
                 <>
@@ -906,13 +925,15 @@ function Janela24h({ conv }: { conv: any }) {
     return () => clearInterval(id);
   }, []);
 
-  const lastInboundAt = conv?.lastInboundAt
-    ? new Date(conv.lastInboundAt).getTime()
-    : (() => {
-        const ms: any[] = conv?.mensagens || [];
-        const li = [...ms].reverse().find((m) => m.direction === 'inbound' || m.autor === 'LEAD');
-        return li ? new Date(li.createdAt).getTime() : 0;
-      })();
+  // Usa o inbound MAIS RECENTE entre o array de mensagens (fonte viva via SSE) e
+  // o lastInboundAt do fetch — assim o badge nunca fica defasado do compositor.
+  const lastInboundAt = (() => {
+    const ms: any[] = conv?.mensagens || [];
+    const li = [...ms].reverse().find((m) => m.direction === 'inbound' || m.autor === 'LEAD');
+    const fromMsgs = li ? new Date(li.createdAt).getTime() : 0;
+    const fromFetch = conv?.lastInboundAt ? new Date(conv.lastInboundAt).getTime() : 0;
+    return Math.max(fromMsgs, fromFetch);
+  })();
 
   if (!lastInboundAt) {
     return (
