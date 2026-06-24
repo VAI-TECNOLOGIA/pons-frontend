@@ -545,6 +545,13 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  const v = fd.get(k);
  if (v != null) payload[k] = String(v);
  }
+ // Pool de números (campanhas round-robin): textarea com 1 ID por linha/vírgula
+ // → guardado como JSON array de phone_number_id (formato que getWhatsappPhoneIds lê).
+ const poolRaw = fd.get('whatsapp.phoneIdPool');
+ if (poolRaw != null) {
+ const ids = String(poolRaw).split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
+ payload['whatsapp.phoneIdPool'] = JSON.stringify(ids);
+ }
  setSaving(true);
  try {
  await Api.settingsSave(payload);
@@ -559,6 +566,15 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  };
 
  const webhookUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/meta-whatsapp` : '';
+ // Pool guardado como JSON array; mostra 1 ID por linha no textarea.
+ const poolText = (() => {
+ try {
+ const arr = JSON.parse(settings['whatsapp.phoneIdPool'] || '[]');
+ return Array.isArray(arr) ? arr.join('\n') : '';
+ } catch {
+ return String(settings['whatsapp.phoneIdPool'] || '');
+ }
+ })();
 
  return (
  <form className="card" onSubmit={submit} style={{ marginBottom: 16 }}>
@@ -644,6 +660,17 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  defaultValue={settings['whatsapp.verifyToken'] || ''}
  />
  <div className="field__hint">Cole o MESMO valor no painel Meta ao configurar o webhook.</div>
+ </div>
+ <div className="field field--span-2">
+ <label className="field__label">Pool de números (campanhas)</label>
+ <textarea
+ name="whatsapp.phoneIdPool"
+ className="field__input"
+ rows={5}
+ placeholder={'1 phone_number_id por linha, ex.:\n1090726274134958\n1236172369571015'}
+ defaultValue={poolText}
+ />
+ <div className="field__hint">phone_number_ids da MESMA WABA usados nas campanhas (round-robin). Vazio = usa só o Phone Number ID acima. O atendimento responde sempre pelo número que recebeu o lead, independente desta lista.</div>
  </div>
  </div>
 
