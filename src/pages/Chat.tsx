@@ -140,10 +140,13 @@ export default function Chat() {
     const id = setInterval(() => setNowTick(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
+  // Só uma mensagem REAL do lead (autor LEAD + inbound) reabre a janela de 24h.
+  // Não vale `|| direction==='inbound'`: logs de SISTEMA/formulário são criados
+  // sem `direction` e o schema default é 'inbound' — abririam a janela à toa.
   const lastInboundMs = (() => {
     for (let i = mensagens.length - 1; i >= 0; i--) {
       const m = mensagens[i];
-      if (m.direction === 'inbound' || m.autor === 'LEAD') return new Date(m.createdAt).getTime();
+      if (m.autor === 'LEAD' && m.direction === 'inbound') return new Date(m.createdAt).getTime();
     }
     return conv?.lastInboundAt ? new Date(conv.lastInboundAt).getTime() : 0;
   })();
@@ -1121,7 +1124,7 @@ function Janela24h({ conv }: { conv: any }) {
   // o lastInboundAt do fetch — assim o badge nunca fica defasado do compositor.
   const lastInboundAt = (() => {
     const ms: any[] = conv?.mensagens || [];
-    const li = [...ms].reverse().find((m) => m.direction === 'inbound' || m.autor === 'LEAD');
+    const li = [...ms].reverse().find((m) => m.autor === 'LEAD' && m.direction === 'inbound');
     const fromMsgs = li ? new Date(li.createdAt).getTime() : 0;
     const fromFetch = conv?.lastInboundAt ? new Date(conv.lastInboundAt).getTime() : 0;
     return Math.max(fromMsgs, fromFetch);
