@@ -616,6 +616,8 @@ export default function Chat() {
                     >
                       <Icon name="paperclip" size={14} />
                     </button>
+                    {/* Botão IA manual desativado: a IA já responde pelo fluxo SDR configurado;
+                        após o corretor assumir o atendimento este gatilho manual não é necessário.
                     <button
                       className="btn btn--secondary btn--sm"
                       title="IA responder"
@@ -624,6 +626,7 @@ export default function Chat() {
                     >
                       IA
                     </button>
+                    */}
                     <button
                       className="btn btn--secondary btn--sm"
                       title="Enviar template Meta aprovado"

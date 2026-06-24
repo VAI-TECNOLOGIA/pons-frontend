@@ -201,8 +201,16 @@
   /* Safe-area pro iPhone (notch + barra inferior) */
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
+/* Itens de ação alinham com a altura base da textarea (40px) pra barra não
+   ficar torta; nunca encolhem e o texto não quebra. */
+.composer > .btn {
+  flex-shrink: 0;
+  height: 40px;
+  white-space: nowrap;
+}
 .composer textarea {
   flex: 1;
+  min-width: 0;
   border: 1px solid var(--border-light);
   border-radius: 10px;
   padding: 10px 12px;
@@ -348,8 +356,17 @@
   .composer {
     padding: 10px 12px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    flex-wrap: wrap;
   }
-  .composer textarea { font-size: 16px; /* evita zoom no iOS */ min-height: 40px; }
+  /* Empilha: textarea em cima (largura total) e os botões numa linha embaixo,
+     com o Enviar empurrado pra direita. Evita a textarea espremida no celular. */
+  .composer textarea {
+    font-size: 16px; /* evita zoom no iOS */
+    min-height: 40px;
+    order: -1;
+    flex-basis: 100%;
+  }
+  .composer > .btn--primary { margin-left: auto; }
   .conv { padding: 12px 14px; }
   .conv__name { font-size: 13px; }
   .conv__last { font-size: 11px; }
