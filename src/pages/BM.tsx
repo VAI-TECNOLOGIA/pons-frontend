@@ -220,7 +220,7 @@ export default function BMPage() {
                   borderRadius: 14,
                   padding: '20px 22px',
                   color: '#fff',
-                  background: 'linear-gradient(135deg, var(--pons-navy) 0%, var(--pons-blue) 100%)',
+                  background: 'linear-gradient(135deg, #16243D 0%, var(--pons-blue) 100%)',
                   boxShadow: 'var(--shadow-md)',
                 }}
               >

@@ -688,15 +688,15 @@ export default function Chat() {
                           textAlign: 'left',
                           padding: '10px 12px',
                           borderRadius: 10,
-                          border: '1px solid ' + (ativo ? 'var(--pons-accent-red)' : 'var(--border-color, #334155)'),
-                          background: ativo ? 'rgba(220,38,38,0.08)' : 'transparent',
+                          border: '1px solid ' + (ativo ? 'var(--pons-blue)' : 'var(--border-color, #334155)'),
+                          background: ativo ? 'var(--color-info-bg)' : 'transparent',
                           cursor: 'pointer',
                         }}
                       >
                         <Icon
                           name={ativo ? 'checkCircle' : 'circle'}
                           size={16}
-                          style={{ color: ativo ? 'var(--pons-accent-red)' : 'var(--text-secondary)', flexShrink: 0 }}
+                          style={{ color: ativo ? 'var(--pons-blue)' : 'var(--text-secondary)', flexShrink: 0 }}
                         />
                         <span style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ fontWeight: 600 }}>{s.label}</span>
