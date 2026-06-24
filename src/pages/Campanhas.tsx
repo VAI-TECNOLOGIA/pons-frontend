@@ -16,6 +16,30 @@ const STATUS_LABEL: Record<string, string> = {
   RASCUNHO: 'Rascunho', AGENDADA: 'Agendada', ENVIANDO: 'Enviando', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada',
 };
 
+// Normaliza um número solto para E.164 BR (+55 + DDD + 8/9 dígitos) ou null.
+// Mesma lógica do backend (lib/phone.toE164) — só p/ contar/validar ao vivo.
+function normNumeroBR(raw: string): string | null {
+  let d = (raw || '').replace(/\D/g, '');
+  if (!d) return null;
+  if (!d.startsWith('55') && (d.length === 10 || d.length === 11)) d = '55' + d;
+  if (d.length === 13 && d.startsWith('55')) {
+    const ddd = parseInt(d.slice(2, 4), 10);
+    if (ddd > 31 && d[4] === '9') d = d.slice(0, 4) + d.slice(5); // remove 9º dígito
+  }
+  if (d.length < 12 || d.length > 13) return null;
+  return '+' + d;
+}
+// Quebra o texto colado (1 por linha / vírgula / ;) em números únicos válidos.
+function parseListaNumeros(text: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const tok of (text || '').split(/[\n,;\t]+/)) {
+    const n = normNumeroBR(tok);
+    if (n && !seen.has(n)) { seen.add(n); out.push(n); }
+  }
+  return out;
+}
+
 export default function Campanhas() {
   const [campanhas, setCampanhas] = useState<any[]>([]);
   const [kpis, setKpis] = useState<any>({});
@@ -109,7 +133,8 @@ function Wizard({ onClose }: { onClose: () => void }) {
   const [nome, setNome] = useState('');
   const [phoneNumberId, setPhoneNumberId] = useState('');
   // audiência
-  const [audienciaTipo, setAudienciaTipo] = useState<'TODOS' | 'FILTRO'>('FILTRO');
+  const [audienciaTipo, setAudienciaTipo] = useState<'TODOS' | 'FILTRO' | 'LISTA'>('FILTRO');
+  const [listaRaw, setListaRaw] = useState(''); // números colados (LISTA)
   const [fStatus, setFStatus] = useState('');
   const [fOrigem, setFOrigem] = useState('');
   const [fCorretorId, setFCorretorId] = useState('');
@@ -139,15 +164,24 @@ function Wizard({ onClose }: { onClose: () => void }) {
     semResposta: fSemResposta || undefined,
   }), [fStatus, fOrigem, fCorretorId, fSemResposta]);
 
+  // Números válidos/únicos extraídos da lista colada (LISTA).
+  const listaNumeros = useMemo(() => parseListaNumeros(listaRaw), [listaRaw]);
+
   // Prévia da audiência (debounced) ao mudar filtro / tipo.
   useEffect(() => {
+    // LISTA: conta direto do que foi colado, sem ir ao servidor.
+    if (audienciaTipo === 'LISTA') {
+      setAudCount(listaNumeros.length);
+      setAudAmostra(listaNumeros.slice(0, 3));
+      return;
+    }
     const t = setTimeout(() => {
       Api.campanhaAudienciaPreview({ audienciaTipo, audienciaFiltro: filtro })
         .then((r) => { setAudCount(r.total); setAudAmostra(r.amostra || []); })
         .catch(() => setAudCount(null));
     }, 350);
     return () => clearTimeout(t);
-  }, [audienciaTipo, filtro]);
+  }, [audienciaTipo, filtro, listaNumeros]);
 
   const tpl = templates.find((t) => t.name === templateName);
   const varCount = tpl?.varCount || 0;
@@ -165,7 +199,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
 
   const podeAvancar =
     (step === 0 && nome.trim().length >= 2) ||
-    (step === 1 && (audienciaTipo === 'TODOS' || true) && (audCount ?? 0) > 0) ||
+    (step === 1 && (audCount ?? 0) > 0) ||
     (step === 2 && !!templateName && vars.every((v) => v.trim().length > 0)) ||
     step === 3;
 
@@ -181,6 +215,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
         templateVars: vars,
         audienciaTipo,
         audienciaFiltro: filtro,
+        audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
       });
       // loop de disparo em lote até zerar
       let guard = 0;
@@ -206,7 +241,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
         nome: nome.trim(), phoneNumberId: phoneNumberId || null,
         numeroExibicao: NUMEROS.find((n) => n.id === phoneNumberId)?.label || null,
         templateName: templateName || null, templateLang: tpl?.language || 'pt_BR', templateVars: vars,
-        audienciaTipo, audienciaFiltro: filtro,
+        audienciaTipo, audienciaFiltro: filtro, audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
       });
       onClose();
     } catch (e: any) { setErro(e?.message || 'Falha ao salvar.'); }
@@ -259,6 +294,9 @@ function Wizard({ onClose }: { onClose: () => void }) {
                     <label className={'camp-radio' + (audienciaTipo === 'TODOS' ? ' is-on' : '')}>
                       <input type="radio" checked={audienciaTipo === 'TODOS'} onChange={() => setAudienciaTipo('TODOS')} /> Todos os leads
                     </label>
+                    <label className={'camp-radio' + (audienciaTipo === 'LISTA' ? ' is-on' : '')}>
+                      <input type="radio" checked={audienciaTipo === 'LISTA'} onChange={() => setAudienciaTipo('LISTA')} /> Colar lista / nº
+                    </label>
                   </div>
                 </div>
                 {audienciaTipo === 'FILTRO' && (
@@ -286,8 +324,32 @@ function Wizard({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
                 )}
+                {audienciaTipo === 'LISTA' && (
+                  <div className="field">
+                    <label className="field__label">Números — um por linha (ou separados por vírgula)</label>
+                    <textarea
+                      className="field__input camp-lista"
+                      value={listaRaw}
+                      onChange={(e) => setListaRaw(e.target.value)}
+                      rows={7}
+                      placeholder={'Cole aqui. Ex.:\n47 99159-8050\n(47) 9201-7377\n5547918590029'}
+                    />
+                    <small className="camp-hint">
+                      Aceita um único número ou uma lista colada. DDD/DDI detectados automaticamente (BR).
+                      {listaRaw.trim() && (() => {
+                        const brutas = listaRaw.split(/[\n,;\t]+/).filter((s) => s.trim()).length;
+                        const inval = brutas - listaNumeros.length;
+                        return (
+                          <> {' · '}<strong>{listaNumeros.length}</strong> válido(s)
+                            {inval > 0 && <span className="camp-muted"> · {inval} ignorado(s)/duplicado(s)</span>}
+                          </>
+                        );
+                      })()}
+                    </small>
+                  </div>
+                )}
                 <div className="camp-aud-count">
-                  <strong>{audCount === null ? '…' : audCount}</strong> leads nesta audiência
+                  <strong>{audCount === null ? '…' : audCount}</strong> {audienciaTipo === 'LISTA' ? 'número(s) nesta campanha' : 'leads nesta audiência'}
                   {audAmostra.length > 0 && <span className="camp-muted"> — ex.: {audAmostra.slice(0, 3).join(', ')}…</span>}
                 </div>
               </>

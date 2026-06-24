@@ -49,11 +49,12 @@
 .camp-hint { color: var(--text-secondary); font-size: 12px; }
 .camp-hint code { background: var(--bg-app-soft); padding: 1px 5px; border-radius: 4px; }
 
-.camp-radios { display: flex; gap: 10px; }
+.camp-radios { display: flex; gap: 10px; flex-wrap: wrap; }
 .camp-radio { display: flex; align-items: center; gap: 7px; border: 1.5px solid var(--border-medium); border-radius: 10px; padding: 9px 14px; cursor: pointer; font-size: 14px; color: var(--text-primary); }
 .camp-radio.is-on { border-color: var(--pons-blue, #0E7C9B); background: rgba(14,124,155,.14); font-weight: 700; }
 .camp-check label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-primary); }
 .camp-check input { width: 16px; height: 16px; }
+.camp-lista { width: 100%; min-height: 130px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; line-height: 1.6; }
 
 .camp-aud-count { background: rgba(14,124,155,.12); border: 1px solid rgba(14,124,155,.28); border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--text-primary); }
 .camp-aud-count strong { font-size: 18px; color: #3cc4e3; }
