@@ -9,6 +9,7 @@ const MOTIVO_BADGES: Record<string, [string, string]> = {
   MANUAL_GESTOR:     ['badge--info',      'Manual (gestor)'],
   MANUAL_CORRETOR:   ['badge--info',      'Manual (corretor)'],
   FALLBACK_ROLETA:   ['badge--cancelled', 'Fallback roleta'],
+  DISTRIBUICAO_AGENDADA: ['badge--launch', 'Agendada'],
 };
 
 export default function Transferencias() {
@@ -36,6 +37,7 @@ export default function Transferencias() {
             <button className={`btn btn--sm ${motivo === 'MANUAL_GESTOR' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('MANUAL_GESTOR')}>Gestor</button>
             <button className={`btn btn--sm ${motivo === 'MANUAL_CORRETOR' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('MANUAL_CORRETOR')}>Corretor</button>
             <button className={`btn btn--sm ${motivo === 'FALLBACK_ROLETA' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('FALLBACK_ROLETA')}>Fallback</button>
+            <button className={`btn btn--sm ${motivo === 'DISTRIBUICAO_AGENDADA' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('DISTRIBUICAO_AGENDADA')}>Agendada</button>
           </div>
         </div>
 
