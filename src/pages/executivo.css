@@ -60,3 +60,58 @@
   .google-cta__sub { font-size: 11px; }
   .google-cta > .btn { width: 100%; }
 }
+
+/* Badge "conectado" discreto na topbar (Google Calendar) */
+.gcal-connected {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px 0 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #137333;
+  background: rgba(52, 168, 83, 0.10);
+  border: 1px solid rgba(52, 168, 83, 0.30);
+  white-space: nowrap;
+}
+[data-theme="dark"] .gcal-connected {
+  color: #6ee7a8;
+  background: rgba(52, 168, 83, 0.16);
+  border-color: rgba(52, 168, 83, 0.35);
+}
+.gcal-connected__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: #fff;
+  background: #34a853;
+  flex-shrink: 0;
+}
+.gcal-connected__sync {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.gcal-connected__sync:hover:not(:disabled) {
+  opacity: 1;
+  background: rgba(52, 168, 83, 0.18);
+}
+.gcal-connected__sync:disabled { cursor: default; opacity: 0.5; }
+.gcal-spin { animation: gcal-spin 0.9s linear infinite; transform-origin: 50% 50%; }
+@keyframes gcal-spin { to { transform: rotate(360deg); } }

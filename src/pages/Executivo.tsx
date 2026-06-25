@@ -227,7 +227,9 @@ export default function Executivo() {
     setSyncing(true);
     try {
       const r: any = await Api.googleCalendarSync();
-      toast.success(`Google Calendar sincronizado · ${r?.importados ?? 0} evento(s) importado(s)`);
+      const imp = r?.importados ?? 0;
+      const env = r?.enviados ?? 0;
+      toast.success(`Sincronizado · ${env} enviado(s) ao Google · ${imp} importado(s)`);
       reloadAgenda();
     } catch (e: any) {
       toast.error('Erro ao sincronizar: ' + (e.message || 'falha'));
@@ -320,16 +322,29 @@ export default function Executivo() {
           <>
             {GOOGLE_CALENDAR_ENABLED ? (
               googleConectado ? (
-                <button
-                  className="btn btn--secondary btn--sm"
-                  onClick={sincronizarGoogle}
-                  disabled={syncing}
-                  title={googleEmail ? `Conectado como ${googleEmail} · sincronizar agora` : 'Sincronizar com Google Calendar'}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
-                >
-                  <GoogleCalendarIcon size={16} />
-                  {syncing ? 'Sincronizando…' : 'Sincronizar'}
-                </button>
+                <span className="gcal-connected" title={googleEmail ? `Conectado como ${googleEmail}` : 'Google Calendar conectado'}>
+                  <span className="gcal-connected__check" aria-hidden>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  <GoogleCalendarIcon size={14} />
+                  Conectado
+                  <button
+                    type="button"
+                    className="gcal-connected__sync"
+                    onClick={sincronizarGoogle}
+                    disabled={syncing}
+                    title="Sincronizar agora (envia seus eventos pro Google e importa de lá)"
+                    aria-label="Sincronizar com Google Calendar"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={syncing ? 'gcal-spin' : undefined}>
+                      <polyline points="23 4 23 10 17 10" />
+                      <polyline points="1 20 1 14 7 14" />
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                    </svg>
+                  </button>
+                </span>
               ) : (
                 <button
                   className="btn btn--secondary btn--sm"
@@ -380,24 +395,6 @@ export default function Executivo() {
             </div>
             <button className="btn btn--secondary btn--sm" onClick={conectarGoogle}>
               Conectar
-            </button>
-          </div>
-        )}
-
-        {GOOGLE_CALENDAR_ENABLED && googleConectado && (
-          <div className="card google-cta">
-            <div className="google-cta__icon">
-              <GoogleCalendarIcon size={26} />
-            </div>
-            <div className="google-cta__body">
-              <div className="google-cta__title">Google Calendar conectado</div>
-              <div className="google-cta__sub">
-                {googleEmail ? `Conectado como ${googleEmail}. ` : ''}
-                Seus compromissos sincronizam automaticamente nos dois sentidos.
-              </div>
-            </div>
-            <button className="btn btn--secondary btn--sm" onClick={sincronizarGoogle} disabled={syncing}>
-              {syncing ? 'Sincronizando…' : 'Sincronizar agora'}
             </button>
           </div>
         )}

@@ -13,12 +13,13 @@
 }
 
 /* ── Sidebar interna ─────────────────────────────────────────── */
-/* Mesma cor da sidebar principal (#0B0F1A) — em ambos os temas.
-   Garante continuidade visual entre as duas sidebars. */
+/* Modo claro: superfície clara que combina com o resto da página.
+   Modo escuro (override abaixo): mesma cor da sidebar principal (#0B0F1A),
+   garantindo continuidade visual entre as duas sidebars. */
 .equipe__side {
-  background: #0B0F1A;
-  color: rgba(255, 255, 255, 0.85);
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-light);
   padding: 22px 14px;
   overflow-y: auto;
 }
@@ -27,7 +28,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-secondary);
   padding: 0 10px;
   margin: 0 0 8px;
 }
@@ -44,7 +45,7 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -53,27 +54,45 @@
   width: 100%;
 }
 .equipe__nav-item .icon {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--text-secondary);
   stroke-width: 1.75;
   flex-shrink: 0;
   transition: color 0.16s ease;
 }
-/* Hover: barrinha branca translúcida + ícone azul */
+/* Hover: realce sutil + ícone azul */
 .equipe__nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-primary);
 }
 .equipe__nav-item:hover .icon {
   color: var(--pons-blue, #3FB6D4);
 }
-/* Ativo: barrinha mais forte + ícone azul + texto branco */
+/* Ativo: realce mais forte + ícone azul */
 .equipe__nav-item.is-active {
-  background: rgba(255, 255, 255, 0.09);
-  color: #fff;
+  background: rgba(63, 182, 212, 0.12);
+  color: var(--text-primary);
   font-weight: 600;
 }
 .equipe__nav-item.is-active .icon {
   color: var(--pons-blue, #3FB6D4);
+}
+
+/* Modo escuro: mantém a sidebar escura igual à principal */
+[data-theme="dark"] .equipe__side {
+  background: #0B0F1A;
+  color: rgba(255, 255, 255, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+[data-theme="dark"] .equipe__side-title { color: rgba(255, 255, 255, 0.55); }
+[data-theme="dark"] .equipe__nav-item { color: rgba(255, 255, 255, 0.72); }
+[data-theme="dark"] .equipe__nav-item .icon { color: rgba(255, 255, 255, 0.72); }
+[data-theme="dark"] .equipe__nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+[data-theme="dark"] .equipe__nav-item.is-active {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
 }
 
 /* ── Main ─────────────────────────────────────────────────────── */
