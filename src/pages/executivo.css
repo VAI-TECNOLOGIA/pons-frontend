@@ -65,53 +65,47 @@
 .gcal-connected {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 8px 0 6px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #137333;
-  background: rgba(52, 168, 83, 0.10);
-  border: 1px solid rgba(52, 168, 83, 0.30);
+  gap: 7px;
+  height: 34px;
+  padding: 0 8px 0 7px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #34a853, #1e8e3e);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(30, 142, 62, 0.35);
   white-space: nowrap;
-}
-[data-theme="dark"] .gcal-connected {
-  color: #6ee7a8;
-  background: rgba(52, 168, 83, 0.16);
-  border-color: rgba(52, 168, 83, 0.35);
 }
 .gcal-connected__check {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  color: #fff;
-  background: #34a853;
+  color: #1e8e3e;
+  background: #fff;
   flex-shrink: 0;
 }
 .gcal-connected__sync {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin-left: 2px;
+  width: 24px;
+  height: 24px;
+  margin-left: 1px;
   padding: 0;
   border: none;
   border-radius: 6px;
-  background: transparent;
-  color: inherit;
-  opacity: 0.65;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
   cursor: pointer;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition: background 0.15s ease;
 }
 .gcal-connected__sync:hover:not(:disabled) {
-  opacity: 1;
-  background: rgba(52, 168, 83, 0.18);
+  background: rgba(255, 255, 255, 0.32);
 }
-.gcal-connected__sync:disabled { cursor: default; opacity: 0.5; }
+.gcal-connected__sync:disabled { cursor: default; opacity: 0.6; }
 .gcal-spin { animation: gcal-spin 0.9s linear infinite; transform-origin: 50% 50%; }
 @keyframes gcal-spin { to { transform: rotate(360deg); } }

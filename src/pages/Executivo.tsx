@@ -328,8 +328,8 @@ export default function Executivo() {
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </span>
-                  <GoogleCalendarIcon size={14} />
-                  Conectado
+                  <GoogleCalendarIcon size={15} />
+                  Google Calendar conectado
                   <button
                     type="button"
                     className="gcal-connected__sync"
