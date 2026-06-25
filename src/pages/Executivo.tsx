@@ -365,9 +365,6 @@ export default function Executivo() {
                 Google Calendar · em breve
               </span>
             )}
-            <button className="btn btn--primary btn--sm" onClick={() => abrirNovo()}>
-              + Compromisso
-            </button>
           </>
         }
       />
