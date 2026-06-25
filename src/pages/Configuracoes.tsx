@@ -520,6 +520,41 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  const [saving, setSaving] = useState(false);
  const [checking, setChecking] = useState(false);
  const [health, setHealth] = useState<Awaited<ReturnType<typeof Api.metaHealth>> | null>(null);
+ const [numbers, setNumbers] = useState<Awaited<ReturnType<typeof Api.metaNumbers>> | null>(null);
+ const [loadingNumbers, setLoadingNumbers] = useState(false);
+ const [registering, setRegistering] = useState<string | null>(null);
+
+ const loadNumbers = async () => {
+ setLoadingNumbers(true);
+ try {
+ const r = await Api.metaNumbers();
+ setNumbers(r);
+ if (!r.ok) toast.error('Não listou números: ' + (r.reason || 'erro'));
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setLoadingNumbers(false);
+ }
+ };
+
+ const registrarNumero = async (phoneId: string, displayNumber?: string) => {
+ const pin = window.prompt(`PIN de 6 dígitos da verificação em duas etapas do número ${displayNumber || phoneId}.\nSe o número nunca teve PIN, defina um agora (anote-o):`);
+ if (!pin) return;
+ setRegistering(phoneId);
+ try {
+ const r = await Api.metaRegister(phoneId, pin.trim());
+ if (r.ok) {
+ toast.success('Número registrado na Cloud API. Já recebe inbound + IA.');
+ loadNumbers();
+ } else {
+ toast.error('Falhou: ' + (r.error || 'erro') + (r.metaCode ? ` (${r.metaCode})` : ''));
+ }
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setRegistering(null);
+ }
+ };
 
  const checkHealth = async () => {
  setChecking(true);
@@ -672,6 +707,45 @@ function MetaWhatsappCard({ settings, onSaved }: { settings: Record<string, stri
  />
  <div className="field__hint">phone_number_ids da MESMA WABA usados nas campanhas (round-robin). Vazio = usa só o Phone Number ID acima. O atendimento responde sempre pelo número que recebeu o lead, independente desta lista.</div>
  </div>
+ </div>
+
+ <div className="card" style={{ marginTop: 16 }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+ <h4 className="card__title">Números da WABA — status na Cloud API</h4>
+ <button type="button" className="btn btn--ghost btn--sm" onClick={loadNumbers} disabled={loadingNumbers}>
+ {loadingNumbers ? 'Carregando…' : 'Listar números'}
+ </button>
+ </div>
+ <div className="field__hint" style={{ marginBottom: 8 }}>
+ Só números com plataforma <strong>CLOUD_API</strong> recebem mensagem no Atendimento e a IA responde. Se aparecer outro status, o número está na WABA mas <strong>não registrado</strong> na Cloud API — clique em "Registrar".
+ </div>
+ {numbers?.numbers && numbers.numbers.length > 0 ? (
+ <div style={{ display: 'grid', gap: 6 }}>
+ {numbers.numbers.map((n) => (
+ <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}>
+ <div>
+ <div style={{ fontWeight: 600 }}>
+ {n.displayNumber || n.id}
+ {n.ehDefault && <span className="badge badge--info" style={{ marginLeft: 6 }}>padrão</span>}
+ </div>
+ <div className="text-xs text-secondary">ID {n.id} · {n.verifiedName || 's/ nome'} · qualidade {n.qualityRating || '—'}</div>
+ </div>
+ <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+ <span className={`badge ${n.cloudApi ? 'badge--signed' : 'badge--analysis'}`}>
+ {n.cloudApi ? 'CLOUD_API' : (n.platformType || 'não registrado')}
+ </span>
+ {!n.cloudApi && (
+ <button type="button" className="btn btn--primary btn--sm" disabled={registering === n.id} onClick={() => registrarNumero(n.id, n.displayNumber)}>
+ {registering === n.id ? 'Registrando…' : 'Registrar'}
+ </button>
+ )}
+ </div>
+ </div>
+ ))}
+ </div>
+ ) : numbers && numbers.numbers?.length === 0 ? (
+ <div className="text-sm text-secondary">Nenhum número retornado. Confira o WABA ID e o token.</div>
+ ) : null}
  </div>
 
  <div className="card" style={{ marginTop: 16, background: 'var(--blue-50)', borderColor: 'var(--blue-100)' }}>

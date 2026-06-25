@@ -422,6 +422,31 @@ export const Api = {
       qualityRating?: string;
       wabaId?: string;
     }>('/conversations/_meta/health'),
+  metaNumbers: () =>
+    request<{
+      ok: boolean;
+      configured: boolean;
+      reason?: string;
+      wabaId?: string;
+      defaultPhoneId?: string;
+      numbers: Array<{
+        id: string;
+        displayNumber?: string;
+        verifiedName?: string;
+        platformType?: string | null;
+        codeVerification?: string | null;
+        nameStatus?: string | null;
+        qualityRating?: string | null;
+        status?: string | null;
+        cloudApi: boolean;
+        ehDefault: boolean;
+      }>;
+    }>('/conversations/_meta/numbers'),
+  metaRegister: (phoneId: string, pin: string) =>
+    request<{ ok: boolean; error?: string; metaCode?: number }>(
+      '/conversations/_meta/register',
+      { method: 'POST', body: { phoneId, pin } },
+    ),
 
   // ─── Fase A — BM (Business Managers) ─────────────────────────────
   bmList:    () => request<any[]>('/bm'),
