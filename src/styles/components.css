@@ -1421,7 +1421,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: var(--space-2);
+}
+
+/* Seletor de status dentro do card (fallback de toque + ação rápida no desktop). */
+.kanban-card__select {
+  font-size: var(--fs-caption);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  color: var(--text-primary);
+  cursor: pointer;
 }
 
 .kanban-card__value {

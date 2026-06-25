@@ -84,7 +84,7 @@ export default function Pipeline() {
  </div>
  <div className="kanban__cards">
  {items.length === 0 ? (
- <div style={{ padding: 12, textAlign: 'center', fontSize: 11, color: 'var(--text-secondary)' }}>
+ <div className="kanban__cards--empty-hint">
  {isDropTarget ? 'Soltar aqui' : 'Vazio'}
  </div>
  ) : (
@@ -108,7 +108,7 @@ export default function Pipeline() {
  </div>
  <div className="kanban-card__footer">
  {l.corretor ? (
- <div className="flex gap-2" style={{ alignItems: 'center' }}>
+ <div className="u-flex u-gap-2 u-items-center">
  <div className="avatar avatar--sm">{l.corretor.initials}</div>
  <span className="text-xs">{l.corretor.nome.split(' ')[0]}</span>
  </div>
@@ -116,15 +116,10 @@ export default function Pipeline() {
  <span className="text-xs text-secondary">Sem corretor</span>
  )}
  <select
+ className="kanban-card__select"
  value={l.status}
  onChange={(e) => moveLead(l.id, e.target.value)}
  onMouseDown={(e) => e.stopPropagation()}
- style={{
- fontSize: 11,
- padding: '2px 6px',
- border: '1px solid var(--border-light)',
- borderRadius: 4,
- }}
  >
  {COLS.map((c) => (
  <option key={c.status} value={c.status}>
