@@ -32,7 +32,7 @@ export default function MetaCustos() {
 
         {data && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
               <Stat label="Custo total" value={fmt(data.custoTotal)} />
               <Stat label="Conversas iniciadas" value={data.conversasIniciadas} />
               <Stat label="VGV atribuível" value={fmt(data.vgvAtribuivel)} />

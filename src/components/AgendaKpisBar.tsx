@@ -21,7 +21,7 @@ export function AgendaKpisBar({ userId, refreshKey }: { userId?: number; refresh
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
       gap: 12, marginBottom: 16,
     }}>
       {cards.map((c) => (

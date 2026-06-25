@@ -158,7 +158,7 @@ function PoliticaTab() {
         {sim && !sim.parcelas && (
           <div style={{ marginTop: 16, padding: 12, background: 'var(--bg-elevated)', borderRadius: 8 }}>
             <h4 style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Breakdown</h4>
-            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
               <div>
                 <div><strong>Comissão bruta:</strong> {fmt(sim.valorComissaoBruta)}</div>
                 <div>− Nota Fiscal: {fmt(sim.valorNF)}</div>

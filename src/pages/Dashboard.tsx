@@ -128,7 +128,7 @@ export default function Dashboard() {
  }}
  >
  <div className="speed-line" style={{ position: 'absolute' }} />
- <div style={{ display: 'grid', gridTemplateColumns: temMeta ? '1fr 1fr' : '1fr', gap: 32 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: temMeta ? 'repeat(auto-fit, minmax(220px, 1fr))' : '1fr', gap: 32 }}>
  {temMeta && (
  <div>
  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
@@ -230,7 +230,7 @@ export default function Dashboard() {
  Ver financeiro completo →
  </Link>
  </div>
- <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 20 }}>
  <div>
  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)' }}>Saldo realizado</div>
  <div style={{ fontSize: 26, fontWeight: 900, fontStyle: 'italic', color: data.financeiro.saldo >= 0 ? '#88C559' : '#FF6B6B' }}>

@@ -349,7 +349,7 @@ export default function Vendas() {
  ) : (
  <>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comissão & rateio Pons</div>
- <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 12 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 12 }}>
  <div className="field">
  <label className="field__label">% Comissão (sobre venda)</label>
  <input type="number" step="0.01" name="percentualComissao" className="field__input" defaultValue="5" />

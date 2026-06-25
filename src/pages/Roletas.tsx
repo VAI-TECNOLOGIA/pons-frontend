@@ -130,7 +130,7 @@ export default function Roletas() {
  </div>
  </div>
 
- <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
  {estagios.map((e: any) => (
  <div key={e.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

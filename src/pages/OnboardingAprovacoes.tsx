@@ -64,7 +64,7 @@ export default function OnboardingAprovacoes() {
       </div>
       {err && <div style={{ color: 'var(--color-danger-fg)', marginBottom: 12 }}>{err}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, alignItems: 'start' }}>
         {/* Lista */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {lista.length === 0 && <p className="muted">Nenhum colaborador em onboarding.</p>}
