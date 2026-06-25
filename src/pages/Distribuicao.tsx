@@ -15,12 +15,57 @@ const PRESETS: { label: string; expr: string }[] = [
   { label: 'Toda manhã 10h',   expr: '0 10 * * *' },
 ];
 
+// Nomes dos dias na ordem do cron (0=domingo … 6=sábado)
+const DOW = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+// Converte uma expressão cron simples (agenda semanal/diária "m h * * dow") nos
+// seus componentes. Retorna null quando a expressão é avançada demais pro
+// seletor amigável (steps, dias do mês, etc.) — aí cai no modo avançado.
+function parseCron(expr: string): { minute: number; hour: number; days: number[] } | null {
+  const parts = (expr || '').trim().split(/\s+/);
+  if (parts.length !== 5) return null;
+  const [m, h, dom, mon, dow] = parts;
+  if (dom !== '*' || mon !== '*') return null;
+  const minute = Number(m), hour = Number(h);
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) return null;
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) return null;
+  let days: number[] = [];
+  if (dow !== '*') {
+    for (const tok of dow.split(',')) {
+      const rng = tok.match(/^(\d)-(\d)$/);
+      if (rng) { for (let i = +rng[1]; i <= +rng[2]; i++) days.push(i % 7); }
+      else if (/^\d$/.test(tok)) days.push(Number(tok) % 7);
+      else return null;
+    }
+    days = [...new Set(days)].sort((a, b) => a - b);
+  }
+  return { minute, hour, days };
+}
+
+function buildCron(minute: number, hour: number, days: number[]): string {
+  const dow = days.length === 0 ? '*' : [...days].sort((a, b) => a - b).join(',');
+  return `${minute} ${hour} * * ${dow}`;
+}
+
+// Texto legível pra humanos: "Seg, Qui às 09:00", "Dias úteis às 08:00", etc.
+function cronToHuman(expr: string): string {
+  const p = parseCron(expr);
+  if (!p) return expr;
+  const hora = `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
+  const set = new Set(p.days);
+  if (p.days.length === 0 || set.size === 7) return `Todo dia às ${hora}`;
+  if (set.size === 5 && [1, 2, 3, 4, 5].every((d) => set.has(d))) return `Dias úteis às ${hora}`;
+  return `${[...p.days].sort((a, b) => a - b).map((d) => DOW[d]).join(', ')} às ${hora}`;
+}
+
 export default function Distribuicao() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   // Escopo: 'sistema' (sem filtro de equipe) | 'equipes' (filtra pelas equipes selecionadas)
   const [escopo, setEscopo] = useState<'sistema' | 'equipes'>('sistema');
   const [equipesSel, setEquipesSel] = useState<number[]>([]);
+  const [cronExpr, setCronExpr] = useState('0 9 * * 1');
+  const [showAdv, setShowAdv] = useState(false);
   const { data, loading, error, reload } = useApi<any[]>(() => Api.distribuicaoList());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
   const toast = useToast();
@@ -31,6 +76,8 @@ export default function Distribuicao() {
     setEditing(null);
     setEscopo('sistema');
     setEquipesSel([]);
+    setCronExpr('0 9 * * 1');
+    setShowAdv(false);
     setOpen(true);
   };
   const abrirEditar = (d: any) => {
@@ -38,6 +85,9 @@ export default function Distribuicao() {
     const ids: number[] = Array.isArray(d.equipeIds) ? d.equipeIds : (d.equipeId ? [d.equipeId] : []);
     setEscopo(ids.length > 0 ? 'equipes' : 'sistema');
     setEquipesSel(ids);
+    const expr = d.cronExpr || '0 9 * * 1';
+    setCronExpr(expr);
+    setShowAdv(parseCron(expr) === null);
     setOpen(true);
   };
 
@@ -47,10 +97,14 @@ export default function Distribuicao() {
       toast.error('Selecione pelo menos 1 equipe — ou troque o escopo pra "Sistema todo".');
       return;
     }
+    if (!cronExpr.trim()) {
+      toast.error('Defina quando a regra deve rodar.');
+      return;
+    }
     const fd = new FormData(e.currentTarget);
     const payload: any = {
       nome: String(fd.get('nome') || ''),
-      cronExpr: String(fd.get('cronExpr') || ''),
+      cronExpr: cronExpr.trim(),
       qtdPorCorretor: Number(fd.get('qtdPorCorretor') || 10),
       cidade: String(fd.get('cidade') || '') || null,
       origemLead: String(fd.get('origemLead') || '') || null,
@@ -118,7 +172,7 @@ export default function Distribuicao() {
         <div className="card">
           <table className="table">
             <thead>
-              <tr><th>Nome</th><th>Cron</th><th>Qtd/corretor</th><th>Escopo</th><th>Filtros</th><th>Última exec.</th><th></th></tr>
+              <tr><th>Nome</th><th>Agenda</th><th>Qtd/corretor</th><th>Escopo</th><th>Filtros</th><th>Última exec.</th><th></th></tr>
             </thead>
             <tbody>
               {(data || []).map((d: any) => (
@@ -127,7 +181,7 @@ export default function Distribuicao() {
                     <strong>{d.nome}</strong>
                     <span className={`badge badge--sm ${d.ativa ? 'badge--launch' : 'badge--neutral'}`} style={{ marginLeft: 6 }}>{d.ativa ? 'ativa' : 'pausada'}</span>
                   </td>
-                  <td><code>{d.cronExpr}</code></td>
+                  <td><span title={d.cronExpr}>{cronToHuman(d.cronExpr)}</span></td>
                   <td>{d.qtdPorCorretor}</td>
                   <td className="text-xs">{escopoLabel(d)}</td>
                   <td className="text-xs">
@@ -222,15 +276,62 @@ export default function Distribuicao() {
             </div>
 
             <div className="field">
-              <label className="field__label">Cron expression *</label>
-              <input name="cronExpr" className="field__input" required defaultValue={editing?.cronExpr || '0 9 * * 1'} />
-              <div className="flex" style={{ gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                {PRESETS.map((p) => (
-                  <button key={p.expr} type="button" className="btn btn--ghost btn--sm" onClick={(e) => {
-                    (e.currentTarget.closest('form')!.querySelector('[name="cronExpr"]') as HTMLInputElement).value = p.expr;
-                  }}>{p.label}</button>
-                ))}
-              </div>
+              <label className="field__label">Quando rodar *</label>
+              {(() => {
+                const p = parseCron(cronExpr);
+                if (!p) {
+                  return (
+                    <div className="text-xs text-secondary" style={{ marginBottom: 6 }}>
+                      Agenda personalizada: <strong>{cronToHuman(cronExpr)}</strong>
+                    </div>
+                  );
+                }
+                const timeVal = `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
+                const setTime = (v: string) => {
+                  const [h, m] = v.split(':').map(Number);
+                  setCronExpr(buildCron(m || 0, h || 0, p.days));
+                };
+                const toggleDay = (d: number) => {
+                  const s = new Set(p.days);
+                  s.has(d) ? s.delete(d) : s.add(d);
+                  setCronExpr(buildCron(p.minute, p.hour, [...s]));
+                };
+                return (
+                  <>
+                    <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <input type="time" className="field__input" style={{ width: 130 }} value={timeVal} onChange={(e) => setTime(e.target.value)} />
+                      <div className="flex" style={{ gap: 4, flexWrap: 'wrap' }}>
+                        {DOW.map((n, i) => {
+                          const on = p.days.includes(i);
+                          return (
+                            <button key={i} type="button" className="btn btn--sm" onClick={() => toggleDay(i)}
+                              style={{
+                                background: on ? '#0E7C9B' : 'transparent',
+                                color: on ? '#fff' : 'var(--text-primary)',
+                                border: `1px solid ${on ? '#0E7C9B' : 'var(--border-light)'}`,
+                                minWidth: 42,
+                              }}>{n}</button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex" style={{ gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => setCronExpr(buildCron(p.minute, p.hour, [1, 2, 3, 4, 5]))}>Dias úteis</button>
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => setCronExpr(buildCron(p.minute, p.hour, []))}>Todo dia</button>
+                      {PRESETS.map((pr) => (
+                        <button key={pr.expr} type="button" className="btn btn--ghost btn--sm" onClick={() => setCronExpr(pr.expr)}>{pr.label}</button>
+                      ))}
+                    </div>
+                    <div className="text-xs text-secondary" style={{ marginTop: 6 }}>{cronToHuman(cronExpr)}</div>
+                  </>
+                );
+              })()}
+              <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6 }} onClick={() => setShowAdv((s) => !s)}>
+                {showAdv ? 'Ocultar avançado' : 'Avançado (cron)'}
+              </button>
+              {showAdv && (
+                <input className="field__input" style={{ marginTop: 6, fontFamily: 'monospace' }} value={cronExpr} onChange={(e) => setCronExpr(e.target.value)} placeholder="0 9 * * 1" />
+              )}
             </div>
             <div className="field"><label className="field__label">Qtd leads por corretor</label><input type="number" name="qtdPorCorretor" className="field__input" defaultValue={editing?.qtdPorCorretor || 10} min={1} /></div>
             <div className="field"><label className="field__label">Cidade (opcional)</label><input name="cidade" className="field__input" defaultValue={editing?.cidade || ''} placeholder="Itapema, Balneário Camboriú..." /></div>
