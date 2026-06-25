@@ -219,11 +219,11 @@ export default function Tarefas() {
                             {t.anexos?.length || 0}
                           </button>
                           <select
+                            className="kanban-card__select"
                             value={t.status}
                             onChange={(e) => moveStatus(t.id, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
-                            style={{ fontSize: 11, padding: '2px 6px', border: '1px solid var(--border-light)', borderRadius: 4 }}
                           >
                             {Object.entries(COLS).map(([s, c]) => (
                               <option value={s} key={s}>{c.titulo}</option>
