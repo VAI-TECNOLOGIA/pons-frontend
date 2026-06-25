@@ -203,7 +203,38 @@ export default function Executivo() {
     }
   };
 
-  const googleConectado = settings?.['google.calendar.connected'] === 'true';
+  // Conexão do Google Calendar é POR USUÁRIO (tabela UserGoogleToken), exposta
+  // em /api/integracoes/google/status — não na Setting global. Buscar de lá.
+  const [googleConectado, setGoogleConectado] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const loadGoogleStatus = async () => {
+    try {
+      const s: any = await Api.googleCalendarStatus();
+      setGoogleConectado(!!s?.conectado);
+      setGoogleEmail(s?.email || null);
+    } catch {
+      setGoogleConectado(false);
+    }
+  };
+  useEffect(() => {
+    if (GOOGLE_CALENDAR_ENABLED) loadGoogleStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const sincronizarGoogle = async () => {
+    setSyncing(true);
+    try {
+      const r: any = await Api.googleCalendarSync();
+      toast.success(`Google Calendar sincronizado · ${r?.importados ?? 0} evento(s) importado(s)`);
+      reloadAgenda();
+    } catch (e: any) {
+      toast.error('Erro ao sincronizar: ' + (e.message || 'falha'));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const conectarGoogle = async () => {
     try {
@@ -216,13 +247,34 @@ export default function Executivo() {
           toast.error('Bloqueie o popup blocker e tente de novo.');
           return;
         }
-        const check = setInterval(() => {
-          if (win.closed) {
-            clearInterval(check);
-            reloadSettings();
-            reloadAgenda();
+        // O callback do OAuth roda numa janela separada e grava o token por
+        // usuário (UserGoogleToken). Em vez de confiar só no fechamento do
+        // popup, pollamos /google/status até detectar conexão (ou desistir).
+        const inicio = Date.now();
+        const check = setInterval(async () => {
+          let conectou = false;
+          try {
+            const s: any = await Api.googleCalendarStatus();
+            if (s?.conectado) {
+              conectou = true;
+              setGoogleConectado(true);
+              setGoogleEmail(s?.email || null);
+            }
+          } catch {
+            /* ignora erros transitórios durante o fluxo */
           }
-        }, 800);
+          const expirou = Date.now() - inicio > 120_000;
+          if (conectou || win.closed || expirou) {
+            clearInterval(check);
+            if (conectou) {
+              toast.success('Google Calendar conectado!');
+              reloadAgenda();
+            } else {
+              // popup fechado/timeout sem confirmar — revalida pra refletir estado
+              loadGoogleStatus();
+            }
+          }
+        }, 1500);
       } else if (r?.faltaConfig) {
         // Sem credenciais → manda direto pra aba certa de Configurações
         toast.info('Configure Client ID e Secret do Google primeiro.');
@@ -267,15 +319,28 @@ export default function Executivo() {
         right={
           <>
             {GOOGLE_CALENDAR_ENABLED ? (
-              <button
-                className={'btn btn--sm ' + (googleConectado ? 'btn--secondary' : 'btn--secondary')}
-                onClick={conectarGoogle}
-                title={googleConectado ? 'Google Calendar conectado · clique pra reconectar' : 'Conectar com Google Calendar'}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
-              >
-                <GoogleCalendarIcon size={16} />
-                {googleConectado ? 'Sincronizado' : 'Google Calendar'}
-              </button>
+              googleConectado ? (
+                <button
+                  className="btn btn--secondary btn--sm"
+                  onClick={sincronizarGoogle}
+                  disabled={syncing}
+                  title={googleEmail ? `Conectado como ${googleEmail} · sincronizar agora` : 'Sincronizar com Google Calendar'}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <GoogleCalendarIcon size={16} />
+                  {syncing ? 'Sincronizando…' : 'Sincronizar'}
+                </button>
+              ) : (
+                <button
+                  className="btn btn--secondary btn--sm"
+                  onClick={conectarGoogle}
+                  title="Conectar com Google Calendar"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <GoogleCalendarIcon size={16} />
+                  Google Calendar
+                </button>
+              )
             ) : (
               <span
                 className="badge badge--neutral"
@@ -315,6 +380,24 @@ export default function Executivo() {
             </div>
             <button className="btn btn--secondary btn--sm" onClick={conectarGoogle}>
               Conectar
+            </button>
+          </div>
+        )}
+
+        {GOOGLE_CALENDAR_ENABLED && googleConectado && (
+          <div className="card google-cta">
+            <div className="google-cta__icon">
+              <GoogleCalendarIcon size={26} />
+            </div>
+            <div className="google-cta__body">
+              <div className="google-cta__title">Google Calendar conectado</div>
+              <div className="google-cta__sub">
+                {googleEmail ? `Conectado como ${googleEmail}. ` : ''}
+                Seus compromissos sincronizam automaticamente nos dois sentidos.
+              </div>
+            </div>
+            <button className="btn btn--secondary btn--sm" onClick={sincronizarGoogle} disabled={syncing}>
+              {syncing ? 'Sincronizando…' : 'Sincronizar agora'}
             </button>
           </div>
         )}
