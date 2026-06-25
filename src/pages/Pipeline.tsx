@@ -73,6 +73,7 @@ export default function Pipeline() {
  <div
  className={`kanban__col ${col.klass} ${isDropTarget ? 'kanban__col--drop-target' : ''}`}
  key={col.status}
+ data-kanban-col={col.status}
  onDragOver={dnd.onDragOver(col.status)}
  onDragLeave={dnd.onDragLeave(col.status)}
  onDrop={dnd.onDrop(col.status)}
@@ -94,6 +95,7 @@ export default function Pipeline() {
  draggable
  onDragStart={dnd.onDragStart(l.id)}
  onDragEnd={dnd.onDragEnd}
+ onPointerDown={dnd.onPointerDown(l.id)}
  >
  <div className="kanban-card__header">
  <div>

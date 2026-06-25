@@ -1383,6 +1383,14 @@
   transition: box-shadow var(--transition-base), transform var(--transition-base);
 }
 
+/* Drag por toque (long-press): evita callout/seleção do iOS atrapalhando o arrasto. */
+.kanban-card,
+[data-kanban-col] .card {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .kanban-card:hover {
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);

@@ -145,6 +145,7 @@ export default function Tarefas() {
               <div
                 className={`kanban__col ${col.klass} ${isDropTarget ? 'kanban__col--drop-target' : ''}`}
                 key={key}
+                data-kanban-col={key}
                 onDragOver={dnd.onDragOver(key)}
                 onDragLeave={dnd.onDragLeave(key)}
                 onDrop={dnd.onDrop(key)}
@@ -164,6 +165,7 @@ export default function Tarefas() {
                       draggable
                       onDragStart={dnd.onDragStart(t.id)}
                       onDragEnd={dnd.onDragEnd}
+                      onPointerDown={dnd.onPointerDown(t.id)}
                       onClick={() => setEditId(t.id)}
                       style={{ cursor: 'pointer' }}
                       title="Clique para editar"

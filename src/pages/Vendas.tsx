@@ -447,6 +447,7 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  return (
  <div
  key={col.fase}
+ data-kanban-col={col.fase}
  style={{
  minWidth: 260,
  flex: '0 0 260px',
@@ -474,6 +475,7 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  draggable={podeMover}
  onDragStart={podeMover ? dnd.onDragStart(c.id) : undefined}
  onDragEnd={podeMover ? dnd.onDragEnd : undefined}
+ onPointerDown={podeMover ? dnd.onPointerDown(c.id) : undefined}
  style={{
  padding: 12,
  cursor: podeMover ? 'grab' : 'pointer',
