@@ -228,8 +228,7 @@ export default function Executivo() {
     try {
       const r: any = await Api.googleCalendarSync();
       const imp = r?.importados ?? 0;
-      const env = r?.enviados ?? 0;
-      toast.success(`Sincronizado · ${env} enviado(s) ao Google · ${imp} importado(s)`);
+      toast.success(`Sincronizado · ${imp} evento(s) importado(s)`);
       reloadAgenda();
     } catch (e: any) {
       toast.error('Erro ao sincronizar: ' + (e.message || 'falha'));
