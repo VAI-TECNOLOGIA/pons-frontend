@@ -16,6 +16,7 @@ const COLS: Record<string, { titulo: string; klass: string }> = {
 
 export default function Tarefas() {
   const [open, setOpen] = useState(false);
+  const [waOn, setWaOn] = useState(false); // "Enviar pelo WhatsApp" no criar tarefa
   const { data, loading, error, reload } = useApi<any[]>(() => Api.tarefas());
   const { data: users } = useApi<any[]>(() => Api.users());
   const [tarefas, setTarefas] = useState<any[]>([]);
@@ -75,6 +76,7 @@ export default function Tarefas() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     try {
+      const lembEm = String(fd.get('lembreteEm') || '');
       await Api.tarefaCreate({
         titulo: String(fd.get('titulo') || ''),
         descricao: fd.get('descricao') ? String(fd.get('descricao')) : undefined,
@@ -83,9 +85,13 @@ export default function Tarefas() {
         responsavelId: fd.get('responsavelId') ? Number(fd.get('responsavelId')) : null,
         prazo: fd.get('prazo') ? String(fd.get('prazo')) : null,
         solicitadoEm: fd.get('solicitadoEm') ? String(fd.get('solicitadoEm')) : null,
+        link: fd.get('link') ? String(fd.get('link')) : null,
+        // Lembrete WhatsApp: só agenda se o usuário ligou "Enviar pelo WhatsApp" + hora.
+        lembreteTelefone: waOn && fd.get('lembreteTelefone') ? String(fd.get('lembreteTelefone')) : null,
+        lembreteEm: waOn && lembEm ? new Date(lembEm).toISOString() : null,
       });
-      toast.success('Tarefa criada');
-      setOpen(false);
+      toast.success(waOn && lembEm ? 'Tarefa criada — lembrete agendado no WhatsApp' : 'Tarefa criada');
+      setOpen(false); setWaOn(false);
       reload();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
@@ -240,7 +246,7 @@ export default function Tarefas() {
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Nova Tarefa" subtitle="Atribua a um responsável e defina prazo">
+      <Modal open={open} onClose={() => { setOpen(false); setWaOn(false); }} title="Nova Tarefa" subtitle="Atribua a um responsável e defina prazo">
         {/* key amarrada ao open: o <dialog> mantém os filhos no DOM mesmo fechado,
             então remontamos o form a cada abertura pra limpar os campos não-controlados. */}
         <form key={open ? 'open' : 'closed'} onSubmit={submit}>
@@ -291,9 +297,36 @@ export default function Tarefas() {
               <label className="field__label">Prazo</label>
               <input name="prazo" type="date" className="field__input" />
             </div>
+            <div className="field field--span-2">
+              <label className="field__label">Link (opcional)</label>
+              <input name="link" type="url" className="field__input" placeholder="https://… (reunião, imóvel, localização)" />
+            </div>
+            <div className="field field--span-2">
+              <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={waOn} onChange={(e) => setWaOn(e.target.checked)} />
+                Enviar lembrete pelo WhatsApp (API oficial)
+              </label>
+            </div>
+            {waOn && (
+              <>
+                <div className="field">
+                  <label className="field__label">Disparar o alerta em <span className="field__required">*</span></label>
+                  <input name="lembreteEm" type="datetime-local" className="field__input" required={waOn} />
+                </div>
+                <div className="field">
+                  <label className="field__label">Número (WhatsApp)</label>
+                  <input name="lembreteTelefone" className="field__input" placeholder="vazio = telefone do responsável" />
+                </div>
+                <div className="field field--span-2">
+                  <div className="text-xs text-secondary">
+                    Na hora marcada, o sistema envia um <strong>template oficial</strong> com o resumo: <strong>título · horário · link</strong>.
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
-            <button type="button" className="btn btn--secondary" onClick={() => setOpen(false)}>Cancelar</button>
+            <button type="button" className="btn btn--secondary" onClick={() => { setOpen(false); setWaOn(false); }}>Cancelar</button>
             <button type="submit" className="btn btn--primary">Criar</button>
           </div>
         </form>
