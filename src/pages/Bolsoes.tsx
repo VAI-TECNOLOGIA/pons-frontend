@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
+import { LeadCamposCustom } from '../components/LeadCamposCustom';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -34,6 +35,7 @@ export default function Bolsoes() {
   const [templateName, setTemplateName] = useState('');
   const [phoneNumberId, setPhoneNumberId] = useState('');
   const [criandoCamp, setCriandoCamp] = useState(false);
+  const [campoLead, setCampoLead] = useState<any>(null);
 
   const leads = data?.leads || [];
   const total = data?.total || 0;
@@ -146,7 +148,7 @@ export default function Bolsoes() {
                 {leads.map((l) => (
                   <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : {}}>
                     <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} /></td>
-                    <td>{l.nome}</td>
+                    <td><span style={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 3 }} onClick={() => setCampoLead(l)} title="Ver campos personalizados">{l.nome}</span></td>
                     <td className="text-xs">{l.telefone || '—'}</td>
                     <td className="text-xs">{l.cidade || '—'}</td>
                     <td className="text-xs">{l.origem || '—'}</td>
@@ -229,6 +231,10 @@ export default function Bolsoes() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal open={!!campoLead} onClose={() => setCampoLead(null)} title={campoLead ? `Campos de ${campoLead.nome}` : ''} subtitle="Campos personalizados deste lead">
+        {campoLead && <LeadCamposCustom leadId={campoLead.id} />}
       </Modal>
     </>
   );

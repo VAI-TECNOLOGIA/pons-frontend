@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
+import { LeadCamposCustom } from '../components/LeadCamposCustom';
 import { timeAgo, initials } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -20,6 +21,7 @@ const STATUSES = ['NOVO', 'SDR', 'NEGOCIANDO', 'PROPOSTA', 'FECHADO', 'PERDIDO']
 export default function Leads() {
  const [filterStatus, setFilterStatus] = useState<string | null>(null);
  const [open, setOpen] = useState(false);
+ const [campoLead, setCampoLead] = useState<any>(null);
  const { data: leads, loading: lLoad, error: lErr, reload } = useApi<any[]>(() => Api.leads());
  const { data: stats, reload: reloadStats } = useApi<any>(() => Api.leadStats());
  const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
@@ -132,7 +134,7 @@ export default function Leads() {
  <div className="flex gap-3" style={{ alignItems: 'center' }}>
  <div className="avatar avatar--sm">{initials(l.nome)}</div>
  <div>
- <div className="font-semibold">
+ <div className="font-semibold" style={{ cursor: 'pointer' }} onClick={() => setCampoLead(l)} title="Ver campos personalizados">
  {l.nome}{' '}
  {l.vip && (
  <span className="badge badge--launch" style={{ fontSize: 9, padding: '2px 6px' }}>
@@ -246,6 +248,10 @@ export default function Leads() {
  <button type="submit" className="btn btn--primary">Criar Lead</button>
  </div>
  </form>
+ </Modal>
+
+ <Modal open={!!campoLead} onClose={() => setCampoLead(null)} title={campoLead ? `Campos de ${campoLead.nome}` : ''} subtitle="Campos personalizados deste lead">
+ {campoLead && <LeadCamposCustom leadId={campoLead.id} />}
  </Modal>
  </>
  );
