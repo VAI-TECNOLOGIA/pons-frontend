@@ -26,6 +26,11 @@ export default function Bolsoes() {
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
+  const { data: templatesResp } = useApi<{ items: any[] }>(() => Api.whatsappTemplates());
+  const templates = templatesResp?.items || [];
+  const [campanhaNome, setCampanhaNome] = useState('');
+  const [templateName, setTemplateName] = useState('');
+  const [criandoCamp, setCriandoCamp] = useState(false);
 
   const leads = data?.leads || [];
   const total = data?.total || 0;
@@ -70,6 +75,21 @@ export default function Bolsoes() {
       setModal(false); setSel(new Set()); reload();
     } catch (e: any) { toast.error('Erro: ' + (e.message || 'falha')); }
     finally { setEnviando(false); }
+  };
+
+  const enviarCampanha = async () => {
+    const leadIds = [...sel];
+    if (!leadIds.length) { toast.error('Selecione ao menos 1 lead'); return; }
+    if (!campanhaNome.trim()) { toast.error('Dê um nome à campanha'); return; }
+    if (!templateName) { toast.error('Escolha um template aprovado'); return; }
+    setCriandoCamp(true);
+    try {
+      const c = await Api.campanhaCreate({ nome: campanhaNome.trim(), templateName, audienciaTipo: 'IDS', audienciaIds: leadIds });
+      await Api.campanhaEnviar(c.id);
+      toast.success(`Campanha "${campanhaNome}" criada e disparando pra ${leadIds.length} leads. Acompanhe em Campanhas.`);
+      setModal(false); setSel(new Set()); setCampanhaNome(''); setTemplateName('');
+    } catch (e: any) { toast.error('Erro: ' + (e.message || 'falha')); }
+    finally { setCriandoCamp(false); }
   };
 
   return (
@@ -145,6 +165,7 @@ export default function Bolsoes() {
         footer={<>
           <button className="btn btn--secondary" onClick={() => setModal(false)}>Cancelar</button>
           {aba === 'corretor' && <button className="btn btn--primary" onClick={direcionar} disabled={enviando}>{enviando ? 'Direcionando…' : 'Direcionar'}</button>}
+          {aba === 'api' && <button className="btn btn--primary" onClick={enviarCampanha} disabled={criandoCamp}>{criandoCamp ? 'Criando…' : 'Criar e enviar'}</button>}
         </>}>
         <div className="flex gap-2" style={{ marginBottom: 16 }}>
           <button className={'btn btn--sm ' + (aba === 'corretor' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('corretor')}>Enviar para Corretor</button>
@@ -180,8 +201,19 @@ export default function Bolsoes() {
         )}
 
         {aba === 'api' && (
-          <div className="text-sm text-secondary" style={{ padding: 12, background: 'var(--bg-elevated)', borderRadius: 8 }}>
-            O envio de campanha via API Oficial (template aprovado) a partir da seleção entra na próxima fase. Por enquanto, use o menu <strong>Campanhas</strong> pra disparar templates.
+          <div className="form-grid form-grid--single">
+            <div className="field">
+              <label className="field__label">Nome da campanha</label>
+              <input className="field__input" value={campanhaNome} onChange={(e) => setCampanhaNome(e.target.value)} placeholder="Ex: Reativação Itapema set/26" />
+            </div>
+            <div className="field">
+              <label className="field__label">Template aprovado (Meta)</label>
+              <select className="field__select" value={templateName} onChange={(e) => setTemplateName(e.target.value)}>
+                <option value="">Selecione…</option>
+                {(templates || []).map((t: any) => <option key={t.name} value={t.name}>{t.name} ({t.language || 'pt_BR'})</option>)}
+              </select>
+              <div className="field__hint">Dispara o template oficial pros {sel.size} leads selecionados. Quando o lead responder, ele cai na fila e a IA atende.</div>
+            </div>
           </div>
         )}
       </Modal>
