@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { timeAgo } from '../lib/format';
 
 const MODO_LABEL: Record<string, string> = {
@@ -21,7 +22,10 @@ export default function Roletas() {
  const [simResult, setSimResult] = useState<any>(null);
  const { data: roletas, loading, error, reload } = useApi<any[]>(() => Api.roletas());
  const { data: funil } = useApi<any>(() => Api.funilEmpresa());
+ const { data: corretores } = useApi<any[]>(() => Api.corretores());
  const toast = useToast();
+ const confirm = useConfirm();
+ const [editing, setEditing] = useState<any>(null);
 
  const criar = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -71,6 +75,62 @@ export default function Roletas() {
  try {
  await Api.roletaParticipanteUpdate(pid, { ativo: !ativo });
  toast.success(ativo ? 'Corretor pausado' : 'Corretor reativado');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
+ const addCorretor = async (roletaId: number, corretorId: number) => {
+ try {
+ await Api.roletaAddParticipante(roletaId, corretorId);
+ toast.success('Corretor adicionado à roleta');
+ reload();
+ } catch (err: any) {
+ toast.error(err.message === 'corretor_ja_na_roleta' ? 'Esse corretor já está na roleta' : 'Erro: ' + (err.message || 'falha'));
+ }
+ };
+
+ const removerParticipante = async (pid: number, nome: string) => {
+ const ok = await confirm({ title: 'Remover da roleta?', message: `${nome} sai da fila desta roleta.`, tone: 'danger' });
+ if (!ok) return;
+ try {
+ await Api.roletaParticipanteRemove(pid);
+ toast.success('Corretor removido da roleta');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
+ const removerRoleta = async (r: any) => {
+ const ok = await confirm({ title: 'Excluir roleta?', message: `"${r.nome}" será removida. Os leads dela voltam pro bolsão (sem corretor).`, tone: 'danger' });
+ if (!ok) return;
+ try {
+ await Api.roletaDelete(r.id);
+ toast.success('Roleta removida');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
+ const salvarEdicao = async (e: React.FormEvent<HTMLFormElement>) => {
+ e.preventDefault();
+ const fd = new FormData(e.currentTarget);
+ try {
+ await Api.roletaUpdate(editing.id, {
+ nome: String(fd.get('nome') || ''),
+ descricao: fd.get('descricao') ? String(fd.get('descricao')) : undefined,
+ modo: String(fd.get('modo') || 'ROUND_ROBIN'),
+ origemFiltro: fd.get('origemFiltro') ? String(fd.get('origemFiltro')) : null,
+ campanhaFiltro: fd.get('campanhaFiltro') ? String(fd.get('campanhaFiltro')) : null,
+ slaHoras: Number(fd.get('slaHoras')) || 4,
+ prioridade: Number(fd.get('prioridade')) || 5,
+ ativa: fd.get('ativa') === 'on',
+ });
+ toast.success('Roleta atualizada');
+ setEditing(null);
  reload();
  } catch (err: any) {
  toast.error('Erro: ' + (err.message || 'falha'));
@@ -186,9 +246,13 @@ export default function Roletas() {
  <h3 className="card__title">{r.nome}</h3>
  <p className="card__subtitle">{r.descricao || ''}</p>
  </div>
+ <div className="flex gap-2" style={{ alignItems: 'center' }}>
  <span className={'badge ' + (r.ativa ? 'badge--signed' : 'badge--neutral') + ' badge--dot'}>
  {r.ativa ? 'ATIVA' : 'PAUSADA'}
  </span>
+ <button className="btn btn--ghost btn--sm" onClick={() => setEditing(r)}>Editar</button>
+ <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => removerRoleta(r)}>Remover</button>
+ </div>
  </div>
 
  <div className="flex gap-2 mb-4" style={{ flexWrap: 'wrap' }}>
@@ -221,10 +285,16 @@ export default function Roletas() {
  <button className="btn btn--ghost btn--sm" onClick={() => togglePausar(p.id, p.ativo)}>
  {p.ativo ? 'Pausar' : 'Ativar'}
  </button>
+ <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => removerParticipante(p.id, p.nome)} title="Remover da roleta">✕</button>
  </div>
  ))
  )}
  </div>
+
+ <AddCorretor
+ corretores={(corretores || []).filter((c: any) => c.ativo && !participantes.some((p: any) => p.corretorId === c.id))}
+ onAdd={(cid) => addCorretor(r.id, cid)}
+ />
  </div>
  );
  })}
@@ -375,7 +445,83 @@ export default function Roletas() {
  </div>
  </form>
  </Modal>
+
+ {editing && (
+ <Modal open={!!editing} onClose={() => setEditing(null)} title={`Editar ${editing.nome}`} subtitle="Ajuste nome, modo, filtros e SLA">
+ <form onSubmit={salvarEdicao}>
+ <div className="form-grid">
+ <div className="field field--span-2">
+ <label className="field__label">Nome <span className="field__required">*</span></label>
+ <input name="nome" className="field__input" required defaultValue={editing.nome} />
+ </div>
+ <div className="field field--span-2">
+ <label className="field__label">Descrição</label>
+ <input name="descricao" className="field__input" defaultValue={editing.descricao || ''} />
+ </div>
+ <div className="field">
+ <label className="field__label">Modo</label>
+ <select name="modo" className="field__select" defaultValue={editing.modo || 'ROUND_ROBIN'}>
+ <option value="ROUND_ROBIN">Round-robin (igualitário)</option>
+ <option value="PERFORMANCE">Por performance</option>
+ <option value="PONDERADA">Ponderada (por peso)</option>
+ <option value="MANUAL">Manual (gestor aprova)</option>
+ </select>
+ </div>
+ <div className="field">
+ <label className="field__label">Filtro de origem</label>
+ <select name="origemFiltro" className="field__select" defaultValue={editing.origemFiltro || ''}>
+ <option value="">Todas as origens</option>
+ <option value="META_ADS">Meta Ads</option>
+ <option value="INSTAGRAM">Instagram</option>
+ <option value="GOOGLE">Google</option>
+ <option value="SITE">Site</option>
+ <option value="INDICACAO">Indicação</option>
+ </select>
+ </div>
+ <div className="field">
+ <label className="field__label">Filtro de campanha</label>
+ <input name="campanhaFiltro" className="field__input" defaultValue={editing.campanhaFiltro || ''} />
+ </div>
+ <div className="field">
+ <label className="field__label">SLA (horas)</label>
+ <input name="slaHoras" type="number" className="field__input" defaultValue={editing.slaHoras ?? 4} />
+ </div>
+ <div className="field">
+ <label className="field__label">Prioridade</label>
+ <input name="prioridade" type="number" className="field__input" defaultValue={editing.prioridade ?? 5} />
+ </div>
+ <div className="field field--span-2">
+ <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+ <input type="checkbox" name="ativa" defaultChecked={editing.ativa} /> Roleta ativa
+ </label>
+ </div>
+ </div>
+ <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+ <button type="button" className="btn btn--secondary" onClick={() => setEditing(null)}>Cancelar</button>
+ <button type="submit" className="btn btn--primary">Salvar</button>
+ </div>
+ </form>
+ </Modal>
+ )}
  </>
+ );
+}
+
+function AddCorretor({ corretores, onAdd }: { corretores: any[]; onAdd: (cid: number) => void }) {
+ if (!corretores.length) return null;
+ return (
+ <div style={{ marginTop: 12, borderTop: '1px solid var(--border-light)', paddingTop: 12 }}>
+ <select
+ className="field__select"
+ value=""
+ onChange={(e) => { const v = Number(e.target.value); if (v) onAdd(v); e.currentTarget.value = ''; }}
+ >
+ <option value="">+ Adicionar corretor à roleta…</option>
+ {corretores.map((c) => (
+ <option key={c.id} value={c.id}>{c.nome}{c.equipe ? ` · ${c.equipe.nome}` : ''}</option>
+ ))}
+ </select>
+ </div>
  );
 }
 

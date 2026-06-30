@@ -272,6 +272,7 @@ export const Api = {
   roletas: () => request<any[]>('/roletas'),
   roletaCreate: (data: any) => request<any>('/roletas', { method: 'POST', body: data }),
   roletaUpdate: (id: number, data: any) => request<any>(`/roletas/${id}`, { method: 'PATCH', body: data }),
+  roletaDelete: (id: number) => request<any>(`/roletas/${id}`, { method: 'DELETE' }),
   roletaAddParticipante: (id: number, corretorId: number, peso = 1) =>
     request<any>(`/roletas/${id}/participantes`, { method: 'POST', body: { corretorId, peso } }),
   roletaParticipanteUpdate: (pid: number, data: any) =>
