@@ -112,12 +112,13 @@ export default function Leads() {
  <th>Corretor</th>
  <th>Status</th>
  <th>Entrada</th>
+ <th>WhatsApp</th>
  </tr>
  </thead>
  <tbody>
  {filtered.length === 0 ? (
  <tr>
- <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
+ <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
  Nenhum lead
  </td>
  </tr>
@@ -159,7 +160,20 @@ export default function Leads() {
  <td>
  <span className={`badge badge--${k}`}>{lab}</span>
  </td>
- <td className="text-xs">{timeAgo(l.createdAt)}</td>
+ <td className="text-xs">{timeAgo(l.distribuidoEm || l.createdAt)}</td>
+ <td>
+ {(() => {
+ const digits = String(l.telefone || '').replace(/\D/g, '');
+ const podeAbrir = !l.telefoneOculto && digits.length >= 10;
+ if (!podeAbrir) return <span className="text-xs text-secondary" title="Libere o contato pra ver o número">🔒</span>;
+ return (
+ <a className="btn btn--sm" style={{ background: '#25D366', color: '#fff', borderColor: '#25D366' }}
+ href={`https://wa.me/${digits}`} target="_blank" rel="noopener noreferrer" title="Abrir conversa no WhatsApp">
+ WhatsApp
+ </a>
+ );
+ })()}
+ </td>
  </tr>
  );
  })

@@ -572,7 +572,12 @@ export const Api = {
   capiCreate: (data: any) => request<any>('/capi', { method: 'POST', body: data }),
   capiUpdate: (id: number, data: any) => request<any>(`/capi/${id}`, { method: 'PATCH', body: data }),
   capiDelete: (id: number) => request<{ ok: boolean }>(`/capi/${id}`, { method: 'DELETE' }),
-  // M4: Bolsões múltiplos
+  // Bolsão de Oportunidades (leads sem corretor) + direcionamento
+  bolsaoOportunidades: (params: any = {}) => request<{ total: number; page: number; pageSize: number; leads: any[] }>(`/bolsoes/oportunidades${qs(params)}`),
+  bolsaoOportunidadesIds: (params: any = {}) => request<{ ids: number[] }>(`/bolsoes/oportunidades/ids${qs(params)}`),
+  bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number }) =>
+    request<{ direcionados: number; jaAtribuidos: number; porCorretor: Record<string, number> }>('/bolsoes/direcionar', { method: 'POST', body }),
+  // M4: Bolsões múltiplos (legado)
   bolsoesList:   () => request<any[]>('/bolsoes'),
   bolsaoCreate:  (data: any) => request<any>('/bolsoes', { method: 'POST', body: data }),
   bolsaoUpdate:  (id: number, data: any) => request<any>(`/bolsoes/${id}`, { method: 'PATCH', body: data }),

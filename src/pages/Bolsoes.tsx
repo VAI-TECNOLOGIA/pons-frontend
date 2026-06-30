@@ -1,91 +1,189 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Api } from '../lib/api';
-import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
-import { useConfirm } from '../lib/confirm';
 
-// Sprint 4 M4 — Múltiplos bolsões configuráveis
+const ORIGENS = ['META_ADS', 'GOOGLE', 'SITE', 'INDICACAO', 'WHATSAPP', 'IMPORTACAO_MANUAL', 'IMPORTACAO'];
+const STATUS = ['NOVO', 'SDR', 'QUALIFICANDO', 'NEGOCIANDO', 'VISITA', 'PROPOSTA'];
+
 export default function Bolsoes() {
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const { data, loading, error, reload } = useApi<any[]>(() => Api.bolsoesList());
+  const [filtros, setFiltros] = useState<any>({ cidade: '', origem: '', campanha: '', empreendimentoId: '', status: '' });
+  const [aplicados, setAplicados] = useState<any>({});
+  const [page, setPage] = useState(1);
+  const [sel, setSel] = useState<Set<number>>(new Set());
+  const [modal, setModal] = useState(false);
+  const [aba, setAba] = useState<'corretor' | 'api'>('corretor');
+  const [alvoTipo, setAlvoTipo] = useState<'corretor' | 'equipe'>('corretor');
+  const [alvoCorretor, setAlvoCorretor] = useState<number | ''>('');
+  const [alvoEquipe, setAlvoEquipe] = useState<number | ''>('');
+  const [enviando, setEnviando] = useState(false);
   const toast = useToast();
-  const confirm = useConfirm();
 
-  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    let regras = null;
-    const regrasTxt = String(fd.get('regrasElegibilidade') || '').trim();
-    if (regrasTxt) { try { regras = JSON.parse(regrasTxt); } catch { toast.error('Regras: JSON inválido'); return; } }
-    const payload = {
-      nome: String(fd.get('nome') || ''),
-      descricao: String(fd.get('descricao') || '') || null,
-      ordem: Number(fd.get('ordem') || 0),
-      regrasElegibilidade: regras,
-      ativo: true,
-    };
+  const params = useMemo(() => ({ ...aplicados, page, pageSize: 50 }), [aplicados, page]);
+  const { data, loading, reload } = useApi<{ total: number; page: number; pageSize: number; leads: any[] }>(() => Api.bolsaoOportunidades(params), [JSON.stringify(params)]);
+  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  const { data: equipes } = useApi<any[]>(() => Api.equipes());
+  const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
+
+  const leads = data?.leads || [];
+  const total = data?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(total / 50));
+
+  const aplicar = () => {
+    const a: any = {};
+    for (const [k, v] of Object.entries(filtros)) if (v) a[k] = v;
+    setAplicados(a); setPage(1); setSel(new Set());
+  };
+  const limpar = () => { setFiltros({ cidade: '', origem: '', campanha: '', empreendimentoId: '', status: '' }); setAplicados({}); setPage(1); setSel(new Set()); };
+
+  const toggle = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const togglePagina = () => {
+    const ids = leads.map((l) => l.id);
+    const todosNaPagina = ids.length > 0 && ids.every((id) => sel.has(id));
+    setSel((s) => { const n = new Set(s); ids.forEach((id) => todosNaPagina ? n.delete(id) : n.add(id)); return n; });
+  };
+  const selecionarTodosDoFiltro = async () => {
     try {
-      if (editing) await Api.bolsaoUpdate(editing.id, payload);
-      else await Api.bolsaoCreate(payload);
-      toast.success('Salvo'); setOpen(false); setEditing(null); reload();
-    } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+      const r = await Api.bolsaoOportunidadesIds(aplicados);
+      setSel(new Set(r.ids));
+      toast.success(`${r.ids.length} leads selecionados (todo o filtro)`);
+    } catch (e: any) { toast.error('Erro: ' + (e.message || 'falha')); }
   };
 
-  const excluir = async (b: any) => {
-    const ok = await confirm({ title: 'Excluir?', message: `Excluir bolsão "${b.nome}"?`, tone: 'danger' });
-    if (!ok) return;
-    await Api.bolsaoDelete(b.id); toast.success('Excluído'); reload();
+  const direcionar = async () => {
+    const leadIds = [...sel];
+    if (!leadIds.length) { toast.error('Selecione ao menos 1 lead'); return; }
+    const body: any = { leadIds };
+    if (alvoTipo === 'corretor') {
+      if (!alvoCorretor) { toast.error('Escolha o corretor'); return; }
+      body.corretorId = Number(alvoCorretor);
+    } else {
+      if (!alvoEquipe) { toast.error('Escolha a equipe'); return; }
+      body.equipeId = Number(alvoEquipe);
+    }
+    setEnviando(true);
+    try {
+      const r = await Api.bolsaoDirecionar(body);
+      toast.success(`${r.direcionados} leads direcionados${r.jaAtribuidos ? ` · ${r.jaAtribuidos} já tinham corretor` : ''}`);
+      setModal(false); setSel(new Set()); reload();
+    } catch (e: any) { toast.error('Erro: ' + (e.message || 'falha')); }
+    finally { setEnviando(false); }
   };
 
   return (
     <>
-      <Topbar title="Bolsões" right={<button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Novo bolsão</button>} />
+      <Topbar title="Bolsão de Oportunidades" right={
+        <button className="btn btn--primary btn--sm" disabled={sel.size === 0} onClick={() => { setAba('corretor'); setModal(true); }}>
+          Direcionar Lead{sel.size ? ` (${sel.size})` : ''}
+        </button>
+      } />
       <div className="main__content">
-        <PageHeader breadcrumb="Comercial · Bolsões" title="Bolsões de Recaptura" subtitle="Filtros configuráveis pra organizar leads sem corretor por origem/cidade/status" />
-        {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
+        <PageHeader breadcrumb="Comercial · Bolsão" title={`${total.toLocaleString('pt-BR')} leads disponíveis`} subtitle="Leads sem corretor — filtre, selecione e direcione pra corretor ou equipe" />
+
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+            <input className="field__input" placeholder="Cidade" value={filtros.cidade} onChange={(e) => setFiltros({ ...filtros, cidade: e.target.value })} />
+            <select className="field__select" value={filtros.origem} onChange={(e) => setFiltros({ ...filtros, origem: e.target.value })}>
+              <option value="">Origem (todas)</option>{ORIGENS.map((o) => <option key={o}>{o}</option>)}
+            </select>
+            <input className="field__input" placeholder="Campanha" value={filtros.campanha} onChange={(e) => setFiltros({ ...filtros, campanha: e.target.value })} />
+            <select className="field__select" value={filtros.empreendimentoId} onChange={(e) => setFiltros({ ...filtros, empreendimentoId: e.target.value })}>
+              <option value="">Empreendimento (todos)</option>{(empreendimentos || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+            </select>
+            <select className="field__select" value={filtros.status} onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}>
+              <option value="">Status (todos)</option>{STATUS.map((s) => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-2" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+            <button className="btn btn--primary btn--sm" onClick={aplicar}>Filtrar</button>
+            <button className="btn btn--secondary btn--sm" onClick={limpar}>Limpar</button>
+            <button className="btn btn--ghost btn--sm" onClick={selecionarTodosDoFiltro}>Selecionar todos do filtro ({total})</button>
+            {sel.size > 0 && <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>{sel.size} selecionados</span>}
+          </div>
+        </div>
+
         <div className="card">
-          <table className="table">
-            <thead><tr><th>Ordem</th><th>Nome</th><th>Descrição</th><th>Regras</th><th>Status</th><th></th></tr></thead>
-            <tbody>
-              {(data || []).map((b: any) => (
-                <tr key={b.id}>
-                  <td>{b.ordem}</td>
-                  <td><strong>{b.nome}</strong></td>
-                  <td className="text-xs text-secondary">{b.descricao || '—'}</td>
-                  <td className="text-xs"><code>{JSON.stringify(b.regrasElegibilidade || {})}</code></td>
-                  <td><span className={`badge ${b.ativo ? 'badge--launch' : 'badge--neutral'}`}>{b.ativo ? 'Ativo' : 'Inativo'}</span></td>
-                  <td className="flex" style={{ gap: 6 }}>
-                    <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(b); setOpen(true); }}>Editar</button>
-                    <button className="btn btn--ghost btn--sm" onClick={() => excluir(b)}>×</button>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: 32 }}><input type="checkbox" checked={leads.length > 0 && leads.every((l) => sel.has(l.id))} onChange={togglePagina} /></th>
+                  <th>Nome</th><th>Telefone</th><th>Cidade</th><th>Origem</th><th>Campanha</th><th>Interesse</th><th>Status</th>
                 </tr>
-              ))}
-              {data?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhum bolsão cadastrado</td></tr>}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {loading && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Carregando…</td></tr>}
+                {!loading && leads.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhum lead no bolsão com esse filtro</td></tr>}
+                {leads.map((l) => (
+                  <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : {}}>
+                    <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} /></td>
+                    <td>{l.nome}</td>
+                    <td className="text-xs">{l.telefone || '—'}</td>
+                    <td className="text-xs">{l.cidade || '—'}</td>
+                    <td className="text-xs">{l.origem || '—'}</td>
+                    <td className="text-xs">{l.campanha || '—'}</td>
+                    <td className="text-xs">{l.interesse || '—'}</td>
+                    <td><span className="badge badge--neutral">{l.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex gap-2" style={{ justifyContent: 'center', marginTop: 12, alignItems: 'center' }}>
+              <button className="btn btn--ghost btn--sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹ Anterior</button>
+              <span className="text-xs text-secondary">Página {page} de {totalPages}</span>
+              <button className="btn btn--ghost btn--sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Próxima ›</button>
+            </div>
+          )}
         </div>
       </div>
 
-      <Modal open={open} onClose={() => { setOpen(false); setEditing(null); }} title={editing ? 'Editar bolsão' : 'Novo bolsão'} size="lg" footer={
-        <>
-          <button type="button" className="btn btn--secondary" onClick={() => { setOpen(false); setEditing(null); }}>Cancelar</button>
-          <button type="submit" form="bolsao-form" className="btn btn--primary">Salvar</button>
-        </>
-      }>
-        <form id="bolsao-form" onSubmit={submit}>
-          <div className="form-grid">
-            <div className="field"><label className="field__label">Nome *</label><input name="nome" className="field__input" required defaultValue={editing?.nome} /></div>
-            <div className="field"><label className="field__label">Ordem</label><input type="number" name="ordem" className="field__input" defaultValue={editing?.ordem || 0} /></div>
-            <div className="field" style={{ gridColumn: '1 / -1' }}><label className="field__label">Descrição</label><input name="descricao" className="field__input" defaultValue={editing?.descricao || ''} /></div>
-            <div className="field" style={{ gridColumn: '1 / -1' }}>
-              <label className="field__label">Regras de elegibilidade (JSON)</label>
-              <textarea name="regrasElegibilidade" className="field__textarea" rows={4} defaultValue={editing?.regrasElegibilidade ? JSON.stringify(editing.regrasElegibilidade, null, 2) : ''} placeholder='{"origens": ["META_ADS"], "cidades": ["Itapema"], "statusInclude": ["NOVO"]}' />
+      <Modal open={modal} onClose={() => setModal(false)} title={`Direcionar ${sel.size} lead(s)`} subtitle="Escolha o formato de direcionamento"
+        footer={<>
+          <button className="btn btn--secondary" onClick={() => setModal(false)}>Cancelar</button>
+          {aba === 'corretor' && <button className="btn btn--primary" onClick={direcionar} disabled={enviando}>{enviando ? 'Direcionando…' : 'Direcionar'}</button>}
+        </>}>
+        <div className="flex gap-2" style={{ marginBottom: 16 }}>
+          <button className={'btn btn--sm ' + (aba === 'corretor' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('corretor')}>Enviar para Corretor</button>
+          <button className={'btn btn--sm ' + (aba === 'api' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('api')}>Enviar via API Oficial</button>
+        </div>
+
+        {aba === 'corretor' && (
+          <div className="form-grid form-grid--single">
+            <div className="flex gap-2" style={{ marginBottom: 4 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><input type="radio" checked={alvoTipo === 'corretor'} onChange={() => setAlvoTipo('corretor')} /> Um corretor</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><input type="radio" checked={alvoTipo === 'equipe'} onChange={() => setAlvoTipo('equipe')} /> Uma equipe (rodízio)</label>
             </div>
+            {alvoTipo === 'corretor' ? (
+              <div className="field">
+                <label className="field__label">Corretor</label>
+                <select className="field__select" value={alvoCorretor} onChange={(e) => setAlvoCorretor(e.target.value ? Number(e.target.value) : '')}>
+                  <option value="">Selecione…</option>
+                  {(corretores || []).filter((c: any) => c.ativo).map((c: any) => <option key={c.id} value={c.id}>{c.nome}{c.equipe ? ` · ${c.equipe.nome}` : ''}</option>)}
+                </select>
+                <div className="field__hint">Os {sel.size} leads vão todos pra esse corretor.</div>
+              </div>
+            ) : (
+              <div className="field">
+                <label className="field__label">Equipe</label>
+                <select className="field__select" value={alvoEquipe} onChange={(e) => setAlvoEquipe(e.target.value ? Number(e.target.value) : '')}>
+                  <option value="">Selecione…</option>
+                  {(equipes || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                </select>
+                <div className="field__hint">Os {sel.size} leads são distribuídos em rodízio entre os corretores ativos da equipe.</div>
+              </div>
+            )}
           </div>
-        </form>
+        )}
+
+        {aba === 'api' && (
+          <div className="text-sm text-secondary" style={{ padding: 12, background: 'var(--bg-elevated)', borderRadius: 8 }}>
+            O envio de campanha via API Oficial (template aprovado) a partir da seleção entra na próxima fase. Por enquanto, use o menu <strong>Campanhas</strong> pra disparar templates.
+          </div>
+        )}
       </Modal>
     </>
   );
