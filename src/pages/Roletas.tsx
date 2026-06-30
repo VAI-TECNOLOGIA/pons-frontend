@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { SLAStatusPanel } from '../components/SLAStatusPanel';
+import { SLACharts } from '../components/SLACharts';
 import { Modal } from '../components/Modal';
 import { Link } from 'react-router-dom';
 import { Api } from '../lib/api';
@@ -20,6 +21,7 @@ export default function Roletas() {
  const [openNew, setOpenNew] = useState(false);
  const [openSim, setOpenSim] = useState(false);
  const [simResult, setSimResult] = useState<any>(null);
+ const [aba, setAba] = useState<'roletas' | 'sla'>('roletas');
  const { data: roletas, loading, error, reload } = useApi<any[]>(() => Api.roletas());
  const { data: funil } = useApi<any>(() => Api.funilEmpresa());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
@@ -166,8 +168,21 @@ export default function Roletas() {
  subtitle="Distribuição automática de leads · round-robin, performance, ponderada e manual"
  />
 
- <SLAStatusPanel />
+ {/* Abas: Gerenciar roletas | SLA */}
+ <div className="flex gap-2" style={{ marginBottom: 16 }}>
+ <button className={'btn btn--sm ' + (aba === 'roletas' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('roletas')}>Gerenciar roletas</button>
+ <button className={'btn btn--sm ' + (aba === 'sla' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('sla')}>SLA</button>
+ </div>
 
+ {aba === 'sla' && (
+ <div className="fade-in">
+ <SLACharts />
+ <SLAStatusPanel />
+ </div>
+ )}
+
+ {aba === 'roletas' && (
+ <div className="fade-in">
  <div className="mb-6">
  <div className="card">
  <div className="flex-between" style={{ marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
@@ -299,6 +314,9 @@ export default function Roletas() {
  );
  })}
  </div>
+ </div>
+ )}
+
  </div>
 
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Roleta" subtitle="Defina modo, filtros e SLA — adicione corretores depois">
