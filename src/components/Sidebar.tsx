@@ -121,10 +121,21 @@ const DEV_ITEMS: NavItem[] = [
 
 const TODOS_ITENS: NavItem[] = [...TOP_ITEMS, ...GROUPS.flatMap((g) => g.items)];
 
+// GESTOR = "tudo menos Financeiro + gestão de usuários/sistema". Espelha a
+// blindagem do backend (requireRoleExato): vê tudo, menos estes destinos.
+const GESTOR_BLOQUEADO = new Set([
+  // Seção Financeiro inteira
+  '/financeiro-pons', '/onboarding-aprovacoes', '/financeiro', '/meta-custos', '/relatorios', '/painel-executivo',
+  // Gestão de usuários + sistema (só CEO)
+  '/equipe', '/configuracoes', '/auditoria',
+]);
+
 function canSee(it: NavItem, role: Role, email?: string): boolean {
   if (it.emails) return !!email && it.emails.includes(email);
   // Equipe Financeiro = perfil restrito: vê só o Dashboard + os itens do Financeiro.
   if (role === 'FINANCEIRO') return it.to === '/dashboard' || (!!it.roles && it.roles.includes('FINANCEIRO'));
+  // Gestor: vê tudo, exceto os destinos bloqueados acima.
+  if (role === 'GESTOR') return !GESTOR_BLOQUEADO.has(it.to);
   if (!it.roles) return true;
   return it.roles.includes(role);
 }

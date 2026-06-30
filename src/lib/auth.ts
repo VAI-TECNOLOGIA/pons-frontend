@@ -12,6 +12,7 @@ export type Role =
   | 'CORRETOR'
   | 'GERENTE_EQUIPE'
   | 'SOCIO_UNIDADE'
+  | 'GESTOR'
   | 'DEV';
 
 export interface User {
@@ -71,6 +72,7 @@ export function formatRole(role: Role | string): string {
     CORRETOR: 'Corretor',
     GERENTE_EQUIPE: 'Gerente de Equipe',
     SOCIO_UNIDADE: 'Sócio de Filial',
+    GESTOR: 'Gestor',
     DEV: 'Desenvolvedor',
   };
   return map[role] || role;
