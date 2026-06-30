@@ -68,6 +68,8 @@ export default function Distribuicao() {
   const [showAdv, setShowAdv] = useState(false);
   const { data, loading, error, reload } = useApi<any[]>(() => Api.distribuicaoList());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
+  // Bolsão: leads aguardando distribuição. Mostra a "jornada" antes das regras.
+  const { data: bolsao, reload: reloadBolsao } = useApi<{ total: number; leads: any[] }>(() => Api.roletaBolsao());
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -139,7 +141,7 @@ export default function Distribuicao() {
     try {
       const r = await Api.distribuicaoExecutar(d.id);
       toast.success(`Distribuídos ${r.resultado.leadsDistribuidos} leads pra ${r.resultado.corretoresAtendidos} corretores`);
-      reload();
+      reload(); reloadBolsao();
     } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
   };
 
@@ -168,6 +170,41 @@ export default function Distribuicao() {
         />
 
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
+
+        {/* ─── Bolsão: leads aguardando distribuição (a jornada) ─── */}
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <div className="text-xs text-secondary">Leads no bolsão aguardando distribuição</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-warning)' }}>{bolsao?.total ?? '…'}</div>
+            </div>
+            <button className="btn btn--ghost btn--sm" onClick={() => reloadBolsao()}>↻ Atualizar</button>
+          </div>
+          {bolsao && bolsao.total === 0 && (
+            <div className="text-xs text-secondary" style={{ marginTop: 8 }}>
+              Bolsão vazio. Importe leads em <strong>Importar Leads</strong> — eles caem aqui e podem ser distribuídos pelas regras abaixo (botão ▶ Executar).
+            </div>
+          )}
+          {bolsao && bolsao.leads.length > 0 && (
+            <div style={{ overflowX: 'auto', marginTop: 10 }}>
+              <table className="table">
+                <thead><tr><th>Nome</th><th>Telefone</th><th>Origem</th><th>Campanha</th><th>Entrou</th></tr></thead>
+                <tbody>
+                  {bolsao.leads.slice(0, 10).map((l: any) => (
+                    <tr key={l.id}>
+                      <td>{l.nome}</td>
+                      <td className="text-xs">{l.telefone || '—'}</td>
+                      <td className="text-xs">{l.origem || '—'}</td>
+                      <td className="text-xs">{l.campanha || '—'}</td>
+                      <td className="text-xs text-secondary">{l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {bolsao.total > 10 && <div className="text-xs text-secondary" style={{ marginTop: 6 }}>Mostrando 10 de {bolsao.total} no bolsão.</div>}
+            </div>
+          )}
+        </div>
 
         <div className="card">
           <table className="table">

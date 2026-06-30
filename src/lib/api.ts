@@ -278,7 +278,7 @@ export const Api = {
     request<any>(`/roletas/participantes/${pid}`, { method: 'PATCH', body: data }),
   roletaParticipanteRemove: (pid: number) =>
     request<any>(`/roletas/participantes/${pid}`, { method: 'DELETE' }),
-  roletaBolsao: () => request<any[]>('/roletas/bolsao'),
+  roletaBolsao: () => request<{ total: number; leads: any[] }>('/roletas/bolsao'),
   roletaSimular: (data: any) => request<any>('/roletas/simular', { method: 'POST', body: data }),
   roletaRedistribuirSla: () => request<any>('/roletas/redistribuir-sla', { method: 'POST' }),
   funilEmpresa: () => request<any>('/roletas/funil-empresa'),
@@ -491,6 +491,8 @@ export const Api = {
     return fetch(`${BASE}/import-leads/executar`, { method: 'POST', headers: { Authorization: `Bearer ${Auth.token}` }, body: fd }).then((r) => r.json());
   },
   importLeadsFiltrar:  (params: any = {}) => request<any>(`/import-leads/filtrar${qs(params)}`),
+  // Heal: leads já importados que ficaram sem mensagem (sumiram do Atendimento/bolsão).
+  importLeadsReparar:  () => request<{ normalizados: number; reparados: number; bolsaoSemMensagem: number }>('/import-leads/reparar-bolsao', { method: 'POST' }),
 
   // ─── Fase C — Remarketing ────────────────────────────────────────
   remarketingList:    () => request<any[]>('/remarketing'),

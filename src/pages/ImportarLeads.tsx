@@ -11,7 +11,22 @@ export default function ImportarLeads() {
   const [preview, setPreview] = useState<any>(null);
   const [resultado, setResultado] = useState<any>(null);
   const [carregando, setCarregando] = useState(false);
+  const [reparando, setReparando] = useState(false);
   const toast = useToast();
+
+  // Conserta leads importados em versões antigas que ficaram sem mensagem e por
+  // isso não apareciam no Atendimento/bolsão. Idempotente — pode rodar à vontade.
+  const repararBolsao = async () => {
+    setReparando(true);
+    try {
+      const r = await Api.importLeadsReparar();
+      toast.success(`Reparados ${r.reparados} leads (agora aparecem no Atendimento/bolsão)${r.normalizados ? ` · ${r.normalizados} status corrigidos` : ''}.`);
+    } catch (err: any) {
+      toast.error('Erro ao reparar: ' + (err.message || 'falha'));
+    } finally {
+      setReparando(false);
+    }
+  };
 
   const escolherArquivo = () => fileRef.current?.click();
 
@@ -57,6 +72,16 @@ export default function ImportarLeads() {
           title="Importar Leads em Massa"
           subtitle="Suba CSV ou Excel. Colunas aceitas: nome, telefone, email, origem, campanha, status, tags, notas. Tags são inferidas automaticamente quando ausentes."
         />
+
+        <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <strong style={{ fontSize: 14 }}>Leads importados não aparecem no Atendimento / bolsão?</strong>
+            <div className="text-xs text-secondary">Conserta os leads importados que ficaram sem mensagem inicial — eles voltam a aparecer e ficam distribuíveis. Pode rodar quantas vezes quiser.</div>
+          </div>
+          <button className="btn btn--secondary" onClick={repararBolsao} disabled={reparando}>
+            {reparando ? 'Reparando…' : 'Reparar leads importados'}
+          </button>
+        </div>
 
         <div className="card">
           <div style={{ border: '2px dashed var(--border-light)', borderRadius: 12, padding: 32, textAlign: 'center' }}>
