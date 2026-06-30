@@ -4,6 +4,7 @@ import { Modal } from '../components/Modal';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { useWhatsappNumeros } from '../lib/whatsappNumeros';
 
 const ORIGENS = ['META_ADS', 'GOOGLE', 'SITE', 'INDICACAO', 'WHATSAPP', 'IMPORTACAO_MANUAL', 'IMPORTACAO'];
 const STATUS = ['NOVO', 'SDR', 'QUALIFICANDO', 'NEGOCIANDO', 'VISITA', 'PROPOSTA'];
@@ -28,8 +29,10 @@ export default function Bolsoes() {
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
   const { data: templatesResp } = useApi<{ items: any[] }>(() => Api.whatsappTemplates());
   const templates = templatesResp?.items || [];
+  const numeros = useWhatsappNumeros();
   const [campanhaNome, setCampanhaNome] = useState('');
   const [templateName, setTemplateName] = useState('');
+  const [phoneNumberId, setPhoneNumberId] = useState('');
   const [criandoCamp, setCriandoCamp] = useState(false);
 
   const leads = data?.leads || [];
@@ -84,7 +87,11 @@ export default function Bolsoes() {
     if (!templateName) { toast.error('Escolha um template aprovado'); return; }
     setCriandoCamp(true);
     try {
-      const c = await Api.campanhaCreate({ nome: campanhaNome.trim(), templateName, audienciaTipo: 'IDS', audienciaIds: leadIds });
+      const c = await Api.campanhaCreate({
+        nome: campanhaNome.trim(), templateName, audienciaTipo: 'IDS', audienciaIds: leadIds,
+        phoneNumberId: phoneNumberId || null,
+        numeroExibicao: numeros.find((n) => n.id === phoneNumberId)?.label || null,
+      });
       await Api.campanhaEnviar(c.id);
       toast.success(`Campanha "${campanhaNome}" criada e disparando pra ${leadIds.length} leads. Acompanhe em Campanhas.`);
       setModal(false); setSel(new Set()); setCampanhaNome(''); setTemplateName('');
@@ -211,6 +218,12 @@ export default function Bolsoes() {
               <select className="field__select" value={templateName} onChange={(e) => setTemplateName(e.target.value)}>
                 <option value="">Selecione…</option>
                 {(templates || []).map((t: any) => <option key={t.name} value={t.name}>{t.name} ({t.language || 'pt_BR'})</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Número oficial de envio</label>
+              <select className="field__select" value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)}>
+                {numeros.map((n) => <option key={n.id || 'default'} value={n.id}>{n.label}</option>)}
               </select>
               <div className="field__hint">Dispara o template oficial pros {sel.size} leads selecionados. Quando o lead responder, ele cai na fila e a IA atende.</div>
             </div>

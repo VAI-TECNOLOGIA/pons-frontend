@@ -1,16 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Api } from '../lib/api';
 import './campanhas.css';
-
-// Números conectados na WABA "Pons Imobiliário" (origem do disparo).
-const NUMEROS = [
-  { id: '', label: 'Número padrão do CRM' },
-  { id: '1093208143886015', label: '+55 47 9185-9029' },
-  { id: '1179879415215044', label: '+55 47 9201-7377' },
-  { id: '1140980179105568', label: '+55 47 9198-5387' },
-  { id: '1236172369571015', label: '+55 47 9157-2815' },
-  { id: '1090726274134958', label: '+55 47 9159-8050' },
-];
+import { useWhatsappNumeros } from '../lib/whatsappNumeros';
 const STATUS_LEAD = ['NOVO', 'SDR', 'NEGOCIANDO', 'PROPOSTA', 'FECHADO', 'PERDIDO'];
 const STATUS_LABEL: Record<string, string> = {
   RASCUNHO: 'Rascunho', AGENDADA: 'Agendada', ENVIANDO: 'Enviando', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada',
@@ -107,7 +98,13 @@ export default function Campanhas() {
                     <td><span className={`camp-badge camp-badge--${(c.status || '').toLowerCase()}`}>{STATUS_LABEL[c.status] || c.status}</span></td>
                     <td>
                       <div className="camp-bar"><div className="camp-bar__fill" style={{ width: `${pct}%` }} /></div>
-                      <div className="camp-muted">{c.enviados || 0} enviadas · {c.falhas || 0} falhas</div>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 5, fontSize: 11, fontWeight: 600 }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>{c.enviados || 0} enviadas</span>
+                        <span style={{ color: '#0E9F6E' }}>{c.entregues || 0} entregues</span>
+                        <span style={{ color: '#3B82F6' }}>{c.lidos || 0} lidas</span>
+                        <span style={{ color: '#8B5CF6' }}>{c.respondidos || 0} respostas</span>
+                        {(c.falhas || 0) > 0 && <span style={{ color: 'var(--color-danger-fg)' }}>{c.falhas} falhas</span>}
+                      </div>
                     </td>
                     <td>{total}</td>
                     <td className="camp-muted">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
@@ -129,6 +126,7 @@ export default function Campanhas() {
 //  WIZARD — Config → Público → Mensagem → Envio
 // ════════════════════════════════════════════════════════════════════════════
 function Wizard({ onClose }: { onClose: () => void }) {
+  const NUMEROS = useWhatsappNumeros();
   const [step, setStep] = useState(0); // 0=Config 1=Público 2=Mensagem 3=Envio
   const [nome, setNome] = useState('');
   const [phoneNumberId, setPhoneNumberId] = useState('');
