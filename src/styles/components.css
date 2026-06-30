@@ -2354,6 +2354,19 @@
     z-index: var(--z-sticky);
     backdrop-filter: saturate(180%) blur(8px);
     background: rgba(255, 255, 255, 0.92);
+    /* Conteúdo (botões da página + tema + avatar) pode quebrar linha — a topbar
+       CRESCE pra conter, em vez de transbordar e flutuar sobre o conteúdo. */
+    height: auto;
+    min-height: var(--header-height);
+    flex-wrap: wrap;
+    row-gap: 8px;
+    align-items: center;
+  }
+  .topbar__left { min-width: 0; }
+  .topbar__right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
   }
   [data-theme="dark"] .topbar {
     background: rgba(19, 26, 46, 0.92);
