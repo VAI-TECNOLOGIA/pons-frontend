@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
+import { Modal } from '../components/Modal';
+import { LeadCamposCustom } from '../components/LeadCamposCustom';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { initials, timeAgo } from '../lib/format';
@@ -20,6 +22,7 @@ const FILTROS = ['Todos', 'NOVO', 'NEGOCIANDO', 'PROPOSTA'];
 export default function MeusLeads() {
   const { data, loading, error } = useApi<any[]>(() => Api.leads());
   const [filtro, setFiltro] = useState('Todos');
+  const [campoLead, setCampoLead] = useState<any>(null);
 
   if (loading) return <Shell><LoadingBlock /></Shell>;
   if (error) return <Shell><ErrorBlock error={error} /></Shell>;
@@ -64,7 +67,7 @@ export default function MeusLeads() {
                     <div className="flex gap-3" style={{ alignItems: 'center' }}>
                       <div className="avatar avatar--sm">{initials(l.nome)}</div>
                       <div>
-                        <div className="font-semibold">
+                        <div className="font-semibold" style={{ cursor: 'pointer' }} onClick={() => setCampoLead(l)} title="Ver campos personalizados">
                           {l.nome}{l.vip && <span className="badge badge--launch" style={{ fontSize: 9, padding: '2px 6px', marginLeft: 6 }}>VIP</span>}
                         </div>
                         <div className="text-xs text-secondary">{l.telefone || l.email || '—'}</div>
@@ -90,6 +93,10 @@ export default function MeusLeads() {
           </tbody>
         </table>
       </div>
+
+      <Modal open={!!campoLead} onClose={() => setCampoLead(null)} title={campoLead ? `Campos de ${campoLead.nome}` : ''} subtitle="Campos personalizados deste lead">
+        {campoLead && <LeadCamposCustom leadId={campoLead.id} />}
+      </Modal>
     </Shell>
   );
 }

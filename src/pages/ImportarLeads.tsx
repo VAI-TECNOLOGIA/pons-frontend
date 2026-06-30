@@ -156,6 +156,7 @@ export default function ImportarLeads() {
               <Pill label="Sem cidade" value={resultado.semCidade ?? 0} cor="var(--color-warning)" />
               <Pill label="Com empreendimento" value={resultado.comEmpreendimento ?? 0} cor="var(--color-success)" />
               <Pill label="Com corretor" value={resultado.comCorretor ?? 0} cor="var(--color-success)" />
+              <Pill label="Campos custom" value={resultado.camposCustom ?? 0} cor="var(--blue-500)" />
             </div>
 
             {resultado.mapeamentoIA && Object.keys(resultado.mapeamentoIA).length > 0 && (

@@ -78,6 +78,7 @@ const Campanhas       = lazyRetry(() => import('./pages/Campanhas'));
 const MetaCustos      = lazyRetry(() => import('./pages/MetaCustos'));
 const PainelExecutivo = lazyRetry(() => import('./pages/PainelExecutivo'));
 const ImportarLeads   = lazyRetry(() => import('./pages/ImportarLeads'));
+const CamposCustom    = lazyRetry(() => import('./pages/CamposCustom'));
 const LPPublica       = lazyRetry(() => import('./pages/LPPublica'));
 const Transferencias  = lazyRetry(() => import('./pages/Transferencias'));
 const Auditoria       = lazyRetry(() => import('./pages/Auditoria'));
@@ -149,6 +150,7 @@ export default function App() {
           <Route path="/meta-custos" element={<MetaCustos />} />
           <Route path="/painel-executivo" element={<PainelExecutivo />} />
           <Route path="/importar" element={<ImportarLeads />} />
+          <Route path="/campos-custom" element={<CamposCustom />} />
           <Route path="/transferencias" element={<Transferencias />} />
           <Route path="/auditoria" element={<Auditoria />} />
           <Route path="/bolsoes" element={<Bolsoes />} />

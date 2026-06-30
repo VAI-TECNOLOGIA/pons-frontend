@@ -577,6 +577,14 @@ export const Api = {
   bolsaoOportunidadesIds: (params: any = {}) => request<{ ids: number[] }>(`/bolsoes/oportunidades/ids${qs(params)}`),
   bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number }) =>
     request<{ direcionados: number; jaAtribuidos: number; porCorretor: Record<string, number> }>('/bolsoes/direcionar', { method: 'POST', body }),
+  // Campos personalizados
+  camposCustom: () => request<any[]>('/campos-custom'),
+  campoCustomCreate: (data: any) => request<any>('/campos-custom', { method: 'POST', body: data }),
+  campoCustomUpdate: (id: number, data: any) => request<any>(`/campos-custom/${id}`, { method: 'PATCH', body: data }),
+  campoCustomDelete: (id: number) => request<{ ok: boolean }>(`/campos-custom/${id}`, { method: 'DELETE' }),
+  leadCamposCustom: (leadId: number) => request<any[]>(`/campos-custom/lead/${leadId}`),
+  leadCamposCustomSet: (leadId: number, valores: Record<number, string>) =>
+    request<{ ok: boolean }>(`/campos-custom/lead/${leadId}`, { method: 'PUT', body: { valores } }),
   // M4: Bolsões múltiplos (legado)
   bolsoesList:   () => request<any[]>('/bolsoes'),
   bolsaoCreate:  (data: any) => request<any>('/bolsoes', { method: 'POST', body: data }),

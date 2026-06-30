@@ -88,6 +88,7 @@ const GROUPS: NavGroup[] = [
       { to: '/campanhas', label: 'Campanhas', icon: 'chat', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/distribuicao', label: 'Distribuição', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/importar', label: 'Importar Leads', icon: 'plus', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+      { to: '/campos-custom', label: 'Campos Personalizados', icon: 'layers', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
     ],
   },
   {
