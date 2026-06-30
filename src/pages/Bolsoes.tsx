@@ -99,7 +99,7 @@ export default function Bolsoes() {
           Direcionar Lead{sel.size ? ` (${sel.size})` : ''}
         </button>
       } />
-      <div className="main__content">
+      <div className="main__content page-enter">
         <PageHeader breadcrumb="Comercial · Bolsão" title={`${total.toLocaleString('pt-BR')} leads disponíveis`} subtitle="Leads sem corretor — filtre, selecione e direcione pra corretor ou equipe" />
 
         <div className="card" style={{ marginBottom: 16 }}>
@@ -126,7 +126,7 @@ export default function Bolsoes() {
 
         <div className="card">
           <div style={{ overflowX: 'auto' }}>
-            <table className="table">
+            <table className="table row-hover">
               <thead>
                 <tr>
                   <th style={{ width: 32 }}><input type="checkbox" checked={leads.length > 0 && leads.every((l) => sel.has(l.id))} onChange={togglePagina} /></th>

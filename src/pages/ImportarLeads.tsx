@@ -66,7 +66,7 @@ export default function ImportarLeads() {
   return (
     <>
       <Topbar title="Importar Leads" />
-      <div className="main__content">
+      <div className="main__content page-enter">
         <PageHeader
           breadcrumb="Administração · Big Data"
           title="Importar Leads em Massa"
@@ -127,38 +127,54 @@ export default function ImportarLeads() {
         )}
 
         {resultado && (
-          <div className="card" style={{ marginTop: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Resultado da importação</h3>
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
-              <Stat label="Recebidos" value={resultado.recebidos} />
-              <Stat label="Criados" value={resultado.criados} cor="var(--color-success)" />
-              <Stat label="Distribuídos" value={resultado.distribuidos} cor="var(--color-success)" />
-              <Stat label="No bolsão" value={resultado.bolsao} cor="var(--color-warning)" />
-              <Stat label="Duplicados" value={resultado.duplicados} cor="var(--color-warning)" />
-              <Stat label="Erros" value={resultado.erros} cor="var(--color-danger)" />
+          <div className="card fade-in" style={{ marginTop: 16 }}>
+            {/* Hero: número grande de criados + métricas inline */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Importação concluída</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 44, fontWeight: 700, color: 'var(--color-success)', lineHeight: 1.05 }}>
+                  {Number(resultado.criados).toLocaleString('pt-BR')}
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginLeft: 8 }}>leads criados</span>
+                </div>
+              </div>
+              <div className="stagger" style={{ marginLeft: 'auto', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Pill label="Recebidos" value={resultado.recebidos} />
+                <Pill label="Distribuídos" value={resultado.distribuidos} cor="var(--color-success)" />
+                <Pill label="No bolsão" value={resultado.bolsao} cor="var(--blue-500)" />
+                <Pill label="Duplicados" value={resultado.duplicados} cor="var(--color-warning)" />
+                <Pill label="Erros" value={resultado.erros} cor="var(--color-danger)" />
+              </div>
             </div>
 
-            {/* Relatório de tratamento da base */}
-            <h4 style={{ fontSize: 13, fontWeight: 700, margin: '16px 0 8px' }}>Tratamento da base</h4>
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
-              <Stat label="Sem telefone" value={resultado.semTelefone ?? 0} cor="var(--color-warning)" />
-              <Stat label="Telefone inválido" value={resultado.telefoneInvalido ?? 0} cor="var(--color-warning)" />
-              <Stat label="Sem e-mail" value={resultado.semEmail ?? 0} cor="var(--color-warning)" />
-              <Stat label="Sem cidade" value={resultado.semCidade ?? 0} cor="var(--color-warning)" />
-              <Stat label="Com empreendimento" value={resultado.comEmpreendimento ?? 0} cor="var(--color-success)" />
-              <Stat label="Com corretor" value={resultado.comCorretor ?? 0} cor="var(--color-success)" />
+            <div style={{ height: 1, background: 'var(--border-light)', margin: '18px 0' }} />
+
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 10 }}>Tratamento da base</div>
+            <div className="stagger" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Pill label="Sem telefone" value={resultado.semTelefone ?? 0} cor="var(--color-warning)" />
+              <Pill label="Telefone inválido" value={resultado.telefoneInvalido ?? 0} cor="var(--color-warning)" />
+              <Pill label="Sem e-mail" value={resultado.semEmail ?? 0} cor="var(--color-warning)" />
+              <Pill label="Sem cidade" value={resultado.semCidade ?? 0} cor="var(--color-warning)" />
+              <Pill label="Com empreendimento" value={resultado.comEmpreendimento ?? 0} cor="var(--color-success)" />
+              <Pill label="Com corretor" value={resultado.comCorretor ?? 0} cor="var(--color-success)" />
             </div>
+
             {resultado.mapeamentoIA && Object.keys(resultado.mapeamentoIA).length > 0 && (
-              <div className="text-xs text-secondary" style={{ marginTop: 10 }}>
-                <strong>IA mapeou colunas:</strong>{' '}
-                {Object.entries(resultado.mapeamentoIA).map(([h, c]: any) => `"${h}"→${c}`).join(' · ')}
+              <div style={{ marginTop: 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name="sparkles" size={14} /> Colunas mapeadas por IA
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {Object.entries(resultado.mapeamentoIA).map(([h, c]: any) => (
+                    <span key={h} className="map-chip"><span style={{ opacity: 0.75 }}>{h}</span><Icon name="arrow_right" size={12} /><strong>{c}</strong></span>
+                  ))}
+                </div>
               </div>
             )}
 
             {resultado.erros > 0 && resultado.erros_lista?.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700 }}>Primeiros erros:</h4>
-                <ul style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              <div style={{ marginTop: 18 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Primeiros erros</div>
+                <ul style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, paddingLeft: 18 }}>
                   {resultado.erros_lista.slice(0, 5).map((e: any, i: number) => <li key={i}>{e.err} — {JSON.stringify(e.row).slice(0, 80)}…</li>)}
                 </ul>
               </div>
@@ -183,11 +199,13 @@ Maria Costa,(47) 98888-2222,maria@email.com,SITE,,NEGOCIANDO,,
   );
 }
 
-function Stat({ label, value, cor }: { label: string; value: any; cor?: string }) {
+function Pill({ label, value, cor }: { label: string; value: any; cor?: string }) {
   return (
-    <div className="card" style={{ padding: 12 }}>
-      <div className="text-xs text-secondary">{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: cor }}>{value}</div>
+    <div className="metric-pill">
+      <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-display)', color: cor || 'var(--text-primary)', lineHeight: 1 }}>
+        {Number(value ?? 0).toLocaleString('pt-BR')}
+      </span>
+      <span className="text-xs text-secondary">{label}</span>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
 import { timeAgo, initials } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -102,8 +103,8 @@ export default function Leads() {
  ))}
  </div>
 
- <div className="card" style={{ padding: 0 }}>
- <table className="table">
+ <div className="card fade-in" style={{ padding: 0 }}>
+ <table className="table row-hover">
  <thead>
  <tr>
  <th>Lead</th>
@@ -165,11 +166,10 @@ export default function Leads() {
  {(() => {
  const digits = String(l.telefone || '').replace(/\D/g, '');
  const podeAbrir = !l.telefoneOculto && digits.length >= 10;
- if (!podeAbrir) return <span className="text-xs text-secondary" title="Libere o contato pra ver o número">🔒</span>;
+ if (!podeAbrir) return <span className="wa-lock" title="Libere o contato pra ver o número"><Icon name="lock" size={14} /></span>;
  return (
- <a className="btn btn--sm" style={{ background: '#25D366', color: '#fff', borderColor: '#25D366' }}
- href={`https://wa.me/${digits}`} target="_blank" rel="noopener noreferrer" title="Abrir conversa no WhatsApp">
- WhatsApp
+ <a className="wa-btn" href={`https://wa.me/${digits}`} target="_blank" rel="noopener noreferrer" title="Abrir conversa no WhatsApp" aria-label="WhatsApp">
+ <Icon name="whatsapp" size={17} />
  </a>
  );
  })()}

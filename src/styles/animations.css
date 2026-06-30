@@ -92,6 +92,68 @@
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .fade-in { animation: fadeIn 240ms var(--ease-out) both; }
 
+/* ---------- Botão WhatsApp (ação click-to-chat) ---------- */
+.wa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #25D366;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(37, 211, 102, 0.35);
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+.wa-btn:hover {
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.5);
+}
+.wa-btn:active { transform: scale(0.96); }
+.wa-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  background: var(--bg-elevated);
+  opacity: 0.6;
+}
+
+/* ---------- Linhas de tabela com hover suave ---------- */
+.row-hover tbody tr {
+  transition: background 140ms var(--ease-out), transform 140ms var(--ease-out);
+}
+.row-hover tbody tr:hover {
+  background: var(--bg-elevated);
+}
+
+/* ---------- Chip de métrica / mapeamento ---------- */
+.metric-pill {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out);
+}
+.metric-pill:hover { transform: translateY(-2px); border-color: var(--blue-500); }
+.map-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue-500) 12%, transparent);
+  color: var(--blue-500);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* ---------- Slide in da direita (drawers/sidebars) ---------- */
 @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 .slide-in-right { animation: slideInRight 280ms var(--ease-out) both; }

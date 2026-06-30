@@ -1,16 +1,29 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { initials } from '../lib/format';
 
 // Sprint 1 M15 — Histórico de transferências de leads (auditoria)
 const MOTIVO_BADGES: Record<string, [string, string]> = {
-  SLA_AUTOMATICO:    ['badge--warning',   'SLA automático'],
-  MANUAL_GESTOR:     ['badge--info',      'Manual (gestor)'],
-  MANUAL_CORRETOR:   ['badge--info',      'Manual (corretor)'],
-  FALLBACK_ROLETA:   ['badge--cancelled', 'Fallback roleta'],
-  DISTRIBUICAO_AGENDADA: ['badge--launch', 'Agendada'],
+  SLA_AUTOMATICO:        ['badge--warning',   'SLA automático'],
+  MANUAL_GESTOR:         ['badge--info',      'Manual (gestor)'],
+  MANUAL_CORRETOR:       ['badge--info',      'Manual (corretor)'],
+  FALLBACK_ROLETA:       ['badge--cancelled', 'Fallback roleta'],
+  DISTRIBUICAO_AGENDADA: ['badge--launch',    'Agendada'],
+  DIRECIONAMENTO_GESTOR: ['badge--signed',    'Direcionado'],
 };
+
+const FILTROS: [string, string][] = [
+  ['', 'Todos'],
+  ['DIRECIONAMENTO_GESTOR', 'Direcionado'],
+  ['DISTRIBUICAO_AGENDADA', 'Agendada'],
+  ['SLA_AUTOMATICO', 'SLA'],
+  ['MANUAL_GESTOR', 'Gestor'],
+  ['MANUAL_CORRETOR', 'Corretor'],
+  ['FALLBACK_ROLETA', 'Fallback'],
+];
 
 export default function Transferencias() {
   const [motivo, setMotivo] = useState<string>('');
@@ -22,7 +35,7 @@ export default function Transferencias() {
   return (
     <>
       <Topbar title="Transferências" />
-      <div className="main__content">
+      <div className="main__content page-enter">
         <PageHeader
           breadcrumb="Administração · Auditoria"
           title="Histórico de Transferências"
@@ -30,43 +43,52 @@ export default function Transferencias() {
         />
 
         <div className="card" style={{ marginBottom: 16 }}>
-          <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-            <span className="text-sm">Motivo:</span>
-            <button className={`btn btn--sm ${motivo === '' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('')}>Todos</button>
-            <button className={`btn btn--sm ${motivo === 'SLA_AUTOMATICO' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('SLA_AUTOMATICO')}>SLA</button>
-            <button className={`btn btn--sm ${motivo === 'MANUAL_GESTOR' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('MANUAL_GESTOR')}>Gestor</button>
-            <button className={`btn btn--sm ${motivo === 'MANUAL_CORRETOR' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('MANUAL_CORRETOR')}>Corretor</button>
-            <button className={`btn btn--sm ${motivo === 'FALLBACK_ROLETA' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('FALLBACK_ROLETA')}>Fallback</button>
-            <button className={`btn btn--sm ${motivo === 'DISTRIBUICAO_AGENDADA' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo('DISTRIBUICAO_AGENDADA')}>Agendada</button>
+          <div className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="text-sm text-secondary">Motivo</span>
+            {FILTROS.map(([v, l]) => (
+              <button key={v} className={`btn btn--sm ${motivo === v ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo(v)}>{l}</button>
+            ))}
           </div>
         </div>
 
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
 
         {data && (
-          <div className="card">
-            <table className="table">
+          <div className="card fade-in" style={{ padding: 0 }}>
+            <table className="table row-hover">
               <thead>
                 <tr>
-                  <th>Lead #</th>
-                  <th>De</th>
-                  <th>Para</th>
+                  <th>Lead</th>
+                  <th>Movimento</th>
                   <th>Motivo</th>
                   <th>Observação</th>
-                  <th>Executado por</th>
+                  <th>Por</th>
                   <th>Quando</th>
                 </tr>
               </thead>
               <tbody>
                 {data.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Sem transferências no filtro selecionado</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Sem transferências no filtro selecionado</td></tr>
                 ) : data.map((t: any) => {
                   const [bk, lbl] = MOTIVO_BADGES[t.motivo] || ['badge--neutral', t.motivo];
                   return (
                     <tr key={t.id}>
-                      <td><a href={`/leads/${t.leadId}`}>#{t.leadId}</a></td>
-                      <td>{t.deCorretorNome || <em>Sistema</em>}</td>
-                      <td>{t.paraCorretorNome || <em>Bolsão</em>}</td>
+                      <td>
+                        <a href={`/leads/${t.leadId}`} className="flex gap-2" style={{ alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+                          <div className="avatar avatar--sm">{initials(t.leadNome || 'L')}</div>
+                          <div>
+                            <div className="font-semibold" style={{ fontSize: 13 }}>{t.leadNome || 'Lead'}</div>
+                            <div className="text-xs text-secondary">#{t.leadId}</div>
+                          </div>
+                        </a>
+                      </td>
+                      <td>
+                        <div className="flex gap-2" style={{ alignItems: 'center', fontSize: 13 }}>
+                          <span className="text-secondary">{t.deCorretorNome || 'Sistema'}</span>
+                          <Icon name="arrow_right" size={14} />
+                          <span className="font-semibold">{t.paraCorretorNome || 'Bolsão'}</span>
+                        </div>
+                      </td>
                       <td><span className={`badge ${bk}`}>{lbl}</span></td>
                       <td className="text-xs text-secondary">{t.observacao || '—'}</td>
                       <td className="text-xs">{t.executadoPorNome || '—'}</td>
