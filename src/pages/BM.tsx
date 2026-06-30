@@ -19,7 +19,8 @@ export default function BMPage() {
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const payload = {
+    const token = String(fd.get('accessToken') || '').trim();
+    const payload: any = {
       nome: String(fd.get('nome') || ''),
       bmId: String(fd.get('bmId') || ''),
       contaAnuncioId: String(fd.get('contaAnuncioId') || '') || null,
@@ -29,10 +30,14 @@ export default function BMPage() {
       iaHabilitadaPadrao: fd.get('iaHabilitadaPadrao') === 'on',
       ativa: true,
     };
+    // Só envia o token quando o usuário digita — não apaga o token já salvo numa edição.
+    if (token) payload.accessToken = token;
     try {
-      if (editing) await Api.bmUpdate(editing.id, payload);
-      else await Api.bmCreate(payload);
-      toast.success(editing ? 'BM atualizada' : 'BM cadastrada');
+      const res: any = editing ? await Api.bmUpdate(editing.id, payload) : await Api.bmCreate(payload);
+      const cx = res?.conexao;
+      if (cx?.ok) toast.success('Conectado ao Facebook — os leads vão entrar automaticamente.');
+      else if (cx && !cx.ok) toast.error('BM salva, mas NÃO conectou: ' + (cx.motivo || 'erro'));
+      else toast.success(editing ? 'BM atualizada' : 'BM cadastrada');
       setOpen(false); setEditing(null); reload();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
@@ -113,6 +118,17 @@ export default function BMPage() {
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <h3 style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bm.nome}</h3>
                   <div className="text-xs text-secondary" style={{ fontFamily: 'monospace' }}>BM {bm.bmId}</div>
+                  {(() => {
+                    const ok = bm.paginaFbId && bm.temToken;
+                    const cor = ok ? 'var(--color-success-fg)' : (bm.paginaFbId ? 'var(--color-warning-fg)' : 'var(--text-tertiary)');
+                    const txt = ok ? 'Facebook conectado' : (bm.paginaFbId ? 'Falta o token' : 'Sem página/token');
+                    return (
+                      <div className="text-xs" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3, color: cor }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: cor, flexShrink: 0 }} />
+                        {txt}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <span className={`badge ${bm.ativa ? 'badge--launch' : 'badge--neutral'}`}>{bm.ativa ? 'Ativa' : 'Inativa'}</span>
               </div>
@@ -180,8 +196,21 @@ export default function BMPage() {
             <div className="field"><label className="field__label">Nome *</label><input name="nome" className="field__input" required defaultValue={editing?.nome} /></div>
             <div className="field"><label className="field__label">BM ID (Meta) *</label><input name="bmId" className="field__input" required defaultValue={editing?.bmId} /></div>
             <div className="field"><label className="field__label">Conta de Anúncios (act_xxx)</label><input name="contaAnuncioId" className="field__input" defaultValue={editing?.contaAnuncioId || ''} /></div>
-            <div className="field"><label className="field__label">Página Facebook ID</label><input name="paginaFbId" className="field__input" defaultValue={editing?.paginaFbId || ''} /></div>
+            <div className="field"><label className="field__label">Página Facebook ID</label><input name="paginaFbId" className="field__input" defaultValue={editing?.paginaFbId || ''} placeholder="ID da Página que roda os anúncios" /></div>
             <div className="field"><label className="field__label">Instagram ID</label><input name="instagramId" className="field__input" defaultValue={editing?.instagramId || ''} /></div>
+            <div className="field" style={{ gridColumn: '1 / -1' }}>
+              <label className="field__label">Token de acesso (System User ou Página)</label>
+              <input
+                name="accessToken"
+                type="password"
+                autoComplete="off"
+                className="field__input"
+                placeholder={editing?.temToken ? '•••••• já salvo — deixe vazio pra manter' : 'Cole o token com leads_retrieval + pages_manage_metadata'}
+              />
+              <div className="text-xs text-secondary">
+                Ao salvar com <strong>Página + Token</strong>, o sistema <strong>assina a página no Facebook automaticamente</strong> e os leads passam a entrar sozinhos.
+              </div>
+            </div>
             <div className="field">
               <label className="field__label">Vincular a corretor</label>
               <select name="corretorId" className="field__select" defaultValue={editing?.corretor?.id || ''}>
