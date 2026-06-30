@@ -16,6 +16,73 @@ export default function BMPage() {
   const toast = useToast();
   const confirm = useConfirm();
 
+  // ── OAuth Facebook ("Conectar com Facebook") ────────────────────────────────
+  // Clicar → abre aba do Facebook → cliente autoriza → o callback devolve o
+  // `code` por postMessage → troca por token + lista de Páginas → cliente escolhe
+  // a Página → cria/conecta a BM (reusa o auto-subscribe do bmCreate). Zero token
+  // manual.
+  const [fbPages, setFbPages] = useState<any[] | null>(null);
+  const [fbBusy, setFbBusy] = useState(false);
+
+  const conectarFacebook = async () => {
+    let url = '';
+    try {
+      const r: any = await Api.fbAuthUrl();
+      url = r?.url || '';
+    } catch (err: any) {
+      const m = String(err?.message || '');
+      if (/configurad|503/.test(m)) toast.error('O app Meta não está configurado no servidor (falta META_APP_ID/SECRET). Por enquanto use o Token em "Nova BM".');
+      else toast.error('Erro ao iniciar o login do Facebook: ' + (m || 'falha'));
+      return;
+    }
+    if (!url) { toast.error('Não consegui gerar o link do Facebook.'); return; }
+    const popup = window.open(url, 'fb-oauth', 'width=600,height=720,menubar=no,toolbar=no');
+    if (!popup) { toast.error('Libere o popup do navegador (está bloqueado) pra conectar.'); return; }
+    setFbBusy(true);
+    const onMsg = async (e: MessageEvent) => {
+      // Só aceita o postMessage vindo do callback do Facebook (app ou Vercel).
+      if (!/grupopons\.com\.br|pons-frontend\.vercel\.app|localhost/.test(e.origin)) return;
+      const d: any = e.data;
+      if (!d || typeof d !== 'object' || !String(d.kind || '').startsWith('fb-oauth')) return;
+      window.removeEventListener('message', onMsg);
+      setFbBusy(false);
+      if (d.kind === 'fb-oauth-error') {
+        toast.error('Login do Facebook não concluído: ' + (d.description || d.error || 'cancelado'));
+        return;
+      }
+      if (d.kind === 'fb-oauth-success' && d.code) {
+        try {
+          const r: any = await Api.fbCallback(d.code);
+          const pages = r?.pages || [];
+          if (!pages.length) { toast.error('Esse login não administra nenhuma Página do Facebook.'); return; }
+          setFbPages(pages);
+        } catch (err: any) {
+          toast.error('Erro ao concluir o login: ' + (err?.message || 'falha'));
+        }
+      }
+    };
+    window.addEventListener('message', onMsg);
+  };
+
+  const conectarPagina = async (page: any) => {
+    try {
+      const res: any = await Api.bmCreate({
+        nome: page.name || ('Página ' + page.id),
+        bmId: String(page.id),
+        paginaFbId: String(page.id),
+        accessToken: page.access_token,
+        ativa: true,
+      });
+      const cx = res?.conexao;
+      if (cx?.ok) toast.success(`"${page.name}" conectada — os leads vão entrar automaticamente.`);
+      else if (cx && !cx.ok) toast.error(`"${page.name}" salva, mas não conectou: ${cx.motivo}`);
+      else toast.success(`"${page.name}" cadastrada.`);
+      setFbPages(null); reload();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    }
+  };
+
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -77,7 +144,14 @@ export default function BMPage() {
     <>
       <Topbar
         title="Business Managers"
-        right={<button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova BM</button>}
+        right={
+          <div className="flex" style={{ gap: 8 }}>
+            <button className="btn btn--secondary btn--sm" onClick={conectarFacebook} disabled={fbBusy}>
+              {fbBusy ? 'Aguardando Facebook…' : 'Conectar com Facebook'}
+            </button>
+            <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova BM</button>
+          </div>
+        }
       />
       <div className="main__content">
         <PageHeader
@@ -227,6 +301,38 @@ export default function BMPage() {
             </div>
           </div>
         </form>
+      </Modal>
+
+      {/* Seletor de Página do OAuth Facebook — aparece depois que o cliente autoriza */}
+      <Modal
+        open={!!fbPages}
+        onClose={() => setFbPages(null)}
+        title="Escolha a Página pra conectar"
+        subtitle="Estas são as Páginas que esse login administra no Facebook. Conectar = os leads dessa Página entram sozinhos."
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {(fbPages || []).map((p: any) => (
+            <button
+              key={p.id}
+              type="button"
+              className="card"
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, textAlign: 'left', cursor: 'pointer', width: '100%' }}
+              onClick={() => conectarPagina(p)}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: 'var(--color-info-bg)', color: 'var(--pons-blue)', display: 'grid', placeItems: 'center', fontWeight: 700 }}>
+                {(p.name || '?').charAt(0).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name || 'Página'}</div>
+                <div className="text-xs text-secondary" style={{ fontFamily: 'monospace' }}>{p.id}{p.category ? ' · ' + p.category : ''}</div>
+              </div>
+              <span className="btn btn--primary btn--sm" style={{ pointerEvents: 'none' }}>Conectar</span>
+            </button>
+          ))}
+          {fbPages && fbPages.length === 0 && (
+            <div className="text-secondary" style={{ padding: 12 }}>Nenhuma Página encontrada nesse login.</div>
+          )}
+        </div>
       </Modal>
 
       <Modal
