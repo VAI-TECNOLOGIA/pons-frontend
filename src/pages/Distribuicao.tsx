@@ -70,6 +70,9 @@ export default function Distribuicao() {
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
   // Bolsão: leads aguardando distribuição. Mostra a "jornada" antes das regras.
   const { data: bolsao, reload: reloadBolsao } = useApi<{ total: number; leads: any[] }>(() => Api.roletaBolsao());
+  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  // Alvo opcional: mandar os leads SÓ pra este corretor (ignora escopo/equipe/cidade)
+  const [corretorId, setCorretorId] = useState<number | ''>('');
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -78,6 +81,7 @@ export default function Distribuicao() {
     setEditing(null);
     setEscopo('sistema');
     setEquipesSel([]);
+    setCorretorId('');
     setCronExpr('0 9 * * 1');
     setShowAdv(false);
     setOpen(true);
@@ -87,6 +91,7 @@ export default function Distribuicao() {
     const ids: number[] = Array.isArray(d.equipeIds) ? d.equipeIds : (d.equipeId ? [d.equipeId] : []);
     setEscopo(ids.length > 0 ? 'equipes' : 'sistema');
     setEquipesSel(ids);
+    setCorretorId(d.corretorId || '');
     const expr = d.cronExpr || '0 9 * * 1';
     setCronExpr(expr);
     setShowAdv(parseCron(expr) === null);
@@ -95,7 +100,7 @@ export default function Distribuicao() {
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (escopo === 'equipes' && equipesSel.length === 0) {
+    if (!corretorId && escopo === 'equipes' && equipesSel.length === 0) {
       toast.error('Selecione pelo menos 1 equipe — ou troque o escopo pra "Sistema todo".');
       return;
     }
@@ -104,6 +109,7 @@ export default function Distribuicao() {
       return;
     }
     const fd = new FormData(e.currentTarget);
+    const alvoEspecifico = corretorId ? Number(corretorId) : null;
     const payload: any = {
       nome: String(fd.get('nome') || ''),
       cronExpr: cronExpr.trim(),
@@ -112,8 +118,10 @@ export default function Distribuicao() {
       origemLead: String(fd.get('origemLead') || '') || null,
       statusLead: String(fd.get('statusLead') || '') || null,
       ativa: editing?.ativa ?? true,
+      // Alvo específico tem prioridade — manda só pra esse corretor (ignora escopo)
+      corretorId: alvoEspecifico,
       // Escopo: sistema → equipeIds null + equipeId null. Equipes → equipeIds = sel
-      equipeIds: escopo === 'equipes' ? equipesSel : null,
+      equipeIds: alvoEspecifico ? null : (escopo === 'equipes' ? equipesSel : null),
       equipeId: null, // sempre limpa legado quando salvamos pelo modal novo
     };
     try {
@@ -310,6 +318,24 @@ export default function Distribuicao() {
                   })}
                 </div>
               )}
+            </div>
+
+            {/* ─── Alvo: corretor específico (opcional, sobrepõe o escopo) ─── */}
+            <div className="field" style={{ gridColumn: '1 / -1' }}>
+              <label className="field__label">Mandar pra um corretor específico (opcional)</label>
+              <select
+                className="field__select"
+                value={corretorId}
+                onChange={(e) => setCorretorId(e.target.value ? Number(e.target.value) : '')}
+              >
+                <option value="">— Espalhar entre os corretores (conforme escopo acima) —</option>
+                {(corretores || []).filter((c: any) => c.ativo).map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.nome}{c.equipe ? ` · ${c.equipe.nome}` : ''}</option>
+                ))}
+              </select>
+              {corretorId ? (
+                <div className="field__hint">Os leads vão <strong>todos pra esse corretor</strong> (a quantidade é o "Qtd leads por corretor"). O escopo/equipe acima é ignorado.</div>
+              ) : null}
             </div>
 
             <div className="field">
