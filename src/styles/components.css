@@ -2368,8 +2368,9 @@
     justify-content: flex-end;
     margin-left: auto;
   }
-  /* Mobile: foto + alternar tema saem da topbar — vão pra sidebar. */
-  .user-chip { display: none; }
+  /* Mobile: foto + alternar tema saem da topbar — vão pra sidebar.
+     Especificidade .topbar .user-chip pra vencer a regra base de outro arquivo. */
+  .topbar .user-chip { display: none !important; }
   [data-theme="dark"] .topbar {
     background: rgba(19, 26, 46, 0.92);
   }
