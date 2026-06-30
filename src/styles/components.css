@@ -2368,8 +2368,36 @@
     justify-content: flex-end;
     margin-left: auto;
   }
+  /* Mobile: foto + alternar tema saem da topbar — vão pra sidebar. */
+  .user-chip { display: none; }
   [data-theme="dark"] .topbar {
     background: rgba(19, 26, 46, 0.92);
+  }
+}
+
+/* Botão "alternar tema" dentro da sidebar — só no mobile (no desktop fica no topbar). */
+.sidebar__theme-mobile { display: none; }
+@media (max-width: 1023px) {
+  .sidebar__theme-mobile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 14px;
+    margin-bottom: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background 140ms var(--ease-out), color 140ms var(--ease-out);
+  }
+  .sidebar__theme-mobile:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
   }
 }
 

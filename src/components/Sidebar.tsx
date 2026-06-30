@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Auth, formatRole, type Role } from '../lib/auth';
 import { useUser } from '../lib/userContext';
+import { useTheme } from '../lib/theme';
 import { Icon } from './Icon';
 import { ReportarProblemaModal } from './ReportarProblemaModal';
 
@@ -165,6 +166,7 @@ export function Sidebar({
 } = {}) {
   const navigate = useNavigate();
   const { user: ctxUser, setUser } = useUser();
+  const { theme, toggle: toggleTheme } = useTheme();
   const { favoritos, toggleFav } = useFavoritos();
   const [reportOpen, setReportOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -225,6 +227,11 @@ export function Sidebar({
       </NavLink>
 
       <nav className="sidebar__nav">
+        {/* Alternar tema — primeiro item, só no mobile (no desktop fica no topbar) */}
+        <button type="button" className="sidebar__theme-mobile" onClick={toggleTheme} aria-label="Alternar tema">
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+          <span>{theme === 'dark' ? 'Tema claro' : 'Tema escuro'}</span>
+        </button>
         {isDev ? (
           DEV_ITEMS.map((it) => (
             <NavItemLink key={it.to} item={it} collapsed={collapsed} />
