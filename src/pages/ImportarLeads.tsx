@@ -70,7 +70,7 @@ export default function ImportarLeads() {
         <PageHeader
           breadcrumb="Administração · Big Data"
           title="Importar Leads em Massa"
-          subtitle="Suba CSV ou Excel. Colunas aceitas: nome, telefone, email, origem, campanha, status, tags, notas. Tags são inferidas automaticamente quando ausentes."
+          subtitle="Suba CSV ou Excel. Colunas: nome, telefone, email, cidade, origem, campanha, empreendimento, corretor, status, tags, notas. Telefone é padronizado, duplicados removidos, e colunas com nomes diferentes são mapeadas por IA automaticamente."
         />
 
         <div className="card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -137,6 +137,24 @@ export default function ImportarLeads() {
               <Stat label="Duplicados" value={resultado.duplicados} cor="var(--color-warning)" />
               <Stat label="Erros" value={resultado.erros} cor="var(--color-danger)" />
             </div>
+
+            {/* Relatório de tratamento da base */}
+            <h4 style={{ fontSize: 13, fontWeight: 700, margin: '16px 0 8px' }}>Tratamento da base</h4>
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+              <Stat label="Sem telefone" value={resultado.semTelefone ?? 0} cor="var(--color-warning)" />
+              <Stat label="Telefone inválido" value={resultado.telefoneInvalido ?? 0} cor="var(--color-warning)" />
+              <Stat label="Sem e-mail" value={resultado.semEmail ?? 0} cor="var(--color-warning)" />
+              <Stat label="Sem cidade" value={resultado.semCidade ?? 0} cor="var(--color-warning)" />
+              <Stat label="Com empreendimento" value={resultado.comEmpreendimento ?? 0} cor="var(--color-success)" />
+              <Stat label="Com corretor" value={resultado.comCorretor ?? 0} cor="var(--color-success)" />
+            </div>
+            {resultado.mapeamentoIA && Object.keys(resultado.mapeamentoIA).length > 0 && (
+              <div className="text-xs text-secondary" style={{ marginTop: 10 }}>
+                <strong>IA mapeou colunas:</strong>{' '}
+                {Object.entries(resultado.mapeamentoIA).map(([h, c]: any) => `"${h}"→${c}`).join(' · ')}
+              </div>
+            )}
+
             {resultado.erros > 0 && resultado.erros_lista?.length > 0 && (
               <div style={{ marginTop: 12 }}>
                 <h4 style={{ fontSize: 13, fontWeight: 700 }}>Primeiros erros:</h4>
