@@ -88,12 +88,12 @@ function PoliticaTab() {
       const valorComissaoBruta = valorVenda * (pctPons / 100);
       const numeroParcelas = Number((document.getElementById('sim-parc') as HTMLInputElement).value);
       const temNotaFiscal = (document.getElementById('sim-nf') as HTMLInputElement).checked;
-      const isLead = (document.getElementById('sim-lead') as HTMLInputElement).checked;
-      const lazaroEstrategia = (document.getElementById('sim-estr') as HTMLSelectElement).value;
+      const origemComissao = (document.getElementById('sim-origem') as HTMLSelectElement).value;
+      const extraIndicacoes = Number((document.getElementById('sim-extra') as HTMLInputElement).value) || 0;
       const splitVariante = (document.getElementById('sim-split') as HTMLSelectElement).value;
       const splitCorretorRaw = (document.getElementById('sim-split-corretor') as HTMLInputElement).value;
       const splitCorretorPct = splitCorretorRaw ? Number(splitCorretorRaw) : undefined;
-      const r = await Api.rateioSimular({ valorComissaoBruta, numeroParcelas, temNotaFiscal, isLead, lazaroEstrategia, splitVariante, ...(splitCorretorPct ? { splitCorretorPct } : {}) });
+      const r = await Api.rateioSimular({ valorComissaoBruta, numeroParcelas, temNotaFiscal, origemComissao, extraIndicacoes, splitVariante, ...(splitCorretorPct ? { splitCorretorPct } : {}) });
       setSim({ ...r, _valorVenda: valorVenda, _pctPons: pctPons });
     } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
   };
@@ -144,23 +144,16 @@ function PoliticaTab() {
             </select>
             <div className="field__hint">Usado só quando "Rateio do corretor" está vazio.</div>
           </div>
-          <div className="field"><label className="field__label">Estratégia (se lead)</label>
-            <select id="sim-estr" className="field__select" defaultValue="CAMPANHA">
-              <optgroup label="Com desconto">
-                <option value="CAMPANHA">Campanha (-6,5% corretor / -6,5% imob)</option>
-                <option value="LAZARO">Lázaro (-3% corretor / -1% imob)</option>
-              </optgroup>
-              <optgroup label="Sem desconto extra">
-                <option value="NETWORK">Network</option>
-                <option value="CAMPANHA_PRIVADA">Campanha Privada</option>
-                <option value="INDICACAO">Indicação</option>
-                <option value="PARCERIA">Parceria</option>
-                <option value="COMPRA_PROPRIA">Compra Própria</option>
-              </optgroup>
+          <div className="field"><label className="field__label">Origem</label>
+            <select id="sim-origem" className="field__select" defaultValue="LEAD">
+              <option value="LEAD">Lead (campanha −6,5% / −6,5%)</option>
+              <option value="BASE">Base (−3% corretor / −1% imob)</option>
+              <option value="ORGANICA">Orgânica (sem desconto)</option>
             </select>
+            <div className="field__hint">Campanha do corretor incide sobre o líquido 1 (após R$ 199).</div>
           </div>
+          <div className="field"><label className="field__label">Extra indicações (R$)</label><input id="sim-extra" type="number" className="field__input" defaultValue={0} min={0} step={0.01} /><div className="field__hint">Bônus somado ao corretor; sai da parte da casa.</div></div>
           <div className="field"><label className="field__label" style={{ display: 'flex', gap: 8 }}><input id="sim-nf" type="checkbox" /> Tem Nota Fiscal (-16%)</label></div>
-          <div className="field"><label className="field__label" style={{ display: 'flex', gap: 8 }}><input id="sim-lead" type="checkbox" /> É lead (descontos extras)</label></div>
         </div>
         <button className="btn btn--primary" style={{ marginTop: 12 }} onClick={simular}>Calcular</button>
 
@@ -189,8 +182,9 @@ function PoliticaTab() {
             </h5>
             <div>Bruto: {fmt(sim.corretor.valorBruto)}</div>
             <div>− Marketing: {fmt(sim.corretor.descontoMarketing)}</div>
-            <div>− Campanha: {fmt(sim.corretor.descontoCampanha)}</div>
+            <div>− Campanha: {fmt(sim.corretor.descontoCampanha)} <span className="text-xs text-secondary">(sobre o líquido 1)</span></div>
             <div>− Lázaro: {fmt(sim.corretor.descontoLazaro)}</div>
+            {sim.corretor.extraIndicacoes > 0 && <div>+ Extra indicações: {fmt(sim.corretor.extraIndicacoes)}</div>}
             <div style={{ color: 'var(--color-success)', fontWeight: 700 }}>= Líquido: {fmt(sim.corretor.valorLiquido)}</div>
             <hr style={{ margin: '12px 0' }} />
             <h5 style={{ fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -201,6 +195,7 @@ function PoliticaTab() {
             <div>− Direção Adm/Financeira: {fmt(sim.imobiliaria.descontoDirecao)} <span className="text-xs text-secondary">(5% fixo)</span></div>
             <div>− Campanha: {fmt(sim.imobiliaria.descontoCampanha)}</div>
             <div>− Lázaro: {fmt(sim.imobiliaria.descontoLazaro)}</div>
+            {sim.imobiliaria.descontoExtraIndicacoes > 0 && <div>− Extra indicações (pro corretor): {fmt(sim.imobiliaria.descontoExtraIndicacoes)}</div>}
             <div style={{ color: 'var(--color-success)', fontWeight: 700 }}>= Líquido: {fmt(sim.imobiliaria.valorLiquido)}</div>
             <div style={{ marginTop: 8, color: 'var(--color-info-fg)', fontWeight: 700 }}>
               🎯 Gestor de Tráfego: {fmt(sim.gestorTrafego)} <span className="text-xs text-secondary">(campanha do corretor + imobiliária)</span>

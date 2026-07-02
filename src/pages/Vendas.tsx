@@ -57,8 +57,9 @@ export default function Vendas() {
  splitCasa: num(fd.get('splitCasa')) || 30,
  // Sinalizadores Pons
  temNotaFiscal: fd.get('temNotaFiscal') === 'on',
- isLead: fd.get('isLead') === 'on',
- lazaroEstrategia: String(fd.get('lazaroEstrategia') || 'CAMPANHA'),
+ // Origem (Lead/Base/Orgânica) deriva os descontos no backend
+ ...(fd.get('origemComissao') ? { origemComissao: String(fd.get('origemComissao')) } : {}),
+ extraIndicacoes: num(fd.get('extraIndicacoes')),
  splitVariante: String(fd.get('splitVariante') || '55_45'),
  percentualGestor: Number(fd.get('percentualGestorPons') || 10),
  aplicarGestorTrafego: fd.get('aplicarGestorTrafego') === 'on',
@@ -339,12 +340,13 @@ export default function Vendas() {
  </div>
 
  {isCorretor ? (
- /* Corretor não tem visão de rateio/comissão — manda só os defaults */
+ /* Corretor não tem visão de rateio/comissão — manda só os defaults.
+    Origem LEAD (mais comum); financeiro ajusta na venda se for Base/Orgânica. */
  <>
  <input type="hidden" name="percentualComissao" value="5" />
  <input type="hidden" name="splitVariante" value="55_45" />
  <input type="hidden" name="percentualGestorPons" value="10" />
- <input type="hidden" name="lazaroEstrategia" value="CAMPANHA" />
+ <input type="hidden" name="origemComissao" value="LEAD" />
  </>
  ) : (
  <>
@@ -368,19 +370,22 @@ export default function Vendas() {
  </select>
  </div>
  <div className="field">
- <label className="field__label">Estratégia (se Lead)</label>
- <select name="lazaroEstrategia" className="field__select" defaultValue="CAMPANHA">
- <option value="CAMPANHA">Campanha (-6,5%)</option>
- <option value="LAZARO">Lázaro (-3% corretor / -1% imob.)</option>
+ <label className="field__label">Origem</label>
+ <select name="origemComissao" className="field__select" defaultValue="LEAD">
+ <option value="LEAD">Lead (campanha −6,5% / −6,5%)</option>
+ <option value="BASE">Base (−3% corretor / −1% imob.)</option>
+ <option value="ORGANICA">Orgânica (sem desconto)</option>
  </select>
+ <div className="field__hint">Define os descontos do Gestor de Tráfego.</div>
+ </div>
+ <div className="field">
+ <label className="field__label">Extra indicações (R$)</label>
+ <input type="number" step="0.01" min="0" name="extraIndicacoes" className="field__input" defaultValue="0" />
+ <div className="field__hint">Bônus somado ao corretor (sai da parte da casa).</div>
  </div>
  </div>
  <div className="flex" style={{ gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
  <label style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="temNotaFiscal" /> Tem Nota Fiscal (-16%)</label>
- <label style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="isLead" /> Veio de Lead</label>
- <label style={{ display: 'flex', gap: 6 }} title="6,5% sobre o que sobra pra imobiliária (encadeado, não sobre o valor cheio)">
- <input type="checkbox" name="aplicarGestorTrafego" /> Gestor de tráfego (-6,5% s/ saldo imob.)
- </label>
  </div>
  {/* Legacy fields (mantidos como hidden pra não quebrar legado) */}
  <input type="hidden" name="splitCorretor" value="55" />
