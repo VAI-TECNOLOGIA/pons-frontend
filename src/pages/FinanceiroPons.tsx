@@ -46,6 +46,7 @@ export default function FinanceiroPons() {
 // ════════════════════════════════════════════════════════════════════════
 function PoliticaTab() {
   const { data: politicas, loading, error, reload } = useApi<any[]>(() => Api.rateioPoliticas());
+  const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
   const [editing, setEditing] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [sim, setSim] = useState<any>(null);
@@ -57,6 +58,7 @@ function PoliticaTab() {
     const payload = {
       nome: String(fd.get('nome') || ''),
       descricao: String(fd.get('descricao') || '') || null,
+      empreendimentoId: fd.get('empreendimentoId') ? Number(fd.get('empreendimentoId')) : null,
       percentualComissao: Number(fd.get('percentualComissao') || 5),
       aplicaNotaFiscal: fd.get('aplicaNotaFiscal') === 'on',
       percentualNotaFiscal: Number(fd.get('percentualNotaFiscal') || 16),
@@ -81,14 +83,18 @@ function PoliticaTab() {
 
   const simular = async () => {
     try {
-      const valor = Number((document.getElementById('sim-valor') as HTMLInputElement).value);
+      const valorVenda = Number((document.getElementById('sim-valor-venda') as HTMLInputElement).value);
+      const pctPons = Number((document.getElementById('sim-pct-pons') as HTMLInputElement).value);
+      const valorComissaoBruta = valorVenda * (pctPons / 100);
       const numeroParcelas = Number((document.getElementById('sim-parc') as HTMLInputElement).value);
       const temNotaFiscal = (document.getElementById('sim-nf') as HTMLInputElement).checked;
       const isLead = (document.getElementById('sim-lead') as HTMLInputElement).checked;
       const lazaroEstrategia = (document.getElementById('sim-estr') as HTMLSelectElement).value;
       const splitVariante = (document.getElementById('sim-split') as HTMLSelectElement).value;
-      const r = await Api.rateioSimular({ valorComissaoBruta: valor, numeroParcelas, temNotaFiscal, isLead, lazaroEstrategia, splitVariante });
-      setSim(r);
+      const splitCorretorRaw = (document.getElementById('sim-split-corretor') as HTMLInputElement).value;
+      const splitCorretorPct = splitCorretorRaw ? Number(splitCorretorRaw) : undefined;
+      const r = await Api.rateioSimular({ valorComissaoBruta, numeroParcelas, temNotaFiscal, isLead, lazaroEstrategia, splitVariante, ...(splitCorretorPct ? { splitCorretorPct } : {}) });
+      setSim({ ...r, _valorVenda: valorVenda, _pctPons: pctPons });
     } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
   };
 
@@ -103,11 +109,12 @@ function PoliticaTab() {
           <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova política</button>
         </div>
         <table className="table">
-          <thead><tr><th>Nome</th><th>% Comissão</th><th>NF</th><th>Split</th><th>Gestor</th><th>Default</th><th></th></tr></thead>
+          <thead><tr><th>Nome</th><th>Empreendimento</th><th>% Comissão</th><th>NF</th><th>Split</th><th>Gestor</th><th>Default</th><th></th></tr></thead>
           <tbody>
             {(politicas || []).map((p: any) => (
               <tr key={p.id}>
                 <td><strong>{p.nome}</strong></td>
+                <td className="text-xs">{p.empreendimento?.nome || <span className="text-secondary">Geral</span>}</td>
                 <td>{p.percentualComissao}%</td>
                 <td>{p.aplicaNotaFiscal ? `${p.percentualNotaFiscal}%` : '—'}</td>
                 <td>{p.splitCorretorPons}/{p.splitImobiliariaPons}</td>
@@ -116,7 +123,7 @@ function PoliticaTab() {
                 <td><button className="btn btn--ghost btn--sm" onClick={() => { setEditing(p); setOpen(true); }}>Editar</button></td>
               </tr>
             ))}
-            {politicas?.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma política cadastrada — crie a primeira pra ativar o cálculo Pons</td></tr>}
+            {politicas?.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma política cadastrada — crie a primeira pra ativar o cálculo Pons</td></tr>}
           </tbody>
         </table>
       </div>
@@ -126,14 +133,16 @@ function PoliticaTab() {
           <Icon name="calculator" size={16} /> Simulador de rateio
         </h3>
         <div className="form-grid">
-          <div className="field"><label className="field__label">Comissão bruta (R$)</label><input id="sim-valor" type="number" className="field__input" defaultValue={50000} step={0.01} /></div>
+          <div className="field"><label className="field__label">Valor total da venda (R$)</label><input id="sim-valor-venda" type="number" className="field__input" defaultValue={1000000} step={0.01} /></div>
+          <div className="field"><label className="field__label">% que a Pons recebe</label><input id="sim-pct-pons" type="number" className="field__input" defaultValue={7} step={0.01} /><div className="field__hint">Comissão bruta = valor × esse %.</div></div>
+          <div className="field"><label className="field__label">Rateio do corretor (%)</label><input id="sim-split-corretor" type="number" className="field__input" placeholder="ex.: 55" step={0.01} /><div className="field__hint">% negociado do corretor. Vazio = usa o split por tempo de casa.</div></div>
           <div className="field"><label className="field__label">Parcelas</label><input id="sim-parc" type="number" className="field__input" defaultValue={1} min={1} /></div>
-          <div className="field"><label className="field__label">Split</label>
+          <div className="field"><label className="field__label">Split (fallback)</label>
             <select id="sim-split" className="field__select" defaultValue="55_45">
               <option value="55_45">55/45 (corretor &gt; 1 ano de casa)</option>
               <option value="50_50">50/50 (corretor ≤ 1 ano de casa)</option>
             </select>
-            <div className="field__hint">Auto-determinado pela data de admissão no cadastro real; aqui só simulação manual.</div>
+            <div className="field__hint">Usado só quando "Rateio do corretor" está vazio.</div>
           </div>
           <div className="field"><label className="field__label">Estratégia (se lead)</label>
             <select id="sim-estr" className="field__select" defaultValue="CAMPANHA">
@@ -158,6 +167,12 @@ function PoliticaTab() {
         {sim && !sim.parcelas && (
           <div style={{ marginTop: 16, padding: 12, background: 'var(--bg-elevated)', borderRadius: 8 }}>
             <h4 style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Breakdown</h4>
+            {sim._valorVenda != null && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>Valor total da venda: {fmt(sim._valorVenda)}</div>
+                <div className="text-xs text-secondary">Comissão Pons ({sim._pctPons}%) = <strong>{fmt(sim.valorComissaoBruta)}</strong> — o rateio abaixo é sobre esse valor.</div>
+              </div>
+            )}
             <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
               <div>
                 <div><strong>Comissão bruta:</strong> {fmt(sim.valorComissaoBruta)}</div>
@@ -231,7 +246,14 @@ function PoliticaTab() {
         <form id="pol-form" onSubmit={submit}>
           <div className="form-grid">
             <div className="field"><label className="field__label">Nome *</label><input name="nome" className="field__input" required defaultValue={editing?.nome} /></div>
-            <div className="field"><label className="field__label">% Comissão (sobre venda)</label><input type="number" step="0.01" name="percentualComissao" className="field__input" defaultValue={editing?.percentualComissao || 5} /></div>
+            <div className="field"><label className="field__label">Empreendimento</label>
+              <select name="empreendimentoId" className="field__select" defaultValue={editing?.empreendimentoId || ''}>
+                <option value="">— Geral (todos) —</option>
+                {(emps || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+              </select>
+              <div className="field__hint">Negociação específica deste empreendimento tem prioridade no cálculo.</div>
+            </div>
+            <div className="field"><label className="field__label">% que a Pons recebe (sobre a venda)</label><input type="number" step="0.01" name="percentualComissao" className="field__input" defaultValue={editing?.percentualComissao || 5} /><div className="field__hint">Ex.: 7% do valor total da venda.</div></div>
             <div className="field" style={{ gridColumn: '1/-1' }}><label className="field__label">Descrição</label><input name="descricao" className="field__input" defaultValue={editing?.descricao || ''} /></div>
             <div className="field"><label style={{ display: 'flex', gap: 8 }}><input type="checkbox" name="aplicaNotaFiscal" defaultChecked={editing?.aplicaNotaFiscal ?? true} /> Aplica NF</label></div>
             <div className="field"><label className="field__label">% NF</label><input type="number" step="0.01" name="percentualNotaFiscal" className="field__input" defaultValue={editing?.percentualNotaFiscal || 16} /></div>

@@ -13,6 +13,7 @@ export default function Corretores() {
  const [filtroEquipe, setFiltroEquipe] = useState<string | null>(null);
  const [filtroStatus, setFiltroStatus] = useState<string | null>(null);
  const [open, setOpen] = useState(false);
+ const [painelId, setPainelId] = useState<number | null>(null);
  const { data: corretores, loading, error, reload } = useApi<any[]>(() => Api.corretores());
  const { data: equipes } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
@@ -35,6 +36,8 @@ export default function Corretores() {
  metaMensal: Number(fd.get('metaMensal')) || 2_000_000,
  banco: fd.get('banco') ? String(fd.get('banco')) : undefined,
  pixKey: fd.get('pixKey') ? String(fd.get('pixKey')) : undefined,
+ ...(fd.get('dataAdmissao') ? { dataAdmissao: String(fd.get('dataAdmissao')) } : {}),
+ ...(fd.get('percentualComissaoAtual') ? { percentualComissaoAtual: Number(fd.get('percentualComissaoAtual')) } : {}),
  });
  if (r?.senhaTemporaria) {
  toast.success(`Corretor cadastrado. Senha temporária: ${r.senhaTemporaria}`, 12000);
@@ -182,7 +185,7 @@ export default function Corretores() {
  <div className="flex gap-3" style={{ alignItems: 'center' }}>
  <div className="avatar">{c.initials}</div>
  <div>
- <div className="font-semibold">{c.nome}</div>
+ <div className="font-semibold" style={{ cursor: 'pointer', color: 'var(--color-info-fg)' }} onClick={() => setPainelId(c.id)} title="Abrir painel do corretor">{c.nome}</div>
  <div className="text-xs text-secondary">{c.email || c.user?.email}</div>
  </div>
  </div>
@@ -284,6 +287,15 @@ export default function Corretores() {
  <label className="field__label">PIX</label>
  <input name="pixKey" className="field__input" placeholder="CPF ou e-mail" />
  </div>
+ <div className="field">
+ <label className="field__label">Data de Entrada</label>
+ <input name="dataAdmissao" type="date" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Rateio de comissão atual (%)</label>
+ <input name="percentualComissaoAtual" type="number" step="0.01" min="0" max="100" className="field__input" placeholder="ex.: 55" />
+ <div className="field__hint">Split negociado do corretor — vale nas vendas novas.</div>
+ </div>
  <div className="field field--span-2">
  <label className="field__label">Senha inicial</label>
  <input name="password" type="password" className="field__input" required minLength={6} placeholder="mínimo 6 caracteres" autoComplete="new-password" />
@@ -296,6 +308,8 @@ export default function Corretores() {
  </div>
  </form>
  </Modal>
+
+ {painelId && <CorretorPainelDrawer id={painelId} onClose={() => setPainelId(null)} onSaved={reload} />}
  </>
  );
 }
@@ -313,4 +327,92 @@ function Shell({ children, onNew }: { children: React.ReactNode; onNew?: () => v
  </div>
  </>
  );
+}
+
+// Painel do corretor: cadastro (Data de Entrada + Rateio de comissão atual) +
+// tabela de vendas com o % TRAVADO de cada uma (snapshot do fechamento).
+function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: () => void; onSaved: () => void }) {
+  const { data: c, loading, error, reload } = useApi<any>(() => Api.corretor(id), [id]);
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+
+  const fmt = (v: number) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
+  const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
+  const dataInput = c?.dataAdmissao ? new Date(c.dataAdmissao).toISOString().slice(0, 10) : '';
+
+  const salvar = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const payload: any = {};
+    const dt = String(fd.get('dataAdmissao') || '');
+    if (dt) payload.dataAdmissao = dt;
+    const pct = String(fd.get('percentualComissaoAtual') || '');
+    payload.percentualComissaoAtual = pct ? Number(pct) : null;
+    setSaving(true);
+    try {
+      await Api.corretorUpdate(id, payload);
+      toast.success('Cadastro atualizado');
+      reload();
+      onSaved();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal open onClose={onClose} title={c ? `Painel — ${c.nome}` : 'Painel do corretor'} size="xl">
+      {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : c ? (
+        <>
+          <div className="flex gap-3" style={{ alignItems: 'center', marginBottom: 16 }}>
+            <div className="avatar">{c.initials}</div>
+            <div>
+              <div className="font-semibold">{c.nome}</div>
+              <div className="text-xs text-secondary">{c.creci ? `CRECI ${c.creci} · ` : ''}{c.status}{c.equipe?.nome ? ` · ${c.equipe.nome}` : ''}</div>
+            </div>
+          </div>
+
+          <form onSubmit={salvar}>
+            <h4 style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Cadastro</h4>
+            <div className="form-grid">
+              <div className="field">
+                <label className="field__label">Data de Entrada</label>
+                <input name="dataAdmissao" type="date" className="field__input" defaultValue={dataInput} />
+              </div>
+              <div className="field">
+                <label className="field__label">Rateio de comissão atual (%)</label>
+                <input name="percentualComissaoAtual" type="number" step="0.01" min="0" max="100" className="field__input" defaultValue={c.percentualComissaoAtual ?? ''} placeholder="ex.: 55" />
+                <div className="field__hint">Negociação Pons × corretor. Vale nas vendas NOVAS — não altera as antigas.</div>
+              </div>
+            </div>
+            <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
+              <button type="submit" className="btn btn--primary btn--sm" disabled={saving}>{saving ? 'Salvando…' : 'Salvar cadastro'}</button>
+            </div>
+          </form>
+
+          <h4 style={{ fontWeight: 700, fontSize: 13, margin: '18px 0 6px' }}>Rateio de comissão por venda</h4>
+          <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
+            Cada venda mantém o <strong>% de quando foi fechada</strong>. Alterar o rateio atual acima só vale pras próximas — vendas e parcelas abaixo permanecem no percentual anterior.
+          </div>
+          <table className="table">
+            <thead><tr><th>Venda</th><th>Data</th><th className="numeric">Valor</th><th className="numeric">% travado</th><th className="numeric">Comissão corretor</th></tr></thead>
+            <tbody>
+              {(c.vendasRecentes || []).length === 0 ? (
+                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma venda registrada</td></tr>
+              ) : c.vendasRecentes.map((v: any) => (
+                <tr key={v.id}>
+                  <td><div className="font-semibold text-xs">{v.empreendimento}</div><div className="text-xs text-secondary">{v.codigo} · {v.unidade}</div></td>
+                  <td className="text-xs">{fmtDate(v.createdAt)}</td>
+                  <td className="numeric">{fmt(v.valorVenda)}</td>
+                  <td className="numeric">{v.splitCorretorPct != null ? <span className="badge badge--info">{v.splitCorretorPct}%</span> : <span className="text-secondary">—</span>}</td>
+                  <td className="numeric money">{v.comissaoCorretor != null ? fmt(v.comissaoCorretor) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : null}
+    </Modal>
+  );
 }
