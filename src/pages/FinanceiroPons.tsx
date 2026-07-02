@@ -187,6 +187,9 @@ function PoliticaTab() {
             <div>− Campanha: {fmt(sim.imobiliaria.descontoCampanha)}</div>
             <div>− Lázaro: {fmt(sim.imobiliaria.descontoLazaro)}</div>
             <div style={{ color: 'var(--color-success)', fontWeight: 700 }}>= Líquido: {fmt(sim.imobiliaria.valorLiquido)}</div>
+            <div style={{ marginTop: 8, color: 'var(--color-info-fg)', fontWeight: 700 }}>
+              🎯 Gestor de Tráfego: {fmt(sim.gestorTrafego)} <span className="text-xs text-secondary">(campanha do corretor + imobiliária)</span>
+            </div>
             <div className="text-xs text-secondary" style={{ marginTop: 8 }}>Confere soma: {fmt(sim.confereSomaBeneficiarios)}</div>
           </div>
         )}
