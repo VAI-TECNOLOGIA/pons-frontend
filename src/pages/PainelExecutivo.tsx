@@ -1,9 +1,50 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 type Bloco = 'EMPRESA' | 'CORRETORES' | 'FILIAIS' | 'CIDADES';
+
+// Gráfico de barras horizontal reutilizável (funil da empresa / VGV por filial).
+function BarrasChart({ labels, valores, cor, formato }: { labels: string[]; valores: number[]; cor?: string; formato?: (v: number) => string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const inst = useRef<Chart | null>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    if (inst.current) inst.current.destroy();
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    inst.current = new Chart(ref.current, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: '',
+          data: valores,
+          backgroundColor: cor || '#0E7C9B',
+          borderRadius: 6,
+          maxBarThickness: 34,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (x: any) => (formato ? formato(x.raw) : String(x.raw)) } },
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: formato ? { callback: (v: any) => formato(Number(v)) } : undefined },
+          y: { grid: { display: false } },
+        },
+      },
+    } as any);
+    return () => { inst.current?.destroy(); };
+  }, [JSON.stringify(labels), JSON.stringify(valores)]);
+  return <canvas ref={ref} />;
+}
 
 export default function PainelExecutivo() {
   const [bloco, setBloco] = useState<Bloco>('EMPRESA');
@@ -36,17 +77,28 @@ export default function PainelExecutivo() {
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
 
         {data && bloco === 'EMPRESA' && (
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-            <Stat label="Leads recebidos"     value={data.leadsRecebidos} />
-            <Stat label="Atendidos"           value={`${data.leadsAtendidos} (${data.taxaAtendimentoPct}%)`} />
-            <Stat label="Fechados"            value={data.leadsFechados} />
-            <Stat label="Conversão"           value={`${data.conversaoPct}%`} />
-            <Stat label="Vendas"              value={data.vendas} />
-            <Stat label="Contratos assinados" value={data.contratosAssinados} />
-            <Stat label="VGV"                 value={fmt(data.vgv)} highlight />
-            <Stat label="Custo tráfego"       value={fmt(data.custoTrafego)} />
-            <Stat label="ROI"                 value={data.roi != null ? `${data.roi}x` : '—'} highlight />
-          </div>
+          <>
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+              <Stat label="Leads recebidos"     value={data.leadsRecebidos} />
+              <Stat label="Atendidos"           value={`${data.leadsAtendidos} (${data.taxaAtendimentoPct}%)`} />
+              <Stat label="Fechados"            value={data.leadsFechados} />
+              <Stat label="Conversão"           value={`${data.conversaoPct}%`} />
+              <Stat label="Vendas"              value={data.vendas} />
+              <Stat label="Contratos assinados" value={data.contratosAssinados} />
+              <Stat label="VGV"                 value={fmt(data.vgv)} highlight />
+              <Stat label="Custo tráfego"       value={fmt(data.custoTrafego)} />
+              <Stat label="ROI"                 value={data.roi != null ? `${data.roi}x` : '—'} highlight />
+            </div>
+            <div className="card" style={{ marginTop: 16 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Funil de conversão</h3>
+              <div style={{ height: 180 }}>
+                <BarrasChart
+                  labels={['Leads recebidos', 'Atendidos', 'Fechados']}
+                  valores={[data.leadsRecebidos || 0, data.leadsAtendidos || 0, data.leadsFechados || 0]}
+                />
+              </div>
+            </div>
+          </>
         )}
 
         {data && bloco === 'CORRETORES' && (
@@ -70,6 +122,19 @@ export default function PainelExecutivo() {
           </div>
         )}
 
+        {data && bloco === 'FILIAIS' && (data.filiais ?? []).length > 0 && (
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>VGV por filial</h3>
+            <div style={{ height: Math.max(160, (data.filiais ?? []).length * 44) }}>
+              <BarrasChart
+                labels={(data.filiais ?? []).map((f: any) => f.nome)}
+                valores={(data.filiais ?? []).map((f: any) => f.vgv || 0)}
+                cor="#88C559"
+                formato={(v) => 'R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1e3).toFixed(0) + 'K')}
+              />
+            </div>
+          </div>
+        )}
         {data && bloco === 'FILIAIS' && (
           <div className="card">
             <table className="table">
