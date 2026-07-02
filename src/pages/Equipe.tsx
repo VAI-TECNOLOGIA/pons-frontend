@@ -93,6 +93,7 @@ function AbaUsuarios() {
   const [filtroNivel, setFiltroNivel] = useState('');   // code do nível, 'sem' (sem nível) ou '' (todos)
   const [filtroStatus, setFiltroStatus] = useState(''); // '' | 'ativo' | 'inativo'
   const [novoOpen, setNovoOpen] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null); // usuário sendo editado (drawer)
   const { data: users, loading, reload } = useApi<any[]>(() => Api.equipeUsers(search), [search]);
   const { data: levels } = useApi<any[]>(() => Api.equipeLevels());
   const toast = useToast();
@@ -202,7 +203,7 @@ function AbaUsuarios() {
                     </label>
                   </td>
                   <td>
-                    <button className="equipe__icon-btn" title="Editar"><Icon name="pencil" size={14} /></button>
+                    <button className="equipe__icon-btn" title="Editar" onClick={() => setEditUser(u)}><Icon name="pencil" size={14} /></button>
                   </td>
                 </tr>
               ))}
@@ -233,6 +234,173 @@ function AbaUsuarios() {
           onSaved={() => { setNovoOpen(false); reload(); }}
         />
       )}
+      {editUser && (
+        <EditarUsuarioModal
+          user={editUser}
+          onClose={() => setEditUser(null)}
+          onSaved={() => { setEditUser(null); reload(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Drawer de EDIÇÃO/COMPLETAR CADASTRO — abre com o que o corretor preencheu no
+// onboarding (pré-carregado) e deixa a equipe Pons completar o que faltou.
+// Aditivo: não altera o fluxo de criação (NovoUsuarioModal) nem o de escopo.
+function EditarUsuarioModal({ user, onClose, onSaved }: any) {
+  const toast = useToast();
+  const { data: unidades } = useApi<any[]>(() => Api.unidadesList());
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    cpf: user.cpf || '',
+    dataNascimento: user.dataNascimento ? String(user.dataNascimento).slice(0, 10) : '',
+    naturalidade: user.naturalidade || '',
+    endereco: user.endereco || '',
+    pix: user.pix || '',
+    creci: user.creci || '',
+    estadoCivil: user.estadoCivil || '',
+    nomeConjuge: user.nomeConjuge || '',
+    contatoSecNome: user.contatoSecNome || '',
+    contatoSecCelular: user.contatoSecCelular || '',
+    gestorResp: user.gestorResp || '',
+    unidadeId: user.unidade?.id ? String(user.unidade.id) : '',
+  });
+  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.name.trim()) return toast.error('Nome completo é obrigatório.');
+    setSaving(true);
+    try {
+      await Api.equipeUserUpdate(user.id, {
+        name: form.name.trim(),
+        email: form.email.trim() || undefined,
+        phone: form.phone || null,
+        cpf: form.cpf || null,
+        dataNascimento: form.dataNascimento || null,
+        naturalidade: form.naturalidade || null,
+        endereco: form.endereco || null,
+        pix: form.pix || null,
+        creci: form.creci || null,
+        estadoCivil: form.estadoCivil || null,
+        nomeConjuge: form.nomeConjuge || null,
+        contatoSecNome: form.contatoSecNome || null,
+        contatoSecCelular: form.contatoSecCelular || null,
+        gestorResp: form.gestorResp || null,
+        unidadeId: form.unidadeId ? Number(form.unidadeId) : null,
+      });
+      toast.success('Cadastro atualizado');
+      onSaved();
+    } catch (e: any) {
+      toast.error('Erro: ' + (e.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="user-drawer__overlay" onClick={onClose}>
+      <div className="user-drawer" onClick={(e) => e.stopPropagation()}>
+        <header className="user-drawer__header">
+          <div className="user-drawer__icon"><Icon name="pencil" size={22} /></div>
+          <h2 className="user-drawer__title">Editar Cadastro</h2>
+          <button className="user-drawer__close" onClick={onClose} aria-label="Fechar"><Icon name="x" size={18} /></button>
+        </header>
+
+        <div className="user-drawer__body">
+          <section>
+            <p className="user-drawer__sec">UNIDADE &amp; GESTÃO</p>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>Unidade (GPI)</span>
+                <select value={form.unidadeId} onChange={(e) => set('unidadeId', e.target.value)}>
+                  <option value="">— Selecionar —</option>
+                  {(unidades || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                </select>
+              </label>
+              <label className="user-drawer__field">
+                <span>Gestor Responsável</span>
+                <input value={form.gestorResp} onChange={(e) => set('gestorResp', e.target.value)} placeholder="Nome do gestor" />
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <p className="user-drawer__sec">DADOS DO CORRETOR</p>
+            <p className="user-drawer__hint">Os dados que o corretor preencheu vêm carregados — complete o que faltar.</p>
+            <label className="user-drawer__field">
+              <span>Nome Completo *</span>
+              <input value={form.name} onChange={(e) => set('name', e.target.value)} />
+            </label>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>CPF</span>
+                <input value={form.cpf} onChange={(e) => set('cpf', e.target.value)} placeholder="000.000.000-00" />
+              </label>
+              <label className="user-drawer__field">
+                <span>Data de Nascimento</span>
+                <input type="date" value={form.dataNascimento} onChange={(e) => set('dataNascimento', e.target.value)} />
+              </label>
+            </div>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>Naturalidade</span>
+                <input value={form.naturalidade} onChange={(e) => set('naturalidade', e.target.value)} placeholder="Cidade/UF" />
+              </label>
+              <label className="user-drawer__field">
+                <span>Estado Civil</span>
+                <input value={form.estadoCivil} onChange={(e) => set('estadoCivil', e.target.value)} placeholder="Solteiro(a), Casado(a)…" />
+              </label>
+            </div>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>E-mail</span>
+                <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
+              </label>
+              <label className="user-drawer__field">
+                <span>Celular</span>
+                <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="(00) 00000-0000" />
+              </label>
+            </div>
+            <label className="user-drawer__field">
+              <span>Endereço Completo com CEP</span>
+              <input value={form.endereco} onChange={(e) => set('endereco', e.target.value)} placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+            </label>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>Chave PIX</span>
+                <input value={form.pix} onChange={(e) => set('pix', e.target.value)} />
+              </label>
+              <label className="user-drawer__field">
+                <span>CRECI</span>
+                <input value={form.creci} onChange={(e) => set('creci', e.target.value)} />
+              </label>
+            </div>
+            <label className="user-drawer__field">
+              <span>Nome do Cônjuge / Companheiro(a)</span>
+              <input value={form.nomeConjuge} onChange={(e) => set('nomeConjuge', e.target.value)} />
+            </label>
+            <div className="user-drawer__row-2">
+              <label className="user-drawer__field">
+                <span>Contato Secundário — Nome</span>
+                <input value={form.contatoSecNome} onChange={(e) => set('contatoSecNome', e.target.value)} />
+              </label>
+              <label className="user-drawer__field">
+                <span>Contato Secundário — Celular</span>
+                <input value={form.contatoSecCelular} onChange={(e) => set('contatoSecCelular', e.target.value)} placeholder="(00) 00000-0000" />
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <footer className="user-drawer__footer">
+          <button className="btn btn--ghost" onClick={onClose} disabled={saving}>Cancelar</button>
+          <button className="btn-novo" onClick={submit} disabled={saving}>{saving ? 'Salvando…' : 'Salvar'}</button>
+        </footer>
+      </div>
     </div>
   );
 }
