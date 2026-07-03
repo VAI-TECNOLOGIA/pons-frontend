@@ -21,9 +21,12 @@ const STATUS_MAP: Record<string, [string, string]> = {
  CANCELADO: ['cancelled', 'Cancelado'],
 };
 
+const ESTADO_CIVIL = ['Solteiro(a)', 'Casado(a)', 'União estável', 'Divorciado(a)', 'Viúvo(a)'];
+
 export default function Vendas() {
  const [selected, setSelected] = useState<number | null>(null);
  const [openNew, setOpenNew] = useState(false);
+ const [tipoComprador, setTipoComprador] = useState<'PF' | 'PJ'>('PF');
  const [view, setView] = useState<'lista' | 'kanban'>('lista');
  const { data: vendas, loading, error, reload } = useApi<any[]>(() => Api.vendas());
  const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
@@ -38,6 +41,8 @@ export default function Vendas() {
  const fd = new FormData(e.currentTarget);
  const num = (v: FormDataEntryValue | null) =>
  Number(String(v || '').replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+ const str = (k: string) => { const v = fd.get(k); return v ? String(v) : undefined; };
+ const optNum = (k: string) => (fd.get(k) ? num(fd.get(k)) : undefined);
  try {
  const r = await Api.vendaCreate({
  clienteNome: String(fd.get('clienteNome') || ''),
@@ -63,6 +68,40 @@ export default function Vendas() {
  splitVariante: String(fd.get('splitVariante') || '55_45'),
  percentualGestor: Number(fd.get('percentualGestorPons') || 10),
  aplicarGestorTrafego: fd.get('aplicarGestorTrafego') === 'on',
+ // Formulário oficial GPI (protocolo PF/PJ)
+ tipoComprador,
+ salaGpi: str('salaGpi'),
+ clienteRg: str('clienteRg'),
+ clienteNascimento: str('clienteNascimento'),
+ clienteProfissao: str('clienteProfissao'),
+ clienteEstadoCivil: str('clienteEstadoCivil'),
+ clienteEndereco: str('clienteEndereco'),
+ clienteCnpj: str('clienteCnpj'),
+ conjugeNome: str('conjugeNome'),
+ conjugeCpf: str('conjugeCpf'),
+ conjugeRg: str('conjugeRg'),
+ conjugeNascimento: str('conjugeNascimento'),
+ conjugeProfissao: str('conjugeProfissao'),
+ conjugeEmail: str('conjugeEmail'),
+ conjugeTelefone: str('conjugeTelefone'),
+ socioNome: str('socioNome'),
+ socioCpf: str('socioCpf'),
+ socioRg: str('socioRg'),
+ socioNascimento: str('socioNascimento'),
+ socioProfissao: str('socioProfissao'),
+ socioEmail: str('socioEmail'),
+ socioTelefone: str('socioTelefone'),
+ socioEstadoCivil: str('socioEstadoCivil'),
+ socioEndereco: str('socioEndereco'),
+ origemLead: str('origemLead'),
+ construtora: str('construtora'),
+ arrasValor: optNum('arrasValor'),
+ arrasVencimento: str('arrasVencimento'),
+ mensaisValor: optNum('mensaisValor'),
+ mensaisMelhorDia: fd.get('mensaisMelhorDia') ? Number(fd.get('mensaisMelhorDia')) : undefined,
+ anuaisValor: optNum('anuaisValor'),
+ anuaisInicio: str('anuaisInicio'),
+ chavesValor: optNum('chavesValor'),
  });
  toast.success(r?.aguardandoAprovacao
  ? 'Venda registrada — parcelamento 4x+ enviado pro Paulo aprovar.'
@@ -259,6 +298,8 @@ export default function Vendas() {
  </div>
  )}
 
+ <FormularioGpi f={sel.formulario} />
+
  <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
@@ -275,10 +316,16 @@ export default function Vendas() {
 
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Cadastre cliente, imóvel e rateio de comissão" size="lg">
  <form onSubmit={submit}>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Cliente</div>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comprador</div>
+ <div className="flex gap-2" style={{ marginBottom: 12 }}>
+ <button type="button" className={'btn btn--sm ' + (tipoComprador === 'PF' ? 'btn--primary' : 'btn--secondary')} onClick={() => setTipoComprador('PF')}>Pessoa Física</button>
+ <button type="button" className={'btn btn--sm ' + (tipoComprador === 'PJ' ? 'btn--primary' : 'btn--secondary')} onClick={() => setTipoComprador('PJ')}>Pessoa Jurídica</button>
+ </div>
+ {tipoComprador === 'PF' ? (
+ <>
  <div className="form-grid" style={{ marginBottom: 16 }}>
  <div className="field field--span-2">
- <label className="field__label">Nome do cliente <span className="field__required">*</span></label>
+ <label className="field__label">Nome completo <span className="field__required">*</span></label>
  <input name="clienteNome" className="field__input" required />
  </div>
  <div className="field">
@@ -286,14 +333,137 @@ export default function Vendas() {
  <input name="clienteCpf" className="field__input" />
  </div>
  <div className="field">
- <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" />
+ <label className="field__label">RG (c/ órgão expedidor)</label>
+ <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" />
  </div>
- <div className="field field--span-2">
+ <div className="field">
+ <label className="field__label">Data de nascimento</label>
+ <input name="clienteNascimento" type="date" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Profissão</label>
+ <input name="clienteProfissao" className="field__input" />
+ </div>
+ <div className="field">
  <label className="field__label">E-mail</label>
  <input name="clienteEmail" type="email" className="field__input" />
  </div>
+ <div className="field">
+ <label className="field__label">Telefone</label>
+ <input name="clienteTelefone" className="field__input" />
  </div>
+ <div className="field">
+ <label className="field__label">Estado civil</label>
+ <select name="clienteEstadoCivil" className="field__select" defaultValue="">
+ <option value="">—</option>
+ {ESTADO_CIVIL.map((e) => <option key={e} value={e}>{e}</option>)}
+ </select>
+ </div>
+ <div className="field field--span-2">
+ <label className="field__label">Endereço completo (c/ CEP)</label>
+ <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+ </div>
+ </div>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Cônjuge (se houver)</div>
+ <div className="form-grid" style={{ marginBottom: 16 }}>
+ <div className="field field--span-2">
+ <label className="field__label">Nome completo</label>
+ <input name="conjugeNome" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">CPF</label>
+ <input name="conjugeCpf" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">RG (c/ órgão expedidor)</label>
+ <input name="conjugeRg" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Data de nascimento</label>
+ <input name="conjugeNascimento" type="date" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Profissão</label>
+ <input name="conjugeProfissao" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">E-mail</label>
+ <input name="conjugeEmail" type="email" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Telefone</label>
+ <input name="conjugeTelefone" className="field__input" />
+ </div>
+ </div>
+ </>
+ ) : (
+ <>
+ <div className="form-grid" style={{ marginBottom: 16 }}>
+ <div className="field field--span-2">
+ <label className="field__label">Razão social <span className="field__required">*</span></label>
+ <input name="clienteNome" className="field__input" required />
+ </div>
+ <div className="field">
+ <label className="field__label">CNPJ</label>
+ <input name="clienteCnpj" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Telefone</label>
+ <input name="clienteTelefone" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">E-mail</label>
+ <input name="clienteEmail" type="email" className="field__input" />
+ </div>
+ <div className="field field--span-2">
+ <label className="field__label">Endereço completo (c/ CEP)</label>
+ <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+ </div>
+ </div>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Sócio-administrador</div>
+ <div className="form-grid" style={{ marginBottom: 16 }}>
+ <div className="field field--span-2">
+ <label className="field__label">Nome completo</label>
+ <input name="socioNome" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">CPF</label>
+ <input name="socioCpf" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">RG (c/ órgão expedidor)</label>
+ <input name="socioRg" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Data de nascimento</label>
+ <input name="socioNascimento" type="date" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Profissão</label>
+ <input name="socioProfissao" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">E-mail</label>
+ <input name="socioEmail" type="email" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Telefone</label>
+ <input name="socioTelefone" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Estado civil</label>
+ <select name="socioEstadoCivil" className="field__select" defaultValue="">
+ <option value="">—</option>
+ {ESTADO_CIVIL.map((e) => <option key={e} value={e}>{e}</option>)}
+ </select>
+ </div>
+ <div className="field field--span-2">
+ <label className="field__label">Endereço completo (c/ CEP)</label>
+ <input name="socioEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+ </div>
+ </div>
+ </>
+ )}
 
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Imóvel & corretor</div>
  <div className="form-grid" style={{ marginBottom: 16 }}>
@@ -321,9 +491,22 @@ export default function Vendas() {
  ))}
  </select>
  </div>
+ <div className="field">
+ <label className="field__label">Sala GPI</label>
+ <input name="salaGpi" className="field__input" placeholder="Sala 12" />
+ </div>
+ <div className="field">
+ <label className="field__label">Origem do lead</label>
+ <input name="origemLead" className="field__input" placeholder="Meta Ads · Indicação · Base…" />
+ </div>
+ <div className="field">
+ <label className="field__label">Construtora</label>
+ <input name="construtora" className="field__input" />
+ <div className="field__hint">Se vazio, usa a construtora do empreendimento.</div>
+ </div>
  </div>
 
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Valores</div>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Negociação detalhada</div>
  <div className="form-grid" style={{ marginBottom: 16 }}>
  <div className="field">
  <label className="field__label">Valor da venda <span className="field__required">*</span></label>
@@ -336,6 +519,63 @@ export default function Vendas() {
  <div className="field">
  <label className="field__label">Parcelas da entrada</label>
  <input name="entradaParcelas" type="number" min={1} className="field__input" defaultValue="5" />
+ </div>
+ <div className="field">
+ <label className="field__label">Arras (R$)</label>
+ <input name="arrasValor" className="field__input" placeholder="20000" />
+ </div>
+ <div className="field">
+ <label className="field__label">Vencimento das arras</label>
+ <input name="arrasVencimento" type="date" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Mensais (R$)</label>
+ <input name="mensaisValor" className="field__input" placeholder="4500" />
+ </div>
+ <div className="field">
+ <label className="field__label">Melhor dia do mês</label>
+ <input name="mensaisMelhorDia" type="number" min={1} max={31} className="field__input" placeholder="10" />
+ </div>
+ <div className="field">
+ <label className="field__label">Anuais (R$)</label>
+ <input name="anuaisValor" className="field__input" placeholder="30000" />
+ </div>
+ <div className="field">
+ <label className="field__label">Início dos anuais</label>
+ <input name="anuaisInicio" type="month" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Chaves (R$)</label>
+ <input name="chavesValor" className="field__input" placeholder="150000" />
+ </div>
+ </div>
+
+ <div className="card" style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--bg-elevated)' }}>
+ <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+ <Icon name="doc" size={13} /> Documentos necessários ({tipoComprador === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'})
+ </div>
+ <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
+ {tipoComprador === 'PF' ? (
+ <>
+ <li>Foto do documento de identificação frente e verso (RG, CPF com foto)</li>
+ <li>Mesmos documentos do cônjuge</li>
+ <li>Comprovante de endereço</li>
+ <li>Comprovante do Arras</li>
+ </>
+ ) : (
+ <>
+ <li>Cartão CNPJ</li>
+ <li>Contrato Social</li>
+ <li>Documento dos sócios</li>
+ <li>Comprovante do Arras</li>
+ </>
+ )}
+ </ul>
+ <div className="text-xs text-secondary" style={{ marginTop: 6 }}>Anexe os documentos na venda depois de criar (seção Documentos).</div>
+ <div style={{ height: 1, background: 'var(--border-light)', margin: '10px 0' }} />
+ <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Dados bancários — Grupo Pons Imobiliário (manter no protocolo)</div>
+ <div className="text-xs text-secondary">
+ Titular: Pons Assessoria Imobiliária Ltda. · CNPJ: 05.198.406/0001-44 · Banco: Sicredi (748) · Agência: 2606 · Conta: 49602-1 · PIX: 05.198.406/0001-44
  </div>
  </div>
 
@@ -402,6 +642,51 @@ export default function Vendas() {
  </Modal>
  </div>
  </>
+ );
+}
+
+// Dados do formulário oficial GPI (protocolo PF/PJ) preenchidos na criação da
+// venda — só renderiza o que foi preenchido; some se a venda for anterior ao form.
+function FormularioGpi({ f }: { f: any }) {
+ if (!f) return null;
+ const brl = (v: any) => (v || v === 0 ? 'R$ ' + Number(v).toLocaleString('pt-BR') : null);
+ const rows: [string, any][] = ([
+ ['Tipo de comprador', f.tipoComprador === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'],
+ ['Sala GPI', f.salaGpi],
+ ['CPF', f.clienteCpf],
+ ['CNPJ', f.clienteCnpj],
+ ['RG', f.clienteRg],
+ ['Nascimento', f.clienteNascimento],
+ ['Profissão', f.clienteProfissao],
+ ['Estado civil', f.clienteEstadoCivil],
+ ['E-mail', f.clienteEmail],
+ ['Telefone', f.clienteTelefone],
+ ['Endereço', f.clienteEndereco],
+ ['Cônjuge', f.conjugeNome],
+ ['CPF do cônjuge', f.conjugeCpf],
+ ['RG do cônjuge', f.conjugeRg],
+ ['Sócio-administrador', f.socioNome],
+ ['CPF do sócio', f.socioCpf],
+ ['Origem do lead', f.origemLead],
+ ['Construtora (form)', f.construtora],
+ ['Arras', f.arrasValor ? `${brl(f.arrasValor)} · venc. ${f.arrasVencimento || '—'}` : null],
+ ['Mensais', f.mensaisValor ? `${brl(f.mensaisValor)} · dia ${f.mensaisMelhorDia || '—'}` : null],
+ ['Anuais', f.anuaisValor ? `${brl(f.anuaisValor)} · início ${f.anuaisInicio || '—'}` : null],
+ ['Chaves', brl(f.chavesValor)],
+ ] as [string, any][]).filter(([, v]) => v !== null && v !== undefined && v !== '');
+ // Só o tipo preenchido (venda antiga) não justifica o bloco
+ if (rows.length <= 1) return null;
+ return (
+ <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Formulário GPI</div>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '6px 16px' }}>
+ {rows.map(([k, v]) => (
+ <div key={k} style={{ fontSize: 12 }}>
+ <span className="text-secondary">{k}:</span> <strong>{String(v)}</strong>
+ </div>
+ ))}
+ </div>
+ </div>
  );
 }
 
