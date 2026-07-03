@@ -27,7 +27,11 @@ export default function Vendas() {
  const [selected, setSelected] = useState<number | null>(null);
  const [openNew, setOpenNew] = useState(false);
  const [tipoComprador, setTipoComprador] = useState<'PF' | 'PJ'>('PF');
+ const [step, setStep] = useState(0);
+ const formRef = useRef<HTMLFormElement>(null);
  const [view, setView] = useState<'lista' | 'kanban'>('lista');
+ // Reabrir o modal sempre volta pra primeira etapa
+ useEffect(() => { if (openNew) { setStep(0); setTipoComprador('PF'); } }, [openNew]);
  const { data: vendas, loading, error, reload } = useApi<any[]>(() => Api.vendas());
  const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
@@ -36,8 +40,31 @@ export default function Vendas() {
  const isCorretor = role === 'CORRETOR';
  const podeEditarStatus = role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
 
+ // Etapas do formulário GPI — corretor não vê a etapa de comissão
+ const PASSOS = isCorretor
+ ? ['Comprador', 'Imóvel & corretor', 'Negociação']
+ : ['Comprador', 'Imóvel & corretor', 'Negociação', 'Comissão & rateio'];
+
+ // Valida só os campos visíveis da etapa atual antes de avançar
+ const proximaEtapa = () => {
+ const cur = formRef.current?.querySelector(`[data-step="${step}"]`);
+ const bad = cur?.querySelector(':invalid') as HTMLInputElement | null;
+ if (bad) { bad.reportValidity(); return; }
+ setStep((s) => Math.min(s + 1, PASSOS.length - 1));
+ };
+
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
+ // Enter antes da última etapa só avança — não cria a venda sem querer
+ if (step < PASSOS.length - 1) { proximaEtapa(); return; }
+ // Com noValidate, valida na mão: pula pra etapa do primeiro campo inválido
+ const invalido = formRef.current?.querySelector(':invalid') as HTMLInputElement | null;
+ if (invalido) {
+ const st = Number(invalido.closest('[data-step]')?.getAttribute('data-step') || 0);
+ setStep(st);
+ setTimeout(() => invalido.reportValidity(), 80);
+ return;
+ }
  const fd = new FormData(e.currentTarget);
  const num = (v: FormDataEntryValue | null) =>
  Number(String(v || '').replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
@@ -314,10 +341,43 @@ export default function Vendas() {
  </div>
  )}
 
- <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Cadastre cliente, imóvel e rateio de comissão" size="lg">
- <form onSubmit={submit}>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comprador</div>
- <div className="flex gap-2" style={{ marginBottom: 12 }}>
+ <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Formulário oficial GPI — preencha etapa por etapa" size="lg">
+ <form ref={formRef} onSubmit={submit} noValidate>
+ <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+ {PASSOS.map((p, i) => {
+ const ativo = i === step;
+ const feito = i < step;
+ return (
+ <button
+ key={p}
+ type="button"
+ onClick={() => feito && setStep(i)}
+ style={{
+ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 12px 6px 7px', borderRadius: 999,
+ border: '1px solid ' + (ativo ? 'var(--blue-500)' : 'var(--border-light)'),
+ background: ativo ? 'var(--bg-elevated)' : 'transparent',
+ color: ativo ? 'var(--text-primary)' : 'var(--text-secondary)',
+ fontSize: 12, fontWeight: 700, cursor: feito ? 'pointer' : 'default',
+ }}
+ title={feito ? 'Voltar pra esta etapa' : undefined}
+ >
+ <span style={{
+ width: 20, height: 20, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+ fontSize: 11, fontWeight: 800,
+ background: feito ? 'var(--color-success)' : ativo ? 'var(--blue-500)' : 'var(--bg-elevated)',
+ color: feito || ativo ? '#fff' : 'var(--text-secondary)',
+ }}>
+ {feito ? <Icon name="check" size={11} /> : i + 1}
+ </span>
+ {p}
+ </button>
+ );
+ })}
+ </div>
+
+ <div data-step="0" style={{ display: step === 0 ? 'block' : 'none' }} className="fade-in">
+ <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Dados do comprador conforme o formulário oficial do protocolo GPI.</div>
+ <div className="flex gap-2" style={{ marginBottom: 14 }}>
  <button type="button" className={'btn btn--sm ' + (tipoComprador === 'PF' ? 'btn--primary' : 'btn--secondary')} onClick={() => setTipoComprador('PF')}>Pessoa Física</button>
  <button type="button" className={'btn btn--sm ' + (tipoComprador === 'PJ' ? 'btn--primary' : 'btn--secondary')} onClick={() => setTipoComprador('PJ')}>Pessoa Jurídica</button>
  </div>
@@ -364,8 +424,9 @@ export default function Vendas() {
  <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
  </div>
  </div>
+ <div style={{ borderLeft: '3px solid var(--border-light)', paddingLeft: 14, marginTop: 6 }}>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Cônjuge (se houver)</div>
- <div className="form-grid" style={{ marginBottom: 16 }}>
+ <div className="form-grid" style={{ marginBottom: 4 }}>
  <div className="field field--span-2">
  <label className="field__label">Nome completo</label>
  <input name="conjugeNome" className="field__input" />
@@ -395,6 +456,7 @@ export default function Vendas() {
  <input name="conjugeTelefone" className="field__input" />
  </div>
  </div>
+ </div>
  </>
  ) : (
  <>
@@ -420,8 +482,9 @@ export default function Vendas() {
  <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
  </div>
  </div>
+ <div style={{ borderLeft: '3px solid var(--border-light)', paddingLeft: 14, marginTop: 6 }}>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Sócio-administrador</div>
- <div className="form-grid" style={{ marginBottom: 16 }}>
+ <div className="form-grid" style={{ marginBottom: 4 }}>
  <div className="field field--span-2">
  <label className="field__label">Nome completo</label>
  <input name="socioNome" className="field__input" />
@@ -462,10 +525,14 @@ export default function Vendas() {
  <input name="socioEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
  </div>
  </div>
+ </div>
  </>
  )}
 
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Imóvel & corretor</div>
+ </div>
+
+ <div data-step="1" style={{ display: step === 1 ? 'block' : 'none' }} className="fade-in">
+ <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Unidade vendida, corretor responsável e origem do lead.</div>
  <div className="form-grid" style={{ marginBottom: 16 }}>
  <div className="field">
  <label className="field__label">Empreendimento <span className="field__required">*</span></label>
@@ -506,7 +573,10 @@ export default function Vendas() {
  </div>
  </div>
 
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Negociação detalhada</div>
+ </div>
+
+ <div data-step="2" style={{ display: step === 2 ? 'block' : 'none' }} className="fade-in">
+ <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Valores e condições de pagamento — arras, mensais, anuais e chaves.</div>
  <div className="form-grid" style={{ marginBottom: 16 }}>
  <div className="field">
  <label className="field__label">Valor da venda <span className="field__required">*</span></label>
@@ -578,7 +648,9 @@ export default function Vendas() {
  Titular: Pons Assessoria Imobiliária Ltda. · CNPJ: 05.198.406/0001-44 · Banco: Sicredi (748) · Agência: 2606 · Conta: 49602-1 · PIX: 05.198.406/0001-44
  </div>
  </div>
+ </div>
 
+ <div data-step="3" style={{ display: step === 3 && !isCorretor ? 'block' : 'none' }} className="fade-in">
  {isCorretor ? (
  /* Corretor não tem visão de rateio/comissão — manda só os defaults.
     Origem LEAD (mais comum); financeiro ajusta na venda se for Base/Orgânica. */
@@ -590,7 +662,7 @@ export default function Vendas() {
  </>
  ) : (
  <>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comissão & rateio Pons</div>
+ <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Configuração do rateio — o snapshot trava na criação e não muda em vendas antigas.</div>
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 12 }}>
  <div className="field">
  <label className="field__label">% Comissão (sobre venda)</label>
@@ -633,10 +705,24 @@ export default function Vendas() {
  <input type="hidden" name="splitCasa" value="30" />
  </>
  )}
+ </div>
 
- <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+ <div className="flex" style={{ justifyContent: 'space-between', marginTop: 20, gap: 8 }}>
  <button type="button" className="btn btn--secondary" onClick={() => setOpenNew(false)}>Cancelar</button>
+ <div className="flex gap-2">
+ {step > 0 && (
+ <button type="button" className="btn btn--secondary" onClick={() => setStep((s) => s - 1)}>
+ <Icon name="arrow_left" size={13} /> Voltar
+ </button>
+ )}
+ {step < PASSOS.length - 1 ? (
+ <button type="button" className="btn btn--primary" onClick={proximaEtapa}>
+ Avançar <Icon name="arrow_right" size={13} />
+ </button>
+ ) : (
  <button type="submit" className="btn btn--primary">Criar venda</button>
+ )}
+ </div>
  </div>
  </form>
  </Modal>
