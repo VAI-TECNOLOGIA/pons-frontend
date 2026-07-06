@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { StatGlow } from '../components/StatGlow';
 import { Api } from '../lib/api';
 import { formatNome } from '../lib/format';
 import './inteligencia-leads.css';
@@ -47,14 +48,9 @@ function presetPeriodo(p: string): { de: string | null; ate: string | null } {
 
 const n = (v: number) => (v ?? 0).toLocaleString('pt-BR');
 
-function Kpi({ label, value, sub, accent }: { label: string; value: React.ReactNode; sub?: string; accent?: string }) {
-  return (
-    <div className="il-kpi">
-      <div className="il-kpi__val" style={accent ? { color: accent } : undefined}>{value}</div>
-      <div className="il-kpi__label">{label}</div>
-      {sub && <div className="il-kpi__sub">{sub}</div>}
-    </div>
-  );
+// KPI no padrão DASH KIT (stat-glow) — ícone + accent + brilho no hover.
+function Kpi({ label, value, sub, accent, icon }: { label: string; value: React.ReactNode; sub?: string; accent?: string; icon?: string }) {
+  return <StatGlow icon={icon} label={label} value={value} sub={sub} accent={accent} />;
 }
 
 function BarList({ items }: { items: { label: string; value: number; extra?: string; cor?: string }[] }) {
@@ -69,7 +65,7 @@ function BarList({ items }: { items: { label: string; value: number; extra?: str
             <span className="il-bar__val">{n(it.value)}{it.extra ? ` · ${it.extra}` : ''}</span>
           </div>
           <div className="il-bar__track">
-            <div className="il-bar__fill" style={{ width: `${Math.round((it.value / mx) * 100)}%`, background: it.cor || PALETTE[i % PALETTE.length] }} />
+            <div className="il-bar__fill" style={{ width: `${Math.round((it.value / mx) * 100)}%`, background: it.cor || PALETTE[i % PALETTE.length], color: it.cor || PALETTE[i % PALETTE.length] }} />
           </div>
         </div>
       ))}
@@ -202,13 +198,13 @@ export default function InteligenciaLeads() {
         {!loading && !erro && m && (
           <>
             {/* KPIs macro */}
-            <div className="il-kpis">
-              <Kpi label="Base total no período" value={n(m.totalBase)} sub={`${n(m.tabulados)} já tabulados`} />
-              <Kpi label="Abordados no WhatsApp" value={n(m.abordados)} sub={`${m.abordadosPct}% da base`} accent="#0E7C9B" />
-              <Kpi label="Taxa de resposta" value={`${m.taxaResposta}%`} sub={`${n(m.responderam)} responderam`} accent="#3FB6D4" />
-              <Kpi label="Em negociação" value={n(m.negociando)} sub={`${m.negociandoPct}% da base`} accent="#F2B544" />
-              <Kpi label="Conversão (fechados)" value={`${m.conversao}%`} sub={`${n(m.fechados)} fechados`} accent="#88C559" />
-              <Kpi label="Remarketing" value={n(data!.remarketing.total)} sub="Anúncio sem resposta" accent="#C70A1A" />
+            <div className="dash-grid" style={{ marginBottom: 14 }}>
+              <Kpi icon="database" label="Base total no período" value={n(m.totalBase)} sub={`${n(m.tabulados)} já tabulados`} />
+              <Kpi icon="whatsapp" label="Abordados no WhatsApp" value={n(m.abordados)} sub={`${m.abordadosPct}% da base`} accent="#0E7C9B" />
+              <Kpi icon="chat" label="Taxa de resposta" value={`${m.taxaResposta}%`} sub={`${n(m.responderam)} responderam`} accent="#3FB6D4" />
+              <Kpi icon="fire" label="Em negociação" value={n(m.negociando)} sub={`${m.negociandoPct}% da base`} accent="#F2B544" />
+              <Kpi icon="target" label="Conversão (fechados)" value={`${m.conversao}%`} sub={`${n(m.fechados)} fechados`} accent="#88C559" />
+              <Kpi icon="megafone" label="Remarketing" value={n(data!.remarketing.total)} sub="Anúncio sem resposta" accent="#C70A1A" />
             </div>
 
             {/* Pons × Parceiros + Origem */}

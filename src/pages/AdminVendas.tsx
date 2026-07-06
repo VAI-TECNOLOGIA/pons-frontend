@@ -5,6 +5,7 @@
 // Sem NADA de comissão/rateio nesta tela (visão administrativa).
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -112,52 +113,74 @@ export default function AdminVendas() {
         </table>
       </div>
 
-      {/* Detalhe da venda (sem comissão/rateio) */}
+      {/* Detalhe da venda (sem comissão/rateio) — auditoria organizada */}
       {sel && (
-        <div className="user-drawer__overlay" onClick={() => setSelId(null)}>
-          <div className="user-drawer" style={{ maxWidth: 720 }} onClick={(e) => e.stopPropagation()}>
-            <header className="user-drawer__header">
-              <div className="user-drawer__icon"><Icon name="doc" size={22} /></div>
-              <div style={{ flex: 1 }}>
-                <h2 className="user-drawer__title" style={{ marginBottom: 2 }}>Venda #{sel.codigo}</h2>
-                <span className={'badge badge--' + (STATUS_MAP[sel.status]?.[0] || 'neutral')}>{STATUS_MAP[sel.status]?.[1] || sel.status}</span>
-                {sel.aguardandoAprovacao && <span className="badge badge--cancelled" style={{ marginLeft: 6 }}>AGUARDANDO APROVAÇÃO DO PAULO</span>}
+        <Modal open onClose={() => setSelId(null)} title={`Auditoria — Venda #${sel.codigo}`} subtitle="Confira dados e documentos antes de avançar a fase" size="lg">
+          {/* Hero: cliente + valor + situação */}
+          <div style={{ background: 'linear-gradient(135deg, #1E2A44, #263654)', borderRadius: 14, padding: '18px 22px', color: '#fff', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 21, fontWeight: 800, lineHeight: 1.15 }}>{sel.clienteNome}</div>
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                  {sel.empreendimento} · {sel.unidade} · {sel.construtora || 'construtora —'}
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                  <span className={'badge badge--' + (STATUS_MAP[sel.status]?.[0] || 'neutral')}>{STATUS_MAP[sel.status]?.[1] || sel.status}</span>
+                  {sel.aguardandoAprovacao && <span className="badge badge--cancelled">Aguardando aprovação do Paulo</span>}
+                </div>
               </div>
-              <button className="user-drawer__close" onClick={() => setSelId(null)} aria-label="Fechar"><Icon name="x" size={18} /></button>
-            </header>
-
-            <div className="user-drawer__body">
-              <div className="text-xs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '4px 16px', marginBottom: 8 }}>
-                <div><span className="text-secondary">Cliente:</span> <strong>{sel.clienteNome}</strong></div>
-                <div><span className="text-secondary">Empreendimento:</span> <strong>{sel.empreendimento}</strong></div>
-                <div><span className="text-secondary">Unidade:</span> <strong>{sel.unidade}</strong></div>
-                <div><span className="text-secondary">Corretor:</span> <strong>{sel.corretor?.nome || '—'}</strong></div>
-                <div><span className="text-secondary">Valor:</span> <strong>R$ {Number(sel.valorVenda).toLocaleString('pt-BR')}</strong></div>
-                <div><span className="text-secondary">Construtora:</span> <strong>{sel.construtora || '—'}</strong></div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.7 }}>Valor da venda</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: '#88C559', lineHeight: 1.1 }}>
+                  {formatCurrencyShort(sel.valorVenda)}
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>Registrada em {new Date(sel.createdAt).toLocaleDateString('pt-BR')}</div>
               </div>
-
-              {/* Formulário GPI completo (protocolo) — sem comissão/rateio */}
-              <FormularioGpi f={sel.formulario} />
-
-              {/* Documentos anexados pelo corretor + anexar contrato da construtora */}
-              <VendaDocumentos vendaId={sel.id} podeRemover />
             </div>
+          </div>
 
-            <footer className="user-drawer__footer" style={{ flexWrap: 'wrap', gap: 8 }}>
+          {/* Dados essenciais em cards lado a lado */}
+          <div className="dash-grid" style={{ marginBottom: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+            <div className="stat-glow" style={{ padding: 12 }}>
+              <div className="stat-glow__label">Corretor</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{sel.corretor?.nome || '—'}</div>
+            </div>
+            <div className="stat-glow" style={{ padding: 12 }}>
+              <div className="stat-glow__label">Empreendimento</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{sel.empreendimento}</div>
+            </div>
+            <div className="stat-glow" style={{ padding: 12 }}>
+              <div className="stat-glow__label">Unidade</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{sel.unidade}</div>
+            </div>
+            <div className="stat-glow" style={{ padding: 12, ['--sg-accent' as any]: '#88C559' }}>
+              <div className="stat-glow__label">Parcelas da entrada</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{sel.entradaParcelas}x</div>
+            </div>
+          </div>
+
+          {/* Formulário GPI completo (protocolo) — sem comissão/rateio */}
+          <FormularioGpi f={sel.formulario} />
+
+          {/* Documentos anexados pelo corretor + anexar contrato da construtora */}
+          <VendaDocumentos vendaId={sel.id} podeRemover />
+
+          <div className="flex" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
+            <div className="flex gap-2">
               <button className="btn btn--secondary" onClick={() => baixarProtocolo(sel)}>
                 <Icon name="doc" size={14} /> Protocolo (PDF)
               </button>
               <button className="btn btn--ghost" onClick={() => window.print()} title="Imprimir esta tela">
                 Imprimir
               </button>
-              {PROXIMA_FASE[sel.status] && (
-                <button className="btn-novo" style={{ marginLeft: 'auto' }} onClick={() => avancar(sel)}>
-                  <Icon name="check" size={14} /> {PROXIMA_FASE[sel.status].rotulo}
-                </button>
-              )}
-            </footer>
+            </div>
+            {PROXIMA_FASE[sel.status] && (
+              <button className="btn btn--primary" onClick={() => avancar(sel)}>
+                <Icon name="check" size={14} /> {PROXIMA_FASE[sel.status].rotulo}
+              </button>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
     </Shell>
   );

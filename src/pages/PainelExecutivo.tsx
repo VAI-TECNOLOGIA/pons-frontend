@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { Icon } from '../components/Icon';
+import { StatGlow } from '../components/StatGlow';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { Chart, registerables } from 'chart.js';
@@ -78,19 +80,19 @@ export default function PainelExecutivo() {
 
         {data && bloco === 'EMPRESA' && (
           <>
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-              <Stat label="Leads recebidos"     value={data.leadsRecebidos} />
-              <Stat label="Atendidos"           value={`${data.leadsAtendidos} (${data.taxaAtendimentoPct}%)`} />
-              <Stat label="Fechados"            value={data.leadsFechados} />
-              <Stat label="Conversão"           value={`${data.conversaoPct}%`} />
-              <Stat label="Vendas"              value={data.vendas} />
-              <Stat label="Contratos assinados" value={data.contratosAssinados} />
-              <Stat label="VGV"                 value={fmt(data.vgv)} highlight />
-              <Stat label="Custo tráfego"       value={fmt(data.custoTrafego)} />
-              <Stat label="ROI"                 value={data.roi != null ? `${data.roi}x` : '—'} highlight />
+            <div className="dash-grid">
+              <StatGlow icon="trophy" label="VGV" value={fmt(data.vgv)} hero accent="#88C559" sub={`${data.vendas} vendas no período`} />
+              <StatGlow icon="gauge" label="ROI" value={data.roi != null ? `${data.roi}x` : '—'} hero accent="#F2B544" sub="Sobre o custo de tráfego" />
+              <StatGlow icon="users" label="Leads recebidos" value={data.leadsRecebidos} />
+              <StatGlow icon="chat" label="Atendidos" value={data.leadsAtendidos} sub={`${data.taxaAtendimentoPct}% da base`} accent="#3FB6D4" />
+              <StatGlow icon="check" label="Fechados" value={data.leadsFechados} accent="#88C559" />
+              <StatGlow icon="target" label="Conversão" value={`${data.conversaoPct}%`} accent="#88C559" />
+              <StatGlow icon="sales" label="Vendas" value={data.vendas} />
+              <StatGlow icon="doc" label="Contratos assinados" value={data.contratosAssinados} />
+              <StatGlow icon="wallet" label="Custo tráfego" value={fmt(data.custoTrafego)} accent="#C70A1A" />
             </div>
-            <div className="card" style={{ marginTop: 16 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Funil de conversão</h3>
+            <div className="chart-card" style={{ marginTop: 16 }}>
+              <h3 className="chart-card__title"><span className="icon-badge"><Icon name="pipeline" size={14} /></span> Funil de conversão</h3>
               <div style={{ height: 180 }}>
                 <BarrasChart
                   labels={['Leads recebidos', 'Atendidos', 'Fechados']}
@@ -102,8 +104,9 @@ export default function PainelExecutivo() {
         )}
 
         {data && bloco === 'CORRETORES' && (
-          <div className="card">
-            <table className="table">
+          <div className="chart-card" style={{ padding: 0 }}>
+            <h3 className="chart-card__title" style={{ padding: '16px 18px 0' }}><span className="icon-badge"><Icon name="ranking" size={14} /></span> Desempenho por corretor</h3>
+            <table className="table row-hover">
               <thead><tr><th>Corretor</th><th>Filial</th><th>Recebidos</th><th>Atend %</th><th>Vendas</th><th>VGV</th><th>ROI</th></tr></thead>
               <tbody>
                 {(data.corretores ?? []).map((c: any) => (
@@ -123,8 +126,8 @@ export default function PainelExecutivo() {
         )}
 
         {data && bloco === 'FILIAIS' && (data.filiais ?? []).length > 0 && (
-          <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>VGV por filial</h3>
+          <div className="chart-card" style={{ marginBottom: 16, ['--sg-accent' as any]: '#88C559' }}>
+            <h3 className="chart-card__title"><span className="icon-badge"><Icon name="building" size={14} /></span> VGV por filial</h3>
             <div style={{ height: Math.max(160, (data.filiais ?? []).length * 44) }}>
               <BarrasChart
                 labels={(data.filiais ?? []).map((f: any) => f.nome)}
@@ -136,8 +139,8 @@ export default function PainelExecutivo() {
           </div>
         )}
         {data && bloco === 'FILIAIS' && (
-          <div className="card">
-            <table className="table">
+          <div className="chart-card" style={{ padding: 0 }}>
+            <table className="table row-hover">
               <thead><tr><th>Filial</th><th>Cidade</th><th>Recebidos</th><th>Conversão</th><th>Vendas</th><th>VGV</th></tr></thead>
               <tbody>
                 {(data.filiais ?? []).map((f: any) => (
@@ -156,8 +159,9 @@ export default function PainelExecutivo() {
         )}
 
         {data && bloco === 'CIDADES' && (
-          <div className="card">
-            <table className="table">
+          <div className="chart-card" style={{ padding: 0 }}>
+            <h3 className="chart-card__title" style={{ padding: '16px 18px 0' }}><span className="icon-badge"><Icon name="pin" size={14} /></span> Desempenho por cidade</h3>
+            <table className="table row-hover">
               <thead><tr><th>Cidade</th><th>Recebidos</th><th>Conversão</th><th>Vendas</th><th>VGV</th><th>ROI</th></tr></thead>
               <tbody>
                 {(data.cidades ?? []).map((c: any) => (
@@ -179,11 +183,3 @@ export default function PainelExecutivo() {
   );
 }
 
-function Stat({ label, value, highlight }: { label: string; value: any; highlight?: boolean }) {
-  return (
-    <div className="card" style={{ padding: 14, background: highlight ? 'var(--bg-elevated)' : undefined }}>
-      <div className="text-xs text-secondary">{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
-    </div>
-  );
-}

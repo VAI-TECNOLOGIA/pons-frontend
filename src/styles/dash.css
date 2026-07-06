@@ -1,0 +1,142 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   DASH KIT — cards de indicadores e gráficos com brilho/hover/animação.
+   Estilo inspirado em dashboards analytics modernos, mas 100% em cima dos
+   tokens do sistema (funciona no tema claro E escuro).
+   Accent por card via `--sg-accent` (default: azul do sistema).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Grid padrão: cards lado a lado ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 12px;
+}
+
+/* ── Stat card com glow ── */
+.stat-glow {
+  --sg-accent: var(--blue-500);
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 16px;
+  overflow: hidden;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+/* brilho radial no topo do card */
+.stat-glow::before {
+  content: '';
+  position: absolute;
+  left: -20%; right: -20%; top: -55%;
+  height: 130px;
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--sg-accent) 20%, transparent), transparent 72%);
+  opacity: .5;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.stat-glow:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--sg-accent) 55%, var(--border-light));
+  box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--sg-accent) 50%, transparent);
+}
+.stat-glow:hover::before { opacity: .95; }
+
+/* variação "hero" — fundo com gradiente do accent (pro card principal) */
+.stat-glow--hero {
+  background: linear-gradient(140deg, color-mix(in srgb, var(--sg-accent) 16%, var(--bg-card)) 0%, var(--bg-card) 62%);
+}
+
+.stat-glow__icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--sg-accent) 15%, transparent);
+  color: var(--sg-accent);
+  margin-bottom: 10px;
+  transition: transform .22s ease;
+}
+.stat-glow:hover .stat-glow__icon { transform: scale(1.1); }
+
+.stat-glow__label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.stat-glow__value {
+  font-size: 26px; font-weight: 800;
+  font-family: var(--font-display);
+  line-height: 1.15; margin-top: 2px;
+  color: var(--text-primary);
+}
+.stat-glow__sub { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+.stat-glow__delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700;
+  padding: 2px 7px; border-radius: 999px;
+  margin-left: 8px; vertical-align: 3px;
+}
+.stat-glow__delta--up { background: var(--color-success-bg); color: var(--color-success-fg); }
+.stat-glow__delta--down { background: var(--color-danger-bg); color: var(--color-danger-fg); }
+
+/* ── Card de gráfico/section com o mesmo hover ── */
+.chart-card {
+  --sg-accent: var(--blue-500);
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 18px;
+  overflow: hidden;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.chart-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--sg-accent) 40%, var(--border-light));
+  box-shadow: 0 12px 30px -16px color-mix(in srgb, var(--sg-accent) 40%, transparent);
+}
+.chart-card__title {
+  font-size: 14px; font-weight: 800;
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 0 14px;
+}
+.chart-card__title .icon-badge {
+  width: 26px; height: 26px; border-radius: 8px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--sg-accent) 15%, transparent);
+  color: var(--sg-accent);
+}
+
+/* ── Barras horizontais animadas (rankings/origem/plataformas) ── */
+.bar-row { margin-bottom: 12px; }
+.bar-row__head {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 12px; margin-bottom: 5px;
+}
+.bar-row__label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-row__val { color: var(--text-secondary); font-weight: 700; white-space: nowrap; }
+.bar-row__track {
+  height: 8px; border-radius: 999px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+.bar-row__fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bar-cor, var(--blue-500)) 75%, transparent), var(--bar-cor, var(--blue-500)));
+  box-shadow: 0 0 10px -2px var(--bar-cor, var(--blue-500));
+  transform-origin: left;
+  animation: dashBarGrow .8s cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes dashBarGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* entrada suave em cascata dos cards */
+.dash-grid > * { animation: fadeInUp .45s ease both; }
+.dash-grid > *:nth-child(2) { animation-delay: .05s; }
+.dash-grid > *:nth-child(3) { animation-delay: .1s; }
+.dash-grid > *:nth-child(4) { animation-delay: .15s; }
+.dash-grid > *:nth-child(5) { animation-delay: .2s; }
+.dash-grid > *:nth-child(6) { animation-delay: .25s; }
+.dash-grid > *:nth-child(7) { animation-delay: .3s; }
+.dash-grid > *:nth-child(8) { animation-delay: .35s; }
+.dash-grid > *:nth-child(9) { animation-delay: .4s; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

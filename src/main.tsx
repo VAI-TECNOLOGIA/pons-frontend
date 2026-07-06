@@ -11,6 +11,7 @@ import './styles/tokens.css';
 import './styles/components.css';
 import './styles/utilities.css';
 import './styles/animations.css';
+import './styles/dash.css';
 import './styles/responsive.css';
 import './styles/theme-overrides.css';
 
