@@ -191,7 +191,7 @@ export default function InteligenciaLeads() {
         {/* Filtros */}
         <div className="il-filtros">
           <label className="il-filtro">
-            <span>Período</span>
+            <span><Icon name="calendar" size={11} /> Período</span>
             <select value={periodo} onChange={(e) => setPeriodo(e.target.value)}>
               <option value="mes">Este mês</option>
               <option value="mespassado">Mês passado</option>
@@ -201,14 +201,14 @@ export default function InteligenciaLeads() {
             </select>
           </label>
           <label className="il-filtro">
-            <span>Equipe</span>
+            <span><Icon name="team" size={11} /> Equipe</span>
             <select value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)}>
               <option value="">Todas as equipes</option>
               {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
             </select>
           </label>
           <label className="il-filtro">
-            <span>Corretor</span>
+            <span><Icon name="users" size={11} /> Corretor</span>
             <select value={corretorId} onChange={(e) => setCorretorId(e.target.value)}>
               <option value="">Todos os corretores</option>
               {corretores.map((c) => <option key={c.id} value={c.id}>{formatNome(c.nome || c.user?.name) || `Corretor ${c.id}`}</option>)}

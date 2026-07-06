@@ -2,15 +2,37 @@
 .il { padding: 0 24px 48px; max-width: 1280px; }
 
 /* filtros */
-.il-filtros { display: flex; flex-wrap: wrap; gap: 14px; margin: 4px 0 22px; }
-.il-filtro { display: flex; flex-direction: column; gap: 5px; min-width: 180px; }
-.il-filtro > span { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
-.il-filtro select {
-  border: 1.5px solid var(--border-light); border-radius: var(--radius-md);
-  padding: 10px 12px; font-size: 14px; background: var(--field-bg, var(--bg-card)); color: var(--text-primary);
-  font-family: inherit; cursor: pointer;
+.il-filtros {
+  display: flex; flex-wrap: wrap; gap: 14px; margin: 4px 0 22px;
+  background: var(--bg-card); border: 1px solid var(--border-light);
+  border-radius: 14px; padding: 14px 16px;
+  transition: border-color .22s ease, box-shadow .22s ease;
 }
-.il-filtro select:focus { outline: none; border-color: var(--pons-blue); }
+.il-filtros:hover {
+  border-color: color-mix(in srgb, var(--blue-500) 35%, var(--border-light));
+  box-shadow: 0 10px 26px -18px color-mix(in srgb, var(--blue-500) 45%, transparent);
+}
+.il-filtro { display: flex; flex-direction: column; gap: 6px; min-width: 190px; flex: 1; max-width: 300px; }
+.il-filtro > span {
+  font-size: 10px; font-weight: 700; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: .07em;
+  display: flex; align-items: center; gap: 5px;
+}
+.il-filtro select {
+  appearance: none; -webkit-appearance: none;
+  border: 1.5px solid var(--border-light); border-radius: 10px;
+  padding: 10px 38px 10px 12px; font-size: 13.5px; font-weight: 600;
+  background-color: var(--bg-elevated);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238493B4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  color: var(--text-primary); font-family: inherit; cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.il-filtro select:hover { border-color: color-mix(in srgb, var(--blue-500) 45%, var(--border-light)); }
+.il-filtro select:focus {
+  outline: none; border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue-500) 18%, transparent);
+}
 
 .il-loading, .il-erro { padding: 40px; text-align: center; color: var(--text-secondary); }
 .il-erro { color: #C70A1A; }
