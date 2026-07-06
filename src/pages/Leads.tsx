@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { LeadCamposCustom } from '../components/LeadCamposCustom';
 import { timeAgo, initials } from '../lib/format';
 import { Api } from '../lib/api';
+import { FichaLeadModal } from '../components/FichaLeadModal';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 
@@ -250,9 +251,7 @@ export default function Leads() {
  </form>
  </Modal>
 
- <Modal open={!!campoLead} onClose={() => setCampoLead(null)} title={campoLead ? `Campos de ${campoLead.nome}` : ''} subtitle="Campos personalizados deste lead">
- {campoLead && <LeadCamposCustom leadId={campoLead.id} />}
- </Modal>
+ {campoLead && <FichaLeadModal leadId={campoLead.id} onClose={() => setCampoLead(null)} />}
  </>
  );
 }

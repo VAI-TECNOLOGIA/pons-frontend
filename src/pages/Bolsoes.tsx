@@ -3,6 +3,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { LeadCamposCustom } from '../components/LeadCamposCustom';
 import { Api } from '../lib/api';
+import { FichaLeadModal } from '../components/FichaLeadModal';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useWhatsappNumeros } from '../lib/whatsappNumeros';
@@ -233,9 +234,7 @@ export default function Bolsoes() {
         )}
       </Modal>
 
-      <Modal open={!!campoLead} onClose={() => setCampoLead(null)} title={campoLead ? `Campos de ${campoLead.nome}` : ''} subtitle="Campos personalizados deste lead">
-        {campoLead && <LeadCamposCustom leadId={campoLead.id} />}
-      </Modal>
+      {campoLead && <FichaLeadModal leadId={campoLead.id} onClose={() => setCampoLead(null)} />}
     </>
   );
 }

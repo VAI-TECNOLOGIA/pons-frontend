@@ -163,6 +163,7 @@ export const Api = {
 
   // Leads
   leads: (params: any = {}) => request<any[]>(`/leads${qs(params)}`),
+  lead: (id: number) => request<any>(`/leads/${id}`), // ficha completa (form + anúncio + corretor)
   leadStats: () => request<any>('/leads/stats'),
   leadCreate: (data: any) => request<any>('/leads', { method: 'POST', body: data }),
   leadUpdate: (id: number, data: any) => request<any>(`/leads/${id}`, { method: 'PATCH', body: data }),

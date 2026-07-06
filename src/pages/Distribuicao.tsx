@@ -5,6 +5,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { FichaLeadModal } from '../components/FichaLeadModal';
 
 const PRESETS: { label: string; expr: string }[] = [
   { label: 'Segunda 9h',       expr: '0 9 * * 1' },
@@ -61,6 +62,7 @@ function cronToHuman(expr: string): string {
 export default function Distribuicao() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [fichaLeadId, setFichaLeadId] = useState<number | null>(null);
   // Escopo: 'sistema' (sem filtro de equipe) | 'equipes' (filtra pelas equipes selecionadas)
   const [escopo, setEscopo] = useState<'sistema' | 'equipes'>('sistema');
   const [equipesSel, setEquipesSel] = useState<number[]>([]);
@@ -200,7 +202,7 @@ export default function Distribuicao() {
                 <tbody>
                   {bolsao.leads.slice(0, 10).map((l: any) => (
                     <tr key={l.id}>
-                      <td>{l.nome}</td>
+                      <td><span style={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 3 }} onClick={() => setFichaLeadId(l.id)} title="Abrir ficha completa do lead">{l.nome}</span></td>
                       <td className="text-xs">{l.telefone || '—'}</td>
                       <td className="text-xs">{l.origem || '—'}</td>
                       <td className="text-xs">{l.campanha || '—'}</td>
@@ -415,6 +417,8 @@ export default function Distribuicao() {
           </div>
         </form>
       </Modal>
+
+      {fichaLeadId && <FichaLeadModal leadId={fichaLeadId} onClose={() => setFichaLeadId(null)} />}
     </>
   );
 }
