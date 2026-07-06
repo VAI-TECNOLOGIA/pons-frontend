@@ -23,10 +23,19 @@ const STATUS_MAP: Record<string, [string, string]> = {
  CANCELADO: ['cancelled', 'Cancelado'],
 };
 
-const ESTADO_CIVIL = ['Solteiro(a)', 'Casado(a)', 'União estável', 'Divorciado(a)', 'Viúvo(a)'];
+const ESTADO_CIVIL = [
+ 'Solteiro(a)',
+ 'Casado(a)',
+ 'Casado(a) — separação de bens',
+ 'Casado(a) — separação total de bens',
+ 'União estável',
+ 'Divorciado(a)',
+ 'Viúvo(a)',
+];
 
-// Estados civis que exigem dados do cônjuge/companheiro(a) no protocolo
-const EXIGE_CONJUGE = new Set(['Casado(a)', 'União estável']);
+// Estados civis que exigem dados do cônjuge/companheiro(a) no protocolo.
+// Separação TOTAL de bens: o cônjuge não anui na compra — não preenche.
+const EXIGE_CONJUGE = new Set(['Casado(a)', 'Casado(a) — separação de bens', 'União estável']);
 
 // Origem gravada no lead → rótulo humano + classificação de comissão.
 // Tráfego pago/portais = LEAD (desconto campanha); campanha WhatsApp/base = BASE; resto = orgânica.
@@ -71,6 +80,10 @@ function docsNecessarios(tipo: 'PF' | 'PJ', estadoCivil: string): string[] {
  switch (estadoCivil) {
  case 'Casado(a)':
  return [...base, 'Certidão de casamento', 'RG e CPF (ou CNH) do cônjuge', 'Pacto antenupcial registrado (se houver)'];
+ case 'Casado(a) — separação de bens':
+ return [...base, 'Certidão de casamento', 'RG e CPF (ou CNH) do cônjuge', 'Pacto antenupcial de separação de bens registrado'];
+ case 'Casado(a) — separação total de bens':
+ return [...base, 'Certidão de casamento', 'Pacto antenupcial de separação total de bens registrado'];
  case 'União estável':
  return [...base, 'Declaração ou escritura de união estável', 'RG e CPF (ou CNH) do(a) companheiro(a)'];
  case 'Divorciado(a)':
