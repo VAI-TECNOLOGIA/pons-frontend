@@ -15,6 +15,14 @@ const STATUS_LABEL: Record<string, string> = {
   VISITA: 'Visita', PROPOSTA: 'Proposta', FECHADO: 'Fechado', PERDIDO: 'Perdido',
 };
 
+const MOTIVO_LABEL: Record<string, string> = {
+  SLA_AUTOMATICO: 'Redistribuição por SLA',
+  MANUAL_GESTOR: 'Transferência do gestor',
+  MANUAL_CORRETOR: 'Transferência do corretor',
+  FALLBACK_ROLETA: 'Fallback da roleta',
+  DIRECIONAMENTO_GESTOR: 'Direcionado pelo gestor',
+};
+
 const dataExtensa = (s: string) =>
   new Date(s).toLocaleString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     .replace(',', ' às');
@@ -23,14 +31,19 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
   const [lead, setLead] = useState<any>(null);
   const [erro, setErro] = useState('');
   const [verCampos, setVerCampos] = useState(false);
+  const [transfs, setTransfs] = useState<any[]>([]);
+  const [verTransfs, setVerTransfs] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     let vivo = true;
-    setLead(null); setErro(''); setVerCampos(false);
+    setLead(null); setErro(''); setVerCampos(false); setVerTransfs(false); setTransfs([]);
     Api.lead(leadId)
       .then((l) => { if (vivo) setLead(l); })
       .catch((e) => { if (vivo) setErro(e?.message || 'Falha ao carregar o lead'); });
+    Api.transferenciasLead(leadId)
+      .then((t) => { if (vivo) setTransfs(t || []); })
+      .catch(() => {});
     return () => { vivo = false; };
   }, [leadId]);
 
@@ -189,6 +202,32 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                   <LeadCamposCustom leadId={lead.id} />
                 </div>
               )}
+
+              {/* Histórico de transferências — de quem veio, pra quem foi, por quê */}
+              <div style={{ marginTop: 8 }}>
+                <button className="btn btn--ghost btn--sm" onClick={() => setVerTransfs((v) => !v)}>
+                  <Icon name="history" size={13} /> {verTransfs ? 'Ocultar histórico de transferências' : `Histórico de transferências${transfs.length ? ` (${transfs.length})` : ''}`}
+                </button>
+                {verTransfs && (
+                  <div className="card" style={{ padding: '12px 16px', marginTop: 8 }}>
+                    {transfs.length === 0 ? (
+                      <div className="text-xs text-secondary">Sem transferências registradas.</div>
+                    ) : (
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        {transfs.slice(0, 10).map((t: any) => (
+                          <div key={t.id} style={{ borderLeft: '3px solid var(--border-light)', paddingLeft: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                              {t.deCorretorNome || 'Sistema'} <Icon name="arrow_right" size={11} /> {t.paraCorretorNome || '—'}
+                            </div>
+                            <div className="text-xs text-secondary">{MOTIVO_LABEL[t.motivo] || t.motivo} · {timeAgo(t.createdAt)}</div>
+                          </div>
+                        ))}
+                        {transfs.length > 10 && <div className="text-xs text-secondary">+ {transfs.length - 10} mais antigas</div>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </>
