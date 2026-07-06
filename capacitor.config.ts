@@ -5,8 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Grupo Pons',
   webDir: 'dist',
   server: {
-    // Origin do WebView = dominio real -> same-origin com a API, sem exceção CORS
-    hostname: 'app.grupopons.com.br',
+    // SERVER MODE: o app carrega a prod ao vivo (app.grupopons.com.br). Cada deploy
+    // na Vercel reflete no app automaticamente — sem precisar subir pacote novo na loja.
+    // A Academia Pons vai pela prod e aparece só no app via gate isNativeApp().
+    url: 'https://app.grupopons.com.br',
     androidScheme: 'https',
   },
   android: {

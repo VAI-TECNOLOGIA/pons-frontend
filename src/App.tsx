@@ -2,6 +2,8 @@ import { lazy, Suspense, ComponentType } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/Layout';
 import { LoadingBlock } from './lib/useApi';
+import { isNativeApp } from './lib/platform';
+import { Auth } from './lib/auth';
 
 // Login fica eager — é o primeiro hit do usuário, evitamos qualquer flicker.
 import Login from './pages/Login';
@@ -89,6 +91,8 @@ const AgenteIA        = lazyRetry(() => import('./pages/AgenteIA'));
 const Reuniao         = lazyRetry(() => import('./pages/Reuniao'));
 const Equipe          = lazyRetry(() => import('./pages/Equipe'));
 const Pessoal         = lazyRetry(() => import('./pages/Pessoal'));
+// Academia Pons — pública, exclusiva do app nativo
+const Treinamentos    = lazyRetry(() => import('./pages/Treinamentos'));
 // DEV panel
 const DevMensagens    = lazyRetry(() => import('./pages/DevMensagens'));
 const DevFeedback     = lazyRetry(() => import('./pages/DevFeedback'));
@@ -105,8 +109,18 @@ export default function App() {
   return (
     <Suspense fallback={<LoadingBlock />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* No app nativo a entrada é a Academia (pública); no site web, o login. */}
+        <Route
+          path="/"
+          element={
+            isNativeApp()
+              ? <Navigate to={Auth.token ? '/dashboard' : '/treinamentos'} replace />
+              : <Navigate to="/login" replace />
+          }
+        />
         <Route path="/login" element={<Login />} />
+        {/* Academia Pons — só existe no app (não no site web) */}
+        {isNativeApp() && <Route path="/treinamentos" element={<Treinamentos />} />}
         <Route path="/painel-tv" element={<PainelTV />} />
         <Route path="/lp/:slug" element={<LPPublica />} />
         <Route path="/atualizacao-cadastral" element={<CadastroColaborador />} />
