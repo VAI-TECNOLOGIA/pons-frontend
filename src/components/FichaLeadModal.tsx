@@ -7,7 +7,6 @@ import { Modal } from './Modal';
 import { Icon } from './Icon';
 import { Api } from '../lib/api';
 import { useToast } from '../lib/toast';
-import { LeadCamposCustom } from './LeadCamposCustom';
 import { timeAgo } from '../lib/format';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -31,14 +30,13 @@ const dataExtensa = (s: string) =>
 export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: () => void }) {
   const [lead, setLead] = useState<any>(null);
   const [erro, setErro] = useState('');
-  const [verCampos, setVerCampos] = useState(false);
   const [transfs, setTransfs] = useState<any[]>([]);
   const [verTransfs, setVerTransfs] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     let vivo = true;
-    setLead(null); setErro(''); setVerCampos(false); setVerTransfs(false); setTransfs([]);
+    setLead(null); setErro(''); setVerTransfs(false); setTransfs([]);
     Api.lead(leadId)
       .then((l) => { if (vivo) setLead(l); })
       .catch((e) => { if (vivo) setErro(e?.message || 'Falha ao carregar o lead'); });
@@ -74,10 +72,8 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
   const rotuloSec = { fontSize: 10, fontWeight: 700 as const, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' };
   const linhaNota = { display: 'flex', justifyContent: 'space-between', gap: 16, padding: '9px 0', borderBottom: '1px solid var(--border-light)', fontSize: 13 };
 
-  // Header: lead de TRÁFEGO PAGO fica com o azul do modelo de referência
-  // (idêntico ao print aprovado); os demais usam a cor da Pons (#0E7C9B).
-  const temTrafegoPago = !!(lead && (lead.campanha || lead.conjuntoAnuncio || lead.criativo || ['META_ADS', 'GOOGLE'].includes(lead.origem)));
-  const headerBg = temTrafegoPago ? '#1e4fc2' : 'var(--blue-500)';
+  // Header sempre com o azul do design system (nada de cor do print de referência)
+  const headerBg = 'var(--blue-500)';
 
   return (
     <Modal open onClose={onClose} title="Ficha do lead" size="lg">
@@ -206,17 +202,8 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                 {lead.notas && <div className="text-xs"><strong>Notas internas:</strong> <span className="text-secondary">{lead.notas}</span></div>}
               </div>
 
-              <button className="btn btn--ghost btn--sm" style={{ marginTop: 14 }} onClick={() => setVerCampos((v) => !v)}>
-                <Icon name="layers" size={13} /> {verCampos ? 'Ocultar campos personalizados' : 'Editar campos personalizados'}
-              </button>
-              {verCampos && (
-                <div className="card" style={{ padding: '12px 16px', marginTop: 8 }}>
-                  <LeadCamposCustom leadId={lead.id} />
-                </div>
-              )}
-
               {/* Histórico de transferências — de quem veio, pra quem foi, por quê */}
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 14 }}>
                 <button className="btn btn--ghost btn--sm" onClick={() => setVerTransfs((v) => !v)}>
                   <Icon name="history" size={13} /> {verTransfs ? 'Ocultar histórico de transferências' : `Histórico de transferências${transfs.length ? ` (${transfs.length})` : ''}`}
                 </button>
