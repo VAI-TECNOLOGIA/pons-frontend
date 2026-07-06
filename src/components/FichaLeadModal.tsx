@@ -23,6 +23,13 @@ const MOTIVO_LABEL: Record<string, string> = {
   DIRECIONAMENTO_GESTOR: 'Direcionado pelo gestor',
 };
 
+// Origem no modelo do cliente: leads captados pela integração aparecem como
+// "Grupo Pons" (o canal real fica em "Dados da conversão"); os demais, humanizados.
+const ORIGEM_LABEL: Record<string, string> = {
+  META_ADS: 'Grupo Pons', WHATSAPP: 'Grupo Pons', SITE: 'Site Grupo Pons',
+  MANUAL: 'Cadastro manual', INDICACAO: 'Indicação', IMPORTACAO: 'Importação',
+};
+
 const dataExtensa = (s: string) =>
   new Date(s).toLocaleString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     .replace(',', ' às');
@@ -32,11 +39,12 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
   const [erro, setErro] = useState('');
   const [transfs, setTransfs] = useState<any[]>([]);
   const [verTransfs, setVerTransfs] = useState(false);
+  const [verIntegra, setVerIntegra] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     let vivo = true;
-    setLead(null); setErro(''); setVerTransfs(false); setTransfs([]);
+    setLead(null); setErro(''); setVerTransfs(false); setTransfs([]); setVerIntegra(false);
     Api.lead(leadId)
       .then((l) => { if (vivo) setLead(l); })
       .catch((e) => { if (vivo) setErro(e?.message || 'Falha ao carregar o lead'); });
@@ -58,16 +66,16 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
     const s = String(v ?? '');
     return /_/.test(s) && !/\s/.test(s) ? s.replace(/_/g, ' ') : s;
   };
-  const copiarNota = () => {
-    if (!lead) return;
-    const linhas = [
-      ...(lead.respostasFormulario || []).map((r: any) => `${r.campo}: ${r.valor}`),
+  const montarNota = () => {
+    if (!lead) return '';
+    return [
+      ...(lead.respostasFormulario || []).map((r: any) => `${r.campo}: ${exibeValor(r.valor)}`),
       `Full name: ${lead.nome}`,
       lead.telefone ? `Phone number: ${lead.telefone}` : null,
       lead.email ? `Email: ${lead.email}` : null,
-    ].filter(Boolean);
-    copiar(linhas.join('\n'), 'Nota');
+    ].filter(Boolean).join('\n');
   };
+  const copiarNota = () => { if (lead) copiar(montarNota(), 'Nota'); };
 
   const rotuloSec = { fontSize: 10, fontWeight: 700 as const, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' };
   const linhaNota = { display: 'flex', justifyContent: 'space-between', gap: 16, padding: '9px 0', borderBottom: '1px solid var(--border-light)', fontSize: 13 };
@@ -127,10 +135,13 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
               <div style={{ display: 'flex', gap: 24, marginBottom: 10 }}>
                 <div>
                   <div style={rotuloSec}>Origem</div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{lead.origem || '—'}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Icon name="webhook" size={14} />
+                    {lead.bm ? 'Grupo Pons' : (ORIGEM_LABEL[lead.origem] || lead.origem || '—')}
+                  </div>
                 </div>
                 <div>
-                  <div style={rotuloSec}>Produto (formulário)</div>
+                  <div style={rotuloSec}>Produto</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-info-fg)' }}>{lead.formularioNome || lead.interesse || lead.bm?.nome || '—'}</div>
                 </div>
               </div>
@@ -147,8 +158,14 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                 <div style={linhaNota}><span className="text-secondary">Full name</span><strong>{lead.nome}</strong></div>
                 {lead.telefone && <div style={linhaNota}><span className="text-secondary">Phone number</span><strong>{lead.telefone}</strong></div>}
                 {lead.email && <div style={{ ...linhaNota, borderBottom: 'none' }}><span className="text-secondary">Email</span><strong style={{ wordBreak: 'break-all', textAlign: 'right' }}>{lead.email}</strong></div>}
-                <div className="text-xs text-secondary" style={{ margin: '8px 0 6px' }}>Integração: Grupo Pons{lead.bm ? ` · ${lead.bm.nome}` : ''}</div>
-                <button className="btn btn--secondary btn--sm" onClick={copiarNota}>Copiar nota original</button>
+                <div className="text-xs text-secondary" style={{ margin: '8px 0 8px' }}>Integração: Grupo Pons</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button className="btn btn--primary btn--sm" onClick={() => setVerIntegra((v) => !v)}>{verIntegra ? 'Ocultar nota' : 'Ver nota íntegra'}</button>
+                  <button className="btn btn--secondary btn--sm" onClick={copiarNota}>Copiar nota original</button>
+                </div>
+                {verIntegra && (
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, marginTop: 10, marginBottom: 0, padding: '10px 12px', background: 'var(--surface-2, rgba(0,0,0,.04))', borderRadius: 8, fontFamily: 'inherit' }}>{montarNota()}</pre>
+                )}
               </div>
 
               {/* Dados da conversão (anúncio) */}
@@ -181,6 +198,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 10 }}>Status de atendimento</h3>
               <div style={{ display: 'grid', gap: 10, fontSize: 13 }}>
+                <div className="text-secondary">Sem agendamento de contato.</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <strong>Etapa do funil:</strong>
                   <span className="badge badge--info">{STATUS_LABEL[lead.status] || lead.status}</span>
