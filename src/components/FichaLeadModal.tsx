@@ -53,6 +53,12 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
   const copiar = (texto: string, rotulo: string) => {
     navigator.clipboard?.writeText(texto).then(() => toast.success(`${rotulo} copiado`)).catch(() => {});
   };
+  // As opções de resposta do Meta chegam com underscore (ex.: "no_máximo_2_meses").
+  // Sem espaço no valor = opção pré-definida → deixa legível só na exibição.
+  const exibeValor = (v: any) => {
+    const s = String(v ?? '');
+    return /_/.test(s) && !/\s/.test(s) ? s.replace(/_/g, ' ') : s;
+  };
   const copiarNota = () => {
     if (!lead) return;
     const linhas = [
@@ -138,7 +144,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                 {(lead.respostasFormulario || []).map((r: any) => (
                   <div key={r.campo} style={linhaNota}>
                     <span className="text-secondary" style={{ maxWidth: '55%' }}>{r.campo}</span>
-                    <strong style={{ textAlign: 'right' }}>{r.valor}</strong>
+                    <strong style={{ textAlign: 'right' }}>{exibeValor(r.valor)}</strong>
                   </div>
                 ))}
                 <div style={linhaNota}><span className="text-secondary">Full name</span><strong>{lead.nome}</strong></div>
