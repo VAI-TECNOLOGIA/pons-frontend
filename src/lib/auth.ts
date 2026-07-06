@@ -1,5 +1,6 @@
 // Auth e User — preserva os mesmos shapes do shared/api.js original
 // localStorage keys idênticas ao sistema antigo para compatibilidade quando o backend for plugado.
+import { capStorageGet, capStorageSet, capStorageRemove } from './capStorage';
 
 export type Role =
   | 'CEO'
@@ -52,14 +53,47 @@ export const Auth = {
     }
   },
   set(token: string, user: User) {
+    const userStr = JSON.stringify(user);
     localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    localStorage.setItem(USER_KEY, userStr);
+    // Dual-write: espelha no storage nativo (sobrevive à limpeza da WebView).
+    capStorageSet(TOKEN_KEY, token);
+    capStorageSet(USER_KEY, userStr);
   },
   clear() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    capStorageRemove(TOKEN_KEY);
+    capStorageRemove(USER_KEY);
   },
 };
+
+// ── Hidratação no boot ──────────────────────────────────────────────────────
+// Se a WebView zerou o localStorage mas o token ainda está no Preferences nativo,
+// re-popula o localStorage ANTES de qualquer decisão de auth (evita o relogin
+// fantasma ao reabrir o app). Também faz backfill: sessão já logada que nunca
+// gravou no Preferences passa a gravar agora (fica resiliente na 1ª reabertura).
+// No navegador é no-op (capStorage* retorna null / não faz nada).
+let _hydrating: Promise<void> | null = (async () => {
+  try {
+    for (const key of [TOKEN_KEY, USER_KEY]) {
+      const ls = localStorage.getItem(key);
+      if (!ls) {
+        const cap = await capStorageGet(key);
+        if (cap) localStorage.setItem(key, cap);
+      } else {
+        capStorageSet(key, ls);
+      }
+    }
+  } finally {
+    _hydrating = null;
+  }
+})();
+
+// Todos os fluxos de boot devem aguardar isto antes de ler Auth.token.
+export function awaitAuthHydration(): Promise<void> {
+  return _hydrating ?? Promise.resolve();
+}
 
 export function formatRole(role: Role | string): string {
   const map: Record<string, string> = {
