@@ -486,7 +486,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   const { data: unidades } = useApi<any[]>(() => Api.unidadesList());
   const [form, setForm] = useState({
     nome: '', sobrenome: '', email: '', password: '', phone: '',
-    role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'FINANCEIRO' | 'SOCIO_UNIDADE',
+    role: 'GERENTE_EQUIPE' as 'GERENTE_EQUIPE' | 'FINANCEIRO' | 'SOCIO_UNIDADE' | 'ADMINISTRATIVO',
     hierarchyLevelId: levels.find((l: any) => l.code === 'manager')?.id || null,
     isMaster: false,            // master = vê TODAS as equipes (não escolhe)
     equipeIds: [] as number[],
@@ -602,6 +602,15 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
                 <Icon name="building" size={16} />
                 <div className="user-drawer__role-name">Sócio</div>
                 <div className="user-drawer__role-sub">Vê as equipes e o financeiro só da própria filial</div>
+              </button>
+              <button
+                type="button"
+                className={'user-drawer__role' + (form.role === 'ADMINISTRATIVO' ? ' is-active' : '')}
+                onClick={() => setForm({ ...form, role: 'ADMINISTRATIVO' })}
+              >
+                <Icon name="doc" size={16} />
+                <div className="user-drawer__role-name">Administrativo de Vendas</div>
+                <div className="user-drawer__role-sub">Audita as vendas, gera o protocolo e acompanha os contratos (sem comissão)</div>
               </button>
             </div>
           </section>

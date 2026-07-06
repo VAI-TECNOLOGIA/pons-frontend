@@ -11,9 +11,12 @@ import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { CampoCnpj } from '../components/CampoCnpj';
 import type { CnpjInfo } from '../lib/consultaCnpj';
 
-const STATUS_MAP: Record<string, [string, string]> = {
+export const STATUS_MAP: Record<string, [string, string]> = {
  PRE_ANALISE: ['analysis', 'Contrato em análise'],
  ANALISE_JURIDICA: ['analysis', 'Análise jurídica'],
+ AGUARDANDO_CONSTRUTORA: ['analysis', 'Aguardando construtora'],
+ CONTRATO_EM_CONFECCAO: ['analysis', 'Contrato em confecção'],
+ CONTRATO_EM_CONFERENCIA: ['signature', 'Contrato em conferência'],
  EM_ASSINATURA: ['signature', 'Em assinatura'],
  ASSINADO: ['signed', 'Assinado'],
  ASSINADO_AGUARDANDO_PAGAMENTO: ['signature', 'Assinado — aguardando pagamento'],
@@ -142,6 +145,7 @@ export default function Vendas() {
 
  // ── Negociação: valor sugerido pela tabela do imóvel, editável pelo corretor ──
  const [valorVenda, setValorVenda] = useState('');
+ const [entradaTotal, setEntradaTotal] = useState(''); // controlado p/ validar % mínimo da política
  useEffect(() => {
  const v = unidadeSel?.valor || empSel?.valorInicial || '';
  setValorVenda(v ? String(v) : '');
@@ -165,7 +169,7 @@ export default function Vendas() {
  setLeadSel(null); setLeadBusca(''); setContestarOpen(false); setContestacao('');
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
- setValorVenda(''); setComEspecial(false);
+ setValorVenda(''); setEntradaTotal(''); setComEspecial(false);
  setResumo(null); setOrigemManualIdx(0);
  }, [openNew]);
 
@@ -955,11 +959,21 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Entrada total</label>
- <input name="entradaTotal" className="field__input" placeholder="156000" />
+ <input name="entradaTotal" className="field__input" placeholder="156000" value={entradaTotal} onChange={(e) => setEntradaTotal(e.target.value)} />
+ {politicaVigente?.entradaMinimaPct != null && (() => {
+ const num = (s: string) => Number(String(s).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+ const vv = num(valorVenda), et = num(entradaTotal);
+ if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {politicaVigente.entradaMinimaPct}% de entrada.</div>;
+ const pct = (et / vv) * 100;
+ return pct < politicaVigente.entradaMinimaPct
+ ? <div className="field__hint" style={{ color: '#d97706' }}>Entrada de {pct.toFixed(1)}% — abaixo do mínimo de {politicaVigente.entradaMinimaPct}%. A venda vai pra aprovação do Paulo.</div>
+ : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(1)}% — dentro da política ({politicaVigente.entradaMinimaPct}% mín.).</div>;
+ })()}
  </div>
  <div className="field">
  <label className="field__label">Parcelas da entrada</label>
  <input name="entradaParcelas" type="number" min={1} className="field__input" defaultValue="5" />
+ {politicaVigente?.parcelasMensaisMax ? <div className="field__hint">Empreendimento libera até {politicaVigente.parcelasMensaisMax} mensais{politicaVigente.reforcosAnuaisMax ? ` e ${politicaVigente.reforcosAnuaisMax} reforços anuais` : ''}.</div> : null}
  </div>
  <div className="field">
  <label className="field__label">Arras (R$)</label>
@@ -1150,7 +1164,7 @@ export default function Vendas() {
 
 // Dados do formulário oficial GPI (protocolo PF/PJ) preenchidos na criação da
 // venda — só renderiza o que foi preenchido; some se a venda for anterior ao form.
-function FormularioGpi({ f }: { f: any }) {
+export function FormularioGpi({ f }: { f: any }) {
  if (!f) return null;
  const brl = (v: any) => (v || v === 0 ? 'R$ ' + Number(v).toLocaleString('pt-BR') : null);
  const rows: [string, any][] = ([
@@ -1307,7 +1321,7 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
 }
 
 // Documentos do protocolo (fotos/PDFs) anexados à venda.
-function VendaDocumentos({ vendaId, podeRemover }: { vendaId: number; podeRemover?: boolean }) {
+export function VendaDocumentos({ vendaId, podeRemover }: { vendaId: number; podeRemover?: boolean }) {
  const toast = useToast();
  const [docs, setDocs] = useState<any[]>([]);
  const [busy, setBusy] = useState(false);
@@ -1423,7 +1437,7 @@ const PARCELA_BADGE: Record<string, [string, string]> = {
  ATRASADO: ['cancelled', 'Atrasado'],
 };
 
-function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; podeConfirmar?: boolean }) {
+export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; podeConfirmar?: boolean }) {
  const toast = useToast();
  const [parcelas, setParcelas] = useState<any[]>([]);
  const [busy, setBusy] = useState<number | null>(null);

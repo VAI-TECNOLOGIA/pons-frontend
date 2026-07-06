@@ -512,6 +512,18 @@ export const Api = {
   // ─── Consulta CNPJ (Receita via BrasilAPI/Minha Receita, cache 24h) ─
   consultaCnpj: (cnpj: string) => request<any>(`/consulta-cnpj/${cnpj}`),
 
+  // ─── Protocolo de venda (PDF p/ construtora — Administrativo de Vendas) ─
+  vendaProtocoloAbrir: async (id: number) => {
+    const r = await fetch(`${BASE}/vendas/${id}/protocolo`, {
+      headers: { Authorization: `Bearer ${Auth.token || ''}` },
+    });
+    if (!r.ok) throw new Error(`Falha ao gerar protocolo (HTTP ${r.status})`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+
   // ─── Fase D — Landing Pages ──────────────────────────────────────
   lpList:    () => request<any[]>('/lp'),
   lpCreate:  (data: any) => request<any>('/lp', { method: 'POST', body: data }),

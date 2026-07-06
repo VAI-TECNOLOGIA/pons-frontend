@@ -45,6 +45,11 @@ export function CondicoesVendaModal({
       percentualLazaroCorretor: Number(fd.get('percentualLazaroCorretor') || 3),
       percentualLazaroImobiliaria: Number(fd.get('percentualLazaroImobiliaria') || 1),
       taxaMarketingFixa: Number(fd.get('taxaMarketingFixa') || 199),
+      // Condições comerciais do empreendimento (reunião 05/07)
+      entradaMinimaPct: fd.get('entradaMinimaPct') ? Number(fd.get('entradaMinimaPct')) : null,
+      parcelasMensaisMax: fd.get('parcelasMensaisMax') ? Number(fd.get('parcelasMensaisMax')) : null,
+      reforcosAnuaisMax: fd.get('reforcosAnuaisMax') ? Number(fd.get('reforcosAnuaisMax')) : null,
+      contatoAdministrativo: String(fd.get('contatoAdministrativo') || '') || null,
       isDefault: fd.get('isDefault') === 'on',
       ativa: true,
     };
@@ -95,6 +100,10 @@ export function CondicoesVendaModal({
             </div>
           )}
           <div className="field"><label className="field__label">% que a Pons recebe (sobre a venda)</label><input type="number" step="0.01" name="percentualComissao" className="field__input" defaultValue={editing?.percentualComissao || 5} /><div className="field__hint">Ex.: 7% do valor total da venda.</div></div>
+          <div className="field"><label className="field__label">% mínimo de entrada</label><input type="number" step="0.01" min="0" max="100" name="entradaMinimaPct" className="field__input" defaultValue={editing?.entradaMinimaPct ?? ''} placeholder="ex.: 7" /><div className="field__hint">Venda com entrada abaixo disso exige aprovação do Paulo.</div></div>
+          <div className="field"><label className="field__label">Parcelas mensais (qtd liberada)</label><input type="number" min="0" name="parcelasMensaisMax" className="field__input" defaultValue={editing?.parcelasMensaisMax ?? ''} placeholder="ex.: 120" /></div>
+          <div className="field"><label className="field__label">Balões / reforços anuais (qtd)</label><input type="number" min="0" name="reforcosAnuaisMax" className="field__input" defaultValue={editing?.reforcosAnuaisMax ?? ''} placeholder="ex.: 8" /></div>
+          <div className="field"><label className="field__label">WhatsApp do administrativo da construtora</label><input name="contatoAdministrativo" className="field__input" defaultValue={editing?.contatoAdministrativo ?? ''} placeholder="(47) 90000-0000" /><div className="field__hint">Quem recebe o protocolo e os documentos da venda.</div></div>
           <div className="field" style={{ gridColumn: '1/-1' }}><label className="field__label">Descrição</label><input name="descricao" className="field__input" defaultValue={editing?.descricao || ''} /></div>
           <div className="field"><label style={{ display: 'flex', gap: 8 }}><input type="checkbox" name="aplicaNotaFiscal" defaultChecked={editing?.aplicaNotaFiscal ?? true} /> Aplica NF</label></div>
           <div className="field"><label className="field__label">% NF</label><input type="number" step="0.01" name="percentualNotaFiscal" className="field__input" defaultValue={editing?.percentualNotaFiscal || 16} /></div>
