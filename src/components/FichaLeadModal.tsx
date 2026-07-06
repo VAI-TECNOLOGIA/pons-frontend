@@ -133,8 +133,8 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{lead.origem || '—'}</div>
                 </div>
                 <div>
-                  <div style={rotuloSec}>Produto</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-info-fg)' }}>{lead.interesse || lead.bm?.nome || '—'}</div>
+                  <div style={rotuloSec}>Produto (formulário)</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-info-fg)' }}>{lead.formularioNome || lead.interesse || lead.bm?.nome || '—'}</div>
                 </div>
               </div>
 
