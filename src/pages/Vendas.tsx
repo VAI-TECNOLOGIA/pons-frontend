@@ -264,7 +264,8 @@ export default function Vendas() {
  unidade: unidadeSel
  ? [unidadeSel.identificacao, unidadeSel.torre].filter(Boolean).join(' · ')
  : String(fd.get('unidade') || ''),
- tipologia: unidadeSel?.tipologia || (fd.get('tipologia') ? String(fd.get('tipologia')) : undefined),
+ // Tipologia vem SÓ do cadastro da unidade (sem digitação livre)
+ tipologia: unidadeSel?.tipologia || undefined,
  valorVenda: num(valorVenda),
  entradaTotal: num(fd.get('entradaTotal')),
  entradaParcelas: Number(fd.get('entradaParcelas')) || 1,
@@ -812,16 +813,11 @@ export default function Vendas() {
  <div className="field__hint">Tipologia e valor entram sozinhos.</div>
  </div>
  ) : (
- <>
  <div className="field">
  <label className="field__label">Unidade <span className="field__required">*</span></label>
  <input name="unidade" className="field__input" required placeholder="Apt 1207 · Torre A" />
+ <div className="field__hint">Este empreendimento ainda não tem estoque cadastrado — cadastre as unidades em Empreendimentos pra selecionar daqui.</div>
  </div>
- <div className="field">
- <label className="field__label">Tipologia</label>
- <input name="tipologia" className="field__input" placeholder="3 suítes" />
- </div>
- </>
  )}
  <div className="field">
  <label className="field__label">Corretor titular <span className="field__required">*</span></label>
@@ -845,20 +841,35 @@ export default function Vendas() {
  </div>
  </div>
 
- {/* Card do imóvel selecionado — dados vêm do cadastro */}
+ {/* Card do imóvel selecionado — SÓ dados que existem no cadastro */}
  {empSel && (
  <div className="card fade-in" style={{ padding: '12px 16px', marginBottom: 14, background: 'var(--bg-elevated)' }}>
  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
  <Icon name="building" size={13} /> {empSel.nome}
  </div>
  <div className="text-xs text-secondary">
- {empSel.construtora?.nome ? `Construtora ${empSel.construtora.nome} · ` : ''}
- {empSel.cidade}{empSel.estado ? `/${empSel.estado}` : ''}
- {empSel.status ? ` · ${String(empSel.status).replace('_', '-').toLowerCase()}` : ''}
- {unidadeSel?.valor
- ? ` · Unidade R$ ${Number(unidadeSel.valor).toLocaleString('pt-BR')}`
- : empSel.valorInicial ? ` · a partir de R$ ${Number(empSel.valorInicial).toLocaleString('pt-BR')}` : ''}
+ {[
+ empSel.construtora?.nome && `Construtora ${empSel.construtora.nome}`,
+ empSel.cidade && `${empSel.cidade}${empSel.estado ? '/' + empSel.estado : ''}`,
+ empSel.status && String(empSel.status).replace('_', '-').toLowerCase(),
+ unidadeSel?.valor
+ ? `Unidade R$ ${Number(unidadeSel.valor).toLocaleString('pt-BR')}`
+ : empSel.valorInicial && `a partir de R$ ${Number(empSel.valorInicial).toLocaleString('pt-BR')}`,
+ ].filter(Boolean).join(' · ')}
  </div>
+ {unidadeSel && (
+ <div className="text-xs" style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+ {[
+ unidadeSel.tipologia,
+ unidadeSel.quartos && `${unidadeSel.quartos} quarto${unidadeSel.quartos > 1 ? 's' : ''}`,
+ unidadeSel.areaPrivativa && `${unidadeSel.areaPrivativa} m² privativos`,
+ unidadeSel.vagas && `${unidadeSel.vagas} vaga${unidadeSel.vagas > 1 ? 's' : ''}`,
+ unidadeSel.andar && `${unidadeSel.andar}º andar`,
+ ].filter(Boolean).map((t: any) => (
+ <span key={String(t)} className="badge badge--neutral" style={{ fontSize: 10 }}>{t}</span>
+ ))}
+ </div>
+ )}
  </div>
  )}
 
@@ -914,11 +925,18 @@ export default function Vendas() {
  <div className="card" style={{ padding: '12px 16px', marginBottom: 14, background: 'var(--bg-elevated)' }}>
  <div className="flex" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
  <div style={{ flex: 1, minWidth: 200 }}>
- <div style={{ fontSize: 12, fontWeight: 700 }}>Valor do imóvel (tabela)</div>
+ <div style={{ fontSize: 12, fontWeight: 700 }}>
+ {empSel ? empSel.nome : 'Imóvel'}
+ {unidadeSel ? ` — ${[unidadeSel.identificacao, unidadeSel.torre].filter(Boolean).join(' · ')}` : ''}
+ </div>
  <div className="text-xs text-secondary">
- {unidadeSel?.valor || empSel?.valorInicial
- ? 'Preenchido pelo cadastro do empreendimento.'
- : 'Sem valor de tabela no cadastro — informe abaixo.'}
+ {[
+ unidadeSel?.tipologia,
+ unidadeSel?.areaPrivativa && `${unidadeSel.areaPrivativa} m²`,
+ (unidadeSel?.valor || empSel?.valorInicial)
+ ? `tabela R$ ${Number(unidadeSel?.valor || empSel?.valorInicial).toLocaleString('pt-BR')}`
+ : 'sem valor de tabela no cadastro — informe abaixo',
+ ].filter(Boolean).join(' · ')}
  </div>
  </div>
  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
