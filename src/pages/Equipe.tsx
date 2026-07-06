@@ -271,6 +271,27 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  // ── Comissão do corretor ──────────────────────────────────────────────
+  // Padrão: 50% nos primeiros 12 meses de casa, 55% depois (automático pela
+  // data de admissão — regra do motor de rateio). Especial: % digitado pelo Adm.
+  const isCorretorUser = user.corretorId != null;
+  const [modoComissao, setModoComissao] = useState<'PADRAO' | 'ESPECIAL'>(
+    user.percentualComissaoAtual != null ? 'ESPECIAL' : 'PADRAO',
+  );
+  const [pctEspecial, setPctEspecial] = useState<string>(
+    user.percentualComissaoAtual != null ? String(user.percentualComissaoAtual) : '',
+  );
+  // % vigente pelo padrão (mesmo critério do backend: 365 dias)
+  const infoPadrao = (() => {
+    if (!user.dataAdmissao) return { pct: 55, detalhe: 'sem data de admissão — assume 55%' };
+    const adm = new Date(user.dataAdmissao);
+    const aniversario = new Date(adm.getTime() + 365.25 * 24 * 3600 * 1000);
+    const completou12m = Date.now() >= aniversario.getTime();
+    return completou12m
+      ? { pct: 55, detalhe: `completou 12 meses em ${aniversario.toLocaleDateString('pt-BR')}` }
+      : { pct: 50, detalhe: `passa a 55% em ${aniversario.toLocaleDateString('pt-BR')}` };
+  })();
+
   const submit = async () => {
     if (!form.name.trim()) return toast.error('Nome completo é obrigatório.');
     setSaving(true);
@@ -291,6 +312,10 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
         contatoSecCelular: form.contatoSecCelular || null,
         gestorResp: form.gestorResp || null,
         unidadeId: form.unidadeId ? Number(form.unidadeId) : null,
+        // Comissão: ESPECIAL grava o % digitado; PADRÃO limpa (motor usa tempo de casa)
+        ...(isCorretorUser
+          ? { percentualComissaoAtual: modoComissao === 'ESPECIAL' && pctEspecial !== '' ? Number(pctEspecial) : null }
+          : {}),
       });
       toast.success('Cadastro atualizado');
       onSaved();
@@ -394,6 +419,53 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
               </label>
             </div>
           </section>
+
+          {isCorretorUser && (
+            <section>
+              <p className="user-drawer__sec">COMISSÃO (RATEIO DA VENDA)</p>
+              <p className="user-drawer__hint">
+                Vale pras <strong>vendas novas</strong> — vendas já fechadas mantêm o % travado da época.
+              </p>
+              <label className="user-drawer__field" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="modoComissao"
+                  checked={modoComissao === 'PADRAO'}
+                  onChange={() => setModoComissao('PADRAO')}
+                  style={{ marginTop: 3, width: 'auto' }}
+                />
+                <span>
+                  <strong>Padrão</strong> — 50% nos primeiros 12 meses, 55% depois (automático pela data de admissão)
+                  <br />
+                  <small style={{ opacity: 0.7 }}>Hoje: {infoPadrao.pct}% · {infoPadrao.detalhe}</small>
+                </span>
+              </label>
+              <label className="user-drawer__field" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="modoComissao"
+                  checked={modoComissao === 'ESPECIAL'}
+                  onChange={() => setModoComissao('ESPECIAL')}
+                  style={{ marginTop: 3, width: 'auto' }}
+                />
+                <span><strong>Negociação especial</strong> — % definido pela administração</span>
+              </label>
+              {modoComissao === 'ESPECIAL' && (
+                <label className="user-drawer__field">
+                  <span>% negociado do corretor</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    value={pctEspecial}
+                    onChange={(e) => setPctEspecial(e.target.value)}
+                    placeholder="ex.: 52,5"
+                  />
+                </label>
+              )}
+            </section>
+          )}
         </div>
 
         <footer className="user-drawer__footer">
