@@ -67,6 +67,11 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
   const rotuloSec = { fontSize: 10, fontWeight: 700 as const, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' };
   const linhaNota = { display: 'flex', justifyContent: 'space-between', gap: 16, padding: '9px 0', borderBottom: '1px solid var(--border-light)', fontSize: 13 };
 
+  // Header: lead de TRÁFEGO PAGO fica com o azul do modelo de referência
+  // (idêntico ao print aprovado); os demais usam a cor da Pons (#0E7C9B).
+  const temTrafegoPago = !!(lead && (lead.campanha || lead.conjuntoAnuncio || lead.criativo || ['META_ADS', 'GOOGLE'].includes(lead.origem)));
+  const headerBg = temTrafegoPago ? '#1e4fc2' : 'var(--blue-500)';
+
   return (
     <Modal open onClose={onClose} title="Ficha do lead" size="lg">
       {erro && <div className="text-sm" style={{ color: 'var(--color-danger)' }}>{erro}</div>}
@@ -74,7 +79,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
       {lead && (
         <>
           {/* ── Header azul: identidade + contatos ── */}
-          <div style={{ background: '#1e4fc2', borderRadius: 12, padding: '18px 20px', color: '#fff', marginBottom: 16 }}>
+          <div style={{ background: headerBg, borderRadius: 12, padding: '18px 20px', color: '#fff', marginBottom: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>
               {lead.nome}
               {lead.vip && <span className="badge badge--launch" style={{ fontSize: 9, marginLeft: 8, verticalAlign: 'middle' }}>VIP</span>}
