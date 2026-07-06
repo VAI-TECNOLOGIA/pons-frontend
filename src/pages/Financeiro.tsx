@@ -6,6 +6,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { CampoCnpj } from '../components/CampoCnpj';
 
 const STATUS_BADGE: Record<string, [string, string]> = {
  PENDENTE: ['analysis', 'PENDENTE'],
@@ -323,8 +324,20 @@ export default function Financeiro() {
  </div>
  {metodoForm !== 'BOLETO' && (
  <div className="field field--span-2">
- <label className="field__label">Documento do favorecido (CPF/CNPJ)</label>
- <input name="favorecidoDocumento" className="field__input" placeholder="000.000.000-00" />
+ <CampoCnpj
+ name="favorecidoDocumento"
+ label="Documento do favorecido (CPF/CNPJ)"
+ permitirCpf
+ onInfo={(info) => {
+ // CNPJ consultado na Receita → confirma quem recebe e preenche o beneficiário
+ const el = document.querySelector('input[name="beneficiario"]') as HTMLInputElement | null;
+ if (el && !el.value && info.razaoSocial) {
+ const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+ setter.call(el, info.razaoSocial);
+ el.dispatchEvent(new Event('input', { bubbles: true }));
+ }
+ }}
+ />
  </div>
  )}
  {metodoForm === 'PIX' && (

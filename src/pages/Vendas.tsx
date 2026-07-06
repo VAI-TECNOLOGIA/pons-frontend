@@ -8,6 +8,8 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
+import { CampoCnpj } from '../components/CampoCnpj';
+import type { CnpjInfo } from '../lib/consultaCnpj';
 
 const STATUS_MAP: Record<string, [string, string]> = {
  PRE_ANALISE: ['analysis', 'Contrato em análise'],
@@ -160,6 +162,38 @@ export default function Vendas() {
  setLeadSel(l);
  setCliente({ nome: l?.nome || '', email: l?.email || '', telefone: l?.telefone || '' });
  setContestarOpen(false); setContestacao('');
+ };
+
+ // CNPJ consultado na Receita → auto-preenche razão social, contato, endereço e sócio-adm.
+ const preencherDaReceita = (info: CnpjInfo) => {
+ setCliente((c) => ({
+ nome: c.nome || info.razaoSocial || '',
+ email: c.email || info.email || '',
+ telefone: c.telefone || info.telefone || '',
+ }));
+ const form = formRef.current;
+ if (!form) return;
+ const setNativo = (nomeCampo: string, v: string) => {
+ const el = form.querySelector(`[name="${nomeCampo}"]`) as HTMLInputElement | null;
+ if (el && !el.value && v) {
+ const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+ setter.call(el, v);
+ el.dispatchEvent(new Event('input', { bubbles: true }));
+ }
+ };
+ // Branch PJ usa inputs não-controlados — preenche direto (só quando vazios)
+ setNativo('clienteNome', info.razaoSocial || '');
+ setNativo('clienteEmail', info.email || '');
+ setNativo('clienteTelefone', info.telefone || '');
+ const endereco = [
+ [info.logradouro, info.numero].filter(Boolean).join(', '),
+ info.bairro,
+ info.municipio && `${info.municipio}/${info.uf}`,
+ info.cep && `CEP ${info.cep}`,
+ ].filter(Boolean).join(' — ');
+ setNativo('clienteEndereco', endereco);
+ const socioAdm = info.socios.find((s) => /adminis/i.test(s.qualificacao || '')) || info.socios[0];
+ if (socioAdm) setNativo('socioNome', socioAdm.nome);
  };
 
  // Etapas — a última é sempre a CONFIRMAÇÃO; corretor não vê a de comissão
@@ -660,8 +694,7 @@ export default function Vendas() {
  <input name="clienteNome" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">CNPJ</label>
- <input name="clienteCnpj" className="field__input" />
+ <CampoCnpj name="clienteCnpj" label="CNPJ" onInfo={preencherDaReceita} />
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>

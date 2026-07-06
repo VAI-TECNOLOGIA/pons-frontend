@@ -509,6 +509,9 @@ export const Api = {
   metaCustosResumo: (dias = 30) => request<any>(`/meta-custos/resumo?dias=${dias}`),
   metaCustosSerie:  (dias = 30) => request<any[]>(`/meta-custos/serie?dias=${dias}`),
 
+  // ─── Consulta CNPJ (Receita via BrasilAPI/Minha Receita, cache 24h) ─
+  consultaCnpj: (cnpj: string) => request<any>(`/consulta-cnpj/${cnpj}`),
+
   // ─── Fase D — Landing Pages ──────────────────────────────────────
   lpList:    () => request<any[]>('/lp'),
   lpCreate:  (data: any) => request<any>('/lp', { method: 'POST', body: data }),
