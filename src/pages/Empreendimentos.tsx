@@ -8,6 +8,7 @@ import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 
 import './empreendimentos.css';
 
@@ -42,6 +43,8 @@ export default function Empreendimentos() {
   const [showNew, setShowNew] = useState(false);
   const [gallery, setGallery] = useState<Empreendimento | null>(null);
   const [unidadesEmp, setUnidadesEmp] = useState<Empreendimento | null>(null);
+  // Condições de venda (política de rateio) — abre logo após cadastrar o empreendimento
+  const [condicoesEmp, setCondicoesEmp] = useState<{ id: number; nome: string } | null>(null);
 
   const userRole = Auth.user?.role || '';
   const canEdit = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'].includes(userRole);
@@ -168,10 +171,21 @@ export default function Empreendimentos() {
         <NovoEmpreendimentoModal
           construtoras={construtoras}
           onClose={() => setShowNew(false)}
-          onCreated={() => {
+          onCreated={(created) => {
             setShowNew(false);
             reload();
+            // Encadeia as condições de venda (financeiro) do empreendimento recém-criado
+            if (created?.id) setCondicoesEmp({ id: created.id, nome: created.nome });
           }}
+        />
+      )}
+
+      {condicoesEmp && (
+        <CondicoesVendaModal
+          open
+          empreendimento={condicoesEmp}
+          onClose={() => setCondicoesEmp(null)}
+          onSaved={() => { setCondicoesEmp(null); reload(); }}
         />
       )}
 

@@ -6,6 +6,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Icon } from '../components/Icon';
+import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 
 type Tab = 'POLITICA' | 'SOCIOS' | 'FECHAMENTO' | 'SICREDI';
 
@@ -51,35 +52,6 @@ function PoliticaTab() {
   const [open, setOpen] = useState(false);
   const [sim, setSim] = useState<any>(null);
   const toast = useToast();
-
-  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const payload = {
-      nome: String(fd.get('nome') || ''),
-      descricao: String(fd.get('descricao') || '') || null,
-      empreendimentoId: fd.get('empreendimentoId') ? Number(fd.get('empreendimentoId')) : null,
-      percentualComissao: Number(fd.get('percentualComissao') || 5),
-      aplicaNotaFiscal: fd.get('aplicaNotaFiscal') === 'on',
-      percentualNotaFiscal: Number(fd.get('percentualNotaFiscal') || 16),
-      splitCorretorPons: Number(fd.get('splitCorretorPons') || 55),
-      splitImobiliariaPons: Number(fd.get('splitImobiliariaPons') || 45),
-      percentualGestor: Number(fd.get('percentualGestor') || 10),
-      percentualDirecao: Number(fd.get('percentualDirecao') || 5),
-      percentualCampanhaCorretor: Number(fd.get('percentualCampanhaCorretor') || 6.5),
-      percentualCampanhaImobiliaria: Number(fd.get('percentualCampanhaImobiliaria') || 6.5),
-      percentualLazaroCorretor: Number(fd.get('percentualLazaroCorretor') || 3),
-      percentualLazaroImobiliaria: Number(fd.get('percentualLazaroImobiliaria') || 1),
-      taxaMarketingFixa: Number(fd.get('taxaMarketingFixa') || 199),
-      isDefault: fd.get('isDefault') === 'on',
-      ativa: true,
-    };
-    try {
-      if (editing) await Api.rateioPoliticaUpdate(editing.id, payload);
-      else await Api.rateioPoliticaCreate(payload);
-      toast.success('Política salva'); setOpen(false); setEditing(null); reload();
-    } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
-  };
 
   const simular = async () => {
     try {
@@ -232,39 +204,13 @@ function PoliticaTab() {
         )}
       </div>
 
-      <Modal open={open} onClose={() => { setOpen(false); setEditing(null); }} title={editing ? 'Editar política' : 'Nova política'} size="lg" footer={
-        <>
-          <button type="button" className="btn btn--secondary" onClick={() => { setOpen(false); setEditing(null); }}>Cancelar</button>
-          <button type="submit" form="pol-form" className="btn btn--primary">Salvar</button>
-        </>
-      }>
-        <form id="pol-form" onSubmit={submit}>
-          <div className="form-grid">
-            <div className="field"><label className="field__label">Nome *</label><input name="nome" className="field__input" required defaultValue={editing?.nome} /></div>
-            <div className="field"><label className="field__label">Empreendimento</label>
-              <select name="empreendimentoId" className="field__select" defaultValue={editing?.empreendimentoId || ''}>
-                <option value="">— Geral (todos) —</option>
-                {(emps || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-              </select>
-              <div className="field__hint">Negociação específica deste empreendimento tem prioridade no cálculo.</div>
-            </div>
-            <div className="field"><label className="field__label">% que a Pons recebe (sobre a venda)</label><input type="number" step="0.01" name="percentualComissao" className="field__input" defaultValue={editing?.percentualComissao || 5} /><div className="field__hint">Ex.: 7% do valor total da venda.</div></div>
-            <div className="field" style={{ gridColumn: '1/-1' }}><label className="field__label">Descrição</label><input name="descricao" className="field__input" defaultValue={editing?.descricao || ''} /></div>
-            <div className="field"><label style={{ display: 'flex', gap: 8 }}><input type="checkbox" name="aplicaNotaFiscal" defaultChecked={editing?.aplicaNotaFiscal ?? true} /> Aplica NF</label></div>
-            <div className="field"><label className="field__label">% NF</label><input type="number" step="0.01" name="percentualNotaFiscal" className="field__input" defaultValue={editing?.percentualNotaFiscal || 16} /></div>
-            <div className="field"><label className="field__label">Split Corretor (%)</label><input type="number" step="0.01" name="splitCorretorPons" className="field__input" defaultValue={editing?.splitCorretorPons || 55} /></div>
-            <div className="field"><label className="field__label">Split Imobiliária (%)</label><input type="number" step="0.01" name="splitImobiliariaPons" className="field__input" defaultValue={editing?.splitImobiliariaPons || 45} /></div>
-            <div className="field"><label className="field__label">% Gestor</label><input type="number" step="0.01" name="percentualGestor" className="field__input" defaultValue={editing?.percentualGestor || 10} /></div>
-            <div className="field"><label className="field__label">% Direção</label><input type="number" step="0.01" name="percentualDirecao" className="field__input" defaultValue={editing?.percentualDirecao || 5} /></div>
-            <div className="field"><label className="field__label">% Campanha — Corretor</label><input type="number" step="0.01" name="percentualCampanhaCorretor" className="field__input" defaultValue={editing?.percentualCampanhaCorretor || 6.5} /></div>
-            <div className="field"><label className="field__label">% Campanha — Imobiliária</label><input type="number" step="0.01" name="percentualCampanhaImobiliaria" className="field__input" defaultValue={editing?.percentualCampanhaImobiliaria || 6.5} /></div>
-            <div className="field"><label className="field__label">% Lázaro — Corretor</label><input type="number" step="0.01" name="percentualLazaroCorretor" className="field__input" defaultValue={editing?.percentualLazaroCorretor || 3} /></div>
-            <div className="field"><label className="field__label">% Lázaro — Imobiliária</label><input type="number" step="0.01" name="percentualLazaroImobiliaria" className="field__input" defaultValue={editing?.percentualLazaroImobiliaria || 1} /></div>
-            <div className="field"><label className="field__label">Taxa Marketing (R$ fixa)</label><input type="number" step="0.01" name="taxaMarketingFixa" className="field__input" defaultValue={editing?.taxaMarketingFixa || 199} /></div>
-            <div className="field"><label style={{ display: 'flex', gap: 8 }}><input type="checkbox" name="isDefault" defaultChecked={editing?.isDefault} /> Política DEFAULT</label></div>
-          </div>
-        </form>
-      </Modal>
+      <CondicoesVendaModal
+        open={open}
+        onClose={() => { setOpen(false); setEditing(null); }}
+        onSaved={reload}
+        editing={editing}
+        emps={emps || []}
+      />
     </>
   );
 }

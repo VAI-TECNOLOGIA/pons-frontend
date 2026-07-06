@@ -140,8 +140,7 @@ export default function Vendas() {
  .catch(() => setUnidades([]));
  }, [empSelId]);
 
- // ── Negociação: valores herdados do imóvel; "especial" destrava a edição ──
- const [negEspecial, setNegEspecial] = useState(false);
+ // ── Negociação: valor sugerido pela tabela do imóvel, editável pelo corretor ──
  const [valorVenda, setValorVenda] = useState('');
  useEffect(() => {
  const v = unidadeSel?.valor || empSel?.valorInicial || '';
@@ -166,7 +165,7 @@ export default function Vendas() {
  setLeadSel(null); setLeadBusca(''); setContestarOpen(false); setContestacao('');
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
- setNegEspecial(false); setValorVenda(''); setComEspecial(false);
+ setValorVenda(''); setComEspecial(false);
  setResumo(null); setOrigemManualIdx(0);
  }, [openNew]);
 
@@ -921,12 +920,11 @@ export default function Vendas() {
  <div data-step="2" style={{ display: step === 2 ? 'block' : 'none' }} className="fade-in">
  <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Valores e condições de pagamento — arras, mensais, anuais e chaves.</div>
 
- {/* Valor herdado do imóvel; negociação especial destrava a edição */}
+ {/* Referência do imóvel — o corretor preenche o valor negociado livremente */}
+ {empSel && (
  <div className="card" style={{ padding: '12px 16px', marginBottom: 14, background: 'var(--bg-elevated)' }}>
- <div className="flex" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
- <div style={{ flex: 1, minWidth: 200 }}>
  <div style={{ fontSize: 12, fontWeight: 700 }}>
- {empSel ? empSel.nome : 'Imóvel'}
+ {empSel.nome}
  {unidadeSel ? ` — ${[unidadeSel.identificacao, unidadeSel.torre].filter(Boolean).join(' · ')}` : ''}
  </div>
  <div className="text-xs text-secondary">
@@ -934,17 +932,12 @@ export default function Vendas() {
  unidadeSel?.tipologia,
  unidadeSel?.areaPrivativa && `${unidadeSel.areaPrivativa} m²`,
  (unidadeSel?.valor || empSel?.valorInicial)
- ? `tabela R$ ${Number(unidadeSel?.valor || empSel?.valorInicial).toLocaleString('pt-BR')}`
- : 'sem valor de tabela no cadastro — informe abaixo',
+ ? `valor de tabela R$ ${Number(unidadeSel?.valor || empSel?.valorInicial).toLocaleString('pt-BR')} (referência)`
+ : 'sem valor de tabela no cadastro',
  ].filter(Boolean).join(' · ')}
  </div>
  </div>
- <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
- <input type="checkbox" checked={negEspecial} onChange={(e) => setNegEspecial(e.target.checked)} style={{ width: 'auto' }} />
- Negociação especial (valor diferente da tabela)
- </label>
- </div>
- </div>
+ )}
 
  <div className="form-grid" style={{ marginBottom: 16 }}>
  <div className="field">
@@ -955,11 +948,9 @@ export default function Vendas() {
  placeholder="780000"
  value={valorVenda}
  onChange={(e) => setValorVenda(e.target.value)}
- readOnly={!negEspecial && !!(unidadeSel?.valor || empSel?.valorInicial)}
- style={!negEspecial && (unidadeSel?.valor || empSel?.valorInicial) ? { opacity: 0.75 } : undefined}
  />
- {!negEspecial && !!(unidadeSel?.valor || empSel?.valorInicial) && (
- <div className="field__hint">Travado no valor de tabela — marque "Negociação especial" pra alterar.</div>
+ {!!(unidadeSel?.valor || empSel?.valorInicial) && (
+ <div className="field__hint">Sugerido pelo valor de tabela — ajuste para o valor negociado.</div>
  )}
  </div>
  <div className="field">
@@ -1101,7 +1092,7 @@ export default function Vendas() {
  <div className="card" style={{ padding: '12px 16px' }}>
  <div className="uppercase-tag" style={{ marginBottom: 6 }}>Valores</div>
  <div className="text-xs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '4px 16px' }}>
- <div><span className="text-secondary">Valor da venda:</span> <strong>R$ {(Number(String(valorVenda).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0).toLocaleString('pt-BR')}</strong>{negEspecial && <span className="badge badge--info" style={{ fontSize: 10, marginLeft: 6 }}>NEGOCIAÇÃO ESPECIAL</span>}</div>
+ <div><span className="text-secondary">Valor da venda:</span> <strong>R$ {(Number(String(valorVenda).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0).toLocaleString('pt-BR')}</strong></div>
  <div><span className="text-secondary">Entrada:</span> <strong>{resumo?.entradaTotal ? `R$ ${Number(String(resumo.entradaTotal).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')} em ${resumo?.entradaParcelas || 1}x` : '—'}</strong></div>
  {resumo?.arrasValor ? <div><span className="text-secondary">Arras:</span> <strong>R$ {Number(String(resumo.arrasValor).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')}</strong></div> : null}
  {resumo?.mensaisValor ? <div><span className="text-secondary">Mensais:</span> <strong>R$ {Number(String(resumo.mensaisValor).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')}{resumo?.mensaisMelhorDia ? ` · dia ${resumo.mensaisMelhorDia}` : ''}</strong></div> : null}
