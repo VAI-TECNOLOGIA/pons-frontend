@@ -1234,10 +1234,26 @@ export function FormularioGpi({ f }: { f: any }) {
 
 // Kanban comercial/financeiro: colunas por fase da venda (contrato em análise →
 // assinatura → assinado aguardando pagamento → inadimplente → pago → repasse).
+// Cor de cada fase — pinta o topo da coluna e o destaque dos cards.
+const COR_FASE: Record<string, string> = {
+ PRE_ANALISE: '#3FB6D4',
+ ANALISE_JURIDICA: '#8493B4',
+ AGUARDANDO_CONSTRUTORA: '#F2B544',
+ CONTRATO_EM_CONFECCAO: '#F2B544',
+ CONTRATO_EM_CONFERENCIA: '#E08E1A',
+ EM_ASSINATURA: '#9B59B6',
+ ASSINADO: '#88C559',
+ ASSINADO_AGUARDANDO_PAGAMENTO: '#0E7C9B',
+ INADIMPLENTE: '#C70A1A',
+ PAGO: '#88C559',
+ AGUARDANDO_REPASSE: '#0E7C9B',
+};
+
 function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; podeMover: boolean }) {
  // Hooks ANTES de qualquer return condicional (Rules of Hooks).
  const { data, loading, error } = useApi<{ colunas: any[] }>(() => Api.vendaKanban());
  const [colunas, setColunas] = useState<any[]>([]);
+ const [mostrarVazias, setMostrarVazias] = useState(false);
  const toast = useToast();
  useEffect(() => { if (data) setColunas(data.colunas); }, [data]);
 
@@ -1271,39 +1287,62 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
 
  if (loading) return <LoadingBlock />;
  if (error) return <ErrorBlock error={error} />;
+
+ const totalVendas = colunas.reduce((s, c) => s + c.total, 0);
+ const totalValor = colunas.reduce((s, c) => s + (c.valorTotal || 0), 0);
+ const vazias = colunas.filter((c) => !c.cards.length).length;
+ // Com o modal recolhido, esconde colunas vazias (menos a primeira, que é a
+ // porta de entrada) — evita o scroll infinito de fases sem nada.
+ const visiveis = mostrarVazias ? colunas : colunas.filter((c, i) => c.cards.length > 0 || i === 0);
+
  return (
+ <>
+ <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+ <div className="text-sm">
+ <strong>{totalVendas}</strong> venda{totalVendas === 1 ? '' : 's'} em andamento · <strong className="money">{formatCurrencyShort(totalValor)}</strong>
+ </div>
+ {vazias > 0 && (
+ <button className="btn btn--ghost btn--sm" onClick={() => setMostrarVazias((v) => !v)}>
+ <Icon name={mostrarVazias ? 'zoom_out' : 'zoom_in'} size={13} /> {mostrarVazias ? 'Ocultar fases vazias' : `Mostrar ${vazias} fases vazias`}
+ </button>
+ )}
+ </div>
  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
- {colunas.map((col) => {
- const [k] = STATUS_MAP[col.fase] || ['neutral'];
+ {visiveis.map((col) => {
+ const cor = COR_FASE[col.fase] || '#0E7C9B';
  const isDropTarget = podeMover && dnd.hoverCol === col.fase;
  return (
  <div
  key={col.fase}
  data-kanban-col={col.fase}
  style={{
- minWidth: 260,
- flex: '0 0 260px',
- borderRadius: 10,
- padding: 4,
- outline: isDropTarget ? '2px dashed var(--pons-blue, #2563eb)' : '2px dashed transparent',
- background: isDropTarget ? 'var(--bg-card-hover)' : 'transparent',
+ minWidth: 250,
+ flex: '0 0 250px',
+ borderRadius: 12,
+ padding: 10,
+ background: isDropTarget ? 'var(--bg-card-hover)' : 'var(--bg-elevated)',
+ borderTop: `3px solid ${cor}`,
+ outline: isDropTarget ? `2px dashed ${cor}` : '2px dashed transparent',
  transition: 'outline-color .12s, background .12s',
  }}
  onDragOver={podeMover ? dnd.onDragOver(col.fase) : undefined}
  onDragLeave={podeMover ? dnd.onDragLeave(col.fase) : undefined}
  onDrop={podeMover ? dnd.onDrop(col.fase) : undefined}
  >
- <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
- <span className={`badge badge--${k}`}>{col.label}</span>
- <span className="text-xs text-secondary">
+ <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 6 }}>
+ <span style={{ fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+ <span style={{ width: 8, height: 8, borderRadius: '50%', background: cor, flexShrink: 0 }} />
+ <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={col.label}>{col.label}</span>
+ </span>
+ <span className="text-xs" style={{ fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
  {col.total} · {formatCurrencyShort(col.valorTotal)}
  </span>
  </div>
- <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 40 }}>
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 46 }}>
  {col.cards.map((c: any) => (
  <div
  key={c.id}
- className="card"
+ className="card kanban-card"
  draggable={podeMover}
  onDragStart={podeMover ? dnd.onDragStart(c.id) : undefined}
  onDragEnd={podeMover ? dnd.onDragEnd : undefined}
@@ -1312,29 +1351,31 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  padding: 12,
  cursor: podeMover ? 'grab' : 'pointer',
  opacity: dnd.draggingId === c.id ? 0.45 : 1,
+ borderLeft: `3px solid ${cor}`,
+ ['--sg-accent' as any]: cor,
  }}
  onClick={() => onSelect(c.id)}
  >
- <div className="font-semibold">{c.clienteNome}</div>
- <div className="text-xs text-secondary">
+ <div className="font-semibold" style={{ fontSize: 13 }}>{c.clienteNome}</div>
+ <div className="text-xs text-secondary" style={{ marginTop: 2 }}>
  #{c.codigo} · {c.empreendimento}
  </div>
- <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
- <span className="money">{formatCurrencyShort(c.valorVenda)}</span>
+ <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+ <span className="money" style={{ fontWeight: 800, fontFamily: 'var(--font-display)' }}>{formatCurrencyShort(c.valorVenda)}</span>
  <div className="avatar avatar--sm" title={c.corretor?.nome}>
  {c.corretor?.initials || initials(c.corretor?.nome || '')}
  </div>
  </div>
  {c.aguardandoAprovacao && (
- <div className="text-xs" style={{ color: 'var(--warning, #b45309)', marginTop: 6 }}>
+ <span className="badge badge--cancelled" style={{ fontSize: 9, marginTop: 8, display: 'inline-block' }}>
  Aguardando aprovação {c.entradaParcelas}x
- </div>
+ </span>
  )}
  </div>
  ))}
  {!col.cards.length && (
- <div className="text-xs text-secondary" style={{ textAlign: 'center', padding: 8 }}>
- {isDropTarget ? 'Soltar aqui' : '—'}
+ <div className="text-xs text-secondary" style={{ textAlign: 'center', padding: '14px 8px', border: '1.5px dashed var(--border-light)', borderRadius: 8 }}>
+ {isDropTarget ? 'Soltar aqui' : 'Nenhuma venda nesta fase'}
  </div>
  )}
  </div>
@@ -1342,6 +1383,7 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  );
  })}
  </div>
+ </>
  );
 }
 
