@@ -1253,7 +1253,8 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  // Hooks ANTES de qualquer return condicional (Rules of Hooks).
  const { data, loading, error } = useApi<{ colunas: any[] }>(() => Api.vendaKanban());
  const [colunas, setColunas] = useState<any[]>([]);
- const [mostrarVazias, setMostrarVazias] = useState(false);
+ // Padrão: mostra TODAS as fases (inclusive vazias) — o usuário recolhe se quiser.
+ const [mostrarVazias, setMostrarVazias] = useState(true);
  const toast = useToast();
  useEffect(() => { if (data) setColunas(data.colunas); }, [data]);
 
