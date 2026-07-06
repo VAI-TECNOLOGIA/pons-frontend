@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { StatGlow } from '../components/StatGlow';
+import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { formatNome } from '../lib/format';
 import './inteligencia-leads.css';
@@ -65,7 +66,14 @@ function BarList({ items }: { items: { label: string; value: number; extra?: str
             <span className="il-bar__val">{n(it.value)}{it.extra ? ` · ${it.extra}` : ''}</span>
           </div>
           <div className="il-bar__track">
-            <div className="il-bar__fill" style={{ width: `${Math.round((it.value / mx) * 100)}%`, background: it.cor || PALETTE[i % PALETTE.length], color: it.cor || PALETTE[i % PALETTE.length] }} />
+            <div
+              className="il-bar__fill"
+              style={{
+                width: `${Math.round((it.value / mx) * 100)}%`,
+                background: `linear-gradient(90deg, ${(it.cor || PALETTE[i % PALETTE.length])}88, ${it.cor || PALETTE[i % PALETTE.length]})`,
+                color: it.cor || PALETTE[i % PALETTE.length],
+              }}
+            />
           </div>
         </div>
       ))}
@@ -85,10 +93,26 @@ function Sparkline({ serie }: { serie: { dia: string; novos: number }[] }) {
   });
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
   const area = `${line} L${pts[pts.length - 1][0].toFixed(1)},${h - pad} L${pad.toFixed(1)},${h - pad} Z`;
+  const fim = pts[pts.length - 1];
   return (
     <svg className="il-spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img" aria-label="Novos leads por dia">
-      <path d={area} fill="rgba(14,124,155,.12)" />
-      <path d={line} fill="none" stroke="#0E7C9B" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <defs>
+        <linearGradient id="ilSparkStroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#0E7C9B" />
+          <stop offset="100%" stopColor="#3FB6D4" />
+        </linearGradient>
+        <linearGradient id="ilSparkArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3FB6D4" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#0E7C9B" stopOpacity="0.02" />
+        </linearGradient>
+        <filter id="ilSparkGlow" x="-20%" y="-40%" width="140%" height="180%">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+      <path d={area} fill="url(#ilSparkArea)" />
+      <path d={line} fill="none" stroke="url(#ilSparkStroke)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" filter="url(#ilSparkGlow)" />
+      <circle cx={fim[0]} cy={fim[1]} r="4.5" fill="#3FB6D4" stroke="#fff" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -207,21 +231,32 @@ export default function InteligenciaLeads() {
               <Kpi icon="megafone" label="Remarketing" value={n(data!.remarketing.total)} sub="Anúncio sem resposta" accent="#C70A1A" />
             </div>
 
-            {/* Pons × Parceiros + Origem */}
+            {/* Pons × Parceiros (ou Top corretores enquanto não configurado) + Origem */}
             <div className="il-grid2">
               <section className="il-card">
-                <h3>Tráfego: Pons × Parceiros</h3>
                 {data!.mapaConfigurado ? (
-                  <BarList items={data!.porGrupo.map((g, i) => ({ label: g.label, value: g.total, extra: `${g.conversao}% conv.`, cor: PALETTE[i % PALETTE.length] }))} />
+                  <>
+                    <h3><span className="icon-badge"><Icon name="target" size={13} /></span> Tráfego: Pons × Parceiros</h3>
+                    <BarList items={data!.porGrupo.map((g, i) => ({ label: g.label, value: g.total, extra: `${g.conversao}% conv.`, cor: PALETTE[i % PALETTE.length] }))} />
+                  </>
                 ) : (
-                  <div className="il-hint">
-                    Recorte ainda não configurado. Defina quais origens/campanhas são <b>Tráfego Pons</b> e quais são <b>Parceiros</b> para liberar esta visão.
-                    <span className="il-hint__tag">configurável</span>
-                  </div>
+                  <>
+                    <h3><span className="icon-badge"><Icon name="ranking" size={13} /></span> Top corretores — leads no período</h3>
+                    <BarList
+                      items={data!.porCorretor
+                        .slice()
+                        .sort((a, b) => b.total - a.total)
+                        .slice(0, 7)
+                        .map((c, i) => ({ label: formatNome(c.label), value: c.total, extra: `${c.conversao}% conv.`, cor: PALETTE[i % PALETTE.length] }))}
+                    />
+                    <div className="text-xs text-secondary" style={{ marginTop: 10 }}>
+                      A visão Pons × Parceiros aparece aqui quando o recorte de origens/campanhas for configurado.
+                    </div>
+                  </>
                 )}
               </section>
               <section className="il-card">
-                <h3>Por origem do lead</h3>
+                <h3><span className="icon-badge"><Icon name="megafone" size={13} /></span> Por origem do lead</h3>
                 <BarList items={data!.porOrigem.map((o) => ({ label: o.label, value: o.total, extra: `${o.conversao}% conv.` }))} />
               </section>
             </div>
@@ -229,11 +264,11 @@ export default function InteligenciaLeads() {
             {/* Funil + Série */}
             <div className="il-grid2">
               <section className="il-card">
-                <h3>Funil — etapas dos leads</h3>
+                <h3><span className="icon-badge"><Icon name="pipeline" size={13} /></span> Funil — etapas dos leads</h3>
                 <BarList items={data!.porFunil.map((f) => ({ label: f.label, value: f.total, cor: COR_FUNIL[f.key] || '#0E7C9B' }))} />
               </section>
               <section className="il-card">
-                <h3>Novos leads por dia</h3>
+                <h3><span className="icon-badge"><Icon name="chart" size={13} /></span> Novos leads por dia</h3>
                 <Sparkline serie={data!.serie} />
                 <div className="il-spark__foot">
                   <span>{data!.serie[0]?.dia?.split('-').reverse().join('/') || '—'}</span>
@@ -245,13 +280,13 @@ export default function InteligenciaLeads() {
 
             {/* Por equipe */}
             <section className="il-card">
-              <h3>Desempenho por equipe</h3>
+              <h3><span className="icon-badge"><Icon name="team" size={13} /></span> Desempenho por equipe</h3>
               <TabelaBuckets rows={data!.porEquipe} primeira="Equipe / Unidade" />
             </section>
 
             {/* Por corretor */}
             <section className="il-card">
-              <h3>Desempenho por corretor</h3>
+              <h3><span className="icon-badge"><Icon name="ranking" size={13} /></span> Desempenho por corretor</h3>
               <TabelaBuckets rows={data!.porCorretor.map((r) => ({ ...r, label: formatNome(r.label) }))} primeira="Corretor" />
             </section>
           </>

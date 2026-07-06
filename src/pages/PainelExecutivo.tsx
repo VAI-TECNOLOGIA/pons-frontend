@@ -80,7 +80,7 @@ export default function PainelExecutivo() {
 
         {data && bloco === 'EMPRESA' && (
           <>
-            <div className="dash-grid">
+            <div className="dash-grid dash-grid--cols3">
               <StatGlow icon="trophy" label="VGV" value={fmt(data.vgv)} hero accent="#88C559" sub={`${data.vendas} vendas no período`} />
               <StatGlow icon="gauge" label="ROI" value={data.roi != null ? `${data.roi}x` : '—'} hero accent="#F2B544" sub="Sobre o custo de tráfego" />
               <StatGlow icon="users" label="Leads recebidos" value={data.leadsRecebidos} />

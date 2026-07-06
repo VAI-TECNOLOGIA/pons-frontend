@@ -37,14 +37,20 @@
   border-color: color-mix(in srgb, var(--blue-500) 40%, var(--border-light));
   box-shadow: 0 12px 30px -16px color-mix(in srgb, var(--blue-500) 40%, transparent);
 }
-.il-card h3 { font-size: 15px; font-weight: 800; margin: 0 0 16px; color: var(--text-primary); }
+.il-card h3 { font-size: 15px; font-weight: 800; margin: 0 0 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.il-card h3 .icon-badge {
+  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--blue-500) 15%, transparent);
+  color: var(--blue-500);
+}
 
 /* barras horizontais */
 .il-bars { display: flex; flex-direction: column; gap: 12px; }
 .il-bar__head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 5px; }
 .il-bar__label { font-size: 13.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .il-bar__val { font-size: 12.5px; color: var(--text-secondary); white-space: nowrap; }
-.il-bar__track { height: 9px; border-radius: var(--radius-full, 999px); background: var(--bg-elevated); overflow: hidden; }
+.il-bar__track { height: 12px; border-radius: var(--radius-full, 999px); background: var(--bg-elevated); overflow: hidden; }
 .il-bar__fill {
   height: 100%; border-radius: var(--radius-full, 999px); min-width: 2px;
   box-shadow: 0 0 10px -3px currentColor;

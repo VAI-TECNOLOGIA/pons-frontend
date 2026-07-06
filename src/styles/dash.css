@@ -12,6 +12,11 @@
   gap: 12px;
 }
 
+/* Grid balanceado em 3 colunas (evita linha de 8 + linha de 1 em telas largas) */
+.dash-grid--cols3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 980px) { .dash-grid--cols3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .dash-grid--cols3 { grid-template-columns: 1fr; } }
+
 /* ── Stat card com glow ── */
 .stat-glow {
   --sg-accent: var(--blue-500);
