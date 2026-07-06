@@ -17,6 +17,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const MOTIVO_LABEL: Record<string, string> = {
   SLA_AUTOMATICO: 'Redistribuição por SLA',
+  SLA_AUTOMATICO_HISTORICO_LIMPO: 'Redistribuição por SLA (histórico limpo)',
   MANUAL_GESTOR: 'Transferência do gestor',
   MANUAL_CORRETOR: 'Transferência do corretor',
   FALLBACK_ROLETA: 'Fallback da roleta',
