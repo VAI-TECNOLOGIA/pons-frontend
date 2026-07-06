@@ -146,6 +146,7 @@ export default function Vendas() {
  // ── Negociação: valor sugerido pela tabela do imóvel, editável pelo corretor ──
  const [valorVenda, setValorVenda] = useState('');
  const [entradaTotal, setEntradaTotal] = useState(''); // controlado p/ validar % mínimo da política
+ const [chavesValor, setChavesValor] = useState(''); // controlado p/ espelhar o % do empreendimento
  useEffect(() => {
  const v = unidadeSel?.valor || empSel?.valorInicial || '';
  setValorVenda(v ? String(v) : '');
@@ -159,6 +160,19 @@ export default function Vendas() {
  const politicaVigente = politicaEmp || politicaDefault;
  const pctPonsHerdado = politicaVigente?.percentualComissao ?? 5;
 
+ // ESPELHO do empreendimento: sugere entrada (mínimo %) e valor na chave (%)
+ // calculados sobre o valor da venda — só quando o campo ainda está vazio.
+ useEffect(() => {
+ const vv = Number(String(valorVenda).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+ if (!vv || !politicaVigente) return;
+ if (!entradaTotal && politicaVigente.entradaMinimaPct) {
+ setEntradaTotal(String(Math.round(vv * (politicaVigente.entradaMinimaPct / 100))));
+ }
+ if (!chavesValor && politicaVigente.chavesPct) {
+ setChavesValor(String(Math.round(vv * (politicaVigente.chavesPct / 100))));
+ }
+ }, [valorVenda, politicaVigente?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
  // ── Confirmação: snapshot do form pro resumo final ──
  const [resumo, setResumo] = useState<any>(null);
 
@@ -169,7 +183,7 @@ export default function Vendas() {
  setLeadSel(null); setLeadBusca(''); setContestarOpen(false); setContestacao('');
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
- setValorVenda(''); setEntradaTotal(''); setComEspecial(false);
+ setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false);
  setResumo(null); setOrigemManualIdx(0);
  }, [openNew]);
 
@@ -940,6 +954,16 @@ export default function Vendas() {
  : 'sem valor de tabela no cadastro',
  ].filter(Boolean).join(' · ')}
  </div>
+ {/* Regras da venda cadastradas no empreendimento — espelhadas nos campos abaixo */}
+ {politicaVigente && (politicaVigente.entradaMinimaPct || politicaVigente.chavesPct || politicaVigente.parcelasMensaisMax || politicaVigente.reforcosAnuaisMax || politicaVigente.percentualComissao) ? (
+ <div className="text-xs" style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+ {politicaVigente.entradaMinimaPct ? <span className="badge badge--info" style={{ fontSize: 10 }}>entrada mín. {politicaVigente.entradaMinimaPct}%</span> : null}
+ {politicaVigente.chavesPct ? <span className="badge badge--info" style={{ fontSize: 10 }}>chaves {politicaVigente.chavesPct}%</span> : null}
+ {politicaVigente.parcelasMensaisMax ? <span className="badge badge--neutral" style={{ fontSize: 10 }}>até {politicaVigente.parcelasMensaisMax} mensais</span> : null}
+ {politicaVigente.reforcosAnuaisMax ? <span className="badge badge--neutral" style={{ fontSize: 10 }}>{politicaVigente.reforcosAnuaisMax} reforços anuais</span> : null}
+ {!isCorretor && politicaVigente.percentualComissao ? <span className="badge badge--neutral" style={{ fontSize: 10 }}>comissão {politicaVigente.percentualComissao}%</span> : null}
+ </div>
+ ) : null}
  </div>
  )}
 
@@ -1001,7 +1025,8 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Chaves (R$)</label>
- <input name="chavesValor" className="field__input" placeholder="150000" />
+ <input name="chavesValor" className="field__input" placeholder="150000" value={chavesValor} onChange={(e) => setChavesValor(e.target.value)} />
+ {politicaVigente?.chavesPct ? <div className="field__hint">Sugerido: {politicaVigente.chavesPct}% do valor da venda (regra do empreendimento) — ajuste se negociado.</div> : null}
  </div>
  </div>
 

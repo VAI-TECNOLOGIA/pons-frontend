@@ -47,6 +47,7 @@ export function CondicoesVendaModal({
       taxaMarketingFixa: Number(fd.get('taxaMarketingFixa') || 199),
       // Condições comerciais do empreendimento (reunião 05/07)
       entradaMinimaPct: fd.get('entradaMinimaPct') ? Number(fd.get('entradaMinimaPct')) : null,
+      chavesPct: fd.get('chavesPct') ? Number(fd.get('chavesPct')) : null,
       parcelasMensaisMax: fd.get('parcelasMensaisMax') ? Number(fd.get('parcelasMensaisMax')) : null,
       reforcosAnuaisMax: fd.get('reforcosAnuaisMax') ? Number(fd.get('reforcosAnuaisMax')) : null,
       contatoAdministrativo: String(fd.get('contatoAdministrativo') || '') || null,
@@ -101,6 +102,7 @@ export function CondicoesVendaModal({
           )}
           <div className="field"><label className="field__label">% que a Pons recebe (sobre a venda)</label><input type="number" step="0.01" name="percentualComissao" className="field__input" defaultValue={editing?.percentualComissao || 5} /><div className="field__hint">Ex.: 7% do valor total da venda.</div></div>
           <div className="field"><label className="field__label">% mínimo de entrada</label><input type="number" step="0.01" min="0" max="100" name="entradaMinimaPct" className="field__input" defaultValue={editing?.entradaMinimaPct ?? ''} placeholder="ex.: 7" /><div className="field__hint">Venda com entrada abaixo disso exige aprovação do Paulo.</div></div>
+          <div className="field"><label className="field__label">Valor na chave (%)</label><input type="number" step="0.01" min="0" max="100" name="chavesPct" className="field__input" defaultValue={editing?.chavesPct ?? ''} placeholder="ex.: 15" /><div className="field__hint">% do valor pago na entrega das chaves.</div></div>
           <div className="field"><label className="field__label">Parcelas mensais (qtd liberada)</label><input type="number" min="0" name="parcelasMensaisMax" className="field__input" defaultValue={editing?.parcelasMensaisMax ?? ''} placeholder="ex.: 120" /></div>
           <div className="field"><label className="field__label">Balões / reforços anuais (qtd)</label><input type="number" min="0" name="reforcosAnuaisMax" className="field__input" defaultValue={editing?.reforcosAnuaisMax ?? ''} placeholder="ex.: 8" /></div>
           <div className="field"><label className="field__label">WhatsApp do administrativo da construtora</label><input name="contatoAdministrativo" className="field__input" defaultValue={editing?.contatoAdministrativo ?? ''} placeholder="(47) 90000-0000" /><div className="field__hint">Quem recebe o protocolo e os documentos da venda.</div></div>
