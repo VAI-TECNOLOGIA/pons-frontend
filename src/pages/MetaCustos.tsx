@@ -3,6 +3,8 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { Chart, registerables } from 'chart.js';
+import { Icon } from '../components/Icon';
+import { StatGlow } from '../components/StatGlow';
 
 Chart.register(...registerables);
 
@@ -91,27 +93,27 @@ export default function MetaCustos() {
 
         {data && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
-              <Stat label="Custo total" value={fmt(data.custoTotal)} />
-              <Stat label="Conversas iniciadas" value={data.conversasIniciadas} />
-              <Stat label="Custo por conversa" value={data.conversasIniciadas > 0 ? fmt(data.custoTotal / data.conversasIniciadas) : '—'} />
-              <Stat label="VGV atribuível" value={fmt(data.vgvAtribuivel)} />
-              <Stat label="Vendas fechadas" value={data.vendasFechadas} />
-              <Stat label="ROI" value={data.roi ? `${data.roi}x` : '—'} highlight />
+            <div className="dash-grid dash-grid--cols3" style={{ marginBottom: 16 }}>
+              <StatGlow icon="wallet" label="Custo total" value={fmt(data.custoTotal)} accent="#C70A1A" />
+              <StatGlow icon="whatsapp" label="Conversas iniciadas" value={data.conversasIniciadas} accent="#0E7C9B" />
+              <StatGlow icon="calculator" label="Custo por conversa" value={data.conversasIniciadas > 0 ? fmt(data.custoTotal / data.conversasIniciadas) : '—'} />
+              <StatGlow icon="trophy" label="VGV atribuível" value={fmt(data.vgvAtribuivel)} accent="#88C559" />
+              <StatGlow icon="check" label="Vendas fechadas" value={data.vendasFechadas} accent="#88C559" />
+              <StatGlow icon="gauge" label="ROI" value={data.roi ? `${data.roi}x` : '—'} hero accent="#F2B544" />
             </div>
 
             {serie && serie.length > 0 && (
-              <div className="card" style={{ marginBottom: 16 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Evolução diária — custo × conversas</h3>
+              <div className="chart-card" style={{ marginBottom: 16 }}>
+                <h3 className="chart-card__title"><span className="icon-badge"><Icon name="chart" size={14} /></span> Evolução diária — custo × conversas</h3>
                 <div style={{ height: 260 }}>
                   <canvas ref={chartRef} />
                 </div>
               </div>
             )}
 
-            <div className="card">
-              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Top corretores por custo</h3>
-              <table className="table">
+            <div className="chart-card">
+              <h3 className="chart-card__title"><span className="icon-badge"><Icon name="ranking" size={14} /></span> Top corretores por custo</h3>
+              <table className="table row-hover">
                 <thead><tr><th>Corretor</th><th>Conversas</th><th>Custo</th></tr></thead>
                 <tbody>
                   {(data.porCorretor ?? []).map((p: any) => (
@@ -132,11 +134,3 @@ export default function MetaCustos() {
   );
 }
 
-function Stat({ label, value, highlight }: { label: string; value: any; highlight?: boolean }) {
-  return (
-    <div className="card" style={{ padding: 14, background: highlight ? 'var(--bg-elevated)' : undefined }}>
-      <div className="text-xs text-secondary">{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700 }}>{value}</div>
-    </div>
-  );
-}

@@ -154,3 +154,39 @@
   transform: translateY(-2px);
   box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--sg-accent, var(--blue-500)) 55%, transparent);
 }
+
+/* ═══ Upgrade global do .kpi (Dashboard, Leads, Tráfego, Financeiro…) ═══
+   Mesmo visual do stat-glow: hover com lift, brilho na cor do ícone,
+   ícone com scale e entrada em cascata no .kpi-grid. */
+.kpi {
+  --sg-accent: var(--blue-500);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.kpi:has(.kpi__icon--green) { --sg-accent: var(--color-success); }
+.kpi:has(.kpi__icon--amber) { --sg-accent: var(--color-warning); }
+.kpi:has(.kpi__icon--red)   { --sg-accent: var(--color-danger); }
+.kpi:has(.kpi__icon--navy)  { --sg-accent: var(--pons-navy, var(--blue-500)); }
+.kpi::before {
+  content: '';
+  position: absolute;
+  left: -20%; right: -20%; top: -55%;
+  height: 120px;
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--sg-accent) 16%, transparent), transparent 72%);
+  opacity: .45;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.kpi:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--sg-accent) 50%, var(--border-light));
+  box-shadow: 0 12px 30px -14px color-mix(in srgb, var(--sg-accent) 45%, transparent);
+}
+.kpi:hover::before { opacity: .9; }
+.kpi__icon { transition: transform .22s ease; }
+.kpi:hover .kpi__icon { transform: scale(1.1); }
+.kpi-grid > .kpi { animation: fadeInUp .45s ease both; }
+.kpi-grid > .kpi:nth-child(2) { animation-delay: .06s; }
+.kpi-grid > .kpi:nth-child(3) { animation-delay: .12s; }
+.kpi-grid > .kpi:nth-child(4) { animation-delay: .18s; }
+.kpi-grid > .kpi:nth-child(5) { animation-delay: .24s; }
+.kpi-grid > .kpi:nth-child(6) { animation-delay: .3s; }

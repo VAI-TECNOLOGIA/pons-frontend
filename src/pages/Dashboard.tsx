@@ -272,7 +272,7 @@ export default function Dashboard() {
  {/* Evolução */}
  {isExec && (
  <div className="mb-6">
- <div className="card">
+ <div className="card chart-card">
  <div className="card__header">
  <h3 className="card__title">Evolução de Vendas × Meta · 6 meses</h3>
  <Link to="/relatorios" style={{ fontSize: 12, fontWeight: 600, color: 'var(--pons-blue)', textDecoration: 'none' }}>
@@ -288,7 +288,7 @@ export default function Dashboard() {
 
  {/* Top Corretores + Empreendimentos */}
  <div className="grid-2-1 mb-6">
- <div className="card">
+ <div className="card chart-card">
  <div className="card__header">
  <h3 className="card__title">Top Corretores — Mês</h3>
  <span className="uppercase-tag">Ranking</span>
@@ -316,7 +316,7 @@ export default function Dashboard() {
  ))}
  </div>
  </div>
- <div className="card">
+ <div className="card chart-card">
  <div className="card__header">
  <h3 className="card__title">Empreendimentos Ativos</h3>
  </div>
@@ -343,7 +343,7 @@ export default function Dashboard() {
  </div>
 
  {/* Atividade Recente */}
- <div className="card">
+ <div className="card chart-card">
  <div className="card__header">
  <h3 className="card__title">Atividade Recente</h3>
  </div>
