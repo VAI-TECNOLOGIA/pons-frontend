@@ -63,6 +63,7 @@ const Trafego         = lazyRetry(() => import('./pages/Trafego'));
 const Tarefas         = lazyRetry(() => import('./pages/Tarefas'));
 const Relatorios      = lazyRetry(() => import('./pages/Relatorios'));
 const Financeiro      = lazyRetry(() => import('./pages/Financeiro'));
+const FinanceiroFilial = lazyRetry(() => import('./pages/FinanceiroFilial'));
 const Executivo       = lazyRetry(() => import('./pages/Executivo'));
 const Avisos          = lazyRetry(() => import('./pages/Avisos'));
 const Videos          = lazyRetry(() => import('./pages/Videos'));
@@ -149,6 +150,7 @@ export default function App() {
           <Route path="/tarefas" element={<Tarefas />} />
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/financeiro" element={<Financeiro />} />
+          <Route path="/financeiro-filial" element={<FinanceiroFilial />} />
           <Route path="/executivo" element={<Executivo />} />
           <Route path="/avisos" element={<Avisos />} />
           <Route path="/videos" element={<Videos />} />
