@@ -475,6 +475,26 @@ function ComissoesPorCorretor() {
     }
   };
 
+  const estornar = async (c: any) => {
+    const ok = await confirm({
+      title: `Estornar repasse de ${c.nome}?`,
+      message: `Desfaz a marcação de pago (${formatCurrency(c.valorPago)}) e cancela os lançamentos gerados. Use só se marcou por engano.`,
+      confirmText: 'Estornar',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setPagando(c.corretorId);
+    try {
+      const r = await Api.finComissaoEstornar({ corretorId: c.corretorId, from, to });
+      toast.success(r.estornados ? `Estornado (${r.estornados} comissões, ${r.lancamentosCancelados || 0} lançamentos cancelados)` : (r.message || 'Nada pago'));
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao estornar');
+    } finally {
+      setPagando(null);
+    }
+  };
+
   return (
     <div className="card">
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -514,6 +534,11 @@ function ComissoesPorCorretor() {
                     {c.aReceber > 0 && (
                       <button className="btn btn--primary btn--sm" style={{ marginRight: 6 }} disabled={pagando === c.corretorId} onClick={() => marcarPago(c)}>
                         {pagando === c.corretorId ? '...' : 'Marcar pago'}
+                      </button>
+                    )}
+                    {c.valorPago > 0 && (
+                      <button className="btn btn--ghost btn--sm" style={{ marginRight: 6 }} disabled={pagando === c.corretorId} onClick={() => estornar(c)}>
+                        Estornar
                       </button>
                     )}
                     <button className="btn btn--ghost btn--sm" disabled={baixando === c.corretorId} onClick={() => baixar(c.corretorId)}>

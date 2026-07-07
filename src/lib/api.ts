@@ -315,6 +315,8 @@ export const Api = {
   finComissoesPorCorretor: (params: any = {}) => request<any>(`/financeiro/comissoes-por-corretor${qs(params)}`),
   finComissaoPagar: (body: { corretorId: number; from?: string; to?: string; metodo?: string; observacao?: string }) =>
     request<{ pagos: number; valorTotal: number; corretor?: string; message?: string }>('/financeiro/comissoes/pagar', { method: 'POST', body }),
+  finComissaoEstornar: (body: { corretorId: number; from?: string; to?: string }) =>
+    request<{ estornados: number; lancamentosCancelados?: number; corretor?: string; message?: string }>('/financeiro/comissoes/estornar', { method: 'POST', body }),
   finComissoesPlano: () => request<any>('/financeiro/comissoes-plano'),
   finPlanejamento: () => request<any>('/financeiro/planejamento'),
   finPagamentosSemana: (semana = 0) => request<any>(`/financeiro/pagamentos-semana?semana=${semana}`),
