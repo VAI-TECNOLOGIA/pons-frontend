@@ -13,10 +13,11 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { timeAgo } from '../lib/format';
+import { parseFunil, FUNIL_SETTING_KEY, type Fase } from '../lib/funil';
 
 import './configuracoes.css';
 
-type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas';
+type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas' | 'funil';
 
 const GROUPS: { label: string; items: { value: Tab; label: string; icon: string; sub: string }[] }[] = [
  {
@@ -29,6 +30,7 @@ const GROUPS: { label: string; items: { value: Tab; label: string; icon: string;
  {
  label: 'Comercial',
  items: [
+ { value: 'funil', label: 'Funil de vendas', icon: 'pipeline', sub: 'Renomear as fases do funil' },
  { value: 'equipes', label: 'Equipes', icon: 'shield', sub: 'Escuderias e cores' },
  { value: 'filiais', label: 'Filiais & CNPJ', icon: 'building', sub: 'Vincular cada sala ao CNPJ' },
  { value: 'corretores', label: 'Corretores', icon: 'users', sub: 'Acessos e CRECIs' },
@@ -121,6 +123,7 @@ export default function Configuracoes() {
  {tab === 'construtoras' && <PanelConstrutoras />}
  {tab === 'empreendimentos' && <PanelEmpreendimentos />}
  {tab === 'politicas' && <PanelPoliticas />}
+ {tab === 'funil' && <PanelFunil />}
  </section>
  </div>
  </div>
@@ -1489,4 +1492,53 @@ function PanelPoliticas() {
  </table>
  </div>
  );
+}
+
+function PanelFunil() {
+  const { data: settings, loading, reload } = useApi<Record<string, string>>(() => Api.settings());
+  const [fases, setFases] = useState<Fase[]>([]);
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => { setFases(parseFunil(settings)); }, [settings]);
+
+  const setLabel = (key: string, label: string) =>
+    setFases((cur) => cur.map((f) => (f.key === key ? { ...f, label } : f)));
+
+  const salvar = async () => {
+    setSaving(true);
+    try {
+      const payload = fases.map((f) => ({ key: f.key, label: f.label }));
+      await Api.settingsSave({ [FUNIL_SETTING_KEY]: JSON.stringify(payload) });
+      toast.success('Fases do funil atualizadas');
+      reload();
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <LoadingBlock />;
+
+  return (
+    <div className="card">
+      <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700 }}>Fases do funil</h3>
+      <p className="text-secondary" style={{ marginTop: 0, fontSize: 13 }}>
+        Renomeie como cada fase aparece no funil e nos cards. Os nomes internos e a lógica não mudam.
+      </p>
+      <div className="form-grid form-grid--single" style={{ maxWidth: 420, marginTop: 12 }}>
+        {fases.map((f) => (
+          <div className="field" key={f.key}>
+            <label className="field__label" style={{ opacity: 0.6, fontSize: 11 }}>{f.key}</label>
+            <input className="field__input" value={f.label} onChange={(e) => setLabel(f.key, e.target.value)} />
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2" style={{ marginTop: 16 }}>
+        <button className="btn btn--primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando…' : 'Salvar fases'}</button>
+        <button className="btn btn--secondary" onClick={() => setFases(parseFunil(settings))} disabled={saving}>Descartar</button>
+      </div>
+    </div>
+  );
 }
