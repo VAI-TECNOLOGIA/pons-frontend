@@ -439,9 +439,11 @@ function ComissoesPorCorretor() {
   const hoje = new Date();
   const [from, setFrom] = useState(`${hoje.getFullYear()}-01-01`);
   const [to, setTo] = useState(hoje.toISOString().slice(0, 10));
-  const { data, loading, error } = useApi<any>(() => Api.finComissoesPorCorretor({ from, to }), [from, to]);
+  const { data, loading, error, reload } = useApi<any>(() => Api.finComissoesPorCorretor({ from, to }), [from, to]);
   const [baixando, setBaixando] = useState<number | null>(null);
+  const [pagando, setPagando] = useState<number | null>(null);
   const toast = useToast();
+  const confirm = useConfirm();
 
   const baixar = async (corretorId: number) => {
     setBaixando(corretorId);
@@ -451,6 +453,25 @@ function ComissoesPorCorretor() {
       toast.error(e?.message || 'Não foi possível gerar o comprovante');
     } finally {
       setBaixando(null);
+    }
+  };
+
+  const marcarPago = async (c: any) => {
+    const ok = await confirm({
+      title: `Registrar repasse de ${c.nome}?`,
+      message: `Confirma que o pagamento de ${formatCurrency(c.aReceber)} foi feito (por fora do sistema)? Isso marca a comissão como paga e registra no financeiro. O dinheiro NÃO sai daqui — é só o registro.`,
+      confirmText: 'Registrar como pago',
+    });
+    if (!ok) return;
+    setPagando(c.corretorId);
+    try {
+      const r = await Api.finComissaoPagar({ corretorId: c.corretorId, from, to });
+      toast.success(r.pagos ? `Repasse registrado: ${formatCurrency(r.valorTotal)} (${r.pagos} comissões)` : (r.message || 'Nada pendente'));
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao registrar repasse');
+    } finally {
+      setPagando(null);
     }
   };
 
@@ -490,6 +511,11 @@ function ComissoesPorCorretor() {
                   <td className="text-right money">{formatCurrency(c.valorPago)}</td>
                   <td className="text-right money" style={{ color: '#4D7A26' }}>{formatCurrency(c.aReceber)}</td>
                   <td className="text-right">
+                    {c.aReceber > 0 && (
+                      <button className="btn btn--primary btn--sm" style={{ marginRight: 6 }} disabled={pagando === c.corretorId} onClick={() => marcarPago(c)}>
+                        {pagando === c.corretorId ? '...' : 'Marcar pago'}
+                      </button>
+                    )}
                     <button className="btn btn--ghost btn--sm" disabled={baixando === c.corretorId} onClick={() => baixar(c.corretorId)}>
                       {baixando === c.corretorId ? '...' : 'PDF'}
                     </button>
