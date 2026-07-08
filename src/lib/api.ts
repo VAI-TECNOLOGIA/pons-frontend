@@ -160,6 +160,7 @@ export const Api = {
   corretorReativar: (id: number) => request<any>(`/corretores/${id}/reativar`, { method: 'POST' }),
   corretorJornada: (id: number) => request<any>(`/corretores/${id}/jornada`),
   corretorScoreEventos: (id: number) => request<{ eventos: any[]; porTipo: Record<string, number> }>(`/corretores/${id}/score-eventos`),
+  corretorLeads: (id: number) => request<{ id: number; nome: string; telefone: string; produto: string | null; status: string; data: string }[]>(`/corretores/${id}/leads`),
 
   // Leads
   leads: (params: any = {}) => request<any[]>(`/leads${qs(params)}`),

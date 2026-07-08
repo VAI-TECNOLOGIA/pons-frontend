@@ -14,6 +14,7 @@ export default function Corretores() {
  const [filtroStatus, setFiltroStatus] = useState<string | null>(null);
  const [open, setOpen] = useState(false);
  const [painelId, setPainelId] = useState<number | null>(null);
+ const [leadsDe, setLeadsDe] = useState<any | null>(null);
  const { data: corretores, loading, error, reload } = useApi<any[]>(() => Api.corretores());
  const { data: equipes } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
@@ -161,6 +162,7 @@ export default function Corretores() {
  <th>Equipe</th>
  <th>CRECI</th>
  <th className="numeric">Score (mês)</th>
+ <th className="numeric">Leads</th>
  <th className="numeric">Vendas (mês)</th>
  <th className="numeric">Volume</th>
  <th>Status</th>
@@ -170,7 +172,7 @@ export default function Corretores() {
  <tbody>
  {filtered.length === 0 ? (
  <tr>
- <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
+ <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
  Nenhum corretor encontrado
  </td>
  </tr>
@@ -204,6 +206,15 @@ export default function Corretores() {
    <span style={{ fontWeight: 700, color: (c.scoreMes || 0) > 0 ? 'var(--color-success)' : 'var(--text-secondary)' }}>
      {c.scoreMes ?? 0}
    </span>
+ </td>
+ <td className="numeric">
+ {(c.leadsCount ?? 0) > 0 ? (
+ <button className="btn btn--ghost btn--sm" style={{ fontWeight: 700, color: 'var(--color-info-fg)' }} onClick={() => setLeadsDe(c)} title="Ver os leads deste corretor">
+ {c.leadsCount}
+ </button>
+ ) : (
+ <span className="text-secondary">0</span>
+ )}
  </td>
  <td className="numeric font-semibold">{c.vendasMes ?? 0}</td>
  <td className="numeric money">{formatCurrencyShort(c.volumeMes)}</td>
@@ -310,7 +321,36 @@ export default function Corretores() {
  </Modal>
 
  {painelId && <CorretorPainelDrawer id={painelId} onClose={() => setPainelId(null)} onSaved={reload} />}
+ {leadsDe && <LeadsCorretorModal corretor={leadsDe} onClose={() => setLeadsDe(null)} />}
  </>
+ );
+}
+
+function LeadsCorretorModal({ corretor, onClose }: { corretor: any; onClose: () => void }) {
+ const { data, loading, error } = useApi<any[]>(() => Api.corretorLeads(corretor.id), [corretor.id]);
+ const fmtData = (d: string) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
+ return (
+ <Modal open onClose={onClose} title={`Leads — ${corretor.nome}`} subtitle={`${corretor.leadsCount ?? (data?.length || 0)} leads · ${corretor.equipe?.nome || 'sem equipe'}`} size="xl">
+ {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : (
+ <table className="table">
+ <thead><tr><th>Nome</th><th>Telefone</th><th>Produto</th><th>Data de entrada</th></tr></thead>
+ <tbody>
+ {(data || []).length === 0 ? (
+ <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)' }}>Nenhum lead atribuído.</td></tr>
+ ) : (
+ (data || []).map((l) => (
+ <tr key={l.id}>
+ <td className="font-semibold">{l.nome}</td>
+ <td className="text-sm">{l.telefone || '—'}</td>
+ <td className="text-sm">{l.produto || '—'}</td>
+ <td className="text-sm text-secondary">{fmtData(l.data)}</td>
+ </tr>
+ ))
+ )}
+ </tbody>
+ </table>
+ )}
+ </Modal>
  );
 }
 
