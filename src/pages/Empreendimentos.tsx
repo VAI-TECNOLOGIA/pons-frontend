@@ -469,6 +469,32 @@ function NovoEmpreendimentoModal({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const inputFileRef = useRef<HTMLInputElement>(null);
 
+  // Construtora: lista local (permite adicionar uma nova sem recarregar) +
+  // seleção controlada (pra já selecionar a recém-criada) + cadastro inline.
+  const [lista, setLista] = useState<Construtora[]>(construtoras);
+  const [construtoraSel, setConstrutoraSel] = useState<string>('');
+  const [novaConstrutora, setNovaConstrutora] = useState(false);
+  const [novaNome, setNovaNome] = useState('');
+  const [addingConstrutora, setAddingConstrutora] = useState(false);
+
+  const adicionarConstrutora = async () => {
+    const nome = novaNome.trim();
+    if (nome.length < 2) { toast.error('Digite o nome da construtora.'); return; }
+    setAddingConstrutora(true);
+    try {
+      const c = await Api.construtoraQuickCreate(nome);
+      setLista((prev) => (prev.some((x) => x.id === c.id) ? prev : [...prev, { id: c.id, nome: c.nome }].sort((a, b) => a.nome.localeCompare(b.nome, 'pt'))));
+      setConstrutoraSel(String(c.id));
+      setNovaConstrutora(false);
+      setNovaNome('');
+      toast.success(c.criada === false ? `"${c.nome}" já existia — selecionada.` : `Construtora "${c.nome}" cadastrada.`);
+    } catch (err: any) {
+      toast.error('Erro ao cadastrar construtora: ' + (err?.message || 'falha'));
+    } finally {
+      setAddingConstrutora(false);
+    }
+  };
+
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -531,13 +557,40 @@ function NovoEmpreendimentoModal({
             <input name="nome" className="field__input" required placeholder="Ex: Park View Itapema" />
           </div>
           <div className="field">
-            <label className="field__label">Construtora *</label>
-            <select name="construtoraId" className="field__select" required defaultValue="">
-              <option value="" disabled>Selecione…</option>
-              {construtoras.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
-              ))}
-            </select>
+            <div className="field__labelrow">
+              <label className="field__label">Construtora *</label>
+              <button type="button" className="field__addlink" onClick={() => { setNovaConstrutora((v) => !v); setNovaNome(''); }}>
+                {novaConstrutora ? 'Cancelar' : '+ nova construtora'}
+              </button>
+            </div>
+            {novaConstrutora ? (
+              <div className="field__inline">
+                <input
+                  className="field__input"
+                  placeholder="Nome da construtora"
+                  value={novaNome}
+                  autoFocus
+                  onChange={(e) => setNovaNome(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarConstrutora(); } }}
+                />
+                <button type="button" className="btn btn--primary btn--sm" onClick={adicionarConstrutora} disabled={addingConstrutora}>
+                  {addingConstrutora ? '…' : 'Adicionar'}
+                </button>
+              </div>
+            ) : (
+              <select
+                name="construtoraId"
+                className="field__select"
+                required
+                value={construtoraSel}
+                onChange={(e) => setConstrutoraSel(e.target.value)}
+              >
+                <option value="" disabled>Selecione…</option>
+                {lista.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="field">
             <label className="field__label">Status</label>

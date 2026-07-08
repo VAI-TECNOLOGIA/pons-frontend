@@ -895,6 +895,28 @@
   margin-left: 2px;
 }
 
+/* Cadastro rápido de construtora dentro do formulário de empreendimento */
+.field__labelrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.field__addlink {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary, #f26f33);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.field__addlink:hover { text-decoration: underline; }
+.field__inline {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.field__inline .field__input { flex: 1; }
+
 .field__hint {
   font-size: 12px;
   color: var(--text-secondary);

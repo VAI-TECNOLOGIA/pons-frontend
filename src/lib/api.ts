@@ -233,6 +233,10 @@ export const Api = {
   empreendimentoUnidadeDelete: (id: number, unidadeId: number) =>
     request<any>(`/empreendimentos/${id}/unidades/${unidadeId}`, { method: 'DELETE' }),
   construtoras: () => request<any[]>('/empreendimentos/construtoras'),
+  // Cadastro rápido de construtora no próprio formulário de empreendimento
+  // (idempotente por nome; mesma permissão de quem cadastra empreendimento).
+  construtoraQuickCreate: (nome: string) =>
+    request<{ id: number; nome: string; criada?: boolean }>('/empreendimentos/construtoras', { method: 'POST', body: { nome } }),
 
   // Vendas
   vendas: () => request<any[]>('/vendas'),
