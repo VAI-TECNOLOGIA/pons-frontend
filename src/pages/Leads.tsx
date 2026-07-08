@@ -21,6 +21,9 @@ const STATUSES = ['NOVO', 'SDR', 'NEGOCIANDO', 'PROPOSTA', 'FECHADO', 'PERDIDO']
 
 export default function Leads() {
  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+ const [filtroOrigem, setFiltroOrigem] = useState('');
+ const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | nome do corretor
+ const [busca, setBusca] = useState('');
  const [open, setOpen] = useState(false);
  const [campoLead, setCampoLead] = useState<any>(null);
  const { data: leads, loading: lLoad, error: lErr, reload } = useApi<any[]>(() => Api.leads());
@@ -37,7 +40,16 @@ export default function Leads() {
  return acc;
  }, {});
 
- const filtered = filterStatus ? leads.filter((l) => l.status === filterStatus) : leads;
+ const origensDisp = [...new Set(leads.map((l) => l.origem).filter(Boolean))].sort();
+ const corretoresDisp = [...new Set(leads.filter((l) => l.corretor).map((l) => l.corretor.nome))].sort();
+ const filtered = leads.filter((l) => {
+ if (filterStatus && l.status !== filterStatus) return false;
+ if (filtroOrigem && (l.origem || '') !== filtroOrigem) return false;
+ if (filtroCorretor === 'sem' && l.corretor) return false;
+ if (filtroCorretor && filtroCorretor !== 'sem' && (l.corretor?.nome || '') !== filtroCorretor) return false;
+ if (busca) { const q = busca.toLowerCase(); if (!`${l.nome || ''} ${l.telefone || ''} ${l.email || ''}`.toLowerCase().includes(q)) return false; }
+ return true;
+ });
 
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -104,7 +116,23 @@ export default function Leads() {
  {s} ({counts[s] || 0})
  </span>
  ))}
+ {/* Filtros de controle */}
+ <input className="field__input" style={{ marginLeft: 'auto', width: 180, height: 32 }} placeholder="Buscar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+ <select className="field__select" style={{ width: 'auto', height: 32 }} value={filtroOrigem} onChange={(e) => setFiltroOrigem(e.target.value)}>
+ <option value="">Origem: todas</option>
+ {origensDisp.map((o) => <option key={o} value={o}>{o}</option>)}
+ </select>
+ <select className="field__select" style={{ width: 'auto', height: 32 }} value={filtroCorretor} onChange={(e) => setFiltroCorretor(e.target.value)}>
+ <option value="">Corretor: todos</option>
+ <option value="sem">Sem corretor (bolsão)</option>
+ {corretoresDisp.map((c) => <option key={c} value={c}>{c}</option>)}
+ </select>
  </div>
+ {(filtroOrigem || filtroCorretor || busca) && (
+ <div className="text-xs text-secondary" style={{ marginTop: -8, marginBottom: 8 }}>
+ {filtered.length} resultado(s) · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setFiltroOrigem(''); setFiltroCorretor(''); setBusca(''); }}>limpar filtros</span>
+ </div>
+ )}
 
  <div className="card fade-in" style={{ padding: 0 }}>
  <table className="table row-hover">

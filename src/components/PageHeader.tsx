@@ -29,7 +29,7 @@ interface TopbarProps {
   extra?: React.ReactNode;
 }
 
-function getGreeting() {
+export function getGreeting() {
   const h = new Date().getHours();
   if (h < 5) return 'Boa madrugada';
   if (h < 12) return 'Bom dia';

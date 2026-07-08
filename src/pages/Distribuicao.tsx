@@ -71,8 +71,29 @@ export default function Distribuicao() {
   const { data, loading, error, reload } = useApi<any[]>(() => Api.distribuicaoList());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
   // Bolsão: leads aguardando distribuição. Mostra a "jornada" antes das regras.
-  const { data: bolsao, reload: reloadBolsao } = useApi<{ total: number; leads: any[] }>(() => Api.roletaBolsao());
+  const [bolsaoLimit, setBolsaoLimit] = useState(50);
+  const { data: bolsao, reload: reloadBolsao } = useApi<{ total: number; leads: any[] }>(() => Api.roletaBolsao({ limit: bolsaoLimit }), [bolsaoLimit]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  // Seleção em massa + transferência manual (pedido do cliente)
+  const [sel, setSel] = useState<Set<number>>(new Set());
+  const [alvoTransf, setAlvoTransf] = useState<number | ''>('');
+  const [transferindo, setTransferindo] = useState(false);
+  const toggleSel = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleTodos = (leads: any[]) => setSel((s) => s.size >= leads.length ? new Set() : new Set(leads.map((l) => l.id)));
+  const transferirSelecionados = async () => {
+    if (!sel.size || !alvoTransf) return;
+    setTransferindo(true);
+    try {
+      const r = await Api.roletaTransferirMassa([...sel], Number(alvoTransf));
+      toast.success(`${r.transferidos} lead(s) transferido(s) para ${r.corretor}.`);
+      setSel(new Set()); setAlvoTransf('');
+      reloadBolsao();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'falha'));
+    } finally {
+      setTransferindo(false);
+    }
+  };
   // Alvo opcional: mandar os leads SÓ pra este corretor (ignora escopo/equipe/cidade)
   const [corretorId, setCorretorId] = useState<number | ''>('');
   const toast = useToast();
@@ -196,23 +217,57 @@ export default function Distribuicao() {
             </div>
           )}
           {bolsao && bolsao.leads.length > 0 && (
-            <div style={{ overflowX: 'auto', marginTop: 10 }}>
-              <table className="table">
-                <thead><tr><th>Nome</th><th>Telefone</th><th>Origem</th><th>Campanha</th><th>Entrou</th></tr></thead>
-                <tbody>
-                  {bolsao.leads.slice(0, 10).map((l: any) => (
-                    <tr key={l.id}>
-                      <td><span style={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 3 }} onClick={() => setFichaLeadId(l.id)} title="Abrir ficha completa do lead">{l.nome}</span></td>
-                      <td className="text-xs">{l.telefone || '—'}</td>
-                      <td className="text-xs">{l.origem || '—'}</td>
-                      <td className="text-xs">{l.campanha || '—'}</td>
-                      <td className="text-xs text-secondary">{l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
+            <>
+              {/* Barra de ação — aparece quando há leads selecionados */}
+              {sel.size > 0 && (
+                <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan, #52f7fe)', borderRadius: 10 }}>
+                  <strong style={{ fontSize: 14 }}>{sel.size} selecionado(s)</strong>
+                  <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
+                  <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
+                  <select className="field__select" style={{ width: 'auto', height: 34 }} value={alvoTransf} onChange={(e) => setAlvoTransf(e.target.value ? Number(e.target.value) : '')}>
+                    <option value="">Escolher corretor…</option>
+                    {(corretores || []).filter((c: any) => c.ativo).map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.nome}{c.equipe ? ` · ${c.equipe.nome}` : ''}</option>
+                    ))}
+                  </select>
+                  <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
+                    {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
+                  </button>
+                </div>
+              )}
+              <div style={{ overflowX: 'auto', marginTop: 10 }}>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 34 }}>
+                        <input type="checkbox" checked={sel.size >= bolsao.leads.length && bolsao.leads.length > 0} onChange={() => toggleTodos(bolsao.leads)} title="Selecionar todos os carregados" />
+                      </th>
+                      <th>Nome</th><th>Telefone</th><th>Origem</th><th>Campanha / conjunto</th><th>Interesse</th><th>Entrou</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {bolsao.total > 10 && <div className="text-xs text-secondary" style={{ marginTop: 6 }}>Mostrando 10 de {bolsao.total} no bolsão.</div>}
-            </div>
+                  </thead>
+                  <tbody>
+                    {bolsao.leads.map((l: any) => (
+                      <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : undefined}>
+                        <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggleSel(l.id)} /></td>
+                        <td><span style={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 3 }} onClick={() => setFichaLeadId(l.id)} title="Abrir ficha completa do lead">{l.nome}</span></td>
+                        <td className="text-xs">{l.telefone || '—'}</td>
+                        <td className="text-xs"><span className="badge badge--neutral" style={{ fontSize: 10 }}>{l.origem || '—'}</span></td>
+                        <td className="text-xs">{l.campanha || '—'}{l.conjuntoAnuncio ? <span className="text-secondary"> · {l.conjuntoAnuncio}</span> : ''}</td>
+                        <td className="text-xs">{l.interesse || '—'}</td>
+                        <td className="text-xs text-secondary">{l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="flex" style={{ gap: 10, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+                  <span className="text-xs text-secondary">Mostrando {bolsao.leads.length} de {bolsao.total} no bolsão.</span>
+                  {bolsao.leads.length < bolsao.total && (
+                    <button className="btn btn--ghost btn--sm" onClick={() => setBolsaoLimit((n) => n + 100)}>Carregar mais</button>
+                  )}
+                  <button className="btn btn--ghost btn--sm" onClick={() => toggleTodos(bolsao.leads)}>{sel.size >= bolsao.leads.length ? 'Desmarcar todos' : 'Selecionar todos os carregados'}</button>
+                </div>
+              </div>
+            </>
           )}
         </div>
 

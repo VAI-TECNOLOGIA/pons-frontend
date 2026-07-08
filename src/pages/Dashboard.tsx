@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Auth } from '../lib/auth';
 import { formatCurrency, formatCurrencyShort, timeAgo } from '../lib/format';
 import { Icon } from '../components/Icon';
-import { Topbar } from '../components/PageHeader';
+import { Topbar, getGreeting } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { DashboardKpisExtra } from '../components/DashboardKpisExtra';
@@ -112,7 +112,7 @@ export default function Dashboard() {
  <div className="page-header">
  <div>
  <div className="page-header__breadcrumb">Visão geral</div>
- <h2 className="page-header__title">Bom dia, {user.name.split(' ')[0]}.</h2> </div>
+ <h2 className="page-header__title">{getGreeting()}, {user.name.split(' ')[0]}.</h2> </div>
  </div>
 
  {/* Avanço */}
@@ -380,7 +380,7 @@ function DashboardShell({ user, children }: { user: { name: string; role: string
  <div className="page-header">
  <div>
  <div className="page-header__breadcrumb">Visão geral</div>
- <h2 className="page-header__title">Bom dia, {user.name.split(' ')[0]}.</h2> </div>
+ <h2 className="page-header__title">{getGreeting()}, {user.name.split(' ')[0]}.</h2> </div>
  </div>
  {children}
  </div>

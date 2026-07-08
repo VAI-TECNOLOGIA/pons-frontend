@@ -316,7 +316,10 @@ export const Api = {
   // Redistribui o bolsão (leads sem corretor) pela roleta
   roletaRedistribuirBolsao: (filtro: { origem?: string; limite?: number } = {}) =>
     request<{ ok: boolean; avaliados: number; distribuidos: number; semCorretor: number }>('/roletas/redistribuir-bolsao', { method: 'POST', body: filtro }),
-  roletaBolsao: () => request<{ total: number; leads: any[] }>('/roletas/bolsao'),
+  roletaBolsao: (params: { limit?: number; origem?: string } = {}) => request<{ total: number; leads: any[] }>(`/roletas/bolsao${qs(params)}`),
+  // Transferência manual em massa de leads pra um corretor
+  roletaTransferirMassa: (leadIds: number[], corretorId: number) =>
+    request<{ ok: boolean; transferidos: number; corretor: string }>('/roletas/transferir-massa', { method: 'POST', body: { leadIds, corretorId } }),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
   roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
   // Histórico de alterações das filas (auditoria antes/depois)
