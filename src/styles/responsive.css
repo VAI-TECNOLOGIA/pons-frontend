@@ -21,6 +21,8 @@
   .card         { padding: 16px !important; }
   .topbar       { padding: 8px 12px; }
   .filter-bar   { flex-wrap: wrap; gap: 6px; }
+  /* Dropdowns de filtro (equipe/status/ordenar) preenchem 2 por linha no mobile */
+  .filter-bar .filtro-sel { flex: 1 1 46%; min-width: 0; }
   .grid-3, .grid-4 { grid-template-columns: 1fr 1fr !important; }
 }
 

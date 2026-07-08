@@ -138,8 +138,8 @@ export default function Corretores() {
 
  <div className="filter-bar">
  <select
- className="field__select"
- style={{ width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
+ className="field__select filtro-sel"
+ style={{ height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
  value={filtroEquipe || ''}
  onChange={(e) => setFiltroEquipe(e.target.value || null)}
  >
@@ -149,8 +149,8 @@ export default function Corretores() {
  ))}
  </select>
  <select
- className="field__select"
- style={{ marginLeft: 'auto', width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
+ className="field__select filtro-sel"
+ style={{ height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
  value={filtroStatus || ''}
  onChange={(e) => setFiltroStatus(e.target.value || null)}
  title="Filtrar por status"
@@ -160,8 +160,8 @@ export default function Corretores() {
  <option value="INATIVO">Status: inativos</option>
  </select>
  <select
- className="field__select"
- style={{ width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0 }}
+ className="field__select filtro-sel"
+ style={{ height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0 }}
  value={ordenar}
  onChange={(e) => setOrdenar(e.target.value)}
  title="Ordenar corretores"
