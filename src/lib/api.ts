@@ -506,6 +506,10 @@ export const Api = {
   importLeadsReparar:  () => request<{ normalizados: number; reparados: number; bolsaoSemMensagem: number }>('/import-leads/reparar-bolsao', { method: 'POST' }),
   // Histórico de planilhas importadas — sempre disponível pra repuxar o original.
   importLeadsArquivos: () => request<{ id: number; nomeArquivo: string; tamanho: number | null; totalLinhas: number | null; stats: any; userNome: string | null; createdAt: string; temArquivo: boolean }[]>('/import-leads/arquivos'),
+  // Lotes de importação (pra limpar um import inteiro) + limpeza (dry-run por padrão).
+  importLeadsLotes: () => request<{ lote: string; qtd: number; semProduto: number; comCorretor: number }[]>('/import-leads/lotes'),
+  importLeadsLimparLote: (lote: string, confirmar: boolean) =>
+    request<{ dryRun: boolean; lote: string; noLote: number; apagaveis: number; protegidos: number; apagados?: number }>('/import-leads/limpar-lote', { method: 'POST', body: { lote, confirmar } }),
   // Baixa o arquivo original (bucket privado → busca autenticada + força download).
   importLeadsBaixar: async (id: number, nome: string) => {
     const r = await fetch(`${BASE}/import-leads/arquivos/${id}/download`, { headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined });

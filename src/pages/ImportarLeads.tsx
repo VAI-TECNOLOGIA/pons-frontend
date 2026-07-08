@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
 import { useToast } from '../lib/toast';
 
 // Fase B3 — Big Data Imobiliária: importação CSV/XLSX
@@ -14,7 +15,45 @@ export default function ImportarLeads() {
   const [reparando, setReparando] = useState(false);
   const [historico, setHistorico] = useState<any[]>([]);
   const [baixando, setBaixando] = useState<number | null>(null);
+  const [lotes, setLotes] = useState<any[] | null>(null);
+  const [limpando, setLimpando] = useState<string | null>(null);
+  const isCEO = Auth.user?.role === 'CEO';
   const toast = useToast();
+
+  // Lotes de importação — pra zerar um import inteiro (ex.: import que entrou errado).
+  const verLotes = async () => {
+    try {
+      setLotes(await Api.importLeadsLotes());
+    } catch (err: any) {
+      toast.error('Erro ao carregar lotes: ' + (err.message || 'falha'));
+    }
+  };
+
+  // Limpa um lote: 1º dry-run (só conta), confirma com os números, aí apaga.
+  const limparLote = async (lote: string, qtd: number) => {
+    setLimpando(lote);
+    try {
+      const dry = await Api.importLeadsLimparLote(lote, false);
+      const quando = new Date(lote).toLocaleString('pt-BR');
+      const ok = window.confirm(
+        `Import de ${quando}\n\n` +
+        `• ${dry.noLote} leads no lote\n` +
+        `• ${dry.apagaveis} serão APAGADOS\n` +
+        `• ${dry.protegidos} protegidos (viraram venda ou têm conversa real)\n\n` +
+        `Isso é irreversível. Confirmar a exclusão de ${dry.apagaveis} leads?`,
+      );
+      if (!ok) { setLimpando(null); return; }
+      const r = await Api.importLeadsLimparLote(lote, true);
+      toast.success(`${r.apagados} leads apagados (${r.protegidos} protegidos). Pode reimportar limpo agora.`);
+      await verLotes();
+      carregarHistorico();
+    } catch (err: any) {
+      toast.error('Erro ao limpar: ' + (err.message || 'falha'));
+    } finally {
+      setLimpando(null);
+    }
+    void qtd;
+  };
 
   // Histórico de planilhas já importadas — sempre disponível pra repuxar.
   const carregarHistorico = async () => {
@@ -104,6 +143,52 @@ export default function ImportarLeads() {
             {reparando ? 'Reparando…' : 'Reparar leads importados'}
           </button>
         </div>
+
+        {isCEO && (
+          <div className="card" style={{ marginBottom: 16, borderColor: 'var(--color-danger, #e5484d)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: lotes ? 12 : 0 }}>
+              <div>
+                <strong style={{ fontSize: 14 }}>Zerar um import inteiro</strong>
+                <div className="text-xs text-secondary">Apaga todos os leads de um import específico pra reimportar do zero. Não toca em leads que viraram venda nem que já têm conversa real.</div>
+              </div>
+              <button className="btn btn--secondary" onClick={verLotes}>{lotes ? 'Recarregar lotes' : 'Ver lotes importados'}</button>
+            </div>
+            {lotes && (
+              lotes.length === 0 ? (
+                <div className="text-xs text-secondary">Nenhum lote de importação encontrado.</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Import (data/hora)</th>
+                        <th className="text-right">Leads</th>
+                        <th className="text-right">Sem produto</th>
+                        <th className="text-right">Com corretor</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lotes.map((l) => (
+                        <tr key={l.lote}>
+                          <td className="text-xs"><strong>{new Date(l.lote).toLocaleString('pt-BR')}</strong></td>
+                          <td className="text-right text-xs">{Number(l.qtd).toLocaleString('pt-BR')}</td>
+                          <td className="text-right text-xs">{Number(l.semProduto).toLocaleString('pt-BR')}</td>
+                          <td className="text-right text-xs">{Number(l.comCorretor).toLocaleString('pt-BR')}</td>
+                          <td className="text-right">
+                            <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => limparLote(l.lote, l.qtd)} disabled={limpando === l.lote}>
+                              {limpando === l.lote ? 'Limpando…' : 'Zerar este import'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+          </div>
+        )}
 
         <div className="card">
           <div style={{ border: '2px dashed var(--border-light)', borderRadius: 12, padding: 32, textAlign: 'center' }}>
