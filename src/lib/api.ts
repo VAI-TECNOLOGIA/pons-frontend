@@ -289,6 +289,12 @@ export const Api = {
     request<any>(`/roletas/participantes/${pid}`, { method: 'PATCH', body: data }),
   roletaParticipanteRemove: (pid: number) =>
     request<any>(`/roletas/participantes/${pid}`, { method: 'DELETE' }),
+  // Preenche a roleta com corretores ativos de uma vez (opcional: unidadeId/equipeId)
+  roletaPreencherCorretores: (id: number, filtro: { unidadeId?: number; equipeId?: number } = {}) =>
+    request<{ ok: boolean; adicionados: number; jaExistiam: number; elegiveis: number; totalNaRoleta: number }>(`/roletas/${id}/preencher-corretores`, { method: 'POST', body: filtro }),
+  // Redistribui o bolsão (leads sem corretor) pela roleta
+  roletaRedistribuirBolsao: (filtro: { origem?: string; limite?: number } = {}) =>
+    request<{ ok: boolean; avaliados: number; distribuidos: number; semCorretor: number }>('/roletas/redistribuir-bolsao', { method: 'POST', body: filtro }),
   roletaBolsao: () => request<{ total: number; leads: any[] }>('/roletas/bolsao'),
   roletaSimular: (data: any) => request<any>('/roletas/simular', { method: 'POST', body: data }),
   roletaRedistribuirSla: () => request<any>('/roletas/redistribuir-sla', { method: 'POST' }),

@@ -117,6 +117,40 @@ export default function Roletas() {
  }
  };
 
+ const preencherRoleta = async (r: any) => {
+ const qtd = (corretores || []).filter((c: any) => c.ativo).length;
+ const ok = await confirm({ title: 'Preencher a roleta?', message: `Adiciona todos os corretores ativos (${qtd}) na fila de "${r.nome}". Quem já está não duplica.` });
+ if (!ok) return;
+ try {
+ const res = await Api.roletaPreencherCorretores(r.id);
+ toast.success(`${res.adicionados} corretor(es) adicionado(s). Roleta agora com ${res.totalNaRoleta} na fila.`);
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
+ const [redistribuindo, setRedistribuindo] = useState(false);
+ const redistribuirBolsao = async () => {
+ const semFila = (roletas || []).every((r: any) => (r.participantes || []).filter((p: any) => p.ativo).length === 0);
+ if (semFila) {
+ toast.error('Nenhuma roleta tem corretor na fila. Preencha uma roleta primeiro (botão "Preencher com corretores ativos").');
+ return;
+ }
+ const ok = await confirm({ title: 'Redistribuir o bolsão?', message: 'Pega os leads sem corretor e distribui pelos corretores das roletas. Pode levar alguns segundos.' });
+ if (!ok) return;
+ setRedistribuindo(true);
+ try {
+ const res = await Api.roletaRedistribuirBolsao();
+ toast.success(`${res.distribuidos} lead(s) distribuído(s) de ${res.avaliados}.${res.semCorretor ? ` ${res.semCorretor} sem roleta compatível ficaram no bolsão.` : ''}`);
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ } finally {
+ setRedistribuindo(false);
+ }
+ };
+
  const salvarEdicao = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
@@ -156,6 +190,7 @@ export default function Roletas() {
  right={
  <>
  <Link to="/formularios" className="btn btn--secondary btn--sm">Formulários / Webhooks</Link>
+ <button className="btn btn--secondary btn--sm" onClick={redistribuirBolsao} disabled={redistribuindo}>{redistribuindo ? 'Redistribuindo…' : 'Redistribuir bolsão'}</button>
  <button className="btn btn--secondary btn--sm" onClick={() => { setSimResult(null); setOpenSim(true); }}>Simular Lead</button>
  <button className="btn btn--primary btn--sm" onClick={() => setOpenNew(true)}>+ Nova Roleta</button>
  </>
@@ -279,8 +314,11 @@ export default function Roletas() {
  </div>
 
  <div className="flex-between mb-2">
- <span className="uppercase-tag">Corretores na fila ({participantes.length})</span>
- <span className="text-xs text-secondary">{r.leadsDistribuidos ?? 0} leads distribuídos</span>
+ <span className="uppercase-tag">Corretores na fila ({participantes.length}) · {r.leadsDistribuidos ?? 0} distribuídos</span>
+ <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
+ {participantes.length === 0 && <span className="badge badge--warning" style={{ fontSize: 11 }}>vazia — não distribui</span>}
+ <button className="btn btn--ghost btn--sm" onClick={() => preencherRoleta(r)} title="Adiciona todos os corretores ativos de uma vez">+ Preencher com corretores ativos</button>
+ </div>
  </div>
 
  <div className="list">
