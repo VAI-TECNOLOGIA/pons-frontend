@@ -3,7 +3,6 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { SLAStatusPanel } from '../components/SLAStatusPanel';
 import { SLACharts } from '../components/SLACharts';
 import { Modal } from '../components/Modal';
-import { Link } from 'react-router-dom';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -191,14 +190,7 @@ export default function Roletas() {
  <>
  <Topbar
  title="Roletas de Distribuição"
- right={
- <>
- <Link to="/formularios" className="btn btn--secondary btn--sm">Formulários / Webhooks</Link>
- <button className="btn btn--secondary btn--sm" onClick={redistribuirBolsao} disabled={redistribuindo}>{redistribuindo ? 'Redistribuindo…' : 'Redistribuir bolsão'}</button>
- <button className="btn btn--secondary btn--sm" onClick={() => { setSimResult(null); setOpenSim(true); }}>Simular Lead</button>
- <button className="btn btn--primary btn--sm" onClick={() => setOpenNew(true)}>+ Nova Roleta</button>
- </>
- }
+ right={<button className="btn btn--primary btn--sm" onClick={() => setOpenNew(true)}>+ Nova Roleta</button>}
  />
  <div className="main__content">
  <PageHeader
@@ -207,10 +199,16 @@ export default function Roletas() {
  subtitle="Distribuição automática de leads · round-robin, performance, ponderada e manual"
  />
 
- {/* Abas: Gerenciar roletas | SLA */}
- <div className="flex gap-2" style={{ marginBottom: 16 }}>
+ {/* Abas (esquerda) + ações utilitárias (direita) */}
+ <div className="flex-between" style={{ marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+ <div className="flex gap-2">
  <button className={'btn btn--sm ' + (aba === 'roletas' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('roletas')}>Gerenciar roletas</button>
  <button className={'btn btn--sm ' + (aba === 'sla' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('sla')}>SLA</button>
+ </div>
+ <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+ <button className="btn btn--ghost btn--sm" onClick={redistribuirBolsao} disabled={redistribuindo}>{redistribuindo ? 'Redistribuindo…' : 'Redistribuir bolsão'}</button>
+ <button className="btn btn--ghost btn--sm" onClick={() => { setSimResult(null); setOpenSim(true); }}>Simular Lead</button>
+ </div>
  </div>
 
  {aba === 'sla' && (
@@ -388,18 +386,14 @@ export default function Roletas() {
  <label className="field__label">Filtro de origem</label>
  <select name="origemFiltro" className="field__select" defaultValue="">
  <option value="">Todas as origens</option>
- <option value="META_ADS">Meta Ads</option>
- <option value="INSTAGRAM">Instagram</option>
- <option value="GOOGLE">Google</option>
- <option value="SITE">Site</option>
- <option value="INDICACAO">Indicação</option>
+ <option value="META_ADS">Meta Ads (Facebook)</option>
+ <option value="WHATSAPP">WhatsApp</option>
  </select>
  </div>
  <div className="field">
  <label className="field__label">Filtro de campanha</label>
  <input name="campanhaFiltro" className="field__input" placeholder="ex: VIP, Park View…" />
  </div>
- <FormularioSelect formularios={formularios || []} />
  <div className="field">
  <label className="field__label">SLA (horas)</label>
  <input name="slaHoras" type="number" className="field__input" defaultValue="4" />
@@ -473,10 +467,8 @@ export default function Roletas() {
  <div className="field">
  <label className="field__label">Origem</label>
  <select name="origem" className="field__select" defaultValue="META_ADS">
- <option value="META_ADS">Meta Ads</option>
- <option value="INSTAGRAM">Instagram</option>
- <option value="GOOGLE">Google</option>
- <option value="SITE">Site</option>
+ <option value="META_ADS">Meta Ads (Facebook)</option>
+ <option value="WHATSAPP">WhatsApp</option>
  </select>
  </div>
  <div className="field">
@@ -544,18 +536,14 @@ export default function Roletas() {
  <label className="field__label">Filtro de origem</label>
  <select name="origemFiltro" className="field__select" defaultValue={editing.origemFiltro || ''}>
  <option value="">Todas as origens</option>
- <option value="META_ADS">Meta Ads</option>
- <option value="INSTAGRAM">Instagram</option>
- <option value="GOOGLE">Google</option>
- <option value="SITE">Site</option>
- <option value="INDICACAO">Indicação</option>
+ <option value="META_ADS">Meta Ads (Facebook)</option>
+ <option value="WHATSAPP">WhatsApp</option>
  </select>
  </div>
  <div className="field">
  <label className="field__label">Filtro de campanha</label>
  <input name="campanhaFiltro" className="field__input" defaultValue={editing.campanhaFiltro || ''} />
  </div>
- <FormularioSelect formularios={formularios || []} selecionados={editing.formularioFiltro || ''} />
  <div className="field">
  <label className="field__label">SLA (horas)</label>
  <input name="slaHoras" type="number" className="field__input" defaultValue={editing.slaHoras ?? 4} />
@@ -584,32 +572,6 @@ export default function Roletas() {
 // Multi-select de formulários do Facebook (Fase 1 Filas de Atendimento).
 // Lista os formulários já vistos nos leads; marcar um vincula a roleta a ele
 // (lead do form X cai na fila X). Vai no form como checkboxes name=formularioFiltro.
-function FormularioSelect({ formularios, selecionados = '' }: { formularios: { nome: string; leads: number }[]; selecionados?: string }) {
- const marcados = selecionados.split(',').map((s) => s.trim()).filter(Boolean);
- // Preserva vínculos antigos que não aparecem mais na lista de leads
- const extras = marcados.filter((m) => !formularios.some((f) => f.nome === m));
- const opcoes = [...formularios, ...extras.map((nome) => ({ nome, leads: 0 }))];
- return (
- <div className="field field--span-2">
- <label className="field__label">Formulários (Facebook)</label>
- {opcoes.length === 0 ? (
- <div className="field__hint">Nenhum formulário capturado ainda — os nomes aparecem aqui quando chegam leads do Meta.</div>
- ) : (
- <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6, maxHeight: 140, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 8, padding: 10 }}>
- {opcoes.map((f) => (
- <label key={f.nome} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, border: '1px solid var(--border-light)', borderRadius: 999, padding: '4px 10px', cursor: 'pointer' }}>
- <input type="checkbox" name="formularioFiltro" value={f.nome} defaultChecked={marcados.includes(f.nome)} />
- <span>📋 {f.nome}</span>
- <span style={{ color: 'var(--text-secondary)' }}>({f.leads})</span>
- </label>
- ))}
- </div>
- )}
- <div className="field__hint">Lead do formulário marcado cai nesta fila. Vazio = aceita qualquer formulário.</div>
- </div>
- );
-}
-
 function AddCorretor({ corretores, onAdd }: { corretores: any[]; onAdd: (cid: number) => void }) {
  if (!corretores.length) return null;
  return (
@@ -635,7 +597,6 @@ function Shell({ children, onNew, onSim }: { children: React.ReactNode; onNew?: 
  title="Roletas de Distribuição"
  right={
  <>
- <Link to="/formularios" className="btn btn--secondary btn--sm">Formulários / Webhooks</Link>
  <button className="btn btn--secondary btn--sm" onClick={onSim}>Simular Lead</button>
  <button className="btn btn--primary btn--sm" onClick={onNew}>+ Nova Roleta</button>
  </>

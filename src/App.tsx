@@ -59,6 +59,7 @@ const Vendas          = lazyRetry(() => import('./pages/Vendas'));
 const Corretores      = lazyRetry(() => import('./pages/Corretores'));
 const Equipes         = lazyRetry(() => import('./pages/Equipes'));
 const Roletas         = lazyRetry(() => import('./pages/Roletas'));
+const FilasAtendimento = lazyRetry(() => import('./pages/FilasAtendimento'));
 const Trafego         = lazyRetry(() => import('./pages/Trafego'));
 const Tarefas         = lazyRetry(() => import('./pages/Tarefas'));
 const Relatorios      = lazyRetry(() => import('./pages/Relatorios'));
@@ -68,7 +69,6 @@ const Executivo       = lazyRetry(() => import('./pages/Executivo'));
 const Avisos          = lazyRetry(() => import('./pages/Avisos'));
 const Videos          = lazyRetry(() => import('./pages/Videos'));
 const Chat            = lazyRetry(() => import('./pages/Chat'));
-const Formularios     = lazyRetry(() => import('./pages/Formularios'));
 const PainelTV        = lazyRetry(() => import('./pages/PainelTV'));
 const Configuracoes   = lazyRetry(() => import('./pages/Configuracoes'));
 const Perfil          = lazyRetry(() => import('./pages/Perfil'));
@@ -146,6 +146,7 @@ export default function App() {
           <Route path="/corretores" element={<Corretores />} />
           <Route path="/equipes" element={<Equipes />} />
           <Route path="/roletas" element={<Roletas />} />
+          <Route path="/filas-atendimento" element={<FilasAtendimento />} />
           <Route path="/trafego" element={<Trafego />} />
           <Route path="/tarefas" element={<Tarefas />} />
           <Route path="/relatorios" element={<Relatorios />} />
@@ -155,7 +156,6 @@ export default function App() {
           <Route path="/avisos" element={<Avisos />} />
           <Route path="/videos" element={<Videos />} />
           <Route path="/chat" element={<Chat />} />
-          <Route path="/formularios" element={<Formularios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/ranking" element={<Ranking />} />

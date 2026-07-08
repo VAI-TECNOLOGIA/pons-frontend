@@ -298,6 +298,8 @@ export const Api = {
   roletaBolsao: () => request<{ total: number; leads: any[] }>('/roletas/bolsao'),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
   roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
+  // Histórico de alterações das filas (auditoria antes/depois)
+  roletaHistorico: () => request<{ id: number; roletaId: number | null; roletaNome: string; acao: string; userNome: string | null; antes: any; depois: any; createdAt: string }[]>('/roletas/historico'),
   roletaSimular: (data: any) => request<any>('/roletas/simular', { method: 'POST', body: data }),
   roletaRedistribuirSla: () => request<any>('/roletas/redistribuir-sla', { method: 'POST' }),
   funilEmpresa: () => request<any>('/roletas/funil-empresa'),

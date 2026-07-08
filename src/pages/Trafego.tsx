@@ -1,5 +1,5 @@
 import { Topbar, PageHeader } from '../components/PageHeader';
-import { Link } from 'react-router-dom';
+import { } from 'react-router-dom';
 import { formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -44,7 +44,7 @@ export default function Trafego() {
  <>
  <Topbar
  title="Tráfego & Meta"
- right={<Link to="/formularios" className="btn btn--secondary btn--sm">Webhooks / Formulários</Link>}
+ 
  />
  <div className="main__content">
  <PageHeader
@@ -170,7 +170,7 @@ export default function Trafego() {
 function Shell({ children }: { children: React.ReactNode }) {
  return (
  <>
- <Topbar title="Tráfego & Meta" right={<Link to="/formularios" className="btn btn--secondary btn--sm">Webhooks / Formulários</Link>} />
+ <Topbar title="Tráfego & Meta"  />
  <div className="main__content">
  <PageHeader breadcrumb="Marketing · Tráfego pago" title="Tráfego" />
  {children}
