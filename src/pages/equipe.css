@@ -340,6 +340,20 @@
 }
 .equipe__nivel-badge .icon { color: #EAB308; }
 
+/* Solicitação de acesso pendente (veio do site) — realça pro admin aprovar */
+.equipe__pending-badge {
+  display: inline-block;
+  margin-top: 6px;
+  background: rgba(82, 247, 254, 0.10);
+  color: #0E7C9B;
+  border: 1px solid rgba(82, 247, 254, 0.30);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .equipe__dept-chip {
   display: inline-block;
   padding: 2px 9px;

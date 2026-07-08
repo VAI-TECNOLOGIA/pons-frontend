@@ -109,8 +109,12 @@ function AbaUsuarios() {
     if (filtroNivel && filtroNivel !== 'sem' && u.nivel?.code !== filtroNivel) return false;
     if (filtroStatus === 'ativo' && !u.active) return false;
     if (filtroStatus === 'inativo' && u.active) return false;
+    if (filtroStatus === 'aguardando' && u.statusCadastro !== 'AGUARDANDO_APROVACAO') return false;
     return true;
   });
+
+  // Solicitações de acesso pendentes (pelo site) — realçadas pro admin aprovar.
+  const pendentes = base.filter((u) => u.statusCadastro === 'AGUARDANDO_APROVACAO').length;
 
   return (
     <div>
@@ -138,6 +142,7 @@ function AbaUsuarios() {
           <option value="">Todos os status</option>
           <option value="ativo">Ativos</option>
           <option value="inativo">Inativos</option>
+          <option value="aguardando">Aguardando aprovação{pendentes ? ` (${pendentes})` : ''}</option>
         </select>
         <div className="equipe__count">{lista.length} usuário{lista.length !== 1 ? 's' : ''}</div>
         <button className="btn-novo" onClick={() => setNovoOpen(true)}>
@@ -201,6 +206,11 @@ function AbaUsuarios() {
                       <span className="equipe__switch-slider" />
                       <span className="equipe__switch-label">{u.active ? 'Ativo' : 'Inativo'}</span>
                     </label>
+                    {u.statusCadastro === 'AGUARDANDO_APROVACAO' && !u.active && (
+                      <span className="equipe__pending-badge" title="Solicitou acesso pelo site — ative para aprovar">
+                        Aguardando aprovação
+                      </span>
+                    )}
                   </td>
                   <td>
                     <button className="equipe__icon-btn" title="Editar" onClick={() => setEditUser(u)}><Icon name="pencil" size={14} /></button>
