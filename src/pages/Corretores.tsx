@@ -136,36 +136,31 @@ export default function Corretores() {
  />
 
  <div className="filter-bar">
- <span
- className={'filter-chip ' + (!filtroEquipe ? 'filter-chip--active' : '')}
- onClick={() => setFiltroEquipe(null)}
- >
- Todas equipes
- </span>
- {eqs.map((e: any) => (
- <span
- key={e.id}
- className={'filter-chip ' + (filtroEquipe === e.nome ? 'filter-chip--active' : '')}
- onClick={() => setFiltroEquipe(e.nome)}
- >
- {e.nome}
- </span>
- ))}
- <span style={{ marginLeft: 'auto', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--gray-700)', fontWeight: 700 }}>
- Status:
- </span>
- <span className={'filter-chip ' + (!filtroStatus ? 'filter-chip--active' : '')} onClick={() => setFiltroStatus(null)}>
- Todos
- </span>
- <span className={'filter-chip ' + (filtroStatus === 'ATIVO' ? 'filter-chip--active' : '')} onClick={() => setFiltroStatus('ATIVO')}>
- Ativos
- </span>
- <span className={'filter-chip ' + (filtroStatus === 'INATIVO' ? 'filter-chip--active' : '')} onClick={() => setFiltroStatus('INATIVO')}>
- Inativos
- </span>
  <select
  className="field__select"
- style={{ marginLeft: 12, width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0 }}
+ style={{ width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
+ value={filtroEquipe || ''}
+ onChange={(e) => setFiltroEquipe(e.target.value || null)}
+ >
+ <option value="">Todas as equipes ({eqs.length})</option>
+ {eqs.map((e: any) => (
+ <option key={e.id} value={e.nome}>{e.nome}</option>
+ ))}
+ </select>
+ <select
+ className="field__select"
+ style={{ marginLeft: 'auto', width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
+ value={filtroStatus || ''}
+ onChange={(e) => setFiltroStatus(e.target.value || null)}
+ title="Filtrar por status"
+ >
+ <option value="">Status: todos</option>
+ <option value="ATIVO">Status: ativos</option>
+ <option value="INATIVO">Status: inativos</option>
+ </select>
+ <select
+ className="field__select"
+ style={{ width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0 }}
  value={ordenar}
  onChange={(e) => setOrdenar(e.target.value)}
  title="Ordenar corretores"
