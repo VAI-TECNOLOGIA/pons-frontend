@@ -312,3 +312,35 @@
 @media (max-width: 1023px) {
   .app-shell--menu-open ~ .sidebar-backdrop { display: block; }
 }
+
+/* ============================================================
+   TABLET / iPad (768px – 1023px) — layout de tablet de verdade:
+   sidebar FIXA (não drawer), sem hambúrguer. iPad portrait (820px)
+   deixa de mostrar a UI de celular esticada. Bloco aditivo colocado
+   por último (cascade) — telefones (≤767) e desktop (≥1024) intactos.
+   ============================================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-shell { grid-template-columns: var(--sidebar-width, 220px) 1fr; }
+
+  /* Devolve a sidebar ao estado fixo do desktop (desfaz o drawer) */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    inset: auto;
+    transform: none !important;
+    width: auto;
+    max-width: none;
+    height: 100vh;
+    z-index: auto;
+    box-shadow: none;
+  }
+  .sidebar__close { display: none !important; }
+
+  /* Sem hambúrguer nem backdrop no tablet */
+  .mobile-menu-btn { display: none !important; }
+  .sidebar-backdrop { display: none !important; }
+
+  /* Conteúdo/topbar não precisam de espaço pro hambúrguer */
+  .main__content { padding: 24px; padding-top: 24px; }
+  .topbar { padding-left: 16px; }
+}

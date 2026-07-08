@@ -107,6 +107,10 @@ export const Api = {
   novaContratacao: (data: any) =>
     request<{ ok: boolean; token: string; user: import('./auth').User }>('/contratacao', { method: 'POST', body: data, auth: false }),
 
+  // Solicitação de acesso pública (site) → cria conta inativa até aprovação.
+  solicitarAcesso: (data: { nome: string; email: string; senha: string; telefone?: string }) =>
+    request<{ ok: boolean; message: string }>('/solicitar-acesso', { method: 'POST', body: data, auth: false }),
+
   // ─── Onboarding de contratação (gating Documentos/Contrato) ──────────────
   onbMe: () => request<any>('/onboarding-colaborador/me'),
   onbSaveCadastro: (data: any) =>

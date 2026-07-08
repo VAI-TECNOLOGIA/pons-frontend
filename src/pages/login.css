@@ -250,6 +250,74 @@
 .login-btn:active:not(:disabled) { transform: translateY(1px); }
 .login-btn:disabled { opacity: 0.6; cursor: progress; }
 
+/* ── Link "Solicitar acesso" (só web) ────────────────────────────────── */
+.login-request-link {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--cyan);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.15s ease;
+}
+.login-request-link:hover { opacity: 0.8; text-decoration: underline; }
+
+.login-field__hint {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--gray);
+}
+
+/* ── Modal de solicitação de acesso ──────────────────────────────────── */
+.login-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(3, 8, 12, 0.72);
+  backdrop-filter: blur(6px);
+  animation: login-modal-fade 0.2s ease;
+}
+@keyframes login-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+.login-modal__card {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 34px 30px 30px;
+  border-radius: 18px;
+  background: #15191c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+.login-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.login-modal__close:hover { background: rgba(255, 255, 255, 0.14); }
+.login-modal__done { text-align: center; }
+.login-modal__done .login-btn { margin-top: 22px; }
+
 /* ── Tagline ALTA PERFORMANCE ────────────────────────────────────────── */
 .login-tagline {
   width: min(430px, 86vw);

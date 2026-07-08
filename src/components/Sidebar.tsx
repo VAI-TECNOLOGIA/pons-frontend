@@ -5,6 +5,7 @@ import { useUser } from '../lib/userContext';
 import { useTheme } from '../lib/theme';
 import { Icon } from './Icon';
 import { ReportarProblemaModal } from './ReportarProblemaModal';
+import { isNativeApp } from '../lib/platform';
 
 // Sidebar estilo BRK: perfil no topo, favoritos com estrela, grupos
 // colapsáveis e modo recolhido (só-ícones). Mantém as rotas/permissões da Pons.
@@ -306,7 +307,7 @@ export function Sidebar({
         )}
       </nav>
 
-      {!collapsed && <AppDownloadBlock />}
+      {!collapsed && !isNativeApp() && <AppDownloadBlock />}
 
       <div className="sidebar__footer">
         {onToggleCollapse && (

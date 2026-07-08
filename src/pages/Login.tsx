@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Auth } from '../lib/auth';
 import { Api, ApiError } from '../lib/api';
 import { useUser } from '../lib/userContext';
+import { isNativeApp } from '../lib/platform';
 
 import './login.css';
 
@@ -25,6 +26,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [bgIdx, setBgIdx] = useState(0);
+  // "Solicitar acesso" — só no navegador (não no app nativo). Cria conta que
+  // fica pendente de aprovação de um administrador.
+  const [showRequest, setShowRequest] = useState(false);
+  const web = !isNativeApp();
 
   // Slideshow de fundo: crossfade suave a cada 5s (estilo Apple).
   useEffect(() => {
@@ -128,6 +133,16 @@ export default function Login() {
           <button type="submit" className="login-btn" disabled={busy}>
             {busy ? 'Acelerando…' : 'Entrar'}
           </button>
+
+          {web && (
+            <button
+              type="button"
+              className="login-request-link"
+              onClick={() => setShowRequest(true)}
+            >
+              Não tem conta? Solicitar acesso
+            </button>
+          )}
         </form>
 
         <div className="login-tagline">
@@ -136,7 +151,81 @@ export default function Login() {
         </div>
       </main>
 
-      <footer className="login-foot">Aplicativo exclusivo do Grupo Pons Imobiliário ®</footer>
+      <footer className="login-foot">Grupo Pons Imobiliário ®</footer>
+
+      {showRequest && <RequestAccessModal onClose={() => setShowRequest(false)} />}
+    </div>
+  );
+}
+
+// Modal de solicitação de acesso (web). Cria uma conta que fica pendente de
+// aprovação — não libera nada até um administrador aprovar.
+function RequestAccessModal({ onClose }: { onClose: () => void }) {
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      await Api.solicitarAcesso({ nome: nome.trim(), email: email.trim(), senha, telefone: telefone.trim() || undefined });
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível enviar. Tente novamente.');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="login-modal" role="dialog" aria-modal="true" aria-label="Solicitar acesso" onClick={onClose}>
+      <div className="login-modal__card" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="login-modal__close" aria-label="Fechar" onClick={onClose}>×</button>
+        {done ? (
+          <div className="login-modal__done">
+            <h2 className="login-card__title">Solicitação enviada</h2>
+            <p className="login-card__sub">
+              Recebemos o seu pedido. Você receberá acesso assim que um administrador aprovar a sua conta.
+            </p>
+            <button type="button" className="login-btn" onClick={onClose}>Fechar</button>
+          </div>
+        ) : (
+          <form onSubmit={submit}>
+            <div className="login-card__eyebrow">Novo por aqui?</div>
+            <h2 className="login-card__title">Solicitar acesso</h2>
+            <p className="login-card__sub">Crie sua conta — a liberação é feita por um administrador.</p>
+
+            {error && <div className="login-card__error">{error}</div>}
+
+            <label className="login-field">
+              <span className="login-field__label">Nome completo</span>
+              <input className="login-field__input" type="text" required value={nome} onChange={(e) => setNome(e.target.value)} />
+            </label>
+            <label className="login-field">
+              <span className="login-field__label">Email</span>
+              <input className="login-field__input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+            <label className="login-field">
+              <span className="login-field__label">Telefone (opcional)</span>
+              <input className="login-field__input" type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+            </label>
+            <label className="login-field">
+              <span className="login-field__label">Senha</span>
+              <input className="login-field__input" type="password" autoComplete="new-password" required value={senha} onChange={(e) => setSenha(e.target.value)} />
+              <span className="login-field__hint">8+ caracteres, com maiúscula, minúscula, número e símbolo.</span>
+            </label>
+
+            <button type="submit" className="login-btn" disabled={busy}>
+              {busy ? 'Enviando…' : 'Solicitar acesso'}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
