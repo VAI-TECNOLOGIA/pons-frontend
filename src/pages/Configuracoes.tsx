@@ -17,7 +17,7 @@ import { parseFunil, FUNIL_SETTING_KEY, type Fase } from '../lib/funil';
 
 import './configuracoes.css';
 
-type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas' | 'funil';
+type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas' | 'funil' | 'score';
 
 const GROUPS: { label: string; items: { value: Tab; label: string; icon: string; sub: string }[] }[] = [
  {
@@ -31,6 +31,7 @@ const GROUPS: { label: string; items: { value: Tab; label: string; icon: string;
  label: 'Comercial',
  items: [
  { value: 'funil', label: 'Funil de vendas', icon: 'pipeline', sub: 'Renomear as fases do funil' },
+ { value: 'score', label: 'Score dos corretores', icon: 'star', sub: 'Pontos por ação (ganho/perda)' },
  { value: 'equipes', label: 'Equipes', icon: 'shield', sub: 'Escuderias e cores' },
  { value: 'filiais', label: 'Filiais & CNPJ', icon: 'building', sub: 'Vincular cada sala ao CNPJ' },
  { value: 'corretores', label: 'Corretores', icon: 'users', sub: 'Acessos e CRECIs' },
@@ -124,6 +125,7 @@ export default function Configuracoes() {
  {tab === 'empreendimentos' && <PanelEmpreendimentos />}
  {tab === 'politicas' && <PanelPoliticas />}
  {tab === 'funil' && <PanelFunil />}
+ {tab === 'score' && <PanelScore />}
  </section>
  </div>
  </div>
@@ -1538,6 +1540,81 @@ function PanelFunil() {
       <div className="flex gap-2" style={{ marginTop: 16 }}>
         <button className="btn btn--primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando…' : 'Salvar fases'}</button>
         <button className="btn btn--secondary" onClick={() => setFases(parseFunil(settings))} disabled={saving}>Descartar</button>
+      </div>
+    </div>
+  );
+}
+
+// Configuração dos pontos de score por ação. Cada ação que hoje soma ou tira
+// pontos do corretor fica editável aqui (valor efetivo lido no backend).
+function PanelScore() {
+  const { data, loading, reload } = useApi<{ regras: { tipo: string; pontos: number; padrao: number; label: string; gatilho: string; sinal: string }[] }>(() => Api.scoreRegras());
+  const [valores, setValores] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (data?.regras) setValores(Object.fromEntries(data.regras.map((r) => [r.tipo, String(r.pontos)])));
+  }, [data]);
+
+  const salvar = async () => {
+    setSaving(true);
+    try {
+      const regras: Record<string, number> = {};
+      for (const [tipo, v] of Object.entries(valores)) {
+        const n = Number(v);
+        if (Number.isFinite(n)) regras[tipo] = Math.trunc(n);
+      }
+      await Api.scoreRegrasSave(regras);
+      toast.success('Pontuação de score atualizada. Vale nos próximos eventos.');
+      reload();
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <LoadingBlock />;
+  const regras = data?.regras || [];
+
+  return (
+    <div className="card">
+      <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700 }}>Score dos corretores</h3>
+      <p className="text-secondary" style={{ marginTop: 0, fontSize: 13 }}>
+        Defina quantos pontos cada ação soma (+) ou tira (−) do corretor. A pontuação alimenta o ranking e a roleta por performance. Os novos valores valem para os próximos eventos — o histórico já registrado não muda.
+      </p>
+      <div style={{ overflowX: 'auto', marginTop: 12 }}>
+        <table className="table">
+          <thead><tr><th>Ação</th><th>Quando acontece</th><th className="numeric" style={{ width: 140 }}>Pontos</th><th className="numeric">Padrão</th></tr></thead>
+          <tbody>
+            {regras.map((r) => {
+              const val = valores[r.tipo] ?? String(r.pontos);
+              const n = Number(val);
+              return (
+                <tr key={r.tipo}>
+                  <td className="font-semibold">{r.label}</td>
+                  <td className="text-sm text-secondary">{r.gatilho}</td>
+                  <td className="numeric">
+                    <input
+                      type="number"
+                      step="1"
+                      className="field__input"
+                      style={{ width: 110, textAlign: 'right', fontWeight: 700, color: Number.isFinite(n) ? (n < 0 ? 'var(--color-danger, #e5484d)' : 'var(--color-success)') : undefined }}
+                      value={val}
+                      onChange={(e) => setValores((cur) => ({ ...cur, [r.tipo]: e.target.value }))}
+                    />
+                  </td>
+                  <td className="numeric text-sm text-secondary">{r.padrao >= 0 ? '+' : ''}{r.padrao}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex gap-2" style={{ marginTop: 16 }}>
+        <button className="btn btn--primary" onClick={salvar} disabled={saving}>{saving ? 'Salvando…' : 'Salvar pontuação'}</button>
+        <button className="btn btn--secondary" onClick={() => data?.regras && setValores(Object.fromEntries(data.regras.map((r) => [r.tipo, String(r.padrao)])))} disabled={saving}>Restaurar padrão</button>
       </div>
     </div>
   );

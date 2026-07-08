@@ -303,6 +303,9 @@ export const Api = {
   // Configurações
   settings: () => request<Record<string, string>>('/config/settings'),
   settingsSave: (obj: Record<string, string>) => request<any>('/config/settings', { method: 'PUT', body: obj }),
+  // Score: pontos por ação (editável)
+  scoreRegras: () => request<{ regras: { tipo: string; pontos: number; padrao: number; label: string; gatilho: string; sinal: string }[] }>('/config/score-regras'),
+  scoreRegrasSave: (regras: Record<string, number>) => request<any>('/config/score-regras', { method: 'PUT', body: { regras } }),
   construtoraCreate: (data: any) => request<any>('/config/construtoras', { method: 'POST', body: data }),
   politicas: () => request<any[]>('/config/politicas'),
   politicaCreate: (data: any) => request<any>('/config/politicas', { method: 'POST', body: data }),
