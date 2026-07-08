@@ -237,10 +237,31 @@ export const Api = {
   empreendimentoUnidadeDelete: (id: number, unidadeId: number) =>
     request<any>(`/empreendimentos/${id}/unidades/${unidadeId}`, { method: 'DELETE' }),
   construtoras: () => request<any[]>('/empreendimentos/construtoras'),
+  construtora: (id: number) => request<any>(`/empreendimentos/construtoras/${id}`),
   // Cadastro rápido de construtora no próprio formulário de empreendimento
   // (idempotente por nome; mesma permissão de quem cadastra empreendimento).
   construtoraQuickCreate: (nome: string) =>
     request<{ id: number; nome: string; criada?: boolean }>('/empreendimentos/construtoras', { method: 'POST', body: { nome } }),
+  // Cadastro/edição completa da construtora (parceria, políticas, história, entregas…)
+  // Nome "Full" p/ não colidir com o construtoraCreate legado (→ /config/construtoras).
+  construtoraCreateFull: (data: any) =>
+    request<any>('/empreendimentos/construtoras', { method: 'POST', body: data }),
+  construtoraUpdate: (id: number, data: any) =>
+    request<any>(`/empreendimentos/construtoras/${id}`, { method: 'PATCH', body: data }),
+  construtoraLogoUpload: async (id: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await fetch(`${BASE}/empreendimentos/construtoras/${id}/logo`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.error || j.message || 'upload_failed');
+    }
+    return r.json();
+  },
 
   // Vendas
   vendas: () => request<any[]>('/vendas'),

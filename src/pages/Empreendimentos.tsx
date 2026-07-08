@@ -29,6 +29,21 @@ type Empreendimento = {
   fotos: Foto[];
   construtora: { id: number; nome: string };
   vendasCount?: number;
+  // Ficha completa (layout KÓRA no site)
+  descritivo?: string | null;
+  endereco?: string | null;
+  bairro?: string | null;
+  localizacao?: string | null;
+  distanciaMar?: string | null;
+  areaLazerM2?: number | null;
+  itensLazer?: string | null;
+  tipologiasTexto?: string | null;
+  areaMin?: number | null;
+  areaMax?: number | null;
+  acabamentos?: string | null;
+  vagas?: number | null;
+  inicioObras?: string | null;
+  entregaPrevista?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -41,6 +56,7 @@ export default function Empreendimentos() {
   const { data: emps, loading, error, reload } = useApi<Empreendimento[]>(() => Api.empreendimentos());
   const { data: construtoras } = useApi<Construtora[]>(() => Api.construtoras());
   const [showNew, setShowNew] = useState(false);
+  const [showConstrutoras, setShowConstrutoras] = useState(false);
   const [gallery, setGallery] = useState<Empreendimento | null>(null);
   const [unidadesEmp, setUnidadesEmp] = useState<Empreendimento | null>(null);
   // Condições de venda (política de rateio) — abre logo após cadastrar o empreendimento
@@ -62,9 +78,14 @@ export default function Empreendimentos() {
         title="Empreendimentos"
         right={
           canEdit ? (
-            <button className="btn btn--primary btn--sm" onClick={() => setShowNew(true)}>
-              <Icon name="plus" size={14} /> Cadastrar empreendimento
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn--secondary btn--sm" onClick={() => setShowConstrutoras(true)}>
+                <Icon name="building" size={14} /> Construtoras
+              </button>
+              <button className="btn btn--primary btn--sm" onClick={() => setShowNew(true)}>
+                <Icon name="plus" size={14} /> Cadastrar empreendimento
+              </button>
+            </div>
           ) : undefined
         }
       />
@@ -206,6 +227,10 @@ export default function Empreendimentos() {
           onClose={() => setUnidadesEmp(null)}
           onChanged={() => reload()}
         />
+      )}
+
+      {showConstrutoras && (
+        <ConstrutorasModal onClose={() => setShowConstrutoras(false)} />
       )}
     </>
   );
@@ -498,6 +523,8 @@ function NovoEmpreendimentoModal({
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const txt = (k: string) => { const v = fd.get(k); const s = v ? String(v).trim() : ''; return s || null; };
+    const num = (k: string) => { const v = fd.get(k); return v ? Number(v) : null; };
     const payload = {
       nome: String(fd.get('nome') || '').trim(),
       construtoraId: Number(fd.get('construtoraId') || 0),
@@ -509,6 +536,21 @@ function NovoEmpreendimentoModal({
       valorInicial: fd.get('valorInicial') ? Number(fd.get('valorInicial')) : null,
       descricao: (fd.get('descricao') ? String(fd.get('descricao')) : null) || null,
       publicado: fd.get('publicado') === 'on',
+      // Ficha completa (layout KÓRA no site)
+      descritivo: txt('descritivo'),
+      endereco: txt('endereco'),
+      bairro: txt('bairro'),
+      localizacao: txt('localizacao'),
+      distanciaMar: txt('distanciaMar'),
+      areaLazerM2: num('areaLazerM2'),
+      itensLazer: txt('itensLazer'),
+      tipologiasTexto: txt('tipologiasTexto'),
+      areaMin: num('areaMin'),
+      areaMax: num('areaMax'),
+      acabamentos: txt('acabamentos'),
+      vagas: num('vagas'),
+      inicioObras: txt('inicioObras'),
+      entregaPrevista: txt('entregaPrevista'),
     };
     if (!payload.nome || !payload.construtoraId || !payload.cidade) {
       toast.error('Nome, construtora e cidade são obrigatórios.');
@@ -651,6 +693,73 @@ function NovoEmpreendimentoModal({
 
         <hr style={{ margin: '20px 0', borderColor: 'var(--border-light)' }} />
 
+        <div style={{ marginBottom: 12 }}>
+          <p className="field__label" style={{ margin: 0 }}>Ficha do site — página do imóvel</p>
+          <p className="text-xs text-secondary" style={{ margin: '2px 0 0' }}>
+            Opcional. Preenchido, o site mostra descritivo, localização, lazer, tipologias e datas na ficha do empreendimento.
+          </p>
+        </div>
+        <div className="form-grid">
+          <div className="field field--span-2">
+            <label className="field__label">Descritivo completo</label>
+            <textarea name="descritivo" className="field__textarea" rows={4} placeholder="Texto de apresentação do empreendimento (aparece na seção 'Descritivo' do site)." />
+          </div>
+          <div className="field field--span-2">
+            <label className="field__label">Localização estratégica</label>
+            <textarea name="localizacao" className="field__textarea" rows={2} placeholder="Ex: A 250 m do mar, no eixo de maior valorização, a 12 min de Balneário Camboriú." />
+          </div>
+          <div className="field">
+            <label className="field__label">Endereço</label>
+            <input name="endereco" className="field__input" placeholder="Av. ..., nº — bairro" />
+          </div>
+          <div className="field">
+            <label className="field__label">Bairro</label>
+            <input name="bairro" className="field__input" placeholder="Ex: Perequê" />
+          </div>
+          <div className="field">
+            <label className="field__label">Distância do mar</label>
+            <input name="distanciaMar" className="field__input" placeholder="Ex: 250 m" />
+          </div>
+          <div className="field">
+            <label className="field__label">Área de lazer (m²)</label>
+            <input name="areaLazerM2" className="field__input" type="number" min={0} step={1} placeholder="Ex: 2400" />
+          </div>
+          <div className="field field--span-2">
+            <label className="field__label">Itens de lazer (um por linha)</label>
+            <textarea name="itensLazer" className="field__textarea" rows={4} placeholder={'Piscina com raia\nAcademia equipada\nEspaço gourmet\nSalão de festas\nPlayground'} />
+          </div>
+          <div className="field field--span-2">
+            <label className="field__label">Tipologias (texto)</label>
+            <input name="tipologiasTexto" className="field__input" placeholder="Ex: 2 e 3 dormitórios · suíte máster" />
+          </div>
+          <div className="field">
+            <label className="field__label">Área mínima (m²)</label>
+            <input name="areaMin" className="field__input" type="number" min={0} step={0.01} placeholder="Ex: 58" />
+          </div>
+          <div className="field">
+            <label className="field__label">Área máxima (m²)</label>
+            <input name="areaMax" className="field__input" type="number" min={0} step={0.01} placeholder="Ex: 112" />
+          </div>
+          <div className="field">
+            <label className="field__label">Vagas</label>
+            <input name="vagas" className="field__input" type="number" min={0} step={1} placeholder="Ex: 2" />
+          </div>
+          <div className="field field--span-2">
+            <label className="field__label">Acabamentos (um por linha)</label>
+            <textarea name="acabamentos" className="field__textarea" rows={3} placeholder={'Porcelanato nas áreas sociais\nBancadas em quartzo\nEsquadrias com vidro duplo'} />
+          </div>
+          <div className="field">
+            <label className="field__label">Início das obras</label>
+            <input name="inicioObras" className="field__input" placeholder="Ex: Set/2025" />
+          </div>
+          <div className="field">
+            <label className="field__label">Entrega prevista</label>
+            <input name="entregaPrevista" className="field__input" placeholder="Ex: Dez/2027" />
+          </div>
+        </div>
+
+        <hr style={{ margin: '20px 0', borderColor: 'var(--border-light)' }} />
+
         <div>
           <label className="field__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>Fotos do empreendimento (até 8)</span>
@@ -752,6 +861,8 @@ function EditarDadosEmpreendimento({
     const fd = new FormData(e.currentTarget);
     setSaving(true);
     try {
+      const txt = (k: string) => { const x = fd.get(k); const s = x ? String(x).trim() : ''; return s || null; };
+      const num = (k: string) => { const x = fd.get(k); return x && String(x).trim() !== '' ? Number(x) : null; };
       const payload: Record<string, any> = {
         nome: String(fd.get('nome') || ''),
         cidade: String(fd.get('cidade') || ''),
@@ -760,6 +871,21 @@ function EditarDadosEmpreendimento({
         unidadesTotal: Number(fd.get('unidadesTotal') || 0),
         unidadesVendidas: Number(fd.get('unidadesVendidas') || 0),
         descricao: fd.get('descricao') ? String(fd.get('descricao')) : null,
+        // Ficha completa (layout KÓRA no site)
+        descritivo: txt('descritivo'),
+        endereco: txt('endereco'),
+        bairro: txt('bairro'),
+        localizacao: txt('localizacao'),
+        distanciaMar: txt('distanciaMar'),
+        areaLazerM2: num('areaLazerM2'),
+        itensLazer: txt('itensLazer'),
+        tipologiasTexto: txt('tipologiasTexto'),
+        areaMin: num('areaMin'),
+        areaMax: num('areaMax'),
+        acabamentos: txt('acabamentos'),
+        vagas: num('vagas'),
+        inicioObras: txt('inicioObras'),
+        entregaPrevista: txt('entregaPrevista'),
       };
       const v = fd.get('valorInicial');
       if (v != null && String(v).trim() !== '') payload.valorInicial = Number(v);
@@ -811,6 +937,68 @@ function EditarDadosEmpreendimento({
         <label className="field__label">Descrição</label>
         <textarea name="descricao" className="field__textarea" rows={2} defaultValue={emp.descricao || ''} />
       </div>
+
+      <div className="emp-edit-form__row--full" style={{ borderTop: '1px solid var(--border-light)', paddingTop: 12, marginTop: 4 }}>
+        <p className="field__label" style={{ margin: 0 }}>Ficha do site — página do imóvel</p>
+        <p className="text-xs text-secondary" style={{ margin: '2px 0 0' }}>Descritivo, localização, lazer, tipologias e datas exibidos na ficha do empreendimento no site.</p>
+      </div>
+      <div className="field emp-edit-form__row--full">
+        <label className="field__label">Descritivo completo</label>
+        <textarea name="descritivo" className="field__textarea" rows={4} defaultValue={emp.descritivo || ''} placeholder="Texto de apresentação (seção 'Descritivo' do site)." />
+      </div>
+      <div className="field emp-edit-form__row--full">
+        <label className="field__label">Localização estratégica</label>
+        <textarea name="localizacao" className="field__textarea" rows={2} defaultValue={emp.localizacao || ''} placeholder="Ex: A 250 m do mar, a 12 min de Balneário Camboriú." />
+      </div>
+      <div className="field">
+        <label className="field__label">Endereço</label>
+        <input name="endereco" className="field__input" defaultValue={emp.endereco || ''} placeholder="Av. ..., nº — bairro" />
+      </div>
+      <div className="field">
+        <label className="field__label">Bairro</label>
+        <input name="bairro" className="field__input" defaultValue={emp.bairro || ''} placeholder="Ex: Perequê" />
+      </div>
+      <div className="field">
+        <label className="field__label">Distância do mar</label>
+        <input name="distanciaMar" className="field__input" defaultValue={emp.distanciaMar || ''} placeholder="Ex: 250 m" />
+      </div>
+      <div className="field">
+        <label className="field__label">Área de lazer (m²)</label>
+        <input name="areaLazerM2" type="number" min="0" step="1" className="field__input" defaultValue={emp.areaLazerM2 ?? ''} placeholder="Ex: 2400" />
+      </div>
+      <div className="field emp-edit-form__row--full">
+        <label className="field__label">Itens de lazer (um por linha)</label>
+        <textarea name="itensLazer" className="field__textarea" rows={4} defaultValue={emp.itensLazer || ''} placeholder={'Piscina com raia\nAcademia equipada\nEspaço gourmet'} />
+      </div>
+      <div className="field emp-edit-form__row--full">
+        <label className="field__label">Tipologias (texto)</label>
+        <input name="tipologiasTexto" className="field__input" defaultValue={emp.tipologiasTexto || ''} placeholder="Ex: 2 e 3 dormitórios · suíte máster" />
+      </div>
+      <div className="field">
+        <label className="field__label">Área mínima (m²)</label>
+        <input name="areaMin" type="number" min="0" step="0.01" className="field__input" defaultValue={emp.areaMin ?? ''} placeholder="Ex: 58" />
+      </div>
+      <div className="field">
+        <label className="field__label">Área máxima (m²)</label>
+        <input name="areaMax" type="number" min="0" step="0.01" className="field__input" defaultValue={emp.areaMax ?? ''} placeholder="Ex: 112" />
+      </div>
+      <div className="field">
+        <label className="field__label">Vagas</label>
+        <input name="vagas" type="number" min="0" step="1" className="field__input" defaultValue={emp.vagas ?? ''} placeholder="Ex: 2" />
+      </div>
+      <div className="field emp-edit-form__row--full">
+        <label className="field__label">Acabamentos (um por linha)</label>
+        <textarea name="acabamentos" className="field__textarea" rows={3} defaultValue={emp.acabamentos || ''} placeholder={'Porcelanato nas áreas sociais\nBancadas em quartzo'} />
+      </div>
+      <div className="field">
+        <label className="field__label">Início das obras</label>
+        <input name="inicioObras" className="field__input" defaultValue={emp.inicioObras || ''} placeholder="Ex: Set/2025" />
+      </div>
+      <div className="field">
+        <label className="field__label">Entrega prevista</label>
+        <input name="entregaPrevista" className="field__input" defaultValue={emp.entregaPrevista || ''} placeholder="Ex: Dez/2027" />
+      </div>
+
       <div className="emp-edit-form__actions">
         <button type="submit" className="btn btn--primary btn--sm" disabled={saving}>
           {saving ? 'Salvando…' : 'Salvar dados'}
@@ -1088,6 +1276,267 @@ function GaleriaFotosModal({
               </label>
             )}
           </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
+// ── Construtoras: cadastro completo (parceria, políticas, história, logo) ────
+type ConstrutoraFull = {
+  id: number;
+  nome: string;
+  logoUrl?: string | null;
+  cidadeSede?: string | null;
+  anoFundacao?: number | null;
+  entregasRealizadas?: number | null;
+  unidadesEntregues?: number | null;
+  site?: string | null;
+  instagram?: string | null;
+  historia?: string | null;
+  politicasComerciais?: string | null;
+  _count?: { empreendimentos?: number };
+};
+
+function ConstrutorasModal({ onClose }: { onClose: () => void }) {
+  const toast = useToast();
+  const [lista, setLista] = useState<ConstrutoraFull[] | null>(null);
+  const [editing, setEditing] = useState<ConstrutoraFull | 'new' | null>(null);
+
+  const load = async () => {
+    try {
+      setLista(await Api.construtoras());
+    } catch {
+      toast.error('Falha ao carregar construtoras.');
+    }
+  };
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (editing) {
+    return (
+      <ConstrutoraForm
+        construtora={editing === 'new' ? null : editing}
+        onBack={() => {
+          setEditing(null);
+          load();
+        }}
+      />
+    );
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Construtoras parceiras"
+      subtitle="Cadastre a parceria, as políticas comerciais e a história de cada construtora — a ficha aparece no site (botão 'Conhecer a construtora')."
+      size="lg"
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose}>Fechar</button>
+          <button className="btn btn--primary" onClick={() => setEditing('new')}>
+            <Icon name="plus" size={14} /> Nova construtora
+          </button>
+        </>
+      }
+    >
+      {!lista ? (
+        <LoadingBlock />
+      ) : lista.length === 0 ? (
+        <p className="text-secondary">Nenhuma construtora cadastrada ainda. Clique em “Nova construtora”.</p>
+      ) : (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {lista.map((c) => (
+            <button
+              key={c.id}
+              className="card"
+              style={{ display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', cursor: 'pointer', padding: 14, width: '100%' }}
+              onClick={() => setEditing(c)}
+            >
+              <div style={{ width: 52, height: 52, borderRadius: 10, border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flex: '0 0 52px', background: 'var(--bg-subtle)' }}>
+                {c.logoUrl ? (
+                  <img src={c.logoUrl} alt={c.nome} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                ) : (
+                  <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>{(c.nome || '?').charAt(0)}</span>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600 }}>{c.nome}</div>
+                <div className="text-xs text-secondary">
+                  {[
+                    c.anoFundacao ? `desde ${c.anoFundacao}` : null,
+                    c.entregasRealizadas ? `${c.entregasRealizadas} entregas` : null,
+                    c._count?.empreendimentos ? `${c._count.empreendimentos} no portfólio` : null,
+                  ].filter(Boolean).join(' · ') || 'Sem ficha institucional'}
+                </div>
+              </div>
+              <Icon name="pencil" size={14} />
+            </button>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function ConstrutoraForm({ construtora, onBack }: { construtora: ConstrutoraFull | null; onBack: () => void }) {
+  const toast = useToast();
+  const isNew = !construtora;
+  const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [data, setData] = useState<ConstrutoraFull | null>(construtora);
+  const [savedId, setSavedId] = useState<number | null>(construtora?.id || null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(construtora?.logoUrl || null);
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isNew || !construtora) return;
+    Api.construtora(construtora.id)
+      .then((c) => { setData(c); setLogoUrl(c.logoUrl || null); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const txt = (k: string) => { const v = fd.get(k); const s = v ? String(v).trim() : ''; return s || null; };
+    const num = (k: string) => { const v = fd.get(k); return v && String(v).trim() !== '' ? Number(v) : null; };
+    const nome = String(fd.get('nome') || '').trim();
+    if (nome.length < 2) { toast.error('Informe o nome da construtora.'); return; }
+    const payload = {
+      nome,
+      cidadeSede: txt('cidadeSede'),
+      anoFundacao: num('anoFundacao'),
+      entregasRealizadas: num('entregasRealizadas'),
+      unidadesEntregues: num('unidadesEntregues'),
+      site: txt('site'),
+      instagram: txt('instagram'),
+      historia: txt('historia'),
+      politicasComerciais: txt('politicasComerciais'),
+    };
+    setSaving(true);
+    try {
+      let saved: ConstrutoraFull;
+      if (savedId) saved = await Api.construtoraUpdate(savedId, payload);
+      else saved = await Api.construtoraCreateFull(payload);
+      setSavedId(saved.id);
+      setData({ ...(data || {} as ConstrutoraFull), ...saved });
+      toast.success(savedId ? 'Construtora atualizada.' : 'Construtora cadastrada. Agora você pode enviar o logo.');
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const enviarLogo = async (file: File) => {
+    if (!savedId) { toast.info('Salve a construtora antes de enviar o logo.'); return; }
+    setLogoBusy(true);
+    try {
+      const r = await Api.construtoraLogoUpload(savedId, file);
+      setLogoUrl(r.logoUrl || null);
+      toast.success('Logo enviado.');
+    } catch (err: any) {
+      toast.error('Erro no upload: ' + (err?.message || 'falha'));
+    } finally {
+      setLogoBusy(false);
+      if (logoRef.current) logoRef.current.value = '';
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onBack}
+      title={isNew ? 'Nova construtora' : `Editar ${data?.nome || construtora?.nome || ''}`}
+      subtitle="Estes dados alimentam a tela “Conhecer a construtora” no site."
+      size="lg"
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onBack} disabled={saving}>Voltar à lista</button>
+          <button form="form-construtora" className="btn btn--primary" disabled={saving}>
+            {saving ? 'Salvando…' : savedId ? 'Salvar alterações' : 'Cadastrar construtora'}
+          </button>
+        </>
+      }
+    >
+      {loading ? (
+        <LoadingBlock />
+      ) : (
+        <>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+            <div style={{ width: 76, height: 76, borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flex: '0 0 76px', background: 'var(--bg-subtle)' }}>
+              {logoUrl ? (
+                <img src={logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                <Icon name="building" size={26} />
+              )}
+            </div>
+            <div>
+              <input
+                ref={logoRef}
+                type="file"
+                accept="image/*"
+                style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+                id="construtora-logo-file"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) enviarLogo(f); }}
+              />
+              <label htmlFor="construtora-logo-file" className={`btn btn--secondary btn--sm${!savedId || logoBusy ? ' is-disabled' : ''}`} style={!savedId || logoBusy ? { pointerEvents: 'none', opacity: 0.55 } : undefined}>
+                {logoBusy ? 'Enviando…' : logoUrl ? 'Trocar logo' : 'Enviar logo'}
+              </label>
+              <p className="text-xs text-secondary" style={{ margin: '6px 0 0' }}>
+                {savedId ? 'PNG/JPG. Ideal fundo transparente.' : 'Salve a construtora para habilitar o envio do logo.'}
+              </p>
+            </div>
+          </div>
+
+          <form id="form-construtora" onSubmit={submit}>
+            <div className="form-grid">
+              <div className="field field--span-2">
+                <label className="field__label">Nome da construtora *</label>
+                <input name="nome" className="field__input" required defaultValue={data?.nome || ''} placeholder="Ex: MAXCES Incorporações" />
+              </div>
+              <div className="field">
+                <label className="field__label">Cidade sede</label>
+                <input name="cidadeSede" className="field__input" defaultValue={data?.cidadeSede || ''} placeholder="Ex: Balneário Camboriú/SC" />
+              </div>
+              <div className="field">
+                <label className="field__label">Ano de fundação</label>
+                <input name="anoFundacao" type="number" min="1900" max="2100" className="field__input" defaultValue={data?.anoFundacao ?? ''} placeholder="Ex: 2007" />
+              </div>
+              <div className="field">
+                <label className="field__label">Entregas realizadas</label>
+                <input name="entregasRealizadas" type="number" min="0" className="field__input" defaultValue={data?.entregasRealizadas ?? ''} placeholder="Ex: 32" />
+              </div>
+              <div className="field">
+                <label className="field__label">Unidades entregues</label>
+                <input name="unidadesEntregues" type="number" min="0" className="field__input" defaultValue={data?.unidadesEntregues ?? ''} placeholder="Ex: 2100" />
+              </div>
+              <div className="field">
+                <label className="field__label">Site</label>
+                <input name="site" className="field__input" defaultValue={data?.site || ''} placeholder="www.construtora.com.br" />
+              </div>
+              <div className="field">
+                <label className="field__label">Instagram</label>
+                <input name="instagram" className="field__input" defaultValue={data?.instagram || ''} placeholder="@construtora" />
+              </div>
+              <div className="field field--span-2">
+                <label className="field__label">História da construtora</label>
+                <textarea name="historia" className="field__textarea" rows={5} defaultValue={data?.historia || ''} placeholder="Trajetória, tempo de mercado, diferenciais e reputação. Aparece na tela 'Conhecer a construtora' no site." />
+              </div>
+              <div className="field field--span-2">
+                <label className="field__label">Parceria e políticas comerciais (interno)</label>
+                <textarea name="politicasComerciais" className="field__textarea" rows={5} defaultValue={data?.politicasComerciais || ''} placeholder="Condições da parceria, comissionamento, tabelas, prazos, reservas, regras de repasse. Uso interno — não vai para o site." />
+              </div>
+            </div>
+          </form>
         </>
       )}
     </Modal>
