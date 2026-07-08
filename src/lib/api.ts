@@ -504,6 +504,19 @@ export const Api = {
   importLeadsFiltrar:  (params: any = {}) => request<any>(`/import-leads/filtrar${qs(params)}`),
   // Heal: leads já importados que ficaram sem mensagem (sumiram do Atendimento/bolsão).
   importLeadsReparar:  () => request<{ normalizados: number; reparados: number; bolsaoSemMensagem: number }>('/import-leads/reparar-bolsao', { method: 'POST' }),
+  // Histórico de planilhas importadas — sempre disponível pra repuxar o original.
+  importLeadsArquivos: () => request<{ id: number; nomeArquivo: string; tamanho: number | null; totalLinhas: number | null; stats: any; userNome: string | null; createdAt: string; temArquivo: boolean }[]>('/import-leads/arquivos'),
+  // Baixa o arquivo original (bucket privado → busca autenticada + força download).
+  importLeadsBaixar: async (id: number, nome: string) => {
+    const r = await fetch(`${BASE}/import-leads/arquivos/${id}/download`, { headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined });
+    if (!r.ok) throw new Error('falha_ao_baixar');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nome || `import-${id}`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  },
 
   // ─── Fase C — Remarketing ────────────────────────────────────────
   remarketingList:    () => request<any[]>('/remarketing'),

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
@@ -12,7 +12,28 @@ export default function ImportarLeads() {
   const [resultado, setResultado] = useState<any>(null);
   const [carregando, setCarregando] = useState(false);
   const [reparando, setReparando] = useState(false);
+  const [historico, setHistorico] = useState<any[]>([]);
+  const [baixando, setBaixando] = useState<number | null>(null);
   const toast = useToast();
+
+  // Histórico de planilhas já importadas — sempre disponível pra repuxar.
+  const carregarHistorico = async () => {
+    try {
+      setHistorico(await Api.importLeadsArquivos());
+    } catch { /* silencioso — histórico é secundário */ }
+  };
+  useEffect(() => { carregarHistorico(); }, []);
+
+  const baixarArquivo = async (id: number, nome: string) => {
+    setBaixando(id);
+    try {
+      await Api.importLeadsBaixar(id, nome);
+    } catch {
+      toast.error('Não foi possível baixar o arquivo.');
+    } finally {
+      setBaixando(null);
+    }
+  };
 
   // Conserta leads importados em versões antigas que ficaram sem mensagem e por
   // isso não apareciam no Atendimento/bolsão. Idempotente — pode rodar à vontade.
@@ -56,6 +77,7 @@ export default function ImportarLeads() {
       const r = await Api.importLeadsExecutar(file);
       setResultado(r);
       toast.success(`${r.criados} criados (${r.distribuidos} na roleta · ${r.bolsao} no bolsão), ${r.duplicados} duplicados, ${r.erros} erros`);
+      carregarHistorico(); // arquivo recém-subido aparece no histórico
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
     } finally {
@@ -180,6 +202,51 @@ export default function ImportarLeads() {
                 </ul>
               </div>
             )}
+          </div>
+        )}
+
+        {historico.length > 0 && (
+          <div className="card" style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <Icon name="doc" size={16} />
+              <h4 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Arquivos importados</h4>
+              <span className="text-xs text-secondary" style={{ marginLeft: 'auto' }}>{historico.length} arquivo(s) guardados</span>
+            </div>
+            <div className="text-xs text-secondary" style={{ marginBottom: 12 }}>
+              Toda planilha subida fica guardada aqui — baixe o original quando quiser conferir ou reimportar.
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Arquivo</th>
+                    <th>Data</th>
+                    <th>Quem subiu</th>
+                    <th className="text-right">Linhas</th>
+                    <th className="text-right">Criados</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historico.map((h) => (
+                    <tr key={h.id}>
+                      <td><strong style={{ fontSize: 13 }}>{h.nomeArquivo}</strong>{h.tamanho ? <span className="text-xs text-secondary"> · {(h.tamanho / 1024).toFixed(0)} KB</span> : null}</td>
+                      <td className="text-xs">{new Date(h.createdAt).toLocaleString('pt-BR')}</td>
+                      <td className="text-xs">{h.userNome || '—'}</td>
+                      <td className="text-right text-xs">{h.totalLinhas != null ? Number(h.totalLinhas).toLocaleString('pt-BR') : '—'}</td>
+                      <td className="text-right text-xs">{h.stats?.criados != null ? Number(h.stats.criados).toLocaleString('pt-BR') : '—'}</td>
+                      <td className="text-right">
+                        {h.temArquivo ? (
+                          <button className="btn btn--ghost btn--sm" onClick={() => baixarArquivo(h.id, h.nomeArquivo)} disabled={baixando === h.id}>
+                            {baixando === h.id ? 'Baixando…' : <><Icon name="arrow_down" size={12} /> Baixar</>}
+                          </button>
+                        ) : <span className="text-xs text-secondary">indisponível</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
