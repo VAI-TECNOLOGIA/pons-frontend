@@ -320,6 +320,9 @@ export const Api = {
   // Transferência manual em massa de leads pra um corretor
   roletaTransferirMassa: (leadIds: number[], corretorId: number) =>
     request<{ ok: boolean; transferidos: number; corretor: string }>('/roletas/transferir-massa', { method: 'POST', body: { leadIds, corretorId } }),
+  // Arquivar leads em massa (somem das telas/distribuição, preservados no banco)
+  leadsArquivar: (leadIds: number[]) =>
+    request<{ ok: boolean; arquivados: number }>('/leads/arquivar', { method: 'POST', body: { leadIds } }),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
   roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
   // Histórico de alterações das filas (auditoria antes/depois)

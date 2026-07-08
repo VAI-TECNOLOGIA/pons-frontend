@@ -94,6 +94,23 @@ export default function Distribuicao() {
       setTransferindo(false);
     }
   };
+  const [arquivando, setArquivando] = useState(false);
+  const arquivarSelecionados = async () => {
+    if (!sel.size) return;
+    const ok = await confirm({ title: `Arquivar ${sel.size} lead(s)?`, message: 'Eles somem do bolsão e das telas (útil pra duplicatas/testes), mas ficam preservados no banco.', tone: 'danger' });
+    if (!ok) return;
+    setArquivando(true);
+    try {
+      const r = await Api.leadsArquivar([...sel]);
+      toast.success(`${r.arquivados} lead(s) arquivado(s).`);
+      setSel(new Set());
+      reloadBolsao();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'falha'));
+    } finally {
+      setArquivando(false);
+    }
+  };
   // Alvo opcional: mandar os leads SÓ pra este corretor (ignora escopo/equipe/cidade)
   const [corretorId, setCorretorId] = useState<number | ''>('');
   const toast = useToast();
@@ -223,6 +240,7 @@ export default function Distribuicao() {
                 <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan, #52f7fe)', borderRadius: 10 }}>
                   <strong style={{ fontSize: 14 }}>{sel.size} selecionado(s)</strong>
                   <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
+                  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
                   <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
                   <select className="field__select" style={{ width: 'auto', height: 34 }} value={alvoTransf} onChange={(e) => setAlvoTransf(e.target.value ? Number(e.target.value) : '')}>
                     <option value="">Escolher corretor…</option>
