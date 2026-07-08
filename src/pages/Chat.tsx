@@ -629,9 +629,15 @@ export default function Chat() {
           )}
           {!buscaDeb && inbox?.totalConversas > (inbox?.carregadas || 0) && (
             <div style={{ padding: 12, textAlign: 'center' }}>
-              <button className="btn btn--ghost btn--sm" onClick={() => setLimite((n) => n + 100)}>
-                Carregar mais ({inbox.totalConversas - inbox.carregadas} restantes)
-              </button>
+              {(inbox?.carregadas || 0) < 1000 ? (
+                <button className="btn btn--ghost btn--sm" onClick={() => setLimite((n) => Math.min(1000, n + 150))}>
+                  Carregar mais ({inbox.totalConversas - inbox.carregadas} restantes)
+                </button>
+              ) : (
+                <div className="text-xs text-secondary">
+                  {inbox.totalConversas - inbox.carregadas} conversas a mais — use a <strong>busca</strong> acima pra achar uma específica.
+                </div>
+              )}
             </div>
           )}
         </div>
