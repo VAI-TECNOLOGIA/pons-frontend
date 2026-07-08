@@ -1294,6 +1294,10 @@
 .gap-4 { gap: 16px; }
 .gap-6 { gap: 32px; }
 
+/* Grid genérico: os usos passam grid-template-columns/gap inline (ex.: cards de
+   KPI lado a lado). Faltava a classe base, então o display:grid não aplicava e
+   os cards empilhavam full-width no lugar de virar quadrados lado a lado. */
+.grid { display: grid; gap: 12px; }
 .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .grid-2-1 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; }
