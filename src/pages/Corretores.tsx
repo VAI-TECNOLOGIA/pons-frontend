@@ -15,6 +15,7 @@ export default function Corretores() {
  const [open, setOpen] = useState(false);
  const [painelId, setPainelId] = useState<number | null>(null);
  const [leadsDe, setLeadsDe] = useState<any | null>(null);
+ const [ordenar, setOrdenar] = useState('leads_desc');
  const { data: corretores, loading, error, reload } = useApi<any[]>(() => Api.corretores());
  const { data: equipes } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
@@ -92,10 +93,20 @@ export default function Corretores() {
 
  const ativos = corretores.filter((c: any) => c.status === 'ATIVO' || c.ativo).length;
 
+ const ts = (d: any) => (d ? new Date(d).getTime() : 0);
+ const sortFns: Record<string, (a: any, b: any) => number> = {
+ leads_desc: (a, b) => (b.leadsCount ?? 0) - (a.leadsCount ?? 0),
+ leads_asc: (a, b) => (a.leadsCount ?? 0) - (b.leadsCount ?? 0),
+ nome_asc: (a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'),
+ nome_desc: (a, b) => (b.nome || '').localeCompare(a.nome || '', 'pt-BR'),
+ entrada_desc: (a, b) => ts(b.dataAdmissao) - ts(a.dataAdmissao),
+ entrada_asc: (a, b) => ts(a.dataAdmissao) - ts(b.dataAdmissao),
+ };
  const filtered = corretores
  .filter((c: any) => !filtroEquipe || (c.equipe?.nome || c.equipe) === filtroEquipe)
  .filter((c: any) => !filtroStatus || (filtroStatus === 'ATIVO' ? (c.status === 'ATIVO' || c.ativo) : !(c.status === 'ATIVO' || c.ativo)))
- .filter((c: any) => !search || (c.nome || '').toLowerCase().includes(search.toLowerCase()) || (c.email || c.user?.email || '').toLowerCase().includes(search.toLowerCase()));
+ .filter((c: any) => !search || (c.nome || '').toLowerCase().includes(search.toLowerCase()) || (c.email || c.user?.email || '').toLowerCase().includes(search.toLowerCase()))
+ .sort(sortFns[ordenar] || sortFns.leads_desc);
 
  return (
  <>
@@ -152,6 +163,20 @@ export default function Corretores() {
  <span className={'filter-chip ' + (filtroStatus === 'INATIVO' ? 'filter-chip--active' : '')} onClick={() => setFiltroStatus('INATIVO')}>
  Inativos
  </span>
+ <select
+ className="field__select"
+ style={{ marginLeft: 12, width: 'auto', height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0 }}
+ value={ordenar}
+ onChange={(e) => setOrdenar(e.target.value)}
+ title="Ordenar corretores"
+ >
+ <option value="leads_desc">Ordenar: mais leads</option>
+ <option value="leads_asc">Ordenar: menos leads</option>
+ <option value="nome_asc">Ordenar: nome A–Z</option>
+ <option value="nome_desc">Ordenar: nome Z–A</option>
+ <option value="entrada_desc">Ordenar: entrada + recente</option>
+ <option value="entrada_asc">Ordenar: entrada + antiga</option>
+ </select>
  </div>
 
  <div className="card" style={{ padding: 0 }}>
