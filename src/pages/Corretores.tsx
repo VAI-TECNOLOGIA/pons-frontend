@@ -15,6 +15,7 @@ export default function Corretores() {
  const [open, setOpen] = useState(false);
  const [painelId, setPainelId] = useState<number | null>(null);
  const [leadsDe, setLeadsDe] = useState<any | null>(null);
+ const [scoreDe, setScoreDe] = useState<any | null>(null);
  const [ordenar, setOrdenar] = useState('leads_desc');
  const { data: corretores, loading, error, reload } = useApi<any[]>(() => Api.corretores());
  const { data: equipes } = useApi<any[]>(() => Api.equipes());
@@ -223,9 +224,9 @@ export default function Corretores() {
  </td>
  <td className="text-xs">{c.creci || '—'}</td>
  <td className="numeric">
-   <span style={{ fontWeight: 700, color: (c.scoreMes || 0) > 0 ? 'var(--color-success)' : 'var(--text-secondary)' }}>
+   <button className="btn btn--ghost btn--sm" style={{ fontWeight: 700, color: (c.scoreMes || 0) > 0 ? 'var(--color-success)' : 'var(--color-info-fg)' }} onClick={() => setScoreDe(c)} title="Ver histórico de score deste corretor">
      {c.scoreMes ?? 0}
-   </span>
+   </button>
  </td>
  <td className="numeric">
  {(c.leadsCount ?? 0) > 0 ? (
@@ -342,7 +343,63 @@ export default function Corretores() {
 
  {painelId && <CorretorPainelDrawer id={painelId} onClose={() => setPainelId(null)} onSaved={reload} />}
  {leadsDe && <LeadsCorretorModal corretor={leadsDe} onClose={() => setLeadsDe(null)} />}
+ {scoreDe && <ScoreCorretorModal corretor={scoreDe} onClose={() => setScoreDe(null)} />}
  </>
+ );
+}
+
+// Rótulos amigáveis + ícone/cor pra cada tipo de evento de score.
+const SCORE_TIPO_LABEL: Record<string, string> = {
+ RESPOSTA_RAPIDA: 'Resposta rápida ao lead',
+ NEGOCIANDO: 'Avançou pra negociação',
+ CONTRATO: 'Contrato',
+ VENDA: 'Venda fechada',
+ SEM_RESPOSTA: 'Lead sem resposta',
+ AJUSTE_MANUAL: 'Ajuste manual (gestor)',
+};
+const scoreTipoLabel = (t: string) => SCORE_TIPO_LABEL[t] || t;
+
+function ScoreCorretorModal({ corretor, onClose }: { corretor: any; onClose: () => void }) {
+ const { data, loading, error } = useApi<{ eventos: any[]; porTipo: Record<string, number> }>(() => Api.corretorScoreEventos(corretor.id), [corretor.id]);
+ const fmtData = (d: string) => (d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
+ const eventos = data?.eventos || [];
+ const porTipo = data?.porTipo || {};
+ return (
+ <Modal open onClose={onClose} title={`Histórico de score — ${corretor.nome}`} subtitle={`Score no mês: ${corretor.scoreMes ?? 0} · ${corretor.equipe?.nome || 'sem equipe'}`} size="xl">
+ {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : (
+ <>
+ {Object.keys(porTipo).length > 0 && (
+ <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+ {Object.entries(porTipo).map(([tipo, pts]) => (
+ <span key={tipo} className="badge" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
+ {scoreTipoLabel(tipo)}: <strong style={{ color: pts >= 0 ? 'var(--color-success)' : 'var(--color-danger, #e5484d)', marginLeft: 4 }}>{pts >= 0 ? '+' : ''}{pts}</strong>
+ </span>
+ ))}
+ </div>
+ )}
+ <table className="table">
+ <thead><tr><th>Ação</th><th>Detalhe</th><th>Quando</th><th className="numeric">Pontos</th></tr></thead>
+ <tbody>
+ {eventos.length === 0 ? (
+ <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)' }}>Nenhum evento de score ainda.</td></tr>
+ ) : (
+ eventos.map((e) => (
+ <tr key={e.id}>
+ <td className="font-semibold">{scoreTipoLabel(e.tipo)}</td>
+ <td className="text-sm text-secondary">{e.descricao || (e.leadId ? `Lead #${e.leadId}` : e.origem === 'GESTOR_MANUAL' ? 'Ajuste do gestor' : '—')}</td>
+ <td className="text-sm text-secondary">{fmtData(e.createdAt)}</td>
+ <td className="numeric" style={{ fontWeight: 700, color: (e.pontos ?? 0) >= 0 ? 'var(--color-success)' : 'var(--color-danger, #e5484d)' }}>
+ {(e.pontos ?? 0) >= 0 ? '+' : ''}{e.pontos ?? 0}
+ </td>
+ </tr>
+ ))
+ )}
+ </tbody>
+ </table>
+ <div className="text-xs text-secondary" style={{ marginTop: 8 }}>Mostrando os últimos {eventos.length} eventos.</div>
+ </>
+ )}
+ </Modal>
  );
 }
 
