@@ -424,9 +424,9 @@ export const Api = {
     request<{ importados: number; enviados: number }>('/integracoes/google/sync', { method: 'POST' }),
 
   // Conversations (VAI WhatsApp)
-  conversations: () =>
-    request<{ pendente: any[]; atendendo: any[]; vaiConfigured: boolean; metaConfigured: boolean }>(
-      '/conversations',
+  conversations: (params: { q?: string; limit?: number } = {}) =>
+    request<{ pendente: any[]; atendendo: any[]; totalConversas?: number; carregadas?: number; busca?: string | null; vaiConfigured: boolean; metaConfigured: boolean }>(
+      `/conversations${qs(params)}`,
     ),
   conversationGet: (leadId: number) => request<any>(`/conversations/${leadId}`),
   conversationSend: (

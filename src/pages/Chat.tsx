@@ -112,7 +112,11 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations());
+  const [busca, setBusca] = useState('');
+  const [limite, setLimite] = useState(80);
+  const [buscaDeb, setBuscaDeb] = useState('');
+  useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 350); return () => clearTimeout(t); }, [busca]);
+  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite }), [buscaDeb, limite]);
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
   const { data: tabMotivos } = useApi<Array<{ codigo: string; label: string; devolveBase?: boolean }>>(() => Api.tabulacaoMotivos());
   const { data: conv, reload: reloadConv } = useApi<ConversationDetail>(
@@ -563,6 +567,21 @@ export default function Chat() {
             </div>
           </div>
 
+          <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-light)' }}>
+            <input
+              className="field__input"
+              style={{ width: '100%', height: 34 }}
+              placeholder="Buscar por nome, telefone ou e-mail…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+            {inbox?.totalConversas != null && (
+              <div className="text-xs text-secondary" style={{ marginTop: 4 }}>
+                {buscaDeb ? `${inbox.carregadas} resultado(s)` : `${inbox.carregadas} de ${inbox.totalConversas} conversas`}
+              </div>
+            )}
+          </div>
+
           {lista.length === 0 ? (
             <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-secondary)' }}>
               {tab === 'pendente'
@@ -607,6 +626,13 @@ export default function Chat() {
                 </div>
               </div>
             ))
+          )}
+          {!buscaDeb && inbox?.totalConversas > (inbox?.carregadas || 0) && (
+            <div style={{ padding: 12, textAlign: 'center' }}>
+              <button className="btn btn--ghost btn--sm" onClick={() => setLimite((n) => n + 100)}>
+                Carregar mais ({inbox.totalConversas - inbox.carregadas} restantes)
+              </button>
+            </div>
           )}
         </div>
 
