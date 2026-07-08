@@ -25,6 +25,7 @@ export default function Roletas() {
  const { data: roletas, loading, error, reload } = useApi<any[]>(() => Api.roletas());
  const { data: funil } = useApi<any>(() => Api.funilEmpresa());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+ const { data: formularios } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaFormularios());
  const toast = useToast();
  const confirm = useConfirm();
  const [editing, setEditing] = useState<any>(null);
@@ -39,6 +40,7 @@ export default function Roletas() {
  modo: String(fd.get('modo') || 'ROUND_ROBIN'),
  origemFiltro: fd.get('origemFiltro') ? String(fd.get('origemFiltro')) : undefined,
  campanhaFiltro: fd.get('campanhaFiltro') ? String(fd.get('campanhaFiltro')) : undefined,
+ formularioFiltro: Array.from(fd.getAll('formularioFiltro')).map(String).join(',') || undefined,
  slaHoras: Number(fd.get('slaHoras')) || 4,
  prioridade: Number(fd.get('prioridade')) || 5,
  maxTransferencias: Number(fd.get('maxTransferencias')) || 10,
@@ -65,6 +67,7 @@ export default function Roletas() {
  const r = await Api.roletaSimular({
  origem: String(fd.get('origem') || 'META_ADS'),
  campanha: fd.get('campanha') ? String(fd.get('campanha')) : '',
+ formularioNome: fd.get('formularioNome') ? String(fd.get('formularioNome')) : null,
  });
  setSimResult(r);
  reload();
@@ -161,6 +164,7 @@ export default function Roletas() {
  modo: String(fd.get('modo') || 'ROUND_ROBIN'),
  origemFiltro: fd.get('origemFiltro') ? String(fd.get('origemFiltro')) : null,
  campanhaFiltro: fd.get('campanhaFiltro') ? String(fd.get('campanhaFiltro')) : null,
+ formularioFiltro: Array.from(fd.getAll('formularioFiltro')).map(String).join(',') || null,
  slaHoras: Number(fd.get('slaHoras')) || 4,
  prioridade: Number(fd.get('prioridade')) || 5,
  ativa: fd.get('ativa') === 'on',
@@ -309,6 +313,9 @@ export default function Roletas() {
  <span className="badge badge--neutral">{MODO_LABEL[r.modo] || r.modo}</span>
  {r.origemFiltro && <span className="badge badge--neutral">{r.origemFiltro}</span>}
  {r.campanhaFiltro && <span className="badge badge--launch">campanha: {r.campanhaFiltro}</span>}
+ {String(r.formularioFiltro || '').split(',').map((f: string) => f.trim()).filter(Boolean).map((f: string) => (
+ <span key={f} className="badge badge--analysis" title="Formulário do Facebook vinculado">📋 {f}</span>
+ ))}
  {r.slaHoras != null && <span className="badge badge--analysis">SLA {r.slaHoras}h</span>}
  <span className="badge badge--neutral">prioridade {r.prioridade ?? 0}</span>
  </div>
@@ -392,6 +399,7 @@ export default function Roletas() {
  <label className="field__label">Filtro de campanha</label>
  <input name="campanhaFiltro" className="field__input" placeholder="ex: VIP, Park View…" />
  </div>
+ <FormularioSelect formularios={formularios || []} />
  <div className="field">
  <label className="field__label">SLA (horas)</label>
  <input name="slaHoras" type="number" className="field__input" defaultValue="4" />
@@ -475,6 +483,15 @@ export default function Roletas() {
  <label className="field__label">Campanha (opcional)</label>
  <input name="campanha" className="field__input" placeholder="ex: VIP, Park View…" />
  </div>
+ <div className="field">
+ <label className="field__label">Formulário do Facebook (opcional)</label>
+ <select name="formularioNome" className="field__select" defaultValue="">
+ <option value="">Sem formulário</option>
+ {(formularios || []).map((f) => (
+ <option key={f.nome} value={f.nome}>{f.nome} ({f.leads} leads)</option>
+ ))}
+ </select>
+ </div>
  </div>
  {simResult && (
  <div style={{ marginTop: 16 }}>
@@ -538,6 +555,7 @@ export default function Roletas() {
  <label className="field__label">Filtro de campanha</label>
  <input name="campanhaFiltro" className="field__input" defaultValue={editing.campanhaFiltro || ''} />
  </div>
+ <FormularioSelect formularios={formularios || []} selecionados={editing.formularioFiltro || ''} />
  <div className="field">
  <label className="field__label">SLA (horas)</label>
  <input name="slaHoras" type="number" className="field__input" defaultValue={editing.slaHoras ?? 4} />
@@ -560,6 +578,35 @@ export default function Roletas() {
  </Modal>
  )}
  </>
+ );
+}
+
+// Multi-select de formulários do Facebook (Fase 1 Filas de Atendimento).
+// Lista os formulários já vistos nos leads; marcar um vincula a roleta a ele
+// (lead do form X cai na fila X). Vai no form como checkboxes name=formularioFiltro.
+function FormularioSelect({ formularios, selecionados = '' }: { formularios: { nome: string; leads: number }[]; selecionados?: string }) {
+ const marcados = selecionados.split(',').map((s) => s.trim()).filter(Boolean);
+ // Preserva vínculos antigos que não aparecem mais na lista de leads
+ const extras = marcados.filter((m) => !formularios.some((f) => f.nome === m));
+ const opcoes = [...formularios, ...extras.map((nome) => ({ nome, leads: 0 }))];
+ return (
+ <div className="field field--span-2">
+ <label className="field__label">Formulários (Facebook)</label>
+ {opcoes.length === 0 ? (
+ <div className="field__hint">Nenhum formulário capturado ainda — os nomes aparecem aqui quando chegam leads do Meta.</div>
+ ) : (
+ <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6, maxHeight: 140, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 8, padding: 10 }}>
+ {opcoes.map((f) => (
+ <label key={f.nome} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, border: '1px solid var(--border-light)', borderRadius: 999, padding: '4px 10px', cursor: 'pointer' }}>
+ <input type="checkbox" name="formularioFiltro" value={f.nome} defaultChecked={marcados.includes(f.nome)} />
+ <span>📋 {f.nome}</span>
+ <span style={{ color: 'var(--text-secondary)' }}>({f.leads})</span>
+ </label>
+ ))}
+ </div>
+ )}
+ <div className="field__hint">Lead do formulário marcado cai nesta fila. Vazio = aceita qualquer formulário.</div>
+ </div>
  );
 }
 

@@ -296,6 +296,8 @@ export const Api = {
   roletaRedistribuirBolsao: (filtro: { origem?: string; limite?: number } = {}) =>
     request<{ ok: boolean; avaliados: number; distribuidos: number; semCorretor: number }>('/roletas/redistribuir-bolsao', { method: 'POST', body: filtro }),
   roletaBolsao: () => request<{ total: number; leads: any[] }>('/roletas/bolsao'),
+  // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
+  roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
   roletaSimular: (data: any) => request<any>('/roletas/simular', { method: 'POST', body: data }),
   roletaRedistribuirSla: () => request<any>('/roletas/redistribuir-sla', { method: 'POST' }),
   funilEmpresa: () => request<any>('/roletas/funil-empresa'),
