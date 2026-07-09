@@ -13,19 +13,19 @@ type CListItem = {
   anoFundacao?: number | null; entregasRealizadas?: number | null; empreendimentosCount?: number;
 };
 
-const TABS = ['Identidade', 'História', 'Financeiro', 'Condições de venda', 'Lotes à venda'] as const;
+const TABS = ['Identidade', 'História', 'Financeiro', 'Lotes à venda'] as const;
 type Tab = typeof TABS[number];
 
-// Campos por aba (cada aba salva só os seus — preenchimento independente)
-const CAMPOS: Record<Tab, string[]> = {
+// Campos por aba que salvam direto na CONSTRUTORA (a aba Financeiro é por empreendimento).
+const CAMPOS: Record<string, string[]> = {
   'Identidade': ['nome', 'cidadeSede', 'anoFundacao', 'entregasRealizadas', 'unidadesEntregues', 'site', 'instagram'],
   'História': ['historia'],
-  'Financeiro': ['comissaoPct', 'comissaoTipo', 'comissaoObs', 'formaPagamentoComissao', 'prazoRepasse', 'vgv', 'tabelaValores', 'cnpj', 'contatoNome', 'contatoEmail', 'contatoTelefone', 'politicasComerciais'],
-  'Condições de venda': ['entradaMinPct', 'parcelamentoMax', 'aceitaFinanciamento', 'aceitaPermuta', 'aceitaFgts', 'descontoMaxPct', 'sinalMinimo', 'validadeReserva', 'condicoesVendaTexto', 'documentacaoNecessaria'],
   'Lotes à venda': ['unidadesDisponiveis', 'faixaPrecoMin', 'faixaPrecoMax', 'lotesObs'],
 };
 const NUM = new Set(['anoFundacao', 'entregasRealizadas', 'unidadesEntregues', 'comissaoPct', 'vgv', 'entradaMinPct', 'parcelamentoMax', 'descontoMaxPct', 'unidadesDisponiveis', 'faixaPrecoMin', 'faixaPrecoMax']);
 const BOOL = new Set(['aceitaFinanciamento', 'aceitaPermuta', 'aceitaFgts']);
+
+const STATUS_LABEL: Record<string, string> = { PRE_LANCAMENTO: 'Pré-lançamento', OBRA: 'Em obra', ENTREGUE: 'Entregue' };
 
 export default function Construtoras() {
   const { data, loading, error, reload } = useApi<CListItem[]>(() => Api.construtoras());
@@ -99,6 +99,7 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
   const [c, setC] = useState<any>({ nome: '', aceitaFinanciamento: false, aceitaPermuta: false, aceitaFgts: false });
   const [savedId, setSavedId] = useState<number | null>(construtoraId);
   const [fotos, setFotos] = useState<any[]>([]);
+  const [empEdit, setEmpEdit] = useState<number | 'new' | null>(null); // financeiro por empreendimento
   const logoRef = useRef<HTMLInputElement>(null);
   const fotosRef = useRef<HTMLInputElement>(null);
 
@@ -110,6 +111,12 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // recarrega a construtora (usado após criar/editar o financeiro de um empreendimento)
+  const recarregar = () => {
+    if (!savedId) return;
+    Api.construtora(savedId).then((data) => { setC((cur: any) => ({ ...cur, ...data })); setFotos(data?.fotos || []); }).catch(() => {});
+  };
 
   const set = (k: string, v: any) => setC((cur: any) => ({ ...cur, [k]: v }));
 
@@ -188,6 +195,7 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
   const bloqueado = !savedId; // abas além da Identidade só liberam após criar
 
   return (
+    <>
     <Modal
       open
       onClose={onClose}
@@ -288,47 +296,33 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
             </div>
           )}
 
-          {/* ---------- FINANCEIRO ---------- */}
+          {/* ---------- FINANCEIRO (por empreendimento) ---------- */}
           {tab === 'Financeiro' && !bloqueado && (
             <div className="cons-pane">
-              <p className="cons-sec">Negociação com a construtora — quanto a Pons ganha (uso interno)</p>
-              <div className="form-grid">
-                <div className="field"><label className="field__label">Comissão da Pons (%)</label><input className="field__input" type="number" step="0.01" value={c.comissaoPct ?? ''} onChange={(e) => set('comissaoPct', e.target.value)} placeholder="Ex: 6" /></div>
-                <div className="field"><label className="field__label">Base do cálculo</label><input className="field__input" value={c.comissaoTipo || ''} onChange={(e) => set('comissaoTipo', e.target.value)} placeholder="sobre o valor de venda / VGV" /></div>
-                <div className="field"><label className="field__label">Forma de pagamento da comissão</label><input className="field__input" value={c.formaPagamentoComissao || ''} onChange={(e) => set('formaPagamentoComissao', e.target.value)} placeholder="Ex: 50% assinatura, 50% repasse" /></div>
-                <div className="field"><label className="field__label">Prazo de repasse</label><input className="field__input" value={c.prazoRepasse || ''} onChange={(e) => set('prazoRepasse', e.target.value)} placeholder="Ex: 30 dias após assinatura" /></div>
-                <div className="field"><label className="field__label">VGV da parceria (R$)</label><input className="field__input" type="number" step="0.01" value={c.vgv ?? ''} onChange={(e) => set('vgv', e.target.value)} placeholder="opcional" /></div>
-                <div className="field"><label className="field__label">CNPJ</label><input className="field__input" value={c.cnpj || ''} onChange={(e) => set('cnpj', e.target.value)} placeholder="00.000.000/0001-00" /></div>
-                <div className="field field--span-2"><label className="field__label">Observações da comissão</label><textarea className="field__textarea" rows={2} value={c.comissaoObs || ''} onChange={(e) => set('comissaoObs', e.target.value)} placeholder="Faixas, bônus por volume, campanhas, etc." /></div>
-                <div className="field field--span-2"><label className="field__label">Tabela / valores praticados</label><textarea className="field__textarea" rows={2} value={c.tabelaValores || ''} onChange={(e) => set('tabelaValores', e.target.value)} placeholder="Resumo da tabela oficial, reajustes, etc." /></div>
-                <div className="field"><label className="field__label">Contato comercial (nome)</label><input className="field__input" value={c.contatoNome || ''} onChange={(e) => set('contatoNome', e.target.value)} /></div>
-                <div className="field"><label className="field__label">Telefone do contato</label><input className="field__input" value={c.contatoTelefone || ''} onChange={(e) => set('contatoTelefone', e.target.value)} /></div>
-                <div className="field field--span-2"><label className="field__label">E-mail do contato</label><input className="field__input" value={c.contatoEmail || ''} onChange={(e) => set('contatoEmail', e.target.value)} /></div>
-                <div className="field field--span-2"><label className="field__label">Políticas comerciais da parceria (interno)</label><textarea className="field__textarea" rows={3} value={c.politicasComerciais || ''} onChange={(e) => set('politicasComerciais', e.target.value)} placeholder="Regras de reserva, repasse, exclusividade, comissionamento do time." /></div>
+              <div className="cons-emp__head">
+                <p className="cons-sec" style={{ margin: 0 }}>O financeiro e o acordo comercial são <b>por empreendimento</b>. Adicione um empreendimento para definir comissão, condições e o acordo.</p>
+                <button className="btn btn--primary btn--sm" style={{ flex: '0 0 auto' }} onClick={() => setEmpEdit('new')}><Icon name="plus" size={14} /> Adicionar empreendimento</button>
               </div>
-              <div className="cons-actions"><button className="btn btn--primary btn--sm" disabled={saving} onClick={() => salvarAba('Financeiro')}>{saving ? 'Salvando…' : 'Salvar Financeiro'}</button></div>
-            </div>
-          )}
-
-          {/* ---------- CONDIÇÕES DE VENDA ---------- */}
-          {tab === 'Condições de venda' && !bloqueado && (
-            <div className="cons-pane">
-              <p className="cons-sec">Condições que a construtora aceita na venda dos empreendimentos</p>
-              <div className="form-grid">
-                <div className="field"><label className="field__label">Entrada mínima (%)</label><input className="field__input" type="number" step="0.01" value={c.entradaMinPct ?? ''} onChange={(e) => set('entradaMinPct', e.target.value)} placeholder="Ex: 10" /></div>
-                <div className="field"><label className="field__label">Parcelamento máx. (meses)</label><input className="field__input" type="number" value={c.parcelamentoMax ?? ''} onChange={(e) => set('parcelamentoMax', e.target.value)} placeholder="Ex: 120" /></div>
-                <div className="field"><label className="field__label">Desconto máx. negociável (%)</label><input className="field__input" type="number" step="0.01" value={c.descontoMaxPct ?? ''} onChange={(e) => set('descontoMaxPct', e.target.value)} placeholder="Ex: 5" /></div>
-                <div className="field"><label className="field__label">Sinal / ato mínimo</label><input className="field__input" value={c.sinalMinimo || ''} onChange={(e) => set('sinalMinimo', e.target.value)} placeholder="Ex: R$ 5.000" /></div>
-                <div className="field"><label className="field__label">Validade da reserva/proposta</label><input className="field__input" value={c.validadeReserva || ''} onChange={(e) => set('validadeReserva', e.target.value)} placeholder="Ex: 48h" /></div>
-                <div className="field field--span-2" style={{ display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={!!c.aceitaFinanciamento} onChange={(e) => set('aceitaFinanciamento', e.target.checked)} /> Aceita financiamento bancário</label>
-                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={!!c.aceitaPermuta} onChange={(e) => set('aceitaPermuta', e.target.checked)} /> Aceita permuta</label>
-                  <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={!!c.aceitaFgts} onChange={(e) => set('aceitaFgts', e.target.checked)} /> Aceita FGTS</label>
+              {(!c.empreendimentos || c.empreendimentos.length === 0) ? (
+                <div className="card" style={{ padding: 26, textAlign: 'center' }}>
+                  <p className="text-secondary" style={{ marginBottom: 14 }}>Nenhum empreendimento vinculado a esta construtora ainda.</p>
+                  <button className="btn btn--secondary btn--sm" onClick={() => setEmpEdit('new')}><Icon name="plus" size={13} /> Adicionar empreendimento</button>
                 </div>
-                <div className="field field--span-2"><label className="field__label">Condições completas (texto livre)</label><textarea className="field__textarea" rows={4} value={c.condicoesVendaTexto || ''} onChange={(e) => set('condicoesVendaTexto', e.target.value)} placeholder="Descreva as condições que a construtora aceita: entrada, reforços, chaves, financiamento, etc." /></div>
-                <div className="field field--span-2"><label className="field__label">Documentação necessária</label><textarea className="field__textarea" rows={2} value={c.documentacaoNecessaria || ''} onChange={(e) => set('documentacaoNecessaria', e.target.value)} placeholder="Documentos exigidos do comprador para fechar a venda." /></div>
-              </div>
-              <div className="cons-actions"><button className="btn btn--primary btn--sm" disabled={saving} onClick={() => salvarAba('Condições de venda')}>{saving ? 'Salvando…' : 'Salvar Condições'}</button></div>
+              ) : (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {c.empreendimentos.map((e: any) => (
+                    <button key={e.id} className="card cons-emp" onClick={() => setEmpEdit(e.id)}>
+                      <span className="cons-emp__ic"><Icon name="building" size={18} /></span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600 }}>{e.nome}</div>
+                        <div className="text-xs text-secondary">{e.cidade}{e.status ? ' · ' + (STATUS_LABEL[e.status] || e.status) : ''}</div>
+                      </div>
+                      <span className={`badge badge--${e.comissaoPct ? 'launch' : 'neutral'}`}>{e.comissaoPct ? `Comissão ${e.comissaoPct}%` : 'A definir'}</span>
+                      <Icon name="pencil" size={14} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -345,6 +339,128 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
               <div className="cons-actions"><button className="btn btn--primary btn--sm" disabled={saving} onClick={() => salvarAba('Lotes à venda')}>{saving ? 'Salvando…' : 'Salvar Lotes'}</button></div>
             </div>
           )}
+        </div>
+      )}
+    </Modal>
+
+    {empEdit != null && savedId != null && (
+      <EmpFinanceiro
+        construtoraId={savedId}
+        empId={empEdit === 'new' ? null : empEdit}
+        construtoraNome={c.nome || 'Construtora'}
+        onClose={(mudou) => { setEmpEdit(null); if (mudou) recarregar(); }}
+      />
+    )}
+    </>
+  );
+}
+
+// ── Editor do FINANCEIRO de UM empreendimento (comissão + condições + acordo) ──
+const E_NUM = new Set(['comissaoPct', 'vgv', 'entradaMinPct', 'parcelamentoMax', 'descontoMaxPct', 'valorInicial']);
+const E_BOOL = new Set(['aceitaFinanciamento', 'aceitaPermuta', 'aceitaFgts']);
+
+function EmpFinanceiro({ construtoraId, empId, construtoraNome, onClose }: {
+  construtoraId: number; empId: number | null; construtoraNome: string; onClose: (mudou?: boolean) => void;
+}) {
+  const toast = useToast();
+  const isNew = empId == null;
+  const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+  const [e, setE] = useState<any>({ estado: 'SC', status: 'PRE_LANCAMENTO', aceitaFinanciamento: false, aceitaPermuta: false, aceitaFgts: false });
+  const set = (k: string, v: any) => setE((cur: any) => ({ ...cur, [k]: v }));
+
+  useEffect(() => {
+    if (isNew || empId == null) return;
+    Api.empreendimento(empId).then((d) => setE(d || {})).catch(() => toast.error('Falha ao carregar o empreendimento.')).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const salvar = async () => {
+    const nome = String(e.nome || '').trim();
+    if (isNew && nome.length < 2) { toast.error('Informe o nome do empreendimento.'); return; }
+    if (isNew && !String(e.cidade || '').trim()) { toast.error('Informe a cidade.'); return; }
+    const CAMPOS = ['comissaoPct', 'comissaoTipo', 'comissaoObs', 'formaPagamentoComissao', 'prazoRepasse', 'vgv', 'tabelaValores',
+      'entradaMinPct', 'parcelamentoMax', 'aceitaFinanciamento', 'aceitaPermuta', 'aceitaFgts', 'descontoMaxPct', 'sinalMinimo', 'validadeReserva',
+      'condicoesVendaTexto', 'documentacaoNecessaria', 'acordoComercial'];
+    const payload: Record<string, any> = {};
+    for (const k of CAMPOS) {
+      const v = e[k];
+      if (E_BOOL.has(k)) payload[k] = !!v;
+      else if (E_NUM.has(k)) payload[k] = (v === '' || v == null) ? null : Number(v);
+      else { const s = v == null ? '' : String(v).trim(); payload[k] = s || null; }
+    }
+    setSaving(true);
+    try {
+      if (isNew) {
+        await Api.empreendimentoCreate({ nome, construtoraId, cidade: String(e.cidade).trim(), estado: String(e.estado || 'SC').toUpperCase(), status: String(e.status || 'PRE_LANCAMENTO'), valorInicial: e.valorInicial ? Number(e.valorInicial) : null, ...payload });
+        toast.success('Empreendimento adicionado com o financeiro.');
+      } else {
+        await Api.empreendimentoUpdate(empId!, payload);
+        toast.success('Financeiro do empreendimento salvo.');
+      }
+      onClose(true);
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err?.message || 'falha'));
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={() => onClose(false)}
+      title={isNew ? 'Adicionar empreendimento' : (e.nome || 'Empreendimento')}
+      subtitle={`Financeiro e acordo comercial · ${construtoraNome}`}
+      size="lg"
+      footer={<>
+        <button className="btn btn--ghost" onClick={() => onClose(false)} disabled={saving}>Cancelar</button>
+        <button className="btn btn--primary" disabled={saving} onClick={salvar}>{saving ? 'Salvando…' : isNew ? 'Adicionar empreendimento' : 'Salvar financeiro'}</button>
+      </>}
+    >
+      {loading ? <LoadingBlock /> : (
+        <div className="cons-pane">
+          {isNew && (
+            <>
+              <p className="cons-sec">Empreendimento</p>
+              <div className="form-grid">
+                <div className="field field--span-2"><label className="field__label">Nome do empreendimento *</label><input className="field__input" value={e.nome || ''} onChange={(ev) => set('nome', ev.target.value)} placeholder="Ex: Conecta Residence" /></div>
+                <div className="field"><label className="field__label">Cidade *</label><input className="field__input" value={e.cidade || ''} onChange={(ev) => set('cidade', ev.target.value)} placeholder="Ex: Porto Belo" /></div>
+                <div className="field"><label className="field__label">UF</label><input className="field__input" maxLength={2} value={e.estado || 'SC'} onChange={(ev) => set('estado', ev.target.value)} /></div>
+                <div className="field"><label className="field__label">Status</label><select className="field__select" value={e.status || 'PRE_LANCAMENTO'} onChange={(ev) => set('status', ev.target.value)}><option value="PRE_LANCAMENTO">Pré-lançamento</option><option value="OBRA">Em obra</option><option value="ENTREGUE">Entregue</option></select></div>
+                <div className="field"><label className="field__label">Valor inicial (R$)</label><input className="field__input" type="number" value={e.valorInicial ?? ''} onChange={(ev) => set('valorInicial', ev.target.value)} placeholder="Ex: 589000" /></div>
+              </div>
+              <hr style={{ margin: '18px 0', borderColor: 'var(--border-light)' }} />
+            </>
+          )}
+
+          <p className="cons-sec">Comissão da Pons neste empreendimento</p>
+          <div className="form-grid">
+            <div className="field"><label className="field__label">Comissão da Pons (%)</label><input className="field__input" type="number" step="0.01" value={e.comissaoPct ?? ''} onChange={(ev) => set('comissaoPct', ev.target.value)} placeholder="Ex: 6" /></div>
+            <div className="field"><label className="field__label">Base do cálculo</label><input className="field__input" value={e.comissaoTipo || ''} onChange={(ev) => set('comissaoTipo', ev.target.value)} placeholder="sobre o valor de venda / VGV" /></div>
+            <div className="field"><label className="field__label">Forma de pagamento</label><input className="field__input" value={e.formaPagamentoComissao || ''} onChange={(ev) => set('formaPagamentoComissao', ev.target.value)} placeholder="Ex: 50% assinatura, 50% repasse" /></div>
+            <div className="field"><label className="field__label">Prazo de repasse</label><input className="field__input" value={e.prazoRepasse || ''} onChange={(ev) => set('prazoRepasse', ev.target.value)} placeholder="Ex: 30 dias após assinatura" /></div>
+            <div className="field"><label className="field__label">VGV (R$)</label><input className="field__input" type="number" step="0.01" value={e.vgv ?? ''} onChange={(ev) => set('vgv', ev.target.value)} placeholder="opcional" /></div>
+            <div className="field field--span-2"><label className="field__label">Observações da comissão</label><textarea className="field__textarea" rows={2} value={e.comissaoObs || ''} onChange={(ev) => set('comissaoObs', ev.target.value)} placeholder="Faixas, bônus por volume, campanhas." /></div>
+            <div className="field field--span-2"><label className="field__label">Tabela / valores praticados</label><textarea className="field__textarea" rows={2} value={e.tabelaValores || ''} onChange={(ev) => set('tabelaValores', ev.target.value)} /></div>
+          </div>
+
+          <p className="cons-sec" style={{ marginTop: 20 }}>Condições de venda deste empreendimento</p>
+          <div className="form-grid">
+            <div className="field"><label className="field__label">Entrada mínima (%)</label><input className="field__input" type="number" step="0.01" value={e.entradaMinPct ?? ''} onChange={(ev) => set('entradaMinPct', ev.target.value)} placeholder="Ex: 10" /></div>
+            <div className="field"><label className="field__label">Parcelamento máx. (meses)</label><input className="field__input" type="number" value={e.parcelamentoMax ?? ''} onChange={(ev) => set('parcelamentoMax', ev.target.value)} placeholder="Ex: 120" /></div>
+            <div className="field"><label className="field__label">Desconto máx. (%)</label><input className="field__input" type="number" step="0.01" value={e.descontoMaxPct ?? ''} onChange={(ev) => set('descontoMaxPct', ev.target.value)} placeholder="Ex: 5" /></div>
+            <div className="field"><label className="field__label">Sinal / ato mínimo</label><input className="field__input" value={e.sinalMinimo || ''} onChange={(ev) => set('sinalMinimo', ev.target.value)} placeholder="Ex: R$ 5.000" /></div>
+            <div className="field"><label className="field__label">Validade da reserva</label><input className="field__input" value={e.validadeReserva || ''} onChange={(ev) => set('validadeReserva', ev.target.value)} placeholder="Ex: 48h" /></div>
+            <div className="field field--span-2" style={{ display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'center' }}>
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={!!e.aceitaFinanciamento} onChange={(ev) => set('aceitaFinanciamento', ev.target.checked)} /> Aceita financiamento</label>
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={!!e.aceitaPermuta} onChange={(ev) => set('aceitaPermuta', ev.target.checked)} /> Aceita permuta</label>
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={!!e.aceitaFgts} onChange={(ev) => set('aceitaFgts', ev.target.checked)} /> Aceita FGTS</label>
+            </div>
+            <div className="field field--span-2"><label className="field__label">Condições completas (texto)</label><textarea className="field__textarea" rows={3} value={e.condicoesVendaTexto || ''} onChange={(ev) => set('condicoesVendaTexto', ev.target.value)} placeholder="Entrada, reforços, chaves, financiamento…" /></div>
+            <div className="field field--span-2"><label className="field__label">Documentação necessária</label><textarea className="field__textarea" rows={2} value={e.documentacaoNecessaria || ''} onChange={(ev) => set('documentacaoNecessaria', ev.target.value)} /></div>
+          </div>
+
+          <p className="cons-sec" style={{ marginTop: 20 }}>Acordo comercial</p>
+          <div className="field"><label className="field__label">Acordo comercial com a construtora</label><textarea className="field__textarea" rows={5} value={e.acordoComercial || ''} onChange={(ev) => set('acordoComercial', ev.target.value)} placeholder="Registre o acordo comercial completo deste empreendimento: comissionamento, exclusividade, metas, regras de reserva e repasse, condições especiais…" /></div>
         </div>
       )}
     </Modal>
