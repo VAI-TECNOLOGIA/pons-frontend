@@ -43,6 +43,7 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/pipeline', label: 'Funil', icon: 'pipeline', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/vendas', label: 'Vendas', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },
   { to: '/empreendimentos', label: 'Empreendimentos', icon: 'building' },
+  { to: '/construtoras', label: 'Construtoras', icon: 'building', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', SOCIO] },
   { to: '/ranking', label: 'Ranking', icon: 'trophy' },
   { to: '/executivo', label: 'Agenda', icon: 'calendar', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA'] },
   { to: '/pessoal', label: 'Meu Espaço', icon: 'crown', emails: ['paulo@grupopons.com.br'] },

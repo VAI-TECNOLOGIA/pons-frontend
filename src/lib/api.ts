@@ -262,6 +262,22 @@ export const Api = {
     }
     return r.json();
   },
+  construtoraFotosUpload: async (id: number, files: File[]) => {
+    const form = new FormData();
+    for (const f of files.slice(0, 12)) form.append('files', f);
+    const r = await fetch(`${BASE}/empreendimentos/construtoras/${id}/fotos`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.error || j.message || 'upload_failed');
+    }
+    return r.json();
+  },
+  construtoraFotoDelete: (id: number, fotoId: number) =>
+    request<{ ok: boolean }>(`/empreendimentos/construtoras/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
 
   // Vendas
   vendas: () => request<any[]>('/vendas'),
