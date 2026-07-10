@@ -60,7 +60,8 @@ export default function PainelExecutivo() {
     [bloco],
   );
 
-  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const fmt = (v: number | null | undefined) =>
+    v != null ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) : '—';
 
   return (
     <>
@@ -78,7 +79,7 @@ export default function PainelExecutivo() {
 
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
 
-        {data && bloco === 'EMPRESA' && (
+        {data && bloco === 'EMPRESA' && typeof data.vgv === 'number' && (
           <>
             <div className="dash-grid dash-grid--cols3">
               <StatGlow icon="trophy" label="VGV" value={fmt(data.vgv)} hero accent="#88C559" sub={`${data.vendas} vendas no período`} />
