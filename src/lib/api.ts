@@ -42,6 +42,84 @@ const qs = (params: Record<string, unknown> = {}) => {
   return s ? '?' + s : '';
 };
 
+// Traduz os códigos de erro do backend em mensagens claras pro usuário — sem
+// expor rota, status HTTP ou detalhe técnico. Código não mapeado cai no fallback
+// por status (também sem número). Cobre TODAS as respostas de erro da API num só ponto.
+const ERROS: Record<string, string> = {
+  // Validação / entrada
+  invalid_input: 'Confira os campos — há informação obrigatória faltando ou inválida.',
+  invalid_id: 'Registro inválido.',
+  id_invalido: 'Registro inválido.',
+  nome_obrigatorio: 'Informe o nome.',
+  url_obrigatoria: 'Informe a URL.',
+  texto_vazio: 'Escreva uma mensagem antes de enviar.',
+  token_vazio: 'Informe o token.',
+  status_invalido: 'Status inválido para essa operação.',
+  tipo_invalido: 'Tipo de arquivo não suportado.',
+  invalid_json: 'Não foi possível ler os dados enviados.',
+  template_required: 'Selecione um template.',
+  telefone_e_template_obrigatorios: 'Informe o telefone e o template.',
+  confirm_required: 'Confirme a ação para continuar.',
+  rateio_invalido: 'A soma do rateio precisa fechar 100%.',
+  // Não encontrado
+  not_found: 'Não encontramos esse registro.',
+  nao_encontrado: 'Não encontramos esse registro.',
+  lead_nao_encontrado: 'Lead não encontrado.',
+  corretor_nao_encontrado: 'Corretor não encontrado.',
+  sem_corretor: 'Corretor não encontrado.',
+  user_not_found: 'Usuário não encontrado.',
+  unidade_not_found: 'Filial não encontrada.',
+  empreendimento_not_found: 'Empreendimento não encontrado.',
+  venda_not_found: 'Venda não encontrada.',
+  foto_not_found: 'Imagem não encontrada.',
+  bm_nao_encontrada: 'Business Manager não encontrada.',
+  cnpj_nao_encontrado: 'CNPJ não encontrado.',
+  // Permissão / sessão
+  forbidden: 'Você não tem permissão para isso.',
+  sem_permissao: 'Você não tem permissão para isso.',
+  unauthorized: 'Sessão expirada — entre de novo.',
+  token_invalido: 'Sessão inválida — entre de novo.',
+  credenciais_invalidas: 'E-mail ou senha incorretos.',
+  somente_ceo_ou_diretor_configura_integracoes: 'Só o CEO ou um diretor pode configurar integrações.',
+  // Conflito / vínculos
+  ja_existe: 'Já existe um registro com esses dados.',
+  unidade_ja_cadastrada: 'Essa filial já está cadastrada.',
+  codigo_duplicado: 'Já existe um registro com esse código.',
+  tem_vendas: 'Não dá para excluir: há vendas vinculadas.',
+  tem_leads: 'Não dá para excluir: há leads vinculados.',
+  // Arquivo / upload
+  upload_failed: 'Não foi possível enviar o arquivo. Tente de novo.',
+  delete_failed: 'Não foi possível excluir. Tente de novo.',
+  no_file: 'Selecione um arquivo.',
+  sem_arquivo: 'Selecione um arquivo.',
+  no_files: 'Selecione ao menos um arquivo.',
+  r2_nao_configurado: 'O envio de arquivos está indisponível no momento.',
+  // Integrações
+  whatsapp_nao_configurado: 'O WhatsApp ainda não está configurado. Fale com o administrador.',
+  vai_nao_configurado: 'A integração de mensagens não está configurada.',
+  meta_app_nao_configurado: 'A integração com a Meta não está configurada.',
+  app_secret_nao_configurado: 'A integração com a Meta não está configurada.',
+  verify_token_nao_configurado: 'A integração com a Meta não está configurada.',
+  webhook_secret_nao_configurado: 'A integração não está configurada.',
+  consulta_indisponivel: 'Consulta indisponível no momento. Tente mais tarde.',
+  // Fluxos
+  sem_leads: 'Nenhum lead disponível para essa ação.',
+  network_error: 'Sem conexão. Verifique a internet e tente de novo.',
+};
+
+// Mensagem clara a partir do corpo de erro do backend, sem vazar código/status/rota.
+function mensagemDeErro(status: number, details: { error?: string; message?: string }): string {
+  const statusFallback =
+    status === 403 ? 'Você não tem permissão para acessar isso.' :
+    status === 404 ? 'Não encontramos o que você procurava.' :
+    status === 401 ? 'Sessão expirada — entre de novo.' :
+    status >= 500 ? 'Tivemos um problema no servidor. Tente de novo em instantes.' :
+    'Não foi possível completar a ação. Tente novamente.';
+  const code = details?.error || '';
+  // Ordem: código mapeado > mensagem amigável do backend (já sanitizada em prod) > fallback por status.
+  return ERROS[code] || details?.message || statusFallback;
+}
+
 async function request<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, auth = true } = opts;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -55,7 +133,7 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (err) {
-    throw new ApiError('network_error', 0, err);
+    throw new ApiError(ERROS.network_error, 0, err);
   }
 
   if (res.status === 401) {
@@ -72,15 +150,8 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
 
   if (!res.ok) {
     const details = await res.json().catch(() => ({}));
-    // Mensagens amigáveis por status — antes mostrava "unknown" quando body vinha vazio
-    const fallback =
-      res.status === 403 ? 'Você não tem permissão pra acessar isso' :
-      res.status === 404 ? 'Não encontrado' :
-      res.status === 401 ? 'Sessão expirada — faça login de novo' :
-      res.status >= 500 ? 'Erro no servidor — tente em instantes' :
-      `Erro HTTP ${res.status}`;
-    const msg = details.error || details.message || fallback;
-    throw new ApiError(msg, res.status, details);
+    // Mensagem clara e concreta, sem expor código de erro, status HTTP nem rota.
+    throw new ApiError(mensagemDeErro(res.status, details), res.status, details);
   }
 
   if (res.status === 204) return null as T;

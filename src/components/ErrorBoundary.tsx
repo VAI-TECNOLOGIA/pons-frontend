@@ -67,7 +67,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
             Tivemos um problema ao carregar essa parte do sistema. O erro foi registrado e nossa
             equipe foi notificada.
           </p>
-          {this.state.err && (
+          {/* Detalhe técnico só em dev — em produção NUNCA expomos a mensagem crua
+              do erro pro usuário (ex.: "Cannot read properties of undefined ..."). */}
+          {import.meta.env.DEV && this.state.err && (
             <pre
               style={{
                 background: 'var(--bg-app)',
