@@ -281,41 +281,45 @@
 /* ── Layout do header do thread: nome+avatar à esquerda toma 100%, badges
    embaixo em row separado. Evita o nome quebrar pra 4 linhas só pq tem
    PENDENTE/IA/FECHADA/Aceitar/Liberar disputando espaço horizontal. ── */
-.thread__header .flex-between {
+/* ── Header compacto da conversa (mesma estrutura no desktop e mobile) ──
+   Linha 1: voltar + avatar + nome/meta (trunca) + badge status + Ações.
+   Linha 2: IA / janela 24h / status.
+   Ações secundárias ficam num bloco recolhível, fora do fluxo. */
+.thread__hd-main {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  row-gap: 10px;
-}
-/* Lado esquerdo (avatar + nome + subtítulo) — ocupa o que tiver disponível,
-   trunca nome se passar. */
-.thread__header .flex-between > .flex.gap-3 {
-  flex: 1 1 280px;
-  min-width: 0;
   align-items: center;
+  gap: 10px;
 }
-.thread__header .flex-between > .flex.gap-3 .font-bold {
+.thread__hd-id { flex: 1 1 auto; min-width: 0; }
+.thread__hd-name {
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
-.thread__header .flex-between > .flex.gap-3 .text-xs {
+.thread__hd-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
-/* Lado direito (badges + ações) — empacota com wrap natural, alinha à
-   direita quando sobra espaço. Em telas estreitas vai pra linha de baixo
-   inteira sem comprimir o nome. */
-.thread__header .flex-between > .flex.gap-2 {
-  flex: 0 1 auto;
+.thread__hd-main > .badge { flex-shrink: 0; }
+.thread__acoes-toggle { flex-shrink: 0; white-space: nowrap; }
+.thread__hd-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
   flex-wrap: wrap;
-  row-gap: 6px;
-  justify-content: flex-end;
+}
+.thread__acoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
   align-items: center;
 }
 

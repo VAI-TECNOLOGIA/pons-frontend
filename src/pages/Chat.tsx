@@ -101,6 +101,7 @@ export default function Chat() {
   const [anexo, setAnexo] = useState<{ url: string; fileName: string; contentType: string } | null>(null);
   const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
+  const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
   const [recording, setRecording] = useState(false); // gravando áudio
   const [recSecs, setRecSecs] = useState(0);
   const [recSending, setRecSending] = useState(false);
@@ -651,61 +652,67 @@ export default function Chat() {
           ) : (
             <>
               <div className="thread__header">
-                <div className="flex-between">
-                  <div className="flex gap-3" style={{ alignItems: 'center' }}>
-                    <button
-                      className="thread__back"
-                      onClick={() => setActiveId(null)}
-                      title="Voltar para a lista"
-                      aria-label="Voltar"
-                    >
-                      <Icon name="arrow_left" size={16} />
-                    </button>
-                    <div className="avatar">{initials(conv.nome)}</div>
-                    <div>
-                      <div className="font-bold">
-                        {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#EAB308', verticalAlign: 'middle' }} />}
-                      </div>
-                      <div className="text-xs text-secondary">
-                        {conv.telefone || 'Telefone protegido'} · {conv.origem}
-                        {conv.vaiConectado && ' · WhatsApp ativo'}
-                      </div>
+                {/* Linha 1 — identidade compacta + toggle de ações (padrão mobile) */}
+                <div className="thread__hd-main">
+                  <button
+                    className="thread__back"
+                    onClick={() => setActiveId(null)}
+                    title="Voltar para a lista"
+                    aria-label="Voltar"
+                  >
+                    <Icon name="arrow_left" size={16} />
+                  </button>
+                  <div className="avatar">{initials(conv.nome)}</div>
+                  <div className="thread__hd-id">
+                    <div className="thread__hd-name">
+                      {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#EAB308', verticalAlign: 'middle' }} />}
+                    </div>
+                    <div className="thread__hd-meta">
+                      {conv.telefone || 'Telefone protegido'} · {conv.origem} · {mensagens.length} msg{mensagens.length === 1 ? '' : 's'}
+                      {conv.vaiConectado && ' · WhatsApp ativo'}
                     </div>
                   </div>
-                  <div className="flex gap-2" style={{ alignItems: 'center' }}>
-                    <button
-                      className="btn btn--ghost btn--sm"
-                      onClick={sincronizar}
-                      disabled={syncing}
-                      title="Buscar mensagens novas na VAI"
-                    >
-                      <Icon name="speed" size={14} /> {syncing ? 'Sincronizando…' : 'Sync'}
-                    </button>
-                    <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
-                      {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
+                  <button
+                    className="btn btn--ghost btn--sm thread__acoes-toggle"
+                    onClick={() => setAcoesOpen((o) => !o)}
+                    aria-expanded={acoesOpen}
+                    title="Ações do atendimento"
+                  >
+                    Ações <Icon name="chevron-down" size={12} style={{ transform: acoesOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                  </button>
+                </div>
+
+                {/* Linha 2 — status, janela 24h e badges de IA */}
+                <div className="thread__hd-sub">
+                  <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
+                    {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
+                  </span>
+                  {(conv as any).classificacao === 'QUENTE' && (
+                    <span className="badge" style={{ background: 'rgba(220,38,38,0.15)', color: '#DC2626' }}>
+                      <Icon name="fire" size={10} /> QUENTE
                     </span>
-                    {(conv as any).iaAtendendo && !conv.reservado && !(conv as any).iaLimiteAtingido && (
-                      <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }}>
-                        <Icon name="bot" size={10} /> IA respondendo · {(conv as any).iaRespostasCount || 0}/3
-                      </span>
-                    )}
-                    {(conv as any).iaLimiteAtingido && !conv.reservado && (
-                      <span className="badge" style={{ background: 'rgba(245,158,11,0.18)', color: '#B45309' }}>
-                        <Icon name="warn" size={10} /> IA esgotou (3/3) — aceite p/ continuar
-                      </span>
-                    )}
-                    {(conv as any).classificacao === 'QUENTE' && (
-                      <span className="badge" style={{ background: 'rgba(220,38,38,0.15)', color: '#DC2626' }}>
-                        <Icon name="fire" size={10} /> QUENTE
-                      </span>
-                    )}
-                    <Janela24h conv={conv} />
-                    <button
-                      className="btn btn--ghost btn--sm"
-                      onClick={abrirStatus}
-                      title="Atualizar o status da negociação"
-                    >
-                      <Icon name="flag" size={12} /> Status: {statusLabel(conv.status)}
+                  )}
+                  {(conv as any).iaAtendendo && !conv.reservado && !(conv as any).iaLimiteAtingido && (
+                    <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }}>
+                      <Icon name="bot" size={10} /> IA respondendo · {(conv as any).iaRespostasCount || 0}/3
+                    </span>
+                  )}
+                  {(conv as any).iaLimiteAtingido && !conv.reservado && (
+                    <span className="badge" style={{ background: 'rgba(245,158,11,0.18)', color: '#B45309' }}>
+                      <Icon name="warn" size={10} /> IA esgotou (3/3)
+                    </span>
+                  )}
+                  <Janela24h conv={conv} />
+                  <button className="btn btn--ghost btn--sm" onClick={abrirStatus} title="Atualizar o status da negociação">
+                    <Icon name="flag" size={12} /> {statusLabel(conv.status)}
+                  </button>
+                </div>
+
+                {/* Ações (recolhível) — some do fluxo até o usuário abrir */}
+                {acoesOpen && (
+                  <div className="thread__acoes">
+                    <button className="btn btn--ghost btn--sm" onClick={sincronizar} disabled={syncing} title="Buscar mensagens novas na VAI">
+                      <Icon name="speed" size={14} /> {syncing ? 'Sincronizando…' : 'Sync'}
                     </button>
                     {!conv.reservado && (
                       <button className="btn btn--primary btn--sm" onClick={aceitarLead}>
@@ -713,25 +720,15 @@ export default function Chat() {
                       </button>
                     )}
                     {!(conv as any).telefoneLiberado && conv.reservado && (
-                      <button
-                        className="btn btn--ghost btn--sm"
-                        onClick={liberarContato}
-                        title="Mostra o telefone do lead, marca como QUENTE e contabiliza no seu perfil"
-                      >
+                      <button className="btn btn--ghost btn--sm" onClick={liberarContato} title="Mostra o telefone do lead, marca como QUENTE e contabiliza no seu perfil">
                         <Icon name="phone" size={12} /> Liberar contato
                       </button>
                     )}
                     {conv.reservado && (
-                      <button
-                        className="btn btn--ghost btn--sm"
-                        onClick={abrirTabular}
-                        title="Registrar desfecho do lead (motivo). Pode devolver à base."
-                      >
-                        <Icon name="warn" size={12} /> Tabular
-                      </button>
-                    )}
-                    {conv.reservado && (
                       <>
+                        <button className="btn btn--ghost btn--sm" onClick={abrirTabular} title="Registrar desfecho do lead (motivo). Pode devolver à base.">
+                          <Icon name="warn" size={12} /> Tabular
+                        </button>
                         <button className="btn btn--ghost btn--sm" onClick={ligar} title="Ligar para o lead (requer contato liberado)">
                           <Icon name="phone" size={12} /> Ligar
                         </button>
@@ -744,7 +741,7 @@ export default function Chat() {
                       </>
                     )}
                   </div>
-                </div>
+                )}
               </div>
               <div className="thread__tools">
                 <span className="text-xs text-secondary" style={{ fontWeight: 700 }}>
