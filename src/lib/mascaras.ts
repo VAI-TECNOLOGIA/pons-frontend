@@ -95,6 +95,12 @@ export function maskMoedaBR(v: string): string {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+// Formata um NÚMERO (reais) como "R$ 1.234,56" — pra preencher campos calculados.
+export function formatMoedaBR(n: number): string {
+  if (!n && n !== 0) return '';
+  return Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 // Converte "R$ 1.234,56" (ou "1234,56" / "1234.56") em número.
 export function parseMoedaBR(v: string): number {
   if (typeof v === 'number') return v;

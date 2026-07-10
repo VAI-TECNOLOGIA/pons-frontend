@@ -10,7 +10,7 @@ import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { CampoCnpj } from '../components/CampoCnpj';
 import type { CnpjInfo } from '../lib/consultaCnpj';
-import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos } from '../lib/mascaras';
+import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
 export const STATUS_MAP: Record<string, [string, string]> = {
  PRE_ANALISE: ['analysis', 'Contrato em análise'],
@@ -135,6 +135,25 @@ export default function Vendas() {
  const [emancipado, setEmancipado] = useState(false);
  const nascimentoRef = useRef<HTMLInputElement>(null);
 
+ // Endereço estruturado do cliente PF (busca CEP + campos separados). Montado
+ // num input oculto clienteEndereco pro submit (que lê via FormData).
+ const [endPF, setEndPF] = useState({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
+ const [buscandoCep, setBuscandoCep] = useState(false);
+ const enderecoPFStr = [
+ [endPF.logradouro, endPF.numero].filter(Boolean).join(', '),
+ endPF.complemento, endPF.bairro,
+ endPF.cidade && `${endPF.cidade}/${endPF.uf}`,
+ endPF.cep && `CEP ${endPF.cep}`,
+ ].filter(Boolean).join(' — ');
+ const onBuscarCep = async () => {
+ if (endPF.cep.replace(/\D/g, '').length !== 8) { toast.error('CEP incompleto.'); return; }
+ setBuscandoCep(true);
+ const r = await buscaCEP(endPF.cep);
+ setBuscandoCep(false);
+ if (!r) { toast.error('CEP não encontrado.'); return; }
+ setEndPF((e) => ({ ...e, logradouro: r.logradouro, bairro: r.bairro, cidade: r.cidade, uf: r.uf }));
+ };
+
  // ── Validações de campo (plugam no :invalid do form → bloqueiam avançar) ──
  const validaNascimento = (el: HTMLInputElement | null) => {
  if (!el) return;
@@ -206,7 +225,7 @@ export default function Vendas() {
  const [chavesValor, setChavesValor] = useState(''); // controlado p/ espelhar o % do empreendimento
  useEffect(() => {
  const v = unidadeSel?.valor || empSel?.valorInicial || '';
- setValorVenda(v ? String(v) : '');
+ setValorVenda(v ? formatMoedaBR(Number(v)) : '');
  }, [unidadeSelId, empSelId]); // eslint-disable-line react-hooks/exhaustive-deps
 
  // ── Comissão: herdada da política do empreendimento; "especial" destrava ──
@@ -221,13 +240,13 @@ export default function Vendas() {
  // ESPELHO do empreendimento: sugere entrada (mínimo %) e valor na chave (%)
  // calculados sobre o valor da venda — só quando o campo ainda está vazio.
  useEffect(() => {
- const vv = Number(String(valorVenda).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+ const vv = parseMoedaBR(valorVenda);
  if (!vv || !politicaVigente) return;
  if (!entradaTotal && politicaVigente.entradaMinimaPct) {
- setEntradaTotal(String(Math.round(vv * (politicaVigente.entradaMinimaPct / 100))));
+ setEntradaTotal(formatMoedaBR(Math.round(vv * (politicaVigente.entradaMinimaPct / 100))));
  }
  if (!chavesValor && politicaVigente.chavesPct) {
- setChavesValor(String(Math.round(vv * (politicaVigente.chavesPct / 100))));
+ setChavesValor(formatMoedaBR(Math.round(vv * (politicaVigente.chavesPct / 100))));
  }
  }, [valorVenda, politicaVigente?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -242,6 +261,7 @@ export default function Vendas() {
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false);
+ setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setResumo(null); setOrigemManualIdx(0);
  }, [openNew]);
 
@@ -317,8 +337,7 @@ export default function Vendas() {
  return;
  }
  const fd = new FormData(e.currentTarget);
- const num = (v: FormDataEntryValue | null) =>
- Number(String(v || '').replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+ const num = (v: FormDataEntryValue | null) => parseMoedaBR(String(v || ''));
  const str = (k: string) => { const v = fd.get(k); return v ? String(v) : undefined; };
  const optNum = (k: string) => (fd.get(k) ? num(fd.get(k)) : undefined);
  try {
@@ -733,10 +752,40 @@ export default function Vendas() {
  </select>
  <div className="field__hint">Define os documentos exigidos e os dados do cônjuge.</div>
  </div>
- <div className="field field--span-2">
- <label className="field__label">Endereço completo (c/ CEP)</label>
- <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+ <div className="field">
+ <label className="field__label">CEP</label>
+ <div style={{ display: 'flex', gap: 6 }}>
+ <input className="field__input" inputMode="numeric" placeholder="00000-000" value={endPF.cep}
+ onChange={(e) => setEndPF((c) => ({ ...c, cep: maskCEP(e.target.value) }))}
+ onBlur={() => { if (endPF.cep.replace(/\D/g, '').length === 8 && !endPF.logradouro) onBuscarCep(); }} />
+ <button type="button" className="btn btn--secondary btn--sm" onClick={onBuscarCep} disabled={buscandoCep}>{buscandoCep ? '...' : 'Buscar'}</button>
  </div>
+ </div>
+ <div className="field">
+ <label className="field__label">Logradouro</label>
+ <input className="field__input" value={endPF.logradouro} onChange={(e) => setEndPF((c) => ({ ...c, logradouro: e.target.value }))} />
+ </div>
+ <div className="field">
+ <label className="field__label">Número</label>
+ <input className="field__input" value={endPF.numero} onChange={(e) => setEndPF((c) => ({ ...c, numero: e.target.value }))} />
+ </div>
+ <div className="field">
+ <label className="field__label">Complemento</label>
+ <input className="field__input" value={endPF.complemento} onChange={(e) => setEndPF((c) => ({ ...c, complemento: e.target.value }))} />
+ </div>
+ <div className="field">
+ <label className="field__label">Bairro</label>
+ <input className="field__input" value={endPF.bairro} onChange={(e) => setEndPF((c) => ({ ...c, bairro: e.target.value }))} />
+ </div>
+ <div className="field">
+ <label className="field__label">Cidade</label>
+ <input className="field__input" value={endPF.cidade} onChange={(e) => setEndPF((c) => ({ ...c, cidade: e.target.value }))} />
+ </div>
+ <div className="field">
+ <label className="field__label">UF</label>
+ <input className="field__input" maxLength={2} value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: e.target.value.toUpperCase() }))} />
+ </div>
+ <input type="hidden" name="clienteEndereco" value={enderecoPFStr} />
  </div>
 
  {/* Cônjuge: só quando o estado civil exige (casado/união estável) */}
@@ -1035,9 +1084,10 @@ export default function Vendas() {
  <input
  className="field__input"
  required
- placeholder="780000"
+ inputMode="numeric"
+ placeholder="R$ 780.000,00"
  value={valorVenda}
- onChange={(e) => setValorVenda(e.target.value)}
+ onChange={(e) => setValorVenda(maskMoedaBR(e.target.value))}
  />
  {!!(unidadeSel?.valor || empSel?.valorInicial) && (
  <div className="field__hint">Sugerido pelo valor de tabela — ajuste para o valor negociado.</div>
@@ -1045,10 +1095,9 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Entrada total</label>
- <input name="entradaTotal" className="field__input" placeholder="156000" value={entradaTotal} onChange={(e) => setEntradaTotal(e.target.value)} />
+ <input name="entradaTotal" className="field__input" inputMode="numeric" placeholder="R$ 156.000,00" value={entradaTotal} onChange={(e) => setEntradaTotal(maskMoedaBR(e.target.value))} />
  {politicaVigente?.entradaMinimaPct != null && (() => {
- const num = (s: string) => Number(String(s).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
- const vv = num(valorVenda), et = num(entradaTotal);
+ const vv = parseMoedaBR(valorVenda), et = parseMoedaBR(entradaTotal);
  if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {politicaVigente.entradaMinimaPct}% de entrada.</div>;
  const pct = (et / vv) * 100;
  return pct < politicaVigente.entradaMinimaPct
@@ -1063,7 +1112,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Arras (R$)</label>
- <input name="arrasValor" className="field__input" placeholder="20000" />
+ <input name="arrasValor" className="field__input" inputMode="numeric" placeholder="R$ 20.000,00" onInput={(e) => { e.currentTarget.value = maskMoedaBR(e.currentTarget.value); }} />
  </div>
  <div className="field">
  <label className="field__label">Vencimento das arras</label>
@@ -1071,7 +1120,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Mensais (R$)</label>
- <input name="mensaisValor" className="field__input" placeholder="4500" />
+ <input name="mensaisValor" className="field__input" inputMode="numeric" placeholder="R$ 4.500,00" onInput={(e) => { e.currentTarget.value = maskMoedaBR(e.currentTarget.value); }} />
  </div>
  <div className="field">
  <label className="field__label">Melhor dia do mês</label>
@@ -1079,7 +1128,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Anuais (R$)</label>
- <input name="anuaisValor" className="field__input" placeholder="30000" />
+ <input name="anuaisValor" className="field__input" inputMode="numeric" placeholder="R$ 30.000,00" onInput={(e) => { e.currentTarget.value = maskMoedaBR(e.currentTarget.value); }} />
  </div>
  <div className="field">
  <label className="field__label">Início dos anuais</label>
@@ -1087,7 +1136,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Chaves (R$)</label>
- <input name="chavesValor" className="field__input" placeholder="150000" value={chavesValor} onChange={(e) => setChavesValor(e.target.value)} />
+ <input name="chavesValor" className="field__input" inputMode="numeric" placeholder="R$ 150.000,00" value={chavesValor} onChange={(e) => setChavesValor(maskMoedaBR(e.target.value))} />
  {politicaVigente?.chavesPct ? <div className="field__hint">Sugerido: {politicaVigente.chavesPct}% do valor da venda (regra do empreendimento) — ajuste se negociado.</div> : null}
  </div>
  </div>
@@ -1193,12 +1242,12 @@ export default function Vendas() {
  <div className="card" style={{ padding: '12px 16px' }}>
  <div className="uppercase-tag" style={{ marginBottom: 6 }}>Valores</div>
  <div className="text-xs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '4px 16px' }}>
- <div><span className="text-secondary">Valor da venda:</span> <strong>R$ {(Number(String(valorVenda).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0).toLocaleString('pt-BR')}</strong></div>
- <div><span className="text-secondary">Entrada:</span> <strong>{resumo?.entradaTotal ? `R$ ${Number(String(resumo.entradaTotal).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')} em ${resumo?.entradaParcelas || 1}x` : '—'}</strong></div>
- {resumo?.arrasValor ? <div><span className="text-secondary">Arras:</span> <strong>R$ {Number(String(resumo.arrasValor).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')}</strong></div> : null}
- {resumo?.mensaisValor ? <div><span className="text-secondary">Mensais:</span> <strong>R$ {Number(String(resumo.mensaisValor).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')}{resumo?.mensaisMelhorDia ? ` · dia ${resumo.mensaisMelhorDia}` : ''}</strong></div> : null}
- {resumo?.anuaisValor ? <div><span className="text-secondary">Anuais:</span> <strong>R$ {Number(String(resumo.anuaisValor).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')}</strong></div> : null}
- {resumo?.chavesValor ? <div><span className="text-secondary">Chaves:</span> <strong>R$ {Number(String(resumo.chavesValor).replace(/[^0-9.,]/g, '').replace(',', '.')).toLocaleString('pt-BR')}</strong></div> : null}
+ <div><span className="text-secondary">Valor da venda:</span> <strong>{formatMoedaBR(parseMoedaBR(valorVenda))}</strong></div>
+ <div><span className="text-secondary">Entrada:</span> <strong>{resumo?.entradaTotal ? `${formatMoedaBR(parseMoedaBR(String(resumo.entradaTotal)))} em ${resumo?.entradaParcelas || 1}x` : '—'}</strong></div>
+ {resumo?.arrasValor ? <div><span className="text-secondary">Arras:</span> <strong>{formatMoedaBR(parseMoedaBR(String(resumo.arrasValor)))}</strong></div> : null}
+ {resumo?.mensaisValor ? <div><span className="text-secondary">Mensais:</span> <strong>{formatMoedaBR(parseMoedaBR(String(resumo.mensaisValor)))}{resumo?.mensaisMelhorDia ? ` · dia ${resumo.mensaisMelhorDia}` : ''}</strong></div> : null}
+ {resumo?.anuaisValor ? <div><span className="text-secondary">Anuais:</span> <strong>{formatMoedaBR(parseMoedaBR(String(resumo.anuaisValor)))}</strong></div> : null}
+ {resumo?.chavesValor ? <div><span className="text-secondary">Chaves:</span> <strong>{formatMoedaBR(parseMoedaBR(String(resumo.chavesValor)))}</strong></div> : null}
  </div>
  </div>
 
