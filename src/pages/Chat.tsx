@@ -401,17 +401,6 @@ export default function Chat() {
     setQuickOpen(false);
   };
 
-  // Ligar — click-to-call. Exige o lead aceito e o contato liberado (nº real).
-  const ligar = () => {
-    if (!conv?.reservado) { toast.info('Aceite o lead antes de ligar.'); return; }
-    const tel = (conv as any)?.telefone as string | undefined;
-    if (!(conv as any)?.telefoneLiberado || !tel) {
-      toast.info('Libere o contato para ver o número e ligar.');
-      return;
-    }
-    window.open(`tel:+${tel.replace(/\D/g, '')}`, '_self');
-  };
-
   // Marca a negociação (status NEGOCIANDO) em 1 clique.
   const marcarNegociacao = async () => {
     if (!activeId) return;
@@ -728,9 +717,6 @@ export default function Chat() {
                       <>
                         <button className="btn btn--ghost btn--sm" onClick={abrirTabular} title="Registrar desfecho do lead (motivo). Pode devolver à base.">
                           <Icon name="warn" size={12} /> Tabular
-                        </button>
-                        <button className="btn btn--ghost btn--sm" onClick={ligar} title="Ligar para o lead (requer contato liberado)">
-                          <Icon name="phone" size={12} /> Ligar
                         </button>
                         <button className="btn btn--ghost btn--sm" onClick={marcarNegociacao} title="Marcar como Negociação">
                           <Icon name="flag" size={12} /> Negociação
