@@ -10,6 +10,7 @@ import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { CampoCnpj } from '../components/CampoCnpj';
 import type { CnpjInfo } from '../lib/consultaCnpj';
+import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos } from '../lib/mascaras';
 
 export const STATUS_MAP: Record<string, [string, string]> = {
  PRE_ANALISE: ['analysis', 'Contrato em análise'],
@@ -64,6 +65,9 @@ function origemDoLead(origem?: string | null) {
 const ORIGENS_MANUAIS: { rotulo: string; comissao: 'LEAD' | 'BASE' | 'ORGANICA' }[] = [
  { rotulo: 'Tráfego pago (Meta/Google)', comissao: 'LEAD' },
  { rotulo: 'Campanha WhatsApp / Base da casa', comissao: 'BASE' },
+ { rotulo: 'Network', comissao: 'ORGANICA' },
+ { rotulo: 'Campanha Particular', comissao: 'ORGANICA' },
+ { rotulo: 'Compra Própria', comissao: 'ORGANICA' },
  { rotulo: 'Indicação', comissao: 'ORGANICA' },
  { rotulo: 'Orgânico / walk-in', comissao: 'ORGANICA' },
 ];
@@ -128,6 +132,59 @@ export default function Vendas() {
  const [cliente, setCliente] = useState({ nome: '', email: '', telefone: '' });
  const [estadoCivil, setEstadoCivil] = useState('');
  const temConjuge = EXIGE_CONJUGE.has(estadoCivil);
+ const [emancipado, setEmancipado] = useState(false);
+ const nascimentoRef = useRef<HTMLInputElement>(null);
+
+ // ── Validações de campo (plugam no :invalid do form → bloqueiam avançar) ──
+ const validaNascimento = (el: HTMLInputElement | null) => {
+ if (!el) return;
+ const anos = idadeEmAnos(el.value);
+ let msg = '';
+ if (anos != null && anos < 16) msg = 'Comprador menor de 16 anos não é permitido.';
+ else if (anos != null && anos < 18 && !emancipado) msg = 'Entre 16 e 18 anos só com emancipação — marque a opção abaixo.';
+ el.setCustomValidity(msg);
+ };
+ const onCpf = (e: React.FormEvent<HTMLInputElement>) => {
+ const el = e.currentTarget;
+ el.value = maskCPF(el.value);
+ el.setCustomValidity(el.value && !validaCPF(el.value) ? 'CPF inválido — confira os números.' : '');
+ };
+ const onRg = (e: React.FormEvent<HTMLInputElement>) => {
+ const el = e.currentTarget;
+ el.setCustomValidity(el.value && !/\d.*[A-Za-z]{2,}/.test(el.value) ? 'Inclua o órgão expedidor (ex.: 1234567 SSP/SC).' : '');
+ };
+ const onTelefoneCtrl = (e: React.ChangeEvent<HTMLInputElement>) => {
+ const masked = maskTelefone(e.target.value);
+ e.target.setCustomValidity(masked && !validaTelefone(masked) ? 'Telefone incompleto (DDD + número).' : '');
+ setCliente((c) => ({ ...c, telefone: masked }));
+ };
+ const onTelefone = (e: React.FormEvent<HTMLInputElement>) => {
+ const el = e.currentTarget;
+ el.value = maskTelefone(el.value);
+ el.setCustomValidity(el.value && !validaTelefone(el.value) ? 'Telefone incompleto (DDD + número).' : '');
+ };
+ const onEmailCtrl = (e: React.ChangeEvent<HTMLInputElement>) => {
+ e.target.setCustomValidity(e.target.value && !validaEmail(e.target.value) ? 'E-mail inválido.' : '');
+ setCliente((c) => ({ ...c, email: e.target.value }));
+ };
+ const onEmail = (e: React.FormEvent<HTMLInputElement>) => {
+ const el = e.currentTarget;
+ el.setCustomValidity(el.value && !validaEmail(el.value) ? 'E-mail inválido.' : '');
+ };
+ // Reavalia a idade quando marca/desmarca emancipado.
+ useEffect(() => { validaNascimento(nascimentoRef.current); }, [emancipado]);
+
+ // Backspace fora de campo de texto NÃO pode voltar a página (perde o formulário).
+ useEffect(() => {
+ const onKey = (ev: KeyboardEvent) => {
+ if (ev.key !== 'Backspace') return;
+ const t = ev.target as HTMLElement | null;
+ const editavel = t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
+ if (!editavel) ev.preventDefault();
+ };
+ window.addEventListener('keydown', onKey);
+ return () => window.removeEventListener('keydown', onKey);
+ }, []);
 
  // ── Imóvel: seleção puxa unidades e valores do cadastro ──
  const [empSelId, setEmpSelId] = useState('');
@@ -642,15 +699,19 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">CPF</label>
- <input name="clienteCpf" className="field__input" />
+ <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor)</label>
- <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" />
+ <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} />
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento</label>
- <input name="clienteNascimento" type="date" className="field__input" />
+ <input ref={nascimentoRef} name="clienteNascimento" type="date" className="field__input" onChange={(e) => validaNascimento(e.currentTarget)} />
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}>
+ <input type="checkbox" checked={emancipado} onChange={(e) => setEmancipado(e.target.checked)} />
+ Menor emancipado (16–18 anos)
+ </label>
  </div>
  <div className="field">
  <label className="field__label">Profissão</label>
@@ -658,11 +719,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
- <input name="clienteEmail" type="email" className="field__input" value={cliente.email} onChange={(e) => setCliente((c) => ({ ...c, email: e.target.value }))} />
+ <input name="clienteEmail" type="email" className="field__input" value={cliente.email} onChange={onEmailCtrl} />
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" value={cliente.telefone} onChange={(e) => setCliente((c) => ({ ...c, telefone: e.target.value }))} />
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" value={cliente.telefone} onChange={onTelefoneCtrl} />
  </div>
  <div className="field">
  <label className="field__label">Estado civil <span className="field__required">*</span></label>
@@ -691,11 +752,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">CPF</label>
- <input name="conjugeCpf" className="field__input" />
+ <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor)</label>
- <input name="conjugeRg" className="field__input" />
+ <input name="conjugeRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} />
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento</label>
@@ -707,11 +768,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
- <input name="conjugeEmail" type="email" className="field__input" />
+ <input name="conjugeEmail" type="email" className="field__input" onInput={onEmail} />
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="conjugeTelefone" className="field__input" />
+ <input name="conjugeTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" onInput={onTelefone} />
  </div>
  </div>
  </div>
@@ -730,11 +791,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" />
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" onInput={onTelefone} />
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
- <input name="clienteEmail" type="email" className="field__input" />
+ <input name="clienteEmail" type="email" className="field__input" onInput={onEmail} />
  </div>
  <div className="field field--span-2">
  <label className="field__label">Endereço completo (c/ CEP)</label>
@@ -750,11 +811,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">CPF</label>
- <input name="socioCpf" className="field__input" />
+ <input name="socioCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor)</label>
- <input name="socioRg" className="field__input" />
+ <input name="socioRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} />
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento</label>
@@ -766,11 +827,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
- <input name="socioEmail" type="email" className="field__input" />
+ <input name="socioEmail" type="email" className="field__input" onInput={onEmail} />
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="socioTelefone" className="field__input" />
+ <input name="socioTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" onInput={onTelefone} />
  </div>
  <div className="field">
  <label className="field__label">Estado civil</label>
