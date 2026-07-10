@@ -88,6 +88,7 @@ const Transferencias  = lazyRetry(() => import('./pages/Transferencias'));
 const Auditoria       = lazyRetry(() => import('./pages/Auditoria'));
 const Bolsoes         = lazyRetry(() => import('./pages/Bolsoes'));
 const FinanceiroPons  = lazyRetry(() => import('./pages/FinanceiroPons'));
+const ContasBancarias = lazyRetry(() => import('./pages/ContasBancarias'));
 const AdminVendas     = lazyRetry(() => import('./pages/AdminVendas'));
 const AgenteIA        = lazyRetry(() => import('./pages/AgenteIA'));
 const Reuniao         = lazyRetry(() => import('./pages/Reuniao'));
@@ -174,6 +175,7 @@ export default function App() {
           <Route path="/auditoria" element={<Auditoria />} />
           <Route path="/bolsoes" element={<Bolsoes />} />
           <Route path="/financeiro-pons" element={<FinanceiroPons />} />
+          <Route path="/contas-bancarias" element={<ContasBancarias />} />
           <Route path="/admin-vendas" element={<AdminVendas />} />
           <Route path="/onboarding-aprovacoes" element={<OnboardingAprovacoes />} />
           <Route path="/agente-ia" element={<AgenteIA />} />

@@ -73,6 +73,7 @@ const GROUPS: NavGroup[] = [
       { to: '/financeiro-filial', label: 'Financeiro da Filial', icon: 'wallet', roles: [SOCIO] },
       { to: '/admin-vendas', label: 'Administrativo de Vendas', icon: 'doc', roles: ['CEO', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'ADMINISTRATIVO'] },
       { to: '/financeiro-pons', label: 'Rateio & Sócios', icon: 'wallet', roles: [...DIR_FINANCE, 'FINANCEIRO'] },
+      { to: '/contas-bancarias', label: 'Contas Bancárias', icon: 'dollar', roles: FINANCE },
       { to: '/onboarding-aprovacoes', label: 'Contratações', icon: 'users', roles: FINANCE },
       { to: '/financeiro', label: 'Caixa & Lançamentos', icon: 'dollar', roles: FINANCE },
       { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'MARKETING'] },

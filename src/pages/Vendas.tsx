@@ -248,6 +248,17 @@ export default function Vendas() {
  return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -1 };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+ // Conta bancária do protocolo: resolvida pela unidade do corretor titular.
+ const [corretorTitularId, setCorretorTitularId] = useState('');
+ const [contaBanco, setContaBanco] = useState<any>(null);
+ const corretorParaConta = isCorretor ? (Auth.user?.corretor?.id || 0) : Number(corretorTitularId || 0);
+ useEffect(() => {
+ if (!corretorParaConta) { setContaBanco(null); return; }
+ Api.contaBancariaResolver(corretorParaConta).then((r) => setContaBanco(r.conta)).catch(() => setContaBanco(null));
+ }, [corretorParaConta]);
+ useEffect(() => {
+ if (!isCorretor && !corretorTitularId && corretores?.length) setCorretorTitularId(String(corretores[0].id));
+ }, [corretores]); // eslint-disable-line react-hooks/exhaustive-deps
  useEffect(() => {
  const v = unidadeSel?.valor || empSel?.valorInicial || '';
  setValorVenda(v ? formatMoedaBR(Number(v)) : '');
@@ -985,7 +996,7 @@ export default function Vendas() {
  <div className="field__hint">A venda é registrada no seu nome.</div>
  </>
  ) : (
- <select name="corretorTitularId" className="field__select" required>
+ <select name="corretorTitularId" className="field__select" required value={corretorTitularId} onChange={(e) => setCorretorTitularId(e.target.value)}>
  {(corretores || []).map((c: any) => (
  <option key={c.id} value={c.id}>{c.nome}</option>
  ))}
@@ -1207,10 +1218,15 @@ export default function Vendas() {
  )}
 
  <div className="card" style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--bg-elevated)' }}>
- <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Dados bancários — Grupo Pons Imobiliário (manter no protocolo)</div>
+ <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Dados bancários — conta da unidade (manter no protocolo)</div>
+ {contaBanco ? (
  <div className="text-xs text-secondary">
- Titular: Pons Assessoria Imobiliária Ltda. · CNPJ: 05.198.406/0001-44 · Banco: Sicredi (748) · Agência: 2606 · Conta: 49602-1 · PIX: 05.198.406/0001-44
+ Titular: {contaBanco.razaoSocial}{contaBanco.cnpj ? ` · CNPJ: ${contaBanco.cnpj}` : ''}{contaBanco.banco ? ` · Banco: ${contaBanco.banco}` : ''}{contaBanco.agencia ? ` · Agência: ${contaBanco.agencia}` : ''}{contaBanco.conta ? ` · Conta: ${contaBanco.conta}` : ''}{contaBanco.pix ? ` · PIX: ${contaBanco.pix}` : ''}
+ {(!contaBanco.banco || !contaBanco.conta) && <span style={{ color: '#d97706' }}> — dados bancários incompletos; cadastre em Contas Bancárias.</span>}
  </div>
+ ) : (
+ <div className="text-xs" style={{ color: '#d97706' }}>Conta da unidade não cadastrada. Cadastre em Financeiro → Contas Bancárias (ou vincule a empresa da filial).</div>
+ )}
  </div>
  </div>
 

@@ -360,6 +360,9 @@ export const Api = {
   vendaKanban: () => request<{ colunas: any[] }>('/vendas/kanban'),
   venda: (id: number) => request<any>(`/vendas/${id}`),
   vendaCreate: (data: any) => request<any>('/vendas', { method: 'POST', body: data }),
+  contasBancarias: () => request<any[]>('/contas-bancarias'),
+  contaBancariaSave: (empresaKey: string, data: any) => request<any>(`/contas-bancarias/${empresaKey}`, { method: 'PATCH', body: data }),
+  contaBancariaResolver: (corretorId: number) => request<{ conta: any; empresaKey?: string; unidade?: string; motivo?: string }>(`/contas-bancarias/resolver/${corretorId}`),
   vendaUpdateStatus: (id: number, status: string) =>
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
   vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
