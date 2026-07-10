@@ -39,3 +39,36 @@
   .pitwall__line { font-size: 15.5px; }
   .pitwall__stamp { display: none; }
 }
+
+/* ---------- Empilhar os pares (Setores do funil + Esteira) no mobile ----------
+   O grid inline é 1fr 1fr; no celular fica espremido, então vira 1 coluna. */
+@media (max-width: 760px) {
+  .row-2 { grid-template-columns: 1fr !important; }
+}
+
+/* ---------- Briefing adaptado ao TEMA CLARO ----------
+   No dark a faixa é escura (F1). No claro, fundo claro + texto escuro pra não
+   destoar do resto da tela. */
+[data-theme="light"] .pitwall {
+  background: linear-gradient(120deg, #eef2f8, #e2ebf5 60%, #dde8f3);
+  color: #1b2a3f;
+  border: 1px solid rgba(27, 42, 63, 0.10);
+}
+[data-theme="light"] .pitwall::after {
+  background: radial-gradient(circle, rgba(255, 90, 43, 0.10), transparent 70%);
+}
+[data-theme="light"] .pitwall__eyebrow { color: rgba(27, 42, 63, 0.55); }
+[data-theme="light"] .pitwall__stamp {
+  color: rgba(27, 42, 63, 0.6);
+  border-color: rgba(27, 42, 63, 0.18);
+}
+[data-theme="light"] .pitwall__line { color: #1b2a3f; }
+[data-theme="light"] .pitwall__line b { color: #0e2a47; }
+[data-theme="light"] .pitwall__line em.neg { color: #c23c1e; }
+[data-theme="light"] .pitwall__line em.pos { color: #2f7d32; }
+[data-theme="light"] .pitwall__warn {
+  color: #7a5200;
+  background: rgba(242, 181, 68, 0.16);
+  border-color: rgba(242, 181, 68, 0.45);
+}
+[data-theme="light"] .pitwall__warn b { color: #8a5a00; }

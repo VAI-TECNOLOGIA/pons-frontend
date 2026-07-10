@@ -12,6 +12,16 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem('pons.sidebarCollapsed') === '1'; } catch { return false; }
   });
+  // No mobile o menu é um drawer que deve mostrar SEMPRE ícone + label. O estado
+  // "recolhido" (só-ícones) é do desktop e não pode vazar pro drawer.
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const on = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
   const loc = useLocation();
 
   const toggleCollapse = () => {
@@ -56,11 +66,11 @@ export function AppLayout() {
       >
         <Icon name="menu" size={22} />
       </button>
-      <div className={'app-shell' + (menuOpen ? ' app-shell--menu-open' : '') + (collapsed ? ' app-shell--collapsed' : '')}>
+      <div className={'app-shell' + (menuOpen ? ' app-shell--menu-open' : '') + (collapsed && !isMobile ? ' app-shell--collapsed' : '')}>
         {menuOpen && <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
         <Sidebar
           onClose={menuOpen ? () => setMenuOpen(false) : undefined}
-          collapsed={collapsed}
+          collapsed={collapsed && !isMobile}
           onToggleCollapse={toggleCollapse}
         />
         <main className="main">
