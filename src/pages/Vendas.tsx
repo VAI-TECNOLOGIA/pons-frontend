@@ -158,7 +158,8 @@ export default function Vendas() {
  const politicaEmp = empSel ? (politicas || []).find((p: any) => p.empreendimento?.id === empSel.id) : null;
  const politicaDefault = (politicas || []).find((p: any) => p.isDefault) || null;
  const politicaVigente = politicaEmp || politicaDefault;
- const pctPonsHerdado = politicaVigente?.percentualComissao ?? 5;
+ // A comissão cadastrada no financeiro do empreendimento manda; senão a política; senão 5%.
+ const pctPonsHerdado = empSel?.comissaoPct ?? politicaVigente?.percentualComissao ?? 5;
 
  // ESPELHO do empreendimento: sugere entrada (mínimo %) e valor na chave (%)
  // calculados sobre o valor da venda — só quando o campo ainda está vazio.
