@@ -111,6 +111,11 @@ export const Api = {
   solicitarAcesso: (data: { nome: string; email: string; senha: string; telefone?: string }) =>
     request<{ ok: boolean; message: string }>('/solicitar-acesso', { method: 'POST', body: data, auth: false }),
 
+  // Push nativa: registra o device token do aparelho + dispara push de teste.
+  registerDevice: (token: string, platform: 'ios' | 'android') =>
+    request<{ id: number; platform: string }>('/notifications/device-token', { method: 'POST', body: { token, platform } }),
+  pushTest: () => request<{ ok: boolean; devicesRegistrados: number }>('/notifications/test', { method: 'POST' }),
+
   // ─── Onboarding de contratação (gating Documentos/Contrato) ──────────────
   onbMe: () => request<any>('/onboarding-colaborador/me'),
   onbSaveCadastro: (data: any) =>

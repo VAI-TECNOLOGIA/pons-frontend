@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Auth } from '../lib/auth';
+import { initPush } from '../lib/push';
 import { Icon } from './Icon';
 import { BirthdayGreeter } from './BirthdayGreeter';
 import { WelcomeSplash } from './WelcomeSplash';
@@ -23,6 +24,13 @@ export function AppLayout() {
     return () => mq.removeEventListener('change', on);
   }, []);
   const loc = useLocation();
+  const navigate = useNavigate();
+
+  // Push nativa: pede permissão e registra o token do aparelho no 1º render
+  // autenticado (no-op no navegador).
+  useEffect(() => {
+    if (Auth.token) initPush((path) => navigate(path));
+  }, []);
 
   const toggleCollapse = () => {
     setCollapsed((c) => {
