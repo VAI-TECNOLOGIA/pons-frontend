@@ -6,9 +6,23 @@
 // notificação, navega pro destino conforme o `data.tipo`.
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { Preferences } from '@capacitor/preferences';
 import { Api } from './api';
 
 let jaIniciado = false;
+
+// iOS: o evento `registration` do plugin entrega o token do APNs (cru), mas o
+// backend envia por FCM (Firebase Admin). O AppDelegate nativo troca o APNs pelo
+// FCM token e o guarda em Preferences (chave `fcmToken`). Aqui aguardamos ele
+// aparecer (chega assíncrono, logo após o registro no APNs).
+async function aguardarFcmToken(): Promise<string | null> {
+  for (let i = 0; i < 15; i++) {
+    const { value } = await Preferences.get({ key: 'fcmToken' });
+    if (value) return value;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return null;
+}
 
 export async function initPush(navigate?: (path: string) => void) {
   if (jaIniciado) return;
@@ -24,10 +38,12 @@ export async function initPush(navigate?: (path: string) => void) {
     }
     if (perm.receive !== 'granted') return; // usuário recusou
 
-    // Token do aparelho -> backend
+    // Token do aparelho -> backend. Android: o `registration` já é o FCM token.
+    // iOS: é o APNs token; o que o backend precisa (FCM) vem do bridge nativo.
     await PushNotifications.addListener('registration', async (token) => {
       try {
-        await Api.registerDevice(token.value, platform);
+        const fcm = platform === 'ios' ? await aguardarFcmToken() : token.value;
+        if (fcm) await Api.registerDevice(fcm, platform);
       } catch { /* backend indisponível: tenta de novo no próximo boot */ }
     });
 
