@@ -12,6 +12,7 @@ export default function Pipeline() {
   const { data, loading, error } = useApi<any[]>(() => Api.leads());
   const { data: settings } = useApi<Record<string, string>>(() => Api.settings());
   const [leads, setLeads] = useState<any[]>([]);
+  const [showPerdidos, setShowPerdidos] = useState(false);
   const toast = useToast();
   useEffect(() => { if (data) setLeads(data); }, [data]);
 
@@ -37,6 +38,10 @@ export default function Pipeline() {
   const ativos = leads.filter((l: any) => l.status !== 'PERDIDO');
   const fechados = leads.filter((l: any) => l.status === 'FECHADO').length;
   const conv = ativos.length ? Math.round((fechados / ativos.length) * 100) : 0;
+
+  // Perdido é terminal e sai do board — mas pode ser reaberto (volta à 1ª fase).
+  const perdidos = leads.filter((l: any) => l.status === 'PERDIDO');
+  const reabrir = (id: number) => moveLead(id, cols[0]?.key || 'NOVO');
 
   return (
     <>
@@ -127,6 +132,41 @@ export default function Pipeline() {
             );
           })}
         </div>
+
+        {perdidos.length > 0 && (
+          <div className="card" style={{ marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={() => setShowPerdidos((v) => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit' }}
+            >
+              <span className="kanban__col-title">Perdidos ({perdidos.length})</span>
+              <span className="text-xs text-secondary">{showPerdidos ? 'ocultar' : 'reabrir um lead marcado por engano'}</span>
+            </button>
+            {showPerdidos && (
+              <div className="u-flex" style={{ flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                {perdidos.map((l: any) => (
+                  <div key={l.id} className="kanban-card" style={{ width: 220 }}>
+                    <div className="kanban-card__header">
+                      <div>
+                        <div className="kanban-card__title">{l.nome}</div>
+                        <div className="kanban-card__meta">{l.interesse || l.empreendimentoInteresse?.nome || l.origem}</div>
+                      </div>
+                    </div>
+                    <div className="kanban-card__footer">
+                      {l.corretor ? (
+                        <span className="text-xs">{l.corretor.nome.split(' ')[0]}</span>
+                      ) : (
+                        <span className="text-xs text-secondary">Sem corretor</span>
+                      )}
+                      <button className="btn btn--ghost btn--sm" onClick={() => reabrir(l.id)}>Reabrir</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
