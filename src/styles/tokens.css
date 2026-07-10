@@ -282,6 +282,11 @@ body {
   line-height: var(--lh-normal);
   background: var(--bg-app);
   color: var(--text-primary);
+  /* App nativo (Capacitor/WKWebView): evita arrastar a página pros lados e o
+     "rubber-band" de scroll. env() = 0 no desktop/web, então não afeta nada lá. */
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 .numeric, .money, td.numeric {

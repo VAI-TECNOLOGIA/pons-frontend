@@ -506,13 +506,17 @@
 /* ---------- TOP HEADER ---------- */
 
 .topbar {
-  height: var(--header-height);
+  /* Safe-area: no iPhone com notch a topbar precisa descer abaixo da barra de
+     status; env() = 0 no desktop/web, então lá nada muda. */
+  height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding-left: max(32px, env(safe-area-inset-left, 0px));
+  padding-right: max(32px, env(safe-area-inset-right, 0px));
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);

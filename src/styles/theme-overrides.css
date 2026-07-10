@@ -344,3 +344,18 @@
   .main__content { padding: 24px; padding-top: 24px; }
   .topbar { padding-left: 16px; }
 }
+
+/* ============================================================
+   SAFE-AREA — app nativo (iPhone com notch / home indicator).
+   env(safe-area-inset-*) = 0 no desktop e no navegador sem notch,
+   então estas regras não afetam a web; só empurram o conteúdo
+   pra dentro da área segura no app iOS.
+   ============================================================ */
+/* Botão hambúrguer não fica sob a barra de status */
+.mobile-menu-btn { top: calc(12px + env(safe-area-inset-top, 0px)); }
+/* Último item da página não fica sob a home indicator */
+.main__content { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+/* Drawer da sidebar (mobile) começa abaixo do notch */
+@media (max-width: 767px) {
+  .sidebar { padding-top: env(safe-area-inset-top, 0px); }
+}
