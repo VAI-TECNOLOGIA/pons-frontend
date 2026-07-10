@@ -223,6 +223,31 @@ export default function Vendas() {
  const [valorVenda, setValorVenda] = useState('');
  const [entradaTotal, setEntradaTotal] = useState(''); // controlado p/ validar % mínimo da política
  const [chavesValor, setChavesValor] = useState(''); // controlado p/ espelhar o % do empreendimento
+ // Negociação (controlados p/ reconciliar com o VGV ao vivo)
+ const [entradaParcelas, setEntradaParcelas] = useState('1');
+ const [entradaData, setEntradaData] = useState(''); // 1º vencimento das parcelas
+ const [arrasValor, setArrasValor] = useState('');
+ const [mensaisValor, setMensaisValor] = useState('');
+ const [mensaisQtd, setMensaisQtd] = useState('');
+ const [mensaisDia, setMensaisDia] = useState('');
+ const [anuaisValor, setAnuaisValor] = useState('');
+ const [anuaisQtd, setAnuaisQtd] = useState('');
+ const [anuaisMes, setAnuaisMes] = useState('');
+ // ── Reconciliação com o VGV ──────────────────────────────────────────────
+ const recon = (() => {
+ const vgv = parseMoedaBR(valorVenda);
+ const entrada = parseMoedaBR(entradaTotal);
+ const arras = parseMoedaBR(arrasValor);
+ const mensaisTot = parseMoedaBR(mensaisValor) * (Number(mensaisQtd) || 0);
+ const anuaisTot = parseMoedaBR(anuaisValor) * (Number(anuaisQtd) || 0);
+ const chaves = parseMoedaBR(chavesValor);
+ const soma = entrada + mensaisTot + anuaisTot + chaves;
+ const saldo = vgv - soma; // > 0 = a financiar; < 0 = excede o VGV
+ const nParc = Math.max(1, Number(entradaParcelas) || 1);
+ const parcela = Math.max(0, (entrada - arras)) / nParc;
+ return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -1 };
+ })();
+ const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
  useEffect(() => {
  const v = unidadeSel?.valor || empSel?.valorInicial || '';
  setValorVenda(v ? formatMoedaBR(Number(v)) : '');
@@ -262,6 +287,7 @@ export default function Vendas() {
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false);
  setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
+ setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
  }, [openNew]);
 
@@ -315,6 +341,8 @@ export default function Vendas() {
  const cur = formRef.current?.querySelector(`[data-step="${step}"]`);
  const bad = cur?.querySelector(':invalid') as HTMLInputElement | null;
  if (bad) { bad.reportValidity(); return; }
+ // Reconciliação: não deixa avançar da negociação se os valores passam do VGV.
+ if (recon.excede) { toast.error('A soma dos pagamentos passou do valor da venda (VGV). Ajuste antes de avançar.'); return; }
  const prox = Math.min(step + 1, stepConfirma);
  // Entrando na confirmação: tira o snapshot dos campos pro resumo
  if (prox === stepConfirma && formRef.current) {
@@ -403,11 +431,12 @@ export default function Vendas() {
  socioEndereco: str('socioEndereco'),
  construtora: str('construtora'),
  arrasValor: optNum('arrasValor'),
- arrasVencimento: str('arrasVencimento'),
  mensaisValor: optNum('mensaisValor'),
  mensaisMelhorDia: fd.get('mensaisMelhorDia') ? Number(fd.get('mensaisMelhorDia')) : undefined,
+ mensaisQtd: fd.get('mensaisQtd') ? Number(fd.get('mensaisQtd')) : undefined,
  anuaisValor: optNum('anuaisValor'),
  anuaisInicio: str('anuaisInicio'),
+ anuaisQtd: fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined,
  chavesValor: optNum('chavesValor'),
  });
  toast.success(r?.aguardandoAprovacao
@@ -1106,33 +1135,53 @@ export default function Vendas() {
  })()}
  </div>
  <div className="field">
+ <label className="field__label">Arras / sinal (R$) <span className="text-secondary" style={{ fontWeight: 400 }}>— pago no ato</span></label>
+ <input name="arrasValor" className="field__input" inputMode="numeric" placeholder="R$ 20.000,00" value={arrasValor} onChange={(e) => setArrasValor(maskMoedaBR(e.target.value))} />
+ <div className="field__hint">Faz parte da entrada. É quitado na reserva — sem vencimento.</div>
+ </div>
+ <div className="field">
  <label className="field__label">Parcelas da entrada</label>
- <input name="entradaParcelas" type="number" min={1} className="field__input" defaultValue="5" />
- {politicaVigente?.parcelasMensaisMax ? <div className="field__hint">Empreendimento libera até {politicaVigente.parcelasMensaisMax} mensais{politicaVigente.reforcosAnuaisMax ? ` e ${politicaVigente.reforcosAnuaisMax} reforços anuais` : ''}.</div> : null}
+ <input name="entradaParcelas" type="number" min={1} className="field__input" value={entradaParcelas} onChange={(e) => setEntradaParcelas(e.target.value)} />
+ {recon.parcela > 0 && recon.nParc > 0 && (
+ <div className="field__hint">{recon.nParc}x de <strong>{formatMoedaBR(recon.parcela)}</strong> (entrada − arras ÷ {recon.nParc}).</div>
+ )}
+ {Number(entradaParcelas) > 4 && (
+ <div className="field__hint" style={{ color: '#d97706' }}>Acima de 4x — vai pra aprovação do Paulo.</div>
+ )}
  </div>
  <div className="field">
- <label className="field__label">Arras (R$)</label>
- <input name="arrasValor" className="field__input" inputMode="numeric" placeholder="R$ 20.000,00" onInput={(e) => { e.currentTarget.value = maskMoedaBR(e.currentTarget.value); }} />
- </div>
- <div className="field">
- <label className="field__label">Vencimento das arras</label>
- <input name="arrasVencimento" type="date" className="field__input" />
+ <label className="field__label">1º vencimento da entrada</label>
+ <input name="entradaData" type="date" className="field__input" value={entradaData} onChange={(e) => setEntradaData(e.target.value)} />
+ {politicaVigente?.parcelasMensaisMax ? <div className="field__hint">Empreendimento libera até {politicaVigente.parcelasMensaisMax} mensais{politicaVigente.reforcosAnuaisMax ? ` e ${politicaVigente.reforcosAnuaisMax} reforços` : ''}.</div> : null}
  </div>
  <div className="field">
  <label className="field__label">Mensais (R$)</label>
- <input name="mensaisValor" className="field__input" inputMode="numeric" placeholder="R$ 4.500,00" onInput={(e) => { e.currentTarget.value = maskMoedaBR(e.currentTarget.value); }} />
+ <input name="mensaisValor" className="field__input" inputMode="numeric" placeholder="R$ 4.500,00" value={mensaisValor} onChange={(e) => setMensaisValor(maskMoedaBR(e.target.value))} />
+ </div>
+ <div className="field">
+ <label className="field__label">Qtd de parcelas mensais</label>
+ <input name="mensaisQtd" type="number" min={0} className="field__input" placeholder="36" value={mensaisQtd} onChange={(e) => setMensaisQtd(e.target.value)} />
+ {recon.mensaisTot > 0 && <div className="field__hint">Total mensais: <strong>{formatMoedaBR(recon.mensaisTot)}</strong></div>}
  </div>
  <div className="field">
  <label className="field__label">Melhor dia do mês</label>
- <input name="mensaisMelhorDia" type="number" min={1} max={31} className="field__input" placeholder="10" />
+ <input name="mensaisMelhorDia" type="number" min={1} max={31} className="field__input" placeholder="10" value={mensaisDia} onChange={(e) => setMensaisDia(e.target.value)} />
  </div>
  <div className="field">
- <label className="field__label">Anuais (R$)</label>
- <input name="anuaisValor" className="field__input" inputMode="numeric" placeholder="R$ 30.000,00" onInput={(e) => { e.currentTarget.value = maskMoedaBR(e.currentTarget.value); }} />
+ <label className="field__label">Reforços anuais / balões (R$)</label>
+ <input name="anuaisValor" className="field__input" inputMode="numeric" placeholder="R$ 30.000,00" value={anuaisValor} onChange={(e) => setAnuaisValor(maskMoedaBR(e.target.value))} />
  </div>
  <div className="field">
- <label className="field__label">Início dos anuais</label>
- <input name="anuaisInicio" type="month" className="field__input" />
+ <label className="field__label">Qtd de reforços</label>
+ <input name="anuaisQtd" type="number" min={0} className="field__input" placeholder="3" value={anuaisQtd} onChange={(e) => setAnuaisQtd(e.target.value)} />
+ {recon.anuaisTot > 0 && <div className="field__hint">Total reforços: <strong>{formatMoedaBR(recon.anuaisTot)}</strong></div>}
+ </div>
+ <div className="field">
+ <label className="field__label">Mês de vencimento dos reforços</label>
+ <select name="anuaisInicio" className="field__select" value={anuaisMes} onChange={(e) => setAnuaisMes(e.target.value)}>
+ <option value="">— Mês —</option>
+ {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
+ </select>
  </div>
  <div className="field">
  <label className="field__label">Chaves (R$)</label>
@@ -1140,6 +1189,22 @@ export default function Vendas() {
  {politicaVigente?.chavesPct ? <div className="field__hint">Sugerido: {politicaVigente.chavesPct}% do valor da venda (regra do empreendimento) — ajuste se negociado.</div> : null}
  </div>
  </div>
+
+ {/* Reconciliação com o VGV — soma dos pagamentos vs valor da venda */}
+ {recon.vgv > 0 && (
+ <div className="card" style={{ marginBottom: 16, padding: '12px 16px', background: recon.excede ? 'var(--color-danger-bg, #fde8ea)' : 'var(--bg-elevated)', border: recon.excede ? '1px solid var(--color-danger)' : undefined }}>
+ <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>Conferência dos valores × VGV</div>
+ <div className="text-xs" style={{ display: 'grid', gap: 3 }}>
+ <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Valor da venda (VGV)</span><strong>{formatMoedaBR(recon.vgv)}</strong></div>
+ <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Entrada + mensais + reforços + chaves</span><strong>{formatMoedaBR(recon.soma)}</strong></div>
+ <div className="flex" style={{ justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-light)' }}>
+ <span className="text-secondary">{recon.excede ? 'Excede o VGV em' : 'Saldo a financiar'}</span>
+ <strong style={{ color: recon.excede ? 'var(--color-danger)' : 'var(--color-success)' }}>{formatMoedaBR(Math.abs(recon.saldo))}</strong>
+ </div>
+ </div>
+ {recon.excede && <div className="text-xs" style={{ color: 'var(--color-danger)', marginTop: 6, fontWeight: 600 }}>A soma dos pagamentos passou do VGV — ajuste antes de avançar.</div>}
+ </div>
+ )}
 
  <div className="card" style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--bg-elevated)' }}>
  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>Dados bancários — Grupo Pons Imobiliário (manter no protocolo)</div>
