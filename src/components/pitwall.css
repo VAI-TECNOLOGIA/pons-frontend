@@ -1,0 +1,41 @@
+/* Pit wall — faixa de briefing do dashboard executivo */
+.pitwall {
+  background: linear-gradient(120deg, #0B0C10, #15171C 60%, #0f1720);
+  color: #fff;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+.pitwall::after {
+  content: '';
+  position: absolute; right: -40px; top: -40px;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 90, 43, 0.16), transparent 70%);
+  pointer-events: none;
+}
+.pitwall__top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--pons-cyan); }
+.pitwall__eyebrow {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.pitwall__stamp {
+  margin-left: auto; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55); border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px; padding: 5px 12px; white-space: nowrap;
+}
+.pitwall__line { font-size: 18px; line-height: 1.55; position: relative; z-index: 1; }
+.pitwall__line b { color: #fff; font-weight: 800; font-style: italic; }
+.pitwall__line em { font-style: italic; font-weight: 800; }
+.pitwall__line em.neg { color: #ff8a6b; }
+.pitwall__line em.pos { color: #a8dc7e; }
+.pitwall__warn {
+  position: relative; z-index: 1; margin-top: 14px; font-size: 12.5px; line-height: 1.6;
+  color: #ffd9a0; background: rgba(242, 181, 68, 0.10);
+  border: 1px solid rgba(242, 181, 68, 0.28); border-radius: 10px; padding: 11px 13px;
+}
+.pitwall__warn b { color: #ffc46b; }
+
+@media (max-width: 760px) {
+  .pitwall__line { font-size: 15.5px; }
+  .pitwall__stamp { display: none; }
+}

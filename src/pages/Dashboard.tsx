@@ -46,6 +46,9 @@ export default function Dashboard() {
  if (!isExec || !chartRef.current || !serie?.meses) return;
  if (chartInstance.current) chartInstance.current.destroy();
  Chart.defaults.font.family = 'Inter, sans-serif';
+ // Meta implausível (soma das metas individuais) achata as barras: 262M vs 8M de VGV.
+ // Nesse caso o gráfico mostra só o realizado — a leitura da meta fica no briefing.
+ const metaImplausivel = Boolean(data?.decisao?.ritmo?.metaSaude?.implausivel);
  const config: any = {
  type: 'bar',
  data: {
@@ -60,7 +63,9 @@ export default function Dashboard() {
  maxBarThickness: 48,
  order: 2,
  },
- {
+ ...(metaImplausivel
+ ? []
+ : [{
  type: 'line',
  label: 'Meta da casa',
  data: serie.meses.map(() => serie.metaCasa),
@@ -69,7 +74,7 @@ export default function Dashboard() {
  borderDash: [6, 4],
  pointRadius: 0,
  order: 1,
- } as any,
+ } as any]),
  ],
  },
  options: {
@@ -94,7 +99,7 @@ export default function Dashboard() {
  return () => {
  chartInstance.current?.destroy();
  };
- }, [isExec, serie]);
+ }, [isExec, serie, data]);
 
  if (loading) return <DashboardShell user={user}><PageSkeleton /></DashboardShell>;
  if (error) return <DashboardShell user={user}><ErrorBlock error={error} label="Erro ao carregar dashboard" /></DashboardShell>;
@@ -116,8 +121,12 @@ export default function Dashboard() {
  <h2 className="page-header__title">{getGreeting()}, {user.name.split(' ')[0]}.</h2> </div>
  </div>
 
- {/* Avanço */}
- {a && (
+ {/* Pit wall — briefing, corrida do mês, quadro do pit e telemetria.
+     Vem antes de tudo: decisão primeiro, detalhe depois. Só gestão recebe `decisao`. */}
+ {data.decisao && <DashboardDecisao decisao={data.decisao} avanco={data.avanco} alertas={data.alertas || []} />}
+
+ {/* Avanço: quando há `decisao`, o briefing do pit wall já dá projeção e ritmo */}
+ {a && !data.decisao && (
  <div
  className="card mb-6"
  style={{
@@ -176,8 +185,8 @@ export default function Dashboard() {
  </div>
  )}
 
- {/* Alertas (não-corretor) */}
- {!isCorretor && (data.alertas?.length ?? 0) > 0 && (
+ {/* Alertas: quando há `decisao`, quem desenha é o Quadro do pit (com R$ em risco) */}
+ {!isCorretor && !data.decisao && (data.alertas?.length ?? 0) > 0 && (
  <div className="mb-6">
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 12 }}>
  {(data.alertas || []).map((al: any, i: number) => {
@@ -261,14 +270,11 @@ export default function Dashboard() {
  {data.kpis && (
  <div className="kpi-grid">
  <KpiCard label="Vendas no mês" value={formatCurrencyShort(data.kpis.vendasMes?.valor)} sub={`${data.kpis.vendasMes?.quantidade ?? 0} contratos`} color="blue" iconName="dollar" />
- <KpiCard label="Pipeline ativo" value={String(data.kpis.pipelineAtivo ?? 0)} sub={`${data.kpis.leadsNovosHoje ?? 0} novos hoje`} color="green" iconName="users" />
+ <KpiCard label="Pipeline ativo" value={(data.kpis.pipelineAtivo ?? 0).toLocaleString('pt-BR')} sub={`${data.kpis.leadsNovosHoje ?? 0} novos hoje`} color="green" iconName="users" />
  <KpiCard label="A pagar (próx. 7d)" value={formatCurrencyShort(data.kpis.aPagar?.valor)} sub={`${data.kpis.aPagar?.operacoes ?? 0} operações`} color="amber" iconName="clock" />
- <KpiCard label="Em assinatura" value={String(data.kpis.contratosEmAssinatura ?? 0)} sub="aguardando cliente" color="navy" iconName="doc" />
+ <KpiCard label="Em assinatura" value={(data.kpis.contratosEmAssinatura ?? 0).toLocaleString('pt-BR')} sub="aguardando cliente" color="navy" iconName="doc" />
  </div>
  )}
-
- {/* Indicadores de decisão — backend só envia este bloco para gestão */}
- {data.decisao && <DashboardDecisao decisao={data.decisao} avanco={data.avanco} />}
 
  <OnboardingProgress />
  <DashboardKpisExtra />
@@ -278,7 +284,7 @@ export default function Dashboard() {
  <div className="mb-6">
  <div className="card chart-card">
  <div className="card__header">
- <h3 className="card__title">Evolução de Vendas × Meta · 6 meses</h3>
+ <h3 className="card__title">{data?.decisao?.ritmo?.metaSaude?.implausivel ? 'Evolução de vendas · 6 meses' : 'Evolução de Vendas × Meta · 6 meses'}</h3>
  <Link to="/relatorios" style={{ fontSize: 12, fontWeight: 600, color: 'var(--pons-blue)', textDecoration: 'none' }}>
  Ver relatórios completos →
  </Link>

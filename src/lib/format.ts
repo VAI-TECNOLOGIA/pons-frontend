@@ -7,9 +7,13 @@ export function formatCurrency(value: number | null | undefined): string {
 }
 
 export function formatCurrencyShort(value: number | null | undefined): string {
-  if (!value) return 'R$ 0';
-  if (value >= 1_000_000) return `R$ ${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `R$ ${Math.round(value / 1_000)}K`;
+  if (!value || !Number.isFinite(value)) return 'R$ 0';
+  // pt-BR usa vírgula decimal: "R$ 22,9M", não "R$ 22.9M".
+  // Negativos (saldo no vermelho) também precisam abreviar, senão estouram o card.
+  const sinal = value < 0 ? '-' : '';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `${sinal}R$ ${(abs / 1_000_000).toFixed(1).replace('.', ',')}M`;
+  if (abs >= 1_000) return `${sinal}R$ ${Math.round(abs / 1_000)}K`;
   return formatCurrency(value);
 }
 
