@@ -7,6 +7,7 @@ import { Topbar, getGreeting } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { DashboardKpisExtra } from '../components/DashboardKpisExtra';
+import { DashboardDecisao } from '../components/DashboardDecisao';
 import { OnboardingProgress } from '../components/OnboardingProgress';
 import { PageSkeleton } from '../components/Skeleton';
 import { PageWrap } from '../components/PageWrap';
@@ -265,6 +266,9 @@ export default function Dashboard() {
  <KpiCard label="Em assinatura" value={String(data.kpis.contratosEmAssinatura ?? 0)} sub="aguardando cliente" color="navy" iconName="doc" />
  </div>
  )}
+
+ {/* Indicadores de decisão — backend só envia este bloco para gestão */}
+ {data.decisao && <DashboardDecisao decisao={data.decisao} avanco={data.avanco} />}
 
  <OnboardingProgress />
  <DashboardKpisExtra />

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Icon } from './Icon';
+import { IaMark } from './IaMark';
 import { Api } from '../lib/api';
 import { useUser } from '../lib/userContext';
 import './assistant.css';
@@ -139,10 +140,10 @@ export function AssistantChat() {
         <button
           className="assistant-fab"
           onClick={() => setOpen(true)}
-          aria-label="Abrir assistente IA"
-          title="Assistente Pons IA"
+          aria-label="Abrir a Pons IA"
+          title="Pons IA — seu copiloto"
         >
-          <Icon name="bot" size={26} />
+          <IaMark size={26} />
           <span className="assistant-fab__dot" aria-hidden />
         </button>
       )}
@@ -151,7 +152,7 @@ export function AssistantChat() {
         <div className="assistant" role="dialog" aria-label="Assistente Pons IA">
           <div className="assistant__header">
             <div className="assistant__avatar">
-              <Icon name="bot" size={20} />
+              <IaMark size={20} />
             </div>
             <div className="assistant__title">
               <div className="assistant__title-main">Assistente Pons IA</div>

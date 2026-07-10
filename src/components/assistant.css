@@ -395,3 +395,68 @@
     bottom: 16px;
   }
 }
+
+/* ============================================================
+   v2 — Pons IA: identidade F1 (bandeira quadriculada) e
+   tratamento delicado. Superfície neutra + símbolo em destaque,
+   no lugar do azul chapado. Vale nos dois temas.
+   ============================================================ */
+.assistant-fab {
+  width: 52px;
+  height: 52px;
+  background: var(--bg-card);
+  color: var(--pons-blue);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 16px rgba(14, 124, 155, 0.14), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.assistant-fab:hover {
+  transform: translateY(-2px);
+  border-color: var(--pons-blue);
+  box-shadow: 0 8px 22px rgba(14, 124, 155, 0.22);
+}
+[data-theme="dark"] .assistant-fab { color: var(--pons-cyan); }
+
+/* anel de respiração — presença sem chamar atenção */
+.assistant-fab::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  opacity: 0;
+  animation: iaBreath 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes iaBreath {
+  0%, 100% { transform: scale(0.96); opacity: 0; }
+  50%      { transform: scale(1.05); opacity: 0.22; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assistant-fab::before { animation: none; }
+}
+
+/* Cabeçalho do painel: hairline em vez de faixa saturada */
+.assistant__header {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+}
+.assistant__avatar {
+  background: rgba(14, 124, 155, 0.10);
+  color: var(--pons-blue);
+}
+[data-theme="dark"] .assistant__avatar {
+  background: rgba(82, 247, 254, 0.12);
+  color: var(--pons-cyan);
+}
+.assistant__title-sub { color: var(--text-secondary); opacity: 1; }
+.assistant__close,
+.assistant__reset {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.assistant__close:hover,
+.assistant__reset:hover {
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
