@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { initials } from '../lib/format';
+import { FichaLeadModal } from '../components/FichaLeadModal';
 
 // Sprint 1 M15 — Histórico de transferências de leads (auditoria)
 const MOTIVO_BADGES: Record<string, [string, string]> = {
@@ -27,6 +28,7 @@ const FILTROS: [string, string][] = [
 
 export default function Transferencias() {
   const [motivo, setMotivo] = useState<string>('');
+  const [verLeadId, setVerLeadId] = useState<number | null>(null);
   const { data, loading, error } = useApi<any[]>(
     () => Api.transferenciasList(motivo ? { motivo } : {}),
     [motivo],
@@ -74,13 +76,18 @@ export default function Transferencias() {
                   return (
                     <tr key={t.id}>
                       <td>
-                        <a href={`/leads/${t.leadId}`} className="flex gap-2" style={{ alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+                        <button
+                          type="button"
+                          onClick={() => setVerLeadId(t.leadId)}
+                          className="flex gap-2"
+                          style={{ alignItems: 'center', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', textAlign: 'left' }}
+                        >
                           <div className="avatar avatar--sm">{initials(t.leadNome || 'L')}</div>
                           <div>
                             <div className="font-semibold" style={{ fontSize: 13 }}>{t.leadNome || 'Lead'}</div>
                             <div className="text-xs text-secondary">#{t.leadId}</div>
                           </div>
-                        </a>
+                        </button>
                       </td>
                       <td>
                         <div className="flex gap-2" style={{ alignItems: 'center', fontSize: 13 }}>
@@ -101,6 +108,7 @@ export default function Transferencias() {
           </div>
         )}
       </div>
+      {verLeadId != null && <FichaLeadModal leadId={verLeadId} onClose={() => setVerLeadId(null)} />}
     </>
   );
 }
