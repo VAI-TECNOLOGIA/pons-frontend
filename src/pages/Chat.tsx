@@ -213,16 +213,22 @@ export default function Chat() {
     [activeId],
   );
 
+  // Deriva o tipo de mídia do WhatsApp a partir do MIME do arquivo.
+  const tipoMedia = (mime: string): 'image' | 'video' | 'audio' | 'document' => {
+    if (mime.startsWith('image/')) return 'image';
+    if (mime.startsWith('video/')) return 'video';
+    if (mime.startsWith('audio/')) return 'audio';
+    return 'document';
+  };
+
   const onSelecionarArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // permite reescolher o mesmo arquivo
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Só imagens por enquanto.');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Imagem acima de 10MB.');
+    // WhatsApp aceita imagem, vídeo, áudio e documento. Limite conservador de 16MB
+    // (teto do vídeo/áudio no WhatsApp Cloud; imagem é bem menor).
+    if (file.size > 16 * 1024 * 1024) {
+      toast.error('Arquivo acima de 16MB.');
       return;
     }
     setUploadingAnexo(true);
@@ -241,7 +247,7 @@ export default function Chat() {
     const texto = draft.trim();
     if (!texto && !anexo) return;
     const media = anexo
-      ? { mediaUrl: anexo.url, mediaType: 'image' as const, fileName: anexo.fileName }
+      ? { mediaUrl: anexo.url, mediaType: tipoMedia(anexo.contentType), fileName: anexo.fileName }
       : undefined;
     setDraft('');
     setAnexo(null);
@@ -769,14 +775,20 @@ export default function Chat() {
                       }}
                     >
                       {uploadingAnexo ? (
-                        <span className="text-xs text-secondary">Enviando imagem…</span>
+                        <span className="text-xs text-secondary">Enviando arquivo…</span>
                       ) : (
                         <>
-                          <img
-                            src={anexo!.url}
-                            alt={anexo!.fileName}
-                            style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
-                          />
+                          {anexo!.contentType.startsWith('image/') ? (
+                            <img
+                              src={anexo!.url}
+                              alt={anexo!.fileName}
+                              style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
+                            />
+                          ) : (
+                            <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-subtle, rgba(255,255,255,0.06))' }}>
+                              <Icon name={anexo!.contentType.startsWith('video/') ? 'video' : 'doc'} size={20} />
+                            </div>
+                          )}
                           <span className="text-xs" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {anexo!.fileName}
                           </span>
@@ -796,7 +808,7 @@ export default function Chat() {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
                       style={{ display: 'none' }}
                       onChange={onSelecionarArquivo}
                     />
