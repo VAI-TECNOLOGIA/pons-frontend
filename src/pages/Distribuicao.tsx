@@ -188,7 +188,14 @@ export default function Distribuicao() {
     if (!ok) return;
     try {
       const r = await Api.distribuicaoExecutar(d.id);
-      toast.success(`Distribuídos ${r.resultado.leadsDistribuidos} leads pra ${r.resultado.corretoresAtendidos} corretores`);
+      const res = r.resultado || {};
+      if (!res.leadsDistribuidos) {
+        toast.info(res.corretoresAtendidos
+          ? 'Regra executada — nenhum lead do bolsão casou com os filtros dela.'
+          : 'Regra executada — nenhum corretor elegível pra receber (confira equipe/filial da regra).');
+      } else {
+        toast.success(`Distribuídos ${res.leadsDistribuidos} leads pra ${res.corretoresAtendidos} corretores`);
+      }
       reload(); reloadBolsao();
     } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
   };
