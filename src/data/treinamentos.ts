@@ -14,9 +14,9 @@ export type Treino = {
   destaque?: boolean;
 };
 
-// NOTA: o vídeo "Pit Stop Semanal" (youtube shorts iycfAgg1U-g) foi REMOVIDO em
-// 2026-07 por questão de direito de imagem — a pessoa que aparece nele não
-// autorizou o uso. Não reincluir sem autorização escrita de uso de imagem.
+// IMPORTANTE (direito de imagem): só publicar vídeos cujas pessoas autorizaram
+// por escrito o uso da imagem. Em 2026-07 um vídeo foi removido por não ter essa
+// autorização. Na dúvida, não publique.
 export const TREINAMENTOS: Treino[] = [
   {
     id: 'grande-conquista',
