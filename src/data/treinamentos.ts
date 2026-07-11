@@ -14,11 +14,14 @@ export type Treino = {
   destaque?: boolean;
 };
 
+// NOTA: o vídeo "Pit Stop Semanal" (youtube shorts iycfAgg1U-g) foi REMOVIDO em
+// 2026-07 por questão de direito de imagem — a pessoa que aparece nele não
+// autorizou o uso. Não reincluir sem autorização escrita de uso de imagem.
 export const TREINAMENTOS: Treino[] = [
   {
-    id: 'pit-stop',
-    titulo: 'Pit Stop Semanal',
-    url: 'https://youtube.com/shorts/iycfAgg1U-g',
+    id: 'grande-conquista',
+    titulo: 'Toda grande conquista começa com uma decisão',
+    url: 'https://youtube.com/shorts/FPsh2qhrjts',
     destaque: true,
   },
   {
@@ -30,11 +33,6 @@ export const TREINAMENTOS: Treino[] = [
     id: 'mensagem-ou-ligacao',
     titulo: 'Mensagem ou ligação?',
     url: 'https://youtube.com/shorts/N-TdrN-H1yA',
-  },
-  {
-    id: 'grande-conquista',
-    titulo: 'Toda grande conquista começa com uma decisão',
-    url: 'https://youtube.com/shorts/FPsh2qhrjts',
   },
   {
     id: 'decisao-preco',
