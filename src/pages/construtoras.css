@@ -34,7 +34,7 @@
   border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .2s;
 }
 .cons-tab:hover { color: var(--text-primary, #222); }
-.cons-tab.on { color: var(--accent, #f97316); border-bottom-color: var(--accent, #f97316); }
+.cons-tab.on { color: var(--pons-blue); border-bottom-color: var(--pons-blue); }
 .cons-tab--dis { opacity: .4; cursor: not-allowed; }
 .cons-hint { font-size: .85rem; color: var(--text-secondary, #888); background: var(--bg-subtle, #f8f8f8);
   border: 1px dashed var(--border-light, #ddd); border-radius: 8px; padding: 14px 16px; }
@@ -65,11 +65,11 @@
   border: 1px dashed var(--border-light, #ccc); color: var(--text-secondary, #888);
   cursor: pointer; font-size: .78rem; background: var(--bg-subtle, #fafafa); transition: border-color .2s, color .2s;
 }
-.cons-foto--add:hover { border-color: var(--accent, #f97316); color: var(--accent, #f97316); }
+.cons-foto--add:hover { border-color: var(--pons-blue); color: var(--pons-blue); }
 .cons-foto--add.is-dis { opacity: .5; pointer-events: none; }
 
 /* Aba Financeiro — lista de empreendimentos */
 .cons-emp__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
 .cons-emp { display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer; padding: 14px; width: 100%; transition: border-color .2s, transform .2s; }
-.cons-emp:hover { border-color: var(--accent, #f97316); transform: translateY(-2px); }
+.cons-emp:hover { border-color: var(--pons-blue); transform: translateY(-2px); }
 .cons-emp__ic { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--border-light, #e5e7eb); background: var(--bg-subtle, #f8f8f8); display: grid; place-items: center; color: var(--text-secondary, #888); }
