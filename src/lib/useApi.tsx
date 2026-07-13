@@ -78,7 +78,15 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): UseA
         cache.set(cacheKey, { data: res, ts: Date.now() });
         setData(res);
       })
-      .catch((err) => { if (alive) setError(err instanceof Error ? err : new Error(String(err))); })
+      .catch((err) => {
+        if (!alive) return;
+        // SWR: quando já havia dados em cache exibidos (hit), uma falha na
+        // revalidação em background NÃO vira tela de erro — mantém os dados
+        // (evita "Erro ao carregar" ao abrir uma página já visitada). O erro
+        // só aparece na 1ª carga, quando não há nada pra mostrar.
+        if (hit) return;
+        setError(err instanceof Error ? err : new Error(String(err)));
+      })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
