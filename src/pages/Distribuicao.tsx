@@ -78,6 +78,7 @@ export default function Distribuicao() {
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [alvoTransf, setAlvoTransf] = useState<number | ''>('');
   const [transferindo, setTransferindo] = useState(false);
+  const [buscaBolsao, setBuscaBolsao] = useState(''); // busca por nome/telefone no bolsão (antes de transferir)
   const toggleSel = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleTodos = (leads: any[]) => setSel((s) => s.size >= leads.length ? new Set() : new Set(leads.map((l) => l.id)));
   const transferirSelecionados = async () => {
@@ -211,6 +212,12 @@ export default function Distribuicao() {
     reload();
   };
 
+  // Filtro por nome/telefone sobre os leads já carregados do bolsão (localizar antes de transferir).
+  const qBolsao = buscaBolsao.trim().toLowerCase();
+  const leadsBolsao = (bolsao?.leads || []).filter((l: any) =>
+    !qBolsao || (l.nome || '').toLowerCase().includes(qBolsao) || String(l.telefone || '').toLowerCase().includes(qBolsao)
+  );
+
   return (
     <>
       <Topbar
@@ -242,6 +249,17 @@ export default function Distribuicao() {
           )}
           {bolsao && bolsao.leads.length > 0 && (
             <>
+              {/* Busca por nome/telefone — localizar o lead antes de transferir */}
+              <div style={{ marginTop: 12 }}>
+                <input
+                  className="field__input"
+                  type="search"
+                  placeholder="Buscar no bolsão por nome ou telefone…"
+                  value={buscaBolsao}
+                  onChange={(e) => setBuscaBolsao(e.target.value)}
+                  style={{ maxWidth: 340 }}
+                />
+              </div>
               {/* Barra de ação — aparece quando há leads selecionados */}
               {sel.size > 0 && (
                 <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan, #52f7fe)', borderRadius: 10 }}>
@@ -265,13 +283,15 @@ export default function Distribuicao() {
                   <thead>
                     <tr>
                       <th style={{ width: 34 }}>
-                        <input type="checkbox" checked={sel.size >= bolsao.leads.length && bolsao.leads.length > 0} onChange={() => toggleTodos(bolsao.leads)} title="Selecionar todos os carregados" />
+                        <input type="checkbox" checked={sel.size >= leadsBolsao.length && leadsBolsao.length > 0} onChange={() => toggleTodos(leadsBolsao)} title="Selecionar todos os filtrados" />
                       </th>
                       <th>Nome</th><th>Telefone</th><th>Origem</th><th>Campanha / conjunto</th><th>Interesse</th><th>Entrou</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {bolsao.leads.map((l: any) => (
+                    {leadsBolsao.length === 0 ? (
+                      <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 20 }}>Nenhum lead encontrado pra “{buscaBolsao}”.</td></tr>
+                    ) : leadsBolsao.map((l: any) => (
                       <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : undefined}>
                         <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggleSel(l.id)} /></td>
                         <td><span style={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 3 }} onClick={() => setFichaLeadId(l.id)} title="Abrir ficha completa do lead">{l.nome}</span></td>
@@ -285,11 +305,11 @@ export default function Distribuicao() {
                   </tbody>
                 </table>
                 <div className="flex" style={{ gap: 10, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
-                  <span className="text-xs text-secondary">Mostrando {bolsao.leads.length} de {bolsao.total} no bolsão.</span>
+                  <span className="text-xs text-secondary">Mostrando {leadsBolsao.length} de {bolsao.total} no bolsão{qBolsao ? ' (filtro ativo)' : ''}.</span>
                   {bolsao.leads.length < bolsao.total && (
                     <button className="btn btn--ghost btn--sm" onClick={() => setBolsaoLimit((n) => n + 100)}>Carregar mais</button>
                   )}
-                  <button className="btn btn--ghost btn--sm" onClick={() => toggleTodos(bolsao.leads)}>{sel.size >= bolsao.leads.length ? 'Desmarcar todos' : 'Selecionar todos os carregados'}</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => toggleTodos(leadsBolsao)}>{sel.size >= leadsBolsao.length && leadsBolsao.length > 0 ? 'Desmarcar todos' : 'Selecionar todos os filtrados'}</button>
                 </div>
               </div>
             </>
