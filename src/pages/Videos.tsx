@@ -165,7 +165,7 @@ export default function Videos() {
                       className="btn btn--ghost btn--sm"
                       onClick={(e) => excluir(v.id, e)}
                       title="Excluir"
-                      style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, padding: '4px 8px' }}
+                      style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, padding: '4px 8px', background: 'rgba(17,26,46,0.72)', color: '#fff', borderRadius: 8 }}
                     >
                       <Icon name="trash" size={14} />
                     </button>
