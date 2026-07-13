@@ -24,7 +24,7 @@ export default function Executivo() {
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | null>(null);
   // A assessoria atende somente o Paulo (id 1) — sem seletor, abre a agenda dele direto.
-  const verAgendaDe: number | '' = user.role === 'ASSESSORA' ? 1 : '';
+  const verAgendaDe: number | '' = user.role === 'ASSESSORA' || user.role === 'ASSESSORA_MARKETING' ? 1 : '';
 
   // Bump pra forçar o AgendaKpisBar a recontar após mutações (criar/editar/excluir).
   const [kpiVersion, setKpiVersion] = useState(0);

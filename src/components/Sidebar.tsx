@@ -139,6 +139,15 @@ const GESTOR_BLOQUEADO = new Set([
   '/equipe', '/configuracoes', '/auditoria',
 ]);
 
+// Papéis combinados expandem para os papéis-base que englobam (ex.: o perfil
+// exclusivo Assessoria & Marketing vê tudo que Assessora OU Marketing vê).
+const ROLE_EXPANSAO: Partial<Record<Role, Role[]>> = {
+  ASSESSORA_MARKETING: ['ASSESSORA_MARKETING', 'ASSESSORA', 'MARKETING'],
+};
+function papeisEfetivos(role: Role): Role[] {
+  return ROLE_EXPANSAO[role] || [role];
+}
+
 function canSee(it: NavItem, role: Role, email?: string): boolean {
   if (it.emails) return !!email && it.emails.includes(email);
   // Equipe Financeiro = perfil restrito: vê só o Dashboard + os itens do Financeiro.
@@ -146,7 +155,8 @@ function canSee(it: NavItem, role: Role, email?: string): boolean {
   // Gestor: vê tudo, exceto os destinos bloqueados acima.
   if (role === 'GESTOR') return !GESTOR_BLOQUEADO.has(it.to);
   if (!it.roles) return true;
-  return it.roles.includes(role);
+  const efetivos = papeisEfetivos(role);
+  return it.roles.some((r) => efetivos.includes(r));
 }
 
 // ── Favoritos (persistidos em localStorage) ────────────────────────────────
