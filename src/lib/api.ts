@@ -441,6 +441,8 @@ export const Api = {
   // Configurações
   settings: () => request<Record<string, string>>('/config/settings'),
   settingsSave: (obj: Record<string, string>) => request<any>('/config/settings', { method: 'PUT', body: obj }),
+  nfAliquota: () => request<{ pct: number }>('/config/nf-aliquota'),
+  nfAliquotaSave: (pct: number) => request<{ pct: number }>('/config/nf-aliquota', { method: 'PUT', body: { pct } }),
   // Score: pontos por ação (editável)
   scoreRegras: () => request<{ regras: { tipo: string; pontos: number; padrao: number; label: string; gatilho: string; sinal: string }[] }>('/config/score-regras'),
   scoreRegrasSave: (regras: Record<string, number>) => request<any>('/config/score-regras', { method: 'PUT', body: { regras } }),

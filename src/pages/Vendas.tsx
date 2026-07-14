@@ -292,6 +292,12 @@ export default function Vendas() {
 
  // ── Comissão: herdada da política do empreendimento; "especial" destrava ──
  const [comEspecial, setComEspecial] = useState(false);
+ // NF: alíquota global (config) + valor desta venda (pode personalizar) + controlado.
+ const [nfAliquotaGlobal, setNfAliquotaGlobal] = useState(16.83);
+ const [nfAliquota, setNfAliquota] = useState('16.83');
+ const [temNf, setTemNf] = useState(false);
+ const [salvandoNfGlobal, setSalvandoNfGlobal] = useState(false);
+ useEffect(() => { Api.nfAliquota().then((r) => { setNfAliquotaGlobal(r.pct); setNfAliquota(String(r.pct)); }).catch(() => {}); }, []);
  const { data: politicas } = useApi<any[]>(() => Api.rateioPoliticas());
  const politicaEmp = empSel ? (politicas || []).find((p: any) => p.empreendimento?.id === empSel.id) : null;
  const politicaDefault = (politicas || []).find((p: any) => p.isDefault) || null;
@@ -323,7 +329,7 @@ export default function Vendas() {
  setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
- setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false);
+ setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(false); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
@@ -436,7 +442,9 @@ export default function Vendas() {
  // Comissão: herdada da política do empreendimento; especial sobrescreve
  percentualComissao: podeEditarRateio && comEspecial ? num(fd.get('percentualComissao')) : pctPonsHerdado,
  splitCorretor: 55, splitGerente: 15, splitCasa: 30, // legacy (ignorado pela regra Pons)
- temNotaFiscal: podeEditarRateio && comEspecial ? fd.get('temNotaFiscal') === 'on' : false,
+ temNotaFiscal: podeEditarRateio && comEspecial ? temNf : false,
+ // Alíquota NF desta venda (personalizada ou o padrão global) — só de quem edita rateio.
+ ...(podeEditarRateio && comEspecial && temNf && Number(nfAliquota) > 0 ? { percentualNotaFiscal: Number(nfAliquota) } : {}),
  origemComissao: origemComissaoFinal,
  origemLead: origemLeadTexto,
  ...(contestacao.trim() ? { origemLeadContestacao: contestacao.trim() } : {}),
@@ -1380,7 +1388,28 @@ export default function Vendas() {
  </div>
  </div>
  <div className="flex" style={{ gap: 16, marginBottom: 4, flexWrap: 'wrap' }}>
- <label style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="temNotaFiscal" /> Tem Nota Fiscal (-16%)</label>
+ <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+ <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+ <input type="checkbox" checked={temNf} onChange={(e) => setTemNf(e.target.checked)} /> Tem Nota Fiscal
+ </label>
+ {temNf && (
+ <>
+ <div className="field" style={{ maxWidth: 170 }}>
+ <label className="field__label">Alíquota NF (%)</label>
+ <input type="number" step="0.01" min="0" className="field__input" value={nfAliquota} onChange={(e) => setNfAliquota(e.target.value)} />
+ <div className="field__hint">Padrão global: {nfAliquotaGlobal}% — pode personalizar nesta venda.</div>
+ </div>
+ <button type="button" className="btn btn--ghost btn--sm" disabled={salvandoNfGlobal || Number(nfAliquota) === nfAliquotaGlobal} onClick={async () => {
+ const pct = Number(nfAliquota);
+ if (!(pct >= 0 && pct <= 100)) { toast.error('Alíquota inválida.'); return; }
+ setSalvandoNfGlobal(true);
+ try { const r = await Api.nfAliquotaSave(pct); setNfAliquotaGlobal(r.pct); toast.success(`Alíquota global atualizada para ${r.pct}%.`); }
+ catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+ finally { setSalvandoNfGlobal(false); }
+ }}>Definir como padrão global</button>
+ </>
+ )}
+ </div>
  </div>
  </div>
  )}
