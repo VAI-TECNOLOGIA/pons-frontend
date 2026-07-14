@@ -117,6 +117,10 @@ export default function Vendas() {
  const toast = useToast();
  const role = Auth.user?.role;
  const isCorretor = role === 'CORRETOR';
+ // Rateio/comissão (incl. % do gestor) só pode ser editado por Administrativo,
+ // Financeiro e Paulo (CEO). Quem cadastra (corretor/gerente/diretor comercial)
+ // usa o rateio herdado da política — sem editar e sem ver a % do gestor.
+ const podeEditarRateio = role === 'CEO' || role === 'DIRETOR_FINANCEIRO' || role === 'FINANCEIRO' || role === 'ADMINISTRATIVO';
  const podeEditarStatus = role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
 
  // ── Lead vinculado: origem vem do banco (corretor não escolhe; pode contestar) ──
@@ -382,7 +386,7 @@ export default function Vendas() {
  const optNum = (k: string) => (fd.get(k) ? num(fd.get(k)) : undefined);
  try {
  // Origem da comissão: negociação especial (admin) > lead vinculado (banco) > manual
- const origemComissaoFinal = (!isCorretor && comEspecial && fd.get('origemComissao'))
+ const origemComissaoFinal = (podeEditarRateio && comEspecial && fd.get('origemComissao'))
  ? String(fd.get('origemComissao'))
  : origemInfo?.comissao ?? ORIGENS_MANUAIS[origemManualIdx].comissao;
  const origemLeadTexto = origemInfo?.rotulo ?? ORIGENS_MANUAIS[origemManualIdx].rotulo;
@@ -404,17 +408,17 @@ export default function Vendas() {
  entradaTotal: num(fd.get('entradaTotal')),
  entradaParcelas: Number(fd.get('entradaParcelas')) || 1,
  // Comissão: herdada da política do empreendimento; especial sobrescreve
- percentualComissao: !isCorretor && comEspecial ? num(fd.get('percentualComissao')) : pctPonsHerdado,
+ percentualComissao: podeEditarRateio && comEspecial ? num(fd.get('percentualComissao')) : pctPonsHerdado,
  splitCorretor: 55, splitGerente: 15, splitCasa: 30, // legacy (ignorado pela regra Pons)
- temNotaFiscal: !isCorretor && comEspecial ? fd.get('temNotaFiscal') === 'on' : false,
+ temNotaFiscal: podeEditarRateio && comEspecial ? fd.get('temNotaFiscal') === 'on' : false,
  origemComissao: origemComissaoFinal,
  origemLead: origemLeadTexto,
  ...(contestacao.trim() ? { origemLeadContestacao: contestacao.trim() } : {}),
- extraIndicacoes: !isCorretor && comEspecial ? num(fd.get('extraIndicacoes')) : 0,
+ extraIndicacoes: podeEditarRateio && comEspecial ? num(fd.get('extraIndicacoes')) : 0,
  // splitVariante só na negociação especial — sem ela o motor usa o rateio do
  // corretor (negociado no cadastro ou automático por tempo de casa)
- ...(!isCorretor && comEspecial && fd.get('splitVariante') ? { splitVariante: String(fd.get('splitVariante')) } : {}),
- percentualGestor: !isCorretor && comEspecial ? Number(fd.get('percentualGestorPons') || 10) : 10,
+ ...(podeEditarRateio && comEspecial && fd.get('splitVariante') ? { splitVariante: String(fd.get('splitVariante')) } : {}),
+ percentualGestor: podeEditarRateio && comEspecial ? Number(fd.get('percentualGestorPons') || 10) : 10,
  aplicarGestorTrafego: false,
  // Formulário oficial GPI (protocolo PF/PJ)
  tipoComprador,
@@ -1247,10 +1251,12 @@ export default function Vendas() {
  <div>• Split do corretor: <strong>rateio do cadastro dele</strong> (negociado ou automático 50% → 55% após 12 meses)</div>
  <div>• Origem: <strong>{origemInfo?.rotulo ?? ORIGENS_MANUAIS[origemManualIdx].rotulo}</strong> {leadSel ? '(do lead vinculado)' : '(manual)'}</div>
  </div>
+ {podeEditarRateio && (
  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 10 }}>
  <input type="checkbox" checked={comEspecial} onChange={(e) => setComEspecial(e.target.checked)} style={{ width: 'auto' }} />
  Negociação especial da comissão (editar valores)
  </label>
+ )}
  </div>
 
  {comEspecial && (
