@@ -244,6 +244,7 @@ export const Api = {
 
   // Leads
   leads: (params: any = {}) => request<any[]>(`/leads${qs(params)}`),
+  leadsBuscar: (q: string) => request<any[]>(`/leads/buscar${qs({ q })}`),
   lead: (id: number) => request<any>(`/leads/${id}`), // ficha completa (form + anúncio + corretor)
   leadStats: () => request<any>('/leads/stats'),
   leadCreate: (data: any) => request<any>('/leads', { method: 'POST', body: data }),

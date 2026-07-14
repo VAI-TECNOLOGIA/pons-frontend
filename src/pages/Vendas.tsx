@@ -130,6 +130,9 @@ export default function Vendas() {
  const [contestarOpen, setContestarOpen] = useState(false);
  const [contestacao, setContestacao] = useState('');
  const [origemManualIdx, setOrigemManualIdx] = useState(0);
+ // Busca automática de lead na base (por nome/telefone/email) enquanto preenche o comprador.
+ const [leadAutoSug, setLeadAutoSug] = useState<any[]>([]);
+ const [leadSugDispensada, setLeadSugDispensada] = useState(false);
  const origemInfo = leadSel ? origemDoLead(leadSel.origem) : null;
 
  // ── Comprador (controlados pra receber os dados do lead) ──
@@ -138,6 +141,22 @@ export default function Vendas() {
  const temConjuge = EXIGE_CONJUGE.has(estadoCivil);
  const [emancipado, setEmancipado] = useState(false);
  const nascimentoRef = useRef<HTMLInputElement>(null);
+
+ // Busca automática do lead na base enquanto o corretor preenche nome/telefone/email.
+ // Se já vinculou ou dispensou a sugestão, não busca. Debounce de 400ms.
+ useEffect(() => {
+ if (leadSel || leadSugDispensada) { setLeadAutoSug([]); return; }
+ const nome = cliente.nome.trim();
+ const tel = (cliente.telefone || '').replace(/\D/g, '');
+ const email = cliente.email.trim();
+ const q = tel.length >= 4 ? tel : email.length >= 3 ? email : nome.length >= 3 ? nome : '';
+ if (!q) { setLeadAutoSug([]); return; }
+ const t = setTimeout(() => {
+ Api.leadsBuscar(q).then((r) => setLeadAutoSug(Array.isArray(r) ? r : [])).catch(() => setLeadAutoSug([]));
+ }, 400);
+ return () => clearTimeout(t);
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [cliente.nome, cliente.telefone, cliente.email, leadSel, leadSugDispensada]);
 
  // Endereço estruturado do cliente PF (busca CEP + campos separados). Montado
  // num input oculto clienteEndereco pro submit (que lê via FormData).
@@ -702,6 +721,27 @@ export default function Vendas() {
 
  <div data-step="0" style={{ display: step === 0 ? 'block' : 'none' }} className="fade-in">
  <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Dados do comprador conforme o formulário oficial do protocolo GPI.</div>
+
+ {/* Sugestão automática: achou lead na base pelo nome/telefone/email digitado */}
+ {!leadSel && !leadSugDispensada && leadAutoSug.length > 0 && (
+ <div className="card" style={{ padding: '12px 14px', marginBottom: 14, background: 'var(--color-info-bg, #eaf4ff)', border: '1px solid var(--pons-blue)' }}>
+ <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+ <Icon name="search" size={13} /> Encontramos {leadAutoSug.length > 1 ? 'leads' : 'este lead'} na base — é o mesmo cliente?
+ </div>
+ <div style={{ display: 'grid', gap: 6 }}>
+ {leadAutoSug.slice(0, 4).map((l: any) => (
+ <div key={l.id} className="flex" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+ <div style={{ flex: 1, minWidth: 180 }}>
+ <div className="font-semibold" style={{ fontSize: 13 }}>{l.nome} <span className="text-xs text-secondary">· {l.telefone || l.email || ''}</span></div>
+ <div className="text-xs text-secondary">Origem: <strong>{origemDoLead(l.origem)?.rotulo || l.origem}</strong>{l.campanha ? ` · ${l.campanha}` : ''}{l.corretorNome ? ` · corretor: ${l.corretorNome}` : ''}</div>
+ </div>
+ <button type="button" className="btn btn--primary btn--sm" onClick={() => vincularLead(l)}>Vincular</button>
+ </div>
+ ))}
+ </div>
+ <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={() => setLeadSugDispensada(true)}>Não é o mesmo cliente</button>
+ </div>
+ )}
 
  {/* Vincular lead: puxa nome/contato e a ORIGEM oficial do banco */}
  <div className="card" style={{ padding: '12px 14px', marginBottom: 14, background: 'var(--bg-elevated)' }}>
