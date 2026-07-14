@@ -133,6 +133,9 @@ export default function Vendas() {
  // Busca automática de lead na base (por nome/telefone/email) enquanto preenche o comprador.
  const [leadAutoSug, setLeadAutoSug] = useState<any[]>([]);
  const [leadSugDispensada, setLeadSugDispensada] = useState(false);
+ // Corretor disse "não é o mesmo cliente" pra um lead da base → venda vai pra
+ // aprovação do Gestor de Tráfego (guarda o id do lead negado pra mandar no POST).
+ const [leadNegadoId, setLeadNegadoId] = useState<number | null>(null);
  const origemInfo = leadSel ? origemDoLead(leadSel.origem) : null;
 
  // ── Comprador (controlados pra receber os dados do lead) ──
@@ -317,6 +320,7 @@ export default function Vendas() {
  if (!openNew) return;
  setStep(0); setTipoComprador('PF');
  setLeadSel(null); setLeadBusca(''); setContestarOpen(false); setContestacao('');
+ setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false);
@@ -328,6 +332,7 @@ export default function Vendas() {
  // Vincular lead: preenche comprador + origem automática
  const vincularLead = (l: any) => {
  setLeadSel(l);
+ setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: l?.nome || '', email: l?.email || '', telefone: l?.telefone || '' });
  setContestarOpen(false); setContestacao('');
  };
@@ -417,6 +422,8 @@ export default function Vendas() {
  empreendimentoId: Number(fd.get('empreendimentoId')),
  corretorTitularId: Number(fd.get('corretorTitularId') || 0),
  leadId: leadSel?.id ?? undefined,
+ // Corretor negou um lead da base → venda vai pra aprovação do Gestor de Tráfego.
+ ...(leadNegadoId && !leadSel ? { leadNegadoId } : {}),
  // Unidade selecionada do estoque preenche identificação/tipologia sozinha
  unidade: unidadeSel
  ? [unidadeSel.identificacao, unidadeSel.torre].filter(Boolean).join(' · ')
@@ -669,6 +676,33 @@ export default function Vendas() {
  </div>
  )}
 
+ {sel.aguardandoAprovacaoTrafego && (
+ <div style={{ margin: '16px 0', padding: '14px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10 }}>
+ <div style={{ fontWeight: 700, fontSize: 13, color: '#B45309', marginBottom: 4 }}>
+ Aguardando aprovação do Gestor de Tráfego — o corretor negou um lead da base
+ </div>
+ {role === 'GESTOR_TRAFEGO' ? (
+ <button
+ className="btn btn--primary btn--sm"
+ style={{ marginTop: 6 }}
+ onClick={async () => {
+ try {
+ await Api.vendaAprovarTrafego(sel.id);
+ toast.success('Venda liberada (tráfego).');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ }}
+ >
+ Aprovar (tráfego)
+ </button>
+ ) : (
+ <div className="text-xs text-secondary">Só o Gestor de Tráfego libera essa venda.</div>
+ )}
+ </div>
+ )}
+
  <FormularioGpi f={sel.formulario} />
 
  <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} />
@@ -739,7 +773,17 @@ export default function Vendas() {
  </div>
  ))}
  </div>
- <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={() => setLeadSugDispensada(true)}>Não é o mesmo cliente</button>
+ <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={() => { setLeadNegadoId(leadAutoSug[0]?.id ?? null); setLeadSugDispensada(true); }}>Não é o mesmo cliente</button>
+ </div>
+ )}
+
+ {/* Corretor negou um lead da base → aviso de que vai pra aprovação do Gestor de Tráfego */}
+ {leadNegadoId && !leadSel && (
+ <div className="card" style={{ padding: '10px 14px', marginBottom: 14, background: 'var(--color-warning-bg, #fff6e6)', border: '1px solid var(--color-warning, #f5a623)' }}>
+ <div className="text-xs" style={{ fontWeight: 600 }}>
+ ⚠️ Você indicou que o cliente <strong>não é</strong> um lead da base. A venda entra <strong>pendente</strong> até a aprovação do <strong>Gestor de Tráfego</strong>.
+ <button type="button" className="btn btn--ghost btn--sm" style={{ marginLeft: 8 }} onClick={() => { setLeadNegadoId(null); setLeadSugDispensada(false); }}>Desfazer</button>
+ </div>
  </div>
  )}
 
