@@ -235,6 +235,8 @@ export default function Vendas() {
  const [empSelId, setEmpSelId] = useState('');
  const [unidades, setUnidades] = useState<any[]>([]);
  const [unidadeSelId, setUnidadeSelId] = useState('');
+ const [unidadeLivre, setUnidadeLivre] = useState('');
+ const [unidadeOcupadaCod, setUnidadeOcupadaCod] = useState<string | null>(null);
  const empSel = (emps || []).find((e: any) => String(e.id) === empSelId) || null;
  const unidadeSel = unidades.find((u: any) => String(u.id) === unidadeSelId) || null;
  useEffect(() => {
@@ -244,6 +246,21 @@ export default function Vendas() {
  .then((r: any) => setUnidades(r?.unidades || []))
  .catch(() => setUnidades([]));
  }, [empSelId]);
+
+ // Unidade já vendida por nós? Checa em tempo real (venda CANCELADA não conta —
+ // a unidade volta a ficar livre quando a venda cai).
+ const unidadeStr = unidadeSel ? [unidadeSel.identificacao, unidadeSel.torre].filter(Boolean).join(' · ') : unidadeLivre.trim();
+ useEffect(() => {
+ setUnidadeOcupadaCod(null);
+ const emp = Number(empSelId);
+ if (!emp || !unidadeStr) return;
+ const t = setTimeout(() => {
+ Api.unidadeStatus(emp, unidadeStr)
+ .then((r) => setUnidadeOcupadaCod(r.ocupada ? r.codigo : null))
+ .catch(() => setUnidadeOcupadaCod(null));
+ }, 400);
+ return () => clearTimeout(t);
+ }, [empSelId, unidadeStr]);
 
  // ── Negociação: valor sugerido pela tabela do imóvel, editável pelo corretor ──
  const [valorVenda, setValorVenda] = useState('');
@@ -363,7 +380,7 @@ export default function Vendas() {
  setLeadSel(null); setLeadBusca(''); setContestarOpen(false); setContestacao('');
  setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
- setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
+ setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(false); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
@@ -421,6 +438,8 @@ export default function Vendas() {
  const cur = formRef.current?.querySelector(`[data-step="${step}"]`);
  const bad = cur?.querySelector(':invalid') as HTMLInputElement | null;
  if (bad) { bad.reportValidity(); return; }
+ // Unidade já vendida por nós: não deixa avançar (a anterior tem que cair antes).
+ if (step === 1 && unidadeOcupadaCod) { toast.error(`Esta unidade já tem uma venda ativa (${unidadeOcupadaCod}). Cancele a anterior para liberá-la.`); return; }
  // Reconciliação: na Negociação, os valores preenchidos têm que FECHAR EXATO com
  // o VGV pra avançar (sem saldo em aberto). Nas outras etapas não trava.
  if (step === 2 && !recon.fecha) { toast.error('Os valores preenchidos precisam fechar com o valor da venda (VGV). Ajuste antes de avançar.'); return; }
@@ -1123,8 +1142,13 @@ export default function Vendas() {
  ) : (
  <div className="field">
  <label className="field__label">Unidade <span className="field__required">*</span></label>
- <input name="unidade" className="field__input" required placeholder="Apt 1207 · Torre A" />
+ <input name="unidade" className="field__input" required placeholder="Apt 1207 · Torre A" value={unidadeLivre} onChange={(e) => setUnidadeLivre(e.target.value)} />
  <div className="field__hint">Este empreendimento ainda não tem estoque cadastrado — cadastre as unidades em Empreendimentos pra selecionar daqui.</div>
+ </div>
+ )}
+ {unidadeOcupadaCod && (
+ <div className="field" style={{ gridColumn: '1 / -1' }}>
+ <div className="text-xs" style={{ color: '#dc2626', fontWeight: 600 }}>⚠ Esta unidade já possui uma venda ativa nossa ({unidadeOcupadaCod}). Cancele a venda anterior para liberá-la.</div>
  </div>
  )}
  <div className="field">

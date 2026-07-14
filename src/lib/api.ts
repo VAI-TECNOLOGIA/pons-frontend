@@ -368,6 +368,8 @@ export const Api = {
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
   vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
   vendaAprovarTrafego: (id: number) => request<any>(`/vendas/${id}/aprovar-trafego`, { method: 'POST' }),
+  unidadeStatus: (empreendimentoId: number, unidade: string) =>
+    request<{ ocupada: boolean; codigo: string | null }>(`/vendas/unidade-status${qs({ empreendimentoId, unidade })}`),
   parcelasAtrasadas: () => request<any[]>('/vendas/parcelas/atrasadas'),
   vendaParcelaStatus: (vendaId: number, pagamentoId: number, status: string) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}`, { method: 'PATCH', body: { status } }),
