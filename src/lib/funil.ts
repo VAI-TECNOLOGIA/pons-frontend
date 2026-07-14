@@ -6,12 +6,16 @@
 export type Fase = { key: string; label: string; aliases?: string[]; klass?: string };
 
 export const FUNIL_DEFAULT: Fase[] = [
-  { key: 'NOVO', label: 'Novo' },
-  { key: 'CONTATO', label: 'Contato', aliases: ['SDR', 'QUALIFICANDO', 'NEGOCIANDO'], klass: 'kanban__col--accent' },
-  { key: 'VISITA', label: 'Visita' },
-  { key: 'PROPOSTA', label: 'Proposta' },
-  { key: 'FECHADO', label: 'Fechado', klass: 'kanban__col--success' },
-  { key: 'PERDIDO', label: 'Perdido' },
+  { key: 'NOVO', label: 'Tentando Contato', aliases: ['SDR'] },
+  { key: 'NAO_RESPONDE', label: 'Não responde' },
+  { key: 'LISTA_VIP', label: 'Lista VIP', klass: 'kanban__col--accent' },
+  { key: 'EM_ATENDIMENTO', label: 'Em atendimento', aliases: ['QUALIFICANDO'] },
+  { key: 'FLUXO', label: 'Fluxo' },
+  { key: 'POS_FLUXO', label: 'Atendimento Pós Fluxo' },
+  { key: 'VISITA', label: 'Vídeo/Visita' },
+  { key: 'NEGOCIANDO', label: 'Em Negociação', aliases: ['PROPOSTA', 'CONTATO'] },
+  { key: 'FECHADO', label: 'Venda', aliases: ['VENDIDO', 'GANHO'], klass: 'kanban__col--success' },
+  { key: 'PERDIDO', label: 'Perdido', aliases: ['DESCARTADO'] },
 ];
 
 export const FUNIL_SETTING_KEY = 'funil.fases';

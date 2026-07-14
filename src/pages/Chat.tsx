@@ -26,13 +26,15 @@ const RESPOSTAS_RAPIDAS = [
 ];
 
 const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
-  { codigo: 'NOVO', label: 'Novo', desc: 'Lead recém-chegado, ainda sem contato' },
-  { codigo: 'SDR', label: 'SDR / IA', desc: 'Em pré-atendimento automático pela IA' },
-  { codigo: 'QUALIFICANDO', label: 'Qualificando', desc: 'Corretor qualificando o interesse e o perfil' },
-  { codigo: 'NEGOCIANDO', label: 'Negociando', desc: 'Conversa ativa de negociação' },
-  { codigo: 'VISITA', label: 'Visita agendada', desc: 'Visita ou reunião marcada com o lead' },
-  { codigo: 'PROPOSTA', label: 'Proposta', desc: 'Proposta enviada, aguardando decisão' },
-  { codigo: 'FECHADO', label: 'Fechado', desc: 'Negócio ganho' },
+  { codigo: 'NOVO', label: 'Tentando Contato', desc: 'Lead do tráfego, ainda tentando o primeiro contato' },
+  { codigo: 'NAO_RESPONDE', label: 'Não responde', desc: 'Sem retorno do lead às tentativas de contato' },
+  { codigo: 'LISTA_VIP', label: 'Lista VIP', desc: 'Lead prioritário / lista VIP' },
+  { codigo: 'EM_ATENDIMENTO', label: 'Em atendimento', desc: 'Corretor atendendo e qualificando o lead' },
+  { codigo: 'FLUXO', label: 'Fluxo', desc: 'Lead dentro do fluxo de atendimento' },
+  { codigo: 'POS_FLUXO', label: 'Atendimento Pós Fluxo', desc: 'Acompanhamento após o fluxo' },
+  { codigo: 'VISITA', label: 'Vídeo/Visita', desc: 'Vídeo, visita ou reunião marcada com o lead' },
+  { codigo: 'NEGOCIANDO', label: 'Em Negociação', desc: 'Conversa ativa de negociação' },
+  { codigo: 'FECHADO', label: 'Venda', desc: 'Negócio ganho / venda' },
   { codigo: 'PERDIDO', label: 'Perdido', desc: 'Negócio perdido' },
 ];
 

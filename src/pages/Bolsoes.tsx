@@ -9,7 +9,7 @@ import { useToast } from '../lib/toast';
 import { useWhatsappNumeros } from '../lib/whatsappNumeros';
 
 const ORIGENS = ['META_ADS', 'GOOGLE', 'SITE', 'INDICACAO', 'WHATSAPP', 'IMPORTACAO_MANUAL', 'IMPORTACAO'];
-const STATUS = ['NOVO', 'SDR', 'QUALIFICANDO', 'NEGOCIANDO', 'VISITA', 'PROPOSTA'];
+const STATUS = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO'];
 
 export default function Bolsoes() {
   const [filtros, setFiltros] = useState<any>({ cidade: '', origem: '', campanha: '', empreendimentoId: '', status: '' });

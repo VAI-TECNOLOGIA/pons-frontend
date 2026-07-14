@@ -10,14 +10,21 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 
 const STATUS_MAP: Record<string, [string, string]> = {
- NOVO: ['neutral', 'NOVO'],
- SDR: ['analysis', 'EM SDR'],
- NEGOCIANDO: ['signature', 'NEGOCIANDO'],
- PROPOSTA: ['signed', 'PROPOSTA'],
- FECHADO: ['paid', 'FECHADO'],
- PERDIDO: ['cancelled', 'PERDIDO'],
+ NOVO: ['neutral', 'Tentando Contato'],
+ SDR: ['neutral', 'Tentando Contato'],
+ NAO_RESPONDE: ['cancelled', 'Não responde'],
+ LISTA_VIP: ['analysis', 'Lista VIP'],
+ EM_ATENDIMENTO: ['analysis', 'Em atendimento'],
+ QUALIFICANDO: ['analysis', 'Em atendimento'],
+ FLUXO: ['analysis', 'Fluxo'],
+ POS_FLUXO: ['analysis', 'Pós Fluxo'],
+ VISITA: ['launch', 'Vídeo/Visita'],
+ NEGOCIANDO: ['signature', 'Em Negociação'],
+ PROPOSTA: ['signature', 'Em Negociação'],
+ FECHADO: ['paid', 'Venda'],
+ PERDIDO: ['cancelled', 'Perdido'],
 };
-const STATUSES = ['NOVO', 'SDR', 'NEGOCIANDO', 'PROPOSTA', 'FECHADO', 'PERDIDO'];
+const STATUSES = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
 
 export default function Leads() {
  const [filterStatus, setFilterStatus] = useState<string | null>(null);
@@ -248,9 +255,9 @@ export default function Leads() {
  <div className="field">
  <label className="field__label">Status</label>
  <select name="status" className="field__select" defaultValue="NOVO">
- <option value="NOVO">Novo</option>
- <option value="SDR">Em SDR</option>
- <option value="NEGOCIANDO">Negociando</option>
+ <option value="NOVO">Tentando Contato</option>
+ <option value="EM_ATENDIMENTO">Em atendimento</option>
+ <option value="NEGOCIANDO">Em Negociação</option>
  </select>
  </div>
  <div className="field">

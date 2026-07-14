@@ -9,16 +9,21 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { initials, timeAgo } from '../lib/format';
 
 const STATUS_MAP: Record<string, [string, string]> = {
-  NOVO: ['neutral', 'Novo'],
-  SDR: ['analysis', 'SDR'],
-  QUALIFICANDO: ['analysis', 'Qualificando'],
-  NEGOCIANDO: ['launch', 'Negociando'],
-  VISITA: ['launch', 'Visita'],
-  PROPOSTA: ['signed', 'Proposta'],
-  FECHADO: ['signed', 'Fechado'],
+  NOVO: ['neutral', 'Tentando Contato'],
+  SDR: ['neutral', 'Tentando Contato'],
+  NAO_RESPONDE: ['cancelled', 'Não responde'],
+  LISTA_VIP: ['analysis', 'Lista VIP'],
+  EM_ATENDIMENTO: ['analysis', 'Em atendimento'],
+  QUALIFICANDO: ['analysis', 'Em atendimento'],
+  FLUXO: ['analysis', 'Fluxo'],
+  POS_FLUXO: ['analysis', 'Pós Fluxo'],
+  VISITA: ['launch', 'Vídeo/Visita'],
+  NEGOCIANDO: ['launch', 'Em Negociação'],
+  PROPOSTA: ['launch', 'Em Negociação'],
+  FECHADO: ['signed', 'Venda'],
   PERDIDO: ['cancelled', 'Perdido'],
 };
-const FILTROS = ['Todos', 'NOVO', 'NEGOCIANDO', 'PROPOSTA'];
+const FILTROS = ['Todos', 'NOVO', 'EM_ATENDIMENTO', 'NEGOCIANDO', 'FECHADO'];
 
 export default function MeusLeads() {
   const { data, loading, error } = useApi<any[]>(() => Api.leads());
