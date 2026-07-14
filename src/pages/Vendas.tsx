@@ -245,7 +245,7 @@ export default function Vendas() {
  const saldo = vgv - soma; // > 0 = a financiar; < 0 = excede o VGV
  const nParc = Math.max(1, Number(entradaParcelas) || 1);
  const parcela = Math.max(0, (entrada - arras)) / nParc;
- return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -1 };
+ return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -1, fecha: vgv > 0 && Math.abs(saldo) <= 1 };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
  // Conta bancária do protocolo: resolvida pela unidade do corretor titular.
@@ -352,8 +352,9 @@ export default function Vendas() {
  const cur = formRef.current?.querySelector(`[data-step="${step}"]`);
  const bad = cur?.querySelector(':invalid') as HTMLInputElement | null;
  if (bad) { bad.reportValidity(); return; }
- // Reconciliação: não deixa avançar da negociação se os valores passam do VGV.
- if (recon.excede) { toast.error('A soma dos pagamentos passou do valor da venda (VGV). Ajuste antes de avançar.'); return; }
+ // Reconciliação: na Negociação, os valores preenchidos têm que FECHAR EXATO com
+ // o VGV pra avançar (sem saldo em aberto). Nas outras etapas não trava.
+ if (step === 2 && !recon.fecha) { toast.error('Os valores preenchidos precisam fechar com o valor da venda (VGV). Ajuste antes de avançar.'); return; }
  const prox = Math.min(step + 1, stepConfirma);
  // Entrando na confirmação: tira o snapshot dos campos pro resumo
  if (prox === stepConfirma && formRef.current) {
@@ -1203,17 +1204,21 @@ export default function Vendas() {
 
  {/* Reconciliação com o VGV — soma dos pagamentos vs valor da venda */}
  {recon.vgv > 0 && (
- <div className="card" style={{ marginBottom: 16, padding: '12px 16px', background: recon.excede ? 'var(--color-danger-bg, #fde8ea)' : 'var(--bg-elevated)', border: recon.excede ? '1px solid var(--color-danger)' : undefined }}>
+ <div className="card" style={{ marginBottom: 16, padding: '12px 16px', background: recon.fecha ? 'var(--bg-elevated)' : 'var(--color-danger-bg, #fde8ea)', border: recon.fecha ? undefined : '1px solid var(--color-danger)' }}>
  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>Conferência dos valores × VGV</div>
  <div className="text-xs" style={{ display: 'grid', gap: 3 }}>
  <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Valor da venda (VGV)</span><strong>{formatMoedaBR(recon.vgv)}</strong></div>
  <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Entrada + mensais + reforços + chaves</span><strong>{formatMoedaBR(recon.soma)}</strong></div>
+ {!recon.fecha && (
  <div className="flex" style={{ justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-light)' }}>
- <span className="text-secondary">{recon.excede ? 'Excede o VGV em' : 'Saldo a financiar'}</span>
- <strong style={{ color: recon.excede ? 'var(--color-danger)' : 'var(--color-success)' }}>{formatMoedaBR(Math.abs(recon.saldo))}</strong>
+ <span className="text-secondary">Diferença</span>
+ <strong style={{ color: 'var(--color-danger)' }}>{formatMoedaBR(Math.abs(recon.saldo))}</strong>
  </div>
+ )}
  </div>
- {recon.excede && <div className="text-xs" style={{ color: 'var(--color-danger)', marginTop: 6, fontWeight: 600 }}>A soma dos pagamentos passou do VGV — ajuste antes de avançar.</div>}
+ {recon.fecha
+ ? <div className="text-xs" style={{ color: 'var(--color-success)', marginTop: 6, fontWeight: 600 }}>Os valores fecham com o VGV ✓</div>
+ : <div className="text-xs" style={{ color: 'var(--color-danger)', marginTop: 6, fontWeight: 600 }}>A soma dos pagamentos precisa fechar com o VGV — ajuste antes de avançar.</div>}
  </div>
  )}
 
