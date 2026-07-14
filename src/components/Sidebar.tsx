@@ -143,6 +143,7 @@ const GESTOR_BLOQUEADO = new Set([
 // exclusivo Assessoria & Marketing vê tudo que Assessora OU Marketing vê).
 const ROLE_EXPANSAO: Partial<Record<Role, Role[]>> = {
   ASSESSORA_MARKETING: ['ASSESSORA_MARKETING', 'ASSESSORA', 'MARKETING'],
+  GESTOR_TRAFEGO: ['GESTOR_TRAFEGO', 'MARKETING'],
 };
 function papeisEfetivos(role: Role): Role[] {
   return ROLE_EXPANSAO[role] || [role];

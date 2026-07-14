@@ -63,7 +63,7 @@ export default function Empreendimentos() {
   const [condicoesEmp, setCondicoesEmp] = useState<{ id: number; nome: string } | null>(null);
 
   const userRole = Auth.user?.role || '';
-  const canEdit = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA_MARKETING'].includes(userRole);
+  const canEdit = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO'].includes(userRole);
 
   if (loading) return <Shell canEdit={canEdit}><LoadingBlock /></Shell>;
   if (error) return <Shell canEdit={canEdit}><ErrorBlock error={error} /></Shell>;

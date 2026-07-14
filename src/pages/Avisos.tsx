@@ -9,7 +9,7 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Auth } from '../lib/auth';
 
-const PODE_PUBLICAR = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING']);
+const PODE_PUBLICAR = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO']);
 
 import './avisos.css';
 

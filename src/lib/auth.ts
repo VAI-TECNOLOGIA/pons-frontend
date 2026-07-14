@@ -11,6 +11,7 @@ export type Role =
   | 'MARKETING'
   | 'ASSESSORA'
   | 'ASSESSORA_MARKETING'
+  | 'GESTOR_TRAFEGO'
   | 'CORRETOR'
   | 'GERENTE_EQUIPE'
   | 'SOCIO_UNIDADE'
@@ -106,6 +107,7 @@ export function formatRole(role: Role | string): string {
     MARKETING: 'Diretor de Marketing',
     ASSESSORA: 'Assessora',
     ASSESSORA_MARKETING: 'Assessoria & Marketing',
+    GESTOR_TRAFEGO: 'Gestor de Tráfego',
     CORRETOR: 'Corretor',
     GERENTE_EQUIPE: 'Gerente de Equipe',
     SOCIO_UNIDADE: 'Sócio de Filial',
