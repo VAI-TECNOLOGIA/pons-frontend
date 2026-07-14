@@ -253,6 +253,9 @@ export default function Vendas() {
  const [entradaParcelas, setEntradaParcelas] = useState('1');
  const [entradaData, setEntradaData] = useState(''); // 1º vencimento das parcelas
  const [arrasValor, setArrasValor] = useState('');
+ // Parcelas da entrada: valor+vencimento por parcela, pré-preenchidas e editáveis.
+ const [parcelasEntrada, setParcelasEntrada] = useState<{ valor: string; venc: string }[]>([]);
+ const [parcelasTocadas, setParcelasTocadas] = useState(false);
  const [mensaisValor, setMensaisValor] = useState('');
  const [mensaisQtd, setMensaisQtd] = useState('');
  const [mensaisDia, setMensaisDia] = useState('');
@@ -274,6 +277,38 @@ export default function Vendas() {
  return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -1, fecha: vgv > 0 && Math.abs(saldo) <= 1 };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+ // Pré-preenche as parcelas da entrada (base = entrada/nParc; arras sai da 1ª;
+ // a última acerta o arredondamento pra soma fechar com entrada − arras).
+ // Enquanto o corretor não editar, recalcula ao mudar entrada/arras/nº/1º venc.
+ useEffect(() => {
+ const entradaV = parseMoedaBR(entradaTotal);
+ const arrasV = parseMoedaBR(arrasValor);
+ const n = Math.max(1, Number(entradaParcelas) || 1);
+ if (parcelasTocadas) {
+ // Usuário editou: só ajusta o TAMANHO da lista se o nº de parcelas mudou.
+ setParcelasEntrada((cur) => {
+ if (cur.length === n) return cur;
+ const arr = cur.slice(0, n);
+ while (arr.length < n) arr.push({ valor: '', venc: '' });
+ return arr;
+ });
+ return;
+ }
+ if (entradaV <= 0) { setParcelasEntrada([]); return; }
+ const base = Math.round(entradaV / n);
+ const vals = Array.from({ length: n }, () => base);
+ vals[0] = base - arrasV;
+ const alvo = Math.round(entradaV - arrasV);
+ vals[n - 1] += alvo - vals.reduce((a, b) => a + b, 0);
+ const baseDate = entradaData ? new Date(entradaData + 'T00:00:00') : (() => { const dd = new Date(); dd.setMonth(dd.getMonth() + 1); return dd; })();
+ const arr = vals.map((v, i) => {
+ const dd = new Date(baseDate); dd.setMonth(dd.getMonth() + i);
+ return { valor: formatMoedaBR(Math.max(0, v)), venc: dd.toISOString().slice(0, 10) };
+ });
+ setParcelasEntrada(arr);
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [entradaTotal, arrasValor, entradaParcelas, entradaData, parcelasTocadas]);
  // Conta bancária do protocolo: resolvida pela unidade do corretor titular.
  const [corretorTitularId, setCorretorTitularId] = useState('');
  const [contaBanco, setContaBanco] = useState<any>(null);
@@ -331,7 +366,7 @@ export default function Vendas() {
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(false); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
- setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
+ setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
  }, [openNew]);
 
@@ -389,6 +424,12 @@ export default function Vendas() {
  // Reconciliação: na Negociação, os valores preenchidos têm que FECHAR EXATO com
  // o VGV pra avançar (sem saldo em aberto). Nas outras etapas não trava.
  if (step === 2 && !recon.fecha) { toast.error('Os valores preenchidos precisam fechar com o valor da venda (VGV). Ajuste antes de avançar.'); return; }
+ // Parcelas da entrada: a soma tem que fechar com (entrada − arras).
+ if (step === 2 && parcelasEntrada.length > 0) {
+ const somaP = parcelasEntrada.reduce((a, p) => a + parseMoedaBR(p.valor), 0);
+ const alvoP = parseMoedaBR(entradaTotal) - parseMoedaBR(arrasValor);
+ if (Math.abs(somaP - alvoP) > 1) { toast.error('A soma das parcelas da entrada precisa fechar com (entrada − arras). Ajuste antes de avançar.'); return; }
+ }
  const prox = Math.min(step + 1, stepConfirma);
  // Entrando na confirmação: tira o snapshot dos campos pro resumo
  if (prox === stepConfirma && formRef.current) {
@@ -439,6 +480,8 @@ export default function Vendas() {
  valorVenda: num(valorVenda),
  entradaTotal: num(fd.get('entradaTotal')),
  entradaParcelas: Number(fd.get('entradaParcelas')) || 1,
+ // Valores/vencimentos individuais das parcelas da entrada (editados pelo corretor).
+ ...(parcelasEntrada.length ? { entradaParcelasDetalhe: parcelasEntrada.map((p) => ({ valor: parseMoedaBR(p.valor), vencimento: p.venc })) } : {}),
  // Comissão: herdada da política do empreendimento; especial sobrescreve
  percentualComissao: podeEditarRateio && comEspecial ? num(fd.get('percentualComissao')) : pctPonsHerdado,
  splitCorretor: 55, splitGerente: 15, splitCasa: 30, // legacy (ignorado pela regra Pons)
@@ -1249,10 +1292,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Parcelas da entrada</label>
- <input name="entradaParcelas" type="number" min={1} className="field__input" value={entradaParcelas} onChange={(e) => setEntradaParcelas(e.target.value)} />
- {recon.parcela > 0 && recon.nParc > 0 && (
- <div className="field__hint">{recon.nParc}x de <strong>{formatMoedaBR(recon.parcela)}</strong> (entrada − arras ÷ {recon.nParc}).</div>
- )}
+ <input name="entradaParcelas" type="number" min={1} className="field__input" value={entradaParcelas} onChange={(e) => { setEntradaParcelas(e.target.value); setParcelasTocadas(false); }} />
  {Number(entradaParcelas) > 4 && (
  <div className="field__hint" style={{ color: '#d97706' }}>Acima de 4x — vai pra aprovação do Paulo.</div>
  )}
@@ -1262,6 +1302,27 @@ export default function Vendas() {
  <input name="entradaData" type="date" className="field__input" value={entradaData} onChange={(e) => setEntradaData(e.target.value)} />
  {politicaVigente?.parcelasMensaisMax ? <div className="field__hint">Empreendimento libera até {politicaVigente.parcelasMensaisMax} mensais{politicaVigente.reforcosAnuaisMax ? ` e ${politicaVigente.reforcosAnuaisMax} reforços` : ''}.</div> : null}
  </div>
+ {parcelasEntrada.length > 0 && (
+ <div className="field field--span-2">
+ <label className="field__label">Valores e vencimentos das parcelas da entrada <span className="text-secondary" style={{ fontWeight: 400 }}>— pré-preenchido, editável</span></label>
+ <div style={{ display: 'grid', gap: 6 }}>
+ {parcelasEntrada.map((p, i) => (
+ <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+ <span style={{ width: 30, fontSize: 12, color: 'var(--text-secondary)' }}>{i + 1}ª</span>
+ <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" value={p.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setParcelasEntrada((cur) => cur.map((x, j) => j === i ? { ...x, valor: v } : x)); setParcelasTocadas(true); }} />
+ <input type="date" className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e.target.value; setParcelasEntrada((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasTocadas(true); }} />
+ </div>
+ ))}
+ </div>
+ {(() => {
+ const soma = parcelasEntrada.reduce((a, p) => a + parseMoedaBR(p.valor), 0);
+ const alvo = parseMoedaBR(entradaTotal) - parseMoedaBR(arrasValor);
+ const bate = Math.abs(soma - alvo) <= 1;
+ return <div className="field__hint" style={{ color: bate ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 600 }}>Soma das parcelas: {formatMoedaBR(soma)} · esperado (entrada − arras): {formatMoedaBR(alvo)} {bate ? '✓' : '— ajuste até fechar'}</div>;
+ })()}
+ {parcelasTocadas && <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 4 }} onClick={() => setParcelasTocadas(false)}>Recalcular automático</button>}
+ </div>
+ )}
  <div className="field">
  <label className="field__label">Mensais (R$)</label>
  <input name="mensaisValor" className="field__input" inputMode="numeric" placeholder="R$ 4.500,00" value={mensaisValor} onChange={(e) => setMensaisValor(maskMoedaBR(e.target.value))} />
