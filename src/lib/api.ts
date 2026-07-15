@@ -905,6 +905,10 @@ export const Api = {
     ),
   devNotifications: () => request<{ data: any[]; unread: number }>('/dev/notifications'),
   devNotificationsReadAll: () => request<{ ok: boolean }>('/dev/notifications/read-all', { method: 'POST' }),
+
+  // ─── Notificações in-app (sino da topbar — próprias do usuário) ──
+  notifications: () => request<{ data: any[]; unread: number }>('/notifications'),
+  notificationsReadAll: () => request<{ ok: boolean }>('/notifications/read-all', { method: 'POST' }),
   metricsSnapshot: (slow = false) => request<any>(`/_metrics${slow ? '?slow=1' : ''}`),
 
   // ─── Bug report ──────────────────────────────────────────────────

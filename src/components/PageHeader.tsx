@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useUser } from '../lib/userContext';
 import { useTheme } from '../lib/theme';
 import { Icon } from './Icon';
+import { NotificationsBell } from './NotificationsBell';
 
 interface Props {
   breadcrumb: string;
@@ -58,6 +59,7 @@ function UserChip() {
   if (!user) return null;
   return (
     <div className="user-chip">
+      <NotificationsBell />
       <button
         onClick={toggle}
         className="user-chip__theme"
