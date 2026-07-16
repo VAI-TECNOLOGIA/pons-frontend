@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Auth } from '../lib/auth';
 import { Api, ApiError } from '../lib/api';
 import { useUser } from '../lib/userContext';
-import { isNativeApp } from '../lib/platform';
-
 import './login.css';
 
 // Colaborador em contratação (onboardingStatus != ATIVO) fica preso na esteira
@@ -26,10 +24,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [bgIdx, setBgIdx] = useState(0);
-  // "Solicitar acesso" — só no navegador (não no app nativo). Cria conta que
-  // fica pendente de aprovação de um administrador.
+  // "Criar conta" — disponível no navegador E no app nativo (uso principal:
+  // testadores entrando pelo celular). Cria corretor aprovado e loga direto.
   const [showRequest, setShowRequest] = useState(false);
-  const web = !isNativeApp();
 
   // Slideshow de fundo: crossfade suave a cada 5s (estilo Apple).
   useEffect(() => {
@@ -134,15 +131,13 @@ export default function Login() {
             {busy ? 'Acelerando…' : 'Entrar'}
           </button>
 
-          {web && (
-            <button
-              type="button"
-              className="login-request-link"
-              onClick={() => setShowRequest(true)}
-            >
-              Não tem conta? Criar conta
-            </button>
-          )}
+          <button
+            type="button"
+            className="login-request-link"
+            onClick={() => setShowRequest(true)}
+          >
+            Não tem conta? Criar conta
+          </button>
         </form>
 
         <div className="login-tagline">
