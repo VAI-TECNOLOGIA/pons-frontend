@@ -710,14 +710,15 @@ export default function Vendas() {
  zIndex: 500,
  }}
  >
- <div style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', borderRadius: 14, maxWidth: 720, width: '96%', boxShadow: 'var(--shadow-xl)' }}>
- <div style={{ background: 'linear-gradient(135deg,#15171C,#0B0C10)', color: '#fff', padding: '24px 28px', borderRadius: '14px 14px 0 0' }}>
- <div className="flex-between" style={{ alignItems: 'flex-start' }}>
- <div>
- <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)' }}>
+ <div style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', borderRadius: 14, maxWidth: 860, width: '96%', boxShadow: 'var(--shadow-xl)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+ <div style={{ background: 'linear-gradient(135deg,#15171C,#0B0C10)', color: '#fff', padding: '18px 28px', flexShrink: 0 }}>
+ <div className="flex-between" style={{ alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+ <div style={{ minWidth: 0 }}>
+ <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 8 }}>
  Venda #{String(sel.id).padStart(5, '0')}
+ <span className={`badge badge--${(STATUS_MAP[sel.status] || ['neutral'])[0]}`} style={{ fontSize: 10 }}>{(STATUS_MAP[sel.status] || [, sel.status])[1]}</span>
  </div>
- <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{sel.clienteNome || sel.cliente}</div>
+ <div style={{ fontSize: 21, fontWeight: 800, marginTop: 4 }}>{sel.clienteNome || sel.cliente}</div>
  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
  {(typeof sel.empreendimento === 'string' ? sel.empreendimento : sel.empreendimento?.nome) || ''} · {sel.unidade} · {sel.corretorTitular?.user?.name || sel.corretor?.nome || sel.corretor}
  </div>
@@ -726,24 +727,24 @@ export default function Vendas() {
  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
  Valor da venda
  </div>
- <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#88C559' }}>
+ <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#88C559', lineHeight: 1.1 }}>
  {formatCurrencyShort(sel.valorVenda ?? sel.valor)}
  </div>
- </div>
- </div>
- </div>
- <div style={{ padding: '24px 28px' }}>
- <div className="text-secondary text-sm" style={{ marginBottom: 16 }}>
+ <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
  Comissão estimada: <strong>{formatCurrencyShort(sel.comissao ?? (sel.valorVenda ?? sel.valor) * 0.05)}</strong>
  </div>
- <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Status da venda</div>
+ </div>
+ </div>
+ </div>
+ <div style={{ padding: '18px 28px', overflowY: 'auto', flex: 1 }}>
+ <div style={{ padding: '12px 16px', background: 'var(--bg-card-hover)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+ <div className="uppercase-tag">Status da venda</div>
  {podeEditarStatus ? (
  <select
  className="field__select"
  value={sel.status}
  onChange={(e) => atualizarStatus(sel.id, e.target.value)}
- style={{ width: 'auto', minWidth: 200 }}
+ style={{ width: 'auto', minWidth: 200, height: 34 }}
  >
  {Object.entries(STATUS_MAP).map(([val, [, lbl]]) => (
  <option key={val} value={val}>{lbl}</option>
@@ -813,12 +814,11 @@ export default function Vendas() {
  <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
-
- <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 24 }}>
+ </div>
+ <div style={{ padding: '12px 28px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', flexShrink: 0, background: 'var(--bg-card)' }}>
  <button className="btn btn--secondary" onClick={() => setSelected(null)}>
  Fechar
  </button>
- </div>
  </div>
  </div>
  </div>
@@ -1977,27 +1977,35 @@ export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; pod
  };
 
  if (parcelas.length === 0) return null;
+ const pagas = parcelas.filter((p) => p.status === 'PAGO');
+ const totalEntrada = parcelas.reduce((s, p) => s + (p.valor || 0), 0);
+ const totalPago = pagas.reduce((s, p) => s + (p.valor || 0), 0);
  return (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Plano de recebimento (entrada)</div>
- <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+ <div className="flex-between" style={{ alignItems: 'baseline', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
+ <div className="uppercase-tag">Plano de recebimento (entrada)</div>
+ <div className="text-xs text-secondary">
+ {pagas.length}/{parcelas.length} pagas · {formatCurrencyShort(totalPago)} de {formatCurrencyShort(totalEntrada)}
+ </div>
+ </div>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
  {parcelas.map((p) => {
  const [k, lbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
  const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
  return (
- <div key={p.id} className="flex-between" style={{ alignItems: 'center', padding: '6px 8px', background: 'var(--bg-card)', borderRadius: 8 }}>
- <div style={{ fontSize: 13 }}>
- <strong>{p.numero}/{p.total}</strong> · {formatCurrencyShort(p.valor)} · vence {venc}
+ <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
+ <div style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+ <strong>{p.numero}/{p.total}</strong> · {formatCurrencyShort(p.valor)} · {venc}
  </div>
- <div className="flex gap-2" style={{ alignItems: 'center' }}>
- <span className={`badge badge--${k}`}>{lbl}</span>
+ <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
+ {(!podeConfirmar || p.status === 'PAGO') && <span className={`badge badge--${k}`} style={{ fontSize: 10 }}>{lbl}</span>}
  {podeConfirmar && p.status !== 'PAGO' && (
- <button className="btn btn--primary btn--sm" disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
+ <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
  {busy === p.id ? '…' : 'Confirmar'}
  </button>
  )}
  {podeConfirmar && p.status === 'PAGO' && (
- <button className="btn btn--ghost btn--sm" disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer">
+ <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer">
  Desfazer
  </button>
  )}
