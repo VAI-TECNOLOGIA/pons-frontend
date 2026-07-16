@@ -15,8 +15,15 @@
   }
   .main__content { padding: 16px !important; }
   .kpi-grid     { grid-template-columns: repeat(2, 1fr) !important; }
-  .form-grid    { grid-template-columns: 1fr !important; }
-  .form-grid--single { grid-template-columns: 1fr !important; }
+  .form-grid    { grid-template-columns: minmax(0, 1fr) !important; }
+  .form-grid--single { grid-template-columns: minmax(0, 1fr) !important; }
+  .form-grid--3 { grid-template-columns: minmax(0, 1fr) !important; }
+  /* span-2 num grid de 1 coluna cria coluna IMPLÍCITA (campos vazam pra fora
+     da tela — bug do Perfil no celular). Trava no track único. */
+  .form-grid .field--span-2,
+  .field--span-2 { grid-column: 1 / -1 !important; }
+  .form-grid .field__input,
+  .form-grid .field__select { min-width: 0; max-width: 100%; }
   table.table   { font-size: 13px; }
   .card         { padding: 16px !important; }
   .topbar       { padding: 8px 12px; }
