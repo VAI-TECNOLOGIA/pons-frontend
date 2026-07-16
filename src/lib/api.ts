@@ -373,6 +373,8 @@ export const Api = {
   vendaAprovarTrafego: (id: number) => request<any>(`/vendas/${id}/aprovar-trafego`, { method: 'POST' }),
   unidadeStatus: (empreendimentoId: number, unidade: string) =>
     request<{ ocupada: boolean; codigo: string | null }>(`/vendas/unidade-status${qs({ empreendimentoId, unidade })}`),
+  vendaSalaSugerida: (corretorId?: number | string) =>
+    request<{ salaGpi: string | null }>(`/vendas/sala-sugerida${qs(corretorId ? { corretorId } : {})}`),
   parcelasAtrasadas: () => request<any[]>('/vendas/parcelas/atrasadas'),
   vendaParcelaStatus: (vendaId: number, pagamentoId: number, status: string) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}`, { method: 'PATCH', body: { status } }),

@@ -149,7 +149,7 @@ export default function Leads() {
  {STATUS_MAP[s]?.[1] || s}
  </span>
  ))}
- <input className="field__input" style={{ marginLeft: 'auto', width: 180, height: 32 }} placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+ <input className="field__input leads-filtros__busca" placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} />
  <button className={'btn btn--sm ' + (mostrarFiltros ? 'btn--primary' : 'btn--secondary')} onClick={() => setMostrarFiltros((v) => !v)}>
  <Icon name="settings" size={13} /> {mostrarFiltros ? 'Fechar Filtros' : 'Filtros'}
  </button>
@@ -157,19 +157,19 @@ export default function Leads() {
 
  {mostrarFiltros && (
  <div className="card fade-in" style={{ padding: '16px 18px', marginBottom: 14 }}>
- <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px 24px' }}>
- <div>
+ <div className="leads-filtros">
+ <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="calendar" size={13} /> Período</div>
- <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+ <div className="leads-filtros__linha">
  <input type="date" className="field__input" value={dataInicial} onChange={(e) => aoFiltrar(setDataInicial)(e.target.value)} />
- <span className="text-xs text-secondary">–</span>
+ <span className="text-xs text-secondary leads-filtros__sep">–</span>
  <input type="date" className="field__input" value={dataFinal} onChange={(e) => aoFiltrar(setDataFinal)(e.target.value)} />
  </div>
  <div className="field__hint" style={{ marginTop: 4 }}>Data de entrada do lead no sistema.</div>
  </div>
- <div>
+ <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="target" size={13} /> Jornada do lead</div>
- <div style={{ display: 'flex', gap: 8 }}>
+ <div className="leads-filtros__linha">
  <select className="field__select" value={filtroOrigem} onChange={(e) => aoFiltrar(setFiltroOrigem)(e.target.value)}>
  <option value="">Origem</option>
  {(opcoes?.origens || []).map((o) => <option key={o} value={o}>{o}</option>)}
@@ -180,9 +180,9 @@ export default function Leads() {
  </select>
  </div>
  </div>
- <div>
+ <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="layers" size={13} /> Segmentação</div>
- <div style={{ display: 'flex', gap: 8 }}>
+ <div className="leads-filtros__linha">
  <select className="field__select" value={filtroEmp} onChange={(e) => aoFiltrar(setFiltroEmp)(e.target.value)}>
  <option value="">Produto</option>
  {(empreendimentos || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
@@ -193,13 +193,15 @@ export default function Leads() {
  </select>
  </div>
  </div>
- <div>
+ <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="users" size={13} /> Equipe</div>
+ <div className="leads-filtros__linha">
  <select className="field__select" value={filtroCorretor} onChange={(e) => aoFiltrar(setFiltroCorretor)(e.target.value)}>
  <option value="">Corretor</option>
  <option value="sem">Sem corretor (bolsão)</option>
  {(corretores || []).map((c: any) => <option key={c.id} value={c.id}>{c.nome || c.user?.name}</option>)}
  </select>
+ </div>
  </div>
  </div>
  </div>

@@ -141,6 +141,10 @@ export default function Vendas() {
  // ── Comprador (controlados pra receber os dados do lead) ──
  const [cliente, setCliente] = useState({ nome: '', email: '', telefone: '' });
  const [estadoCivil, setEstadoCivil] = useState('');
+ // Telefone internacional: marcação extra que desliga a máscara nacional.
+ const [telIntl, setTelIntl] = useState(false);
+ // Sala GPI pré-preenchida com a da última venda do corretor (editável).
+ const [salaGpi, setSalaGpi] = useState('');
  const temConjuge = EXIGE_CONJUGE.has(estadoCivil);
  const [emancipado, setEmancipado] = useState(false);
  const nascimentoRef = useRef<HTMLInputElement>(null);
@@ -199,9 +203,27 @@ export default function Vendas() {
  el.setCustomValidity(el.value && !/\d.*[A-Za-z]{2,}/.test(el.value) ? 'Inclua o órgão expedidor (ex.: 1234567 SSP/SC).' : '');
  };
  const onTelefoneCtrl = (e: React.ChangeEvent<HTMLInputElement>) => {
+ // Modo internacional: sem máscara BR — aceita +, dígitos, espaços e hífens.
+ if (telIntl) {
+ const limpo = e.target.value.replace(/[^\d+()\- ]/g, '');
+ e.target.setCustomValidity(limpo && limpo.replace(/\D/g, '').length < 7 ? 'Número internacional muito curto.' : '');
+ setCliente((c) => ({ ...c, telefone: limpo }));
+ return;
+ }
  const masked = maskTelefone(e.target.value);
  e.target.setCustomValidity(masked && !validaTelefone(masked) ? 'Telefone incompleto (DDD + número).' : '');
  setCliente((c) => ({ ...c, telefone: masked }));
+ };
+ // Versão não-controlada (comprador PJ) — mesma regra do internacional.
+ const onTelefoneCliente = (e: React.FormEvent<HTMLInputElement>) => {
+ const el = e.currentTarget;
+ if (telIntl) {
+ el.value = el.value.replace(/[^\d+()\- ]/g, '');
+ el.setCustomValidity(el.value && el.value.replace(/\D/g, '').length < 7 ? 'Número internacional muito curto.' : '');
+ return;
+ }
+ el.value = maskTelefone(el.value);
+ el.setCustomValidity(el.value && !validaTelefone(el.value) ? 'Telefone incompleto (DDD + número).' : '');
  };
  const onTelefone = (e: React.FormEvent<HTMLInputElement>) => {
  const el = e.currentTarget;
@@ -385,7 +407,20 @@ export default function Vendas() {
  setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
+ setTelIntl(false); setSalaGpi('');
  }, [openNew]);
+
+ // Sala GPI sugerida: a da última venda do corretor (dele mesmo quando é
+ // CORRETOR; do titular selecionado quando é gestão). Só preenche se vazio.
+ useEffect(() => {
+ if (!openNew) return;
+ const cid = isCorretor ? undefined : (corretorTitularId ? Number(corretorTitularId) : undefined);
+ if (!isCorretor && !cid) return;
+ Api.vendaSalaSugerida(cid)
+ .then((r) => { if (r.salaGpi) setSalaGpi((s) => s || r.salaGpi!); })
+ .catch(() => {});
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [openNew, corretorTitularId]);
 
  // Vincular lead: preenche comprador + origem automática
  const vincularLead = (l: any) => {
@@ -941,7 +976,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" value={cliente.telefone} onChange={onTelefoneCtrl} />
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} value={cliente.telefone} onChange={onTelefoneCtrl} />
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
+ <input type="checkbox" checked={telIntl} onChange={(e) => { setTelIntl(e.target.checked); if (!e.target.checked) setCliente((c) => ({ ...c, telefone: maskTelefone(c.telefone) })); }} style={{ width: 'auto' }} />
+ Número internacional (sem máscara nacional)
+ </label>
  </div>
  <div className="field">
  <label className="field__label">Estado civil <span className="field__required">*</span></label>
@@ -1039,7 +1078,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" onInput={onTelefone} />
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} onInput={onTelefoneCliente} />
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
+ <input type="checkbox" checked={telIntl} onChange={(e) => setTelIntl(e.target.checked)} style={{ width: 'auto' }} />
+ Número internacional (sem máscara nacional)
+ </label>
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
@@ -1169,7 +1212,8 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Sala GPI</label>
- <input name="salaGpi" className="field__input" placeholder="Sala 12" />
+ <input name="salaGpi" className="field__input" placeholder="Sala 12" value={salaGpi} onChange={(e) => setSalaGpi(e.target.value)} />
+ <div className="field__hint">Preenchida com a sala da sua última venda — ajuste se mudou.</div>
  </div>
  </div>
 

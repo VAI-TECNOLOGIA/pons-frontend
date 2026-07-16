@@ -244,6 +244,44 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ============================================================
+   Painel de filtros da tela de Leads (responsivo)
+   2 colunas no desktop, 1 no mobile; campos nunca vazam a tela
+   ============================================================ */
+.leads-filtros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 28px;
+}
+@media (max-width: 860px) {
+  .leads-filtros { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+}
+.leads-filtros__grupo { min-width: 0; }
+.leads-filtros__linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.leads-filtros__linha > select,
+.leads-filtros__linha > input {
+  flex: 1 1 140px;
+  min-width: 0;
+  width: auto;
+}
+.leads-filtros__sep { flex: 0 0 auto; }
+
+/* Barra superior (chips + busca + botão Filtros) sem estourar no mobile */
+.leads-filtros__busca {
+  margin-left: auto;
+  flex: 0 1 200px;
+  min-width: 120px;
+  height: 32px;
+}
+@media (max-width: 640px) {
+  .leads-filtros__busca { flex: 1 1 100%; margin-left: 0; order: 10; }
+}
 [data-theme="dark"] .user-chip__avatar {
   background: rgba(82, 247, 254, 0.20);
   color: #9DE8F0;
