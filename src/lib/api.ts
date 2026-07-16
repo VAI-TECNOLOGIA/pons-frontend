@@ -901,6 +901,7 @@ export const Api = {
   whatsappTemplateCreate: (body: {
     name: string; category?: 'UTILITY' | 'MARKETING' | 'AUTHENTICATION';
     language?: string; bodyText: string; footer?: string; example?: string[];
+    comLogo?: boolean; botao?: { text: string; url: string };
   }) =>
     request<{ ok: boolean; id: string; status: string; name: string; category: string; language: string }>(
       '/whatsapp/templates',

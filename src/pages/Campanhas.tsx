@@ -136,13 +136,17 @@ const APP_STORE_URL = 'https://apps.apple.com/br/app/grupo-pons/id6783093167';
 function NovoTemplateModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('app_liberado');
   const [category, setCategory] = useState<'MARKETING' | 'UTILITY' | 'AUTHENTICATION'>('MARKETING');
+  // Com botão, o link vira o botão — o corpo fica só com a mensagem.
   const [bodyText, setBodyText] = useState(
     'Olá {{1}}! O Grupo Pons acaba de liberar o acesso exclusivo ao aplicativo. ' +
-    'Baixe o app no seu celular pelo link abaixo e, logo após, realize o seu cadastro:\n\n' +
-    APP_STORE_URL,
+    'Toque no botão abaixo para baixar o app e, logo após, realize o seu cadastro.',
   );
   const [footer, setFooter] = useState('Grupo Pons Imobiliário');
   const [example, setExample] = useState('Rafael');
+  const [comLogo, setComLogo] = useState(true);
+  const [comBotao, setComBotao] = useState(true);
+  const [botaoText, setBotaoText] = useState('Baixar o app');
+  const [botaoUrl, setBotaoUrl] = useState(APP_STORE_URL);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [ok, setOk] = useState<null | { status: string }>(null);
@@ -150,18 +154,22 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
   // Conta as variáveis {{n}} distintas do corpo → quantos exemplos a Meta exige.
   const nVars = useMemo(() => new Set((bodyText.match(/\{\{\d+\}\}/g) || [])).size, [bodyText]);
   const nomeValido = /^[a-z0-9_]+$/.test(name);
+  const botaoUrlOk = /^https?:\/\/.+/.test(botaoUrl);
   const preview = bodyText.replace(/\{\{1\}\}/g, example || '{{1}}');
 
   async function submeter() {
     setErro('');
     if (!nomeValido) { setErro('O nome deve ser snake_case: só letras minúsculas, números e _.'); return; }
     if (!bodyText.trim()) { setErro('O corpo do template não pode ficar vazio.'); return; }
+    if (comBotao && !botaoUrlOk) { setErro('O link do botão precisa começar com http:// ou https://.'); return; }
     setEnviando(true);
     try {
       const r = await Api.whatsappTemplateCreate({
         name, category, language: 'pt_BR', bodyText,
         footer: footer.trim() || undefined,
         example: nVars > 0 ? [example || 'Rafael'] : [],
+        comLogo,
+        botao: comBotao ? { text: botaoText.trim() || 'Baixar', url: botaoUrl.trim() } : undefined,
       });
       setOk({ status: r.status || 'PENDING' });
     } catch (e: any) {
@@ -235,10 +243,48 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
                 <input className="field__input" value={footer} onChange={(e) => setFooter(e.target.value.slice(0, 60))} placeholder="Grupo Pons Imobiliário" />
               </div>
 
-              <div style={{ marginTop: 14, background: 'var(--bg-subtle, #f6f7f9)', border: '1px solid var(--border-light)', borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-secondary)', marginBottom: 6 }}>Prévia</div>
-                <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.55 }}>{preview}</div>
-                {footer && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>{footer}</div>}
+              {/* Logo da marca no topo (header de imagem) */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '4px 0 2px', cursor: 'pointer', fontSize: 14 }}>
+                <input type="checkbox" checked={comLogo} onChange={(e) => setComLogo(e.target.checked)} />
+                Logo do Grupo Pons no topo da mensagem
+              </label>
+
+              {/* Botão de link (CTA) */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '10px 0 2px', cursor: 'pointer', fontSize: 14 }}>
+                <input type="checkbox" checked={comBotao} onChange={(e) => setComBotao(e.target.checked)} />
+                Botão para baixar o app
+              </label>
+              {comBotao && (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div className="field" style={{ width: 170 }}>
+                    <label className="field__label">Texto do botão</label>
+                    <input className="field__input" value={botaoText} onChange={(e) => setBotaoText(e.target.value.slice(0, 25))} placeholder="Baixar o app" />
+                  </div>
+                  <div className="field" style={{ flex: 1 }}>
+                    <label className="field__label">Link do botão</label>
+                    <input className="field__input" value={botaoUrl} onChange={(e) => setBotaoUrl(e.target.value)} placeholder="https://apps.apple.com/…" />
+                  </div>
+                </div>
+              )}
+
+              {/* Prévia fiel do WhatsApp: logo no topo, mensagem, rodapé, botão */}
+              <div style={{ marginTop: 14, background: '#0b141a', borderRadius: 12, padding: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8696a0', marginBottom: 8 }}>Prévia no WhatsApp</div>
+                <div style={{ background: '#202c33', color: '#e9edef', borderRadius: 8, borderTopLeftRadius: 0, overflow: 'hidden', maxWidth: 320 }}>
+                  {comLogo && <div style={{ height: 92, background: 'linear-gradient(158deg,#17181b,#0a0a0c)', display: 'grid', placeItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--f1, sans-serif)', letterSpacing: '.18em', fontWeight: 800, color: '#fff', fontSize: 15 }}>GRUPO&nbsp;PONS</span>
+                  </div>}
+                  <div style={{ padding: '9px 11px 7px' }}>
+                    <div style={{ whiteSpace: 'pre-wrap', fontSize: 13.5, lineHeight: 1.5 }}>{preview}</div>
+                    {footer && <div style={{ fontSize: 12, color: '#8696a0', marginTop: 7 }}>{footer}</div>}
+                    <div style={{ fontSize: 10.5, color: '#8696a0', textAlign: 'right', marginTop: 3 }}>11:42 ✓✓</div>
+                  </div>
+                  {comBotao && (
+                    <div style={{ borderTop: '1px solid #2a3942', textAlign: 'center', padding: '9px', color: '#53bdeb', fontWeight: 500, fontSize: 13.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 15 }}>↗</span> {botaoText || 'Baixar o app'}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {erro && <div className="card camp-erro" style={{ marginTop: 12 }}>{erro}</div>}
