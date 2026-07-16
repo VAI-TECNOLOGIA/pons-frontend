@@ -892,6 +892,15 @@ export const Api = {
       `/whatsapp/leads/${leadId}/send-template`,
       { method: 'POST', body },
     ),
+  // Cria/submete um template à Meta (entra PENDING, aprova em minutos/horas).
+  whatsappTemplateCreate: (body: {
+    name: string; category?: 'UTILITY' | 'MARKETING' | 'AUTHENTICATION';
+    language?: string; bodyText: string; footer?: string; example?: string[];
+  }) =>
+    request<{ ok: boolean; id: string; status: string; name: string; category: string; language: string }>(
+      '/whatsapp/templates',
+      { method: 'POST', body },
+    ),
 
   // ─── DEV panel ───────────────────────────────────────────────────
   devFeedback:        (limit = 200) => request<{ data: any[]; total: number }>(`/dev/feedback?limit=${limit}`),

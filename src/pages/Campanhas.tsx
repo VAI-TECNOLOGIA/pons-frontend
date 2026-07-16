@@ -37,6 +37,7 @@ export default function Campanhas() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [wizard, setWizard] = useState(false);
+  const [templateModal, setTemplateModal] = useState(false);
 
   function load() {
     setLoading(true);
@@ -60,7 +61,10 @@ export default function Campanhas() {
           <h1 className="page-title">Campanhas</h1>
           <p className="page-sub">Disparo em massa via WhatsApp oficial — audiência, template aprovado e acompanhamento.</p>
         </div>
-        <button className="btn btn--primary" onClick={() => setWizard(true)}>+ Nova Campanha</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn--ghost" onClick={() => setTemplateModal(true)}>+ Novo template</button>
+          <button className="btn btn--primary" onClick={() => setWizard(true)}>+ Nova Campanha</button>
+        </div>
       </header>
 
       <div className="kpi-grid camp-kpis">
@@ -118,6 +122,139 @@ export default function Campanhas() {
       </div>
 
       {wizard && <Wizard onClose={() => { setWizard(false); load(); }} />}
+      {templateModal && <NovoTemplateModal onClose={() => setTemplateModal(false)} />}
+    </div>
+  );
+}
+
+// ─── Modal: criar/submeter template à Meta ──────────────────────────────────
+// Vem pré-preenchido com o aviso de liberação do app (pedido do cliente).
+// O backend (POST /whatsapp/templates) submete à Meta; entra PENDING e é
+// aprovado em minutos/horas. Só então fica disponível para disparo.
+const APP_STORE_URL = 'https://apps.apple.com/br/app/grupo-pons/id6783093167';
+
+function NovoTemplateModal({ onClose }: { onClose: () => void }) {
+  const [name, setName] = useState('app_liberado');
+  const [category, setCategory] = useState<'MARKETING' | 'UTILITY' | 'AUTHENTICATION'>('MARKETING');
+  const [bodyText, setBodyText] = useState(
+    'Olá {{1}}! O Grupo Pons acaba de liberar o acesso exclusivo ao aplicativo. ' +
+    'Baixe o app no seu celular pelo link abaixo e, logo após, realize o seu cadastro:\n\n' +
+    APP_STORE_URL,
+  );
+  const [footer, setFooter] = useState('Grupo Pons Imobiliário');
+  const [example, setExample] = useState('Rafael');
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [ok, setOk] = useState<null | { status: string }>(null);
+
+  // Conta as variáveis {{n}} distintas do corpo → quantos exemplos a Meta exige.
+  const nVars = useMemo(() => new Set((bodyText.match(/\{\{\d+\}\}/g) || [])).size, [bodyText]);
+  const nomeValido = /^[a-z0-9_]+$/.test(name);
+  const preview = bodyText.replace(/\{\{1\}\}/g, example || '{{1}}');
+
+  async function submeter() {
+    setErro('');
+    if (!nomeValido) { setErro('O nome deve ser snake_case: só letras minúsculas, números e _.'); return; }
+    if (!bodyText.trim()) { setErro('O corpo do template não pode ficar vazio.'); return; }
+    setEnviando(true);
+    try {
+      const r = await Api.whatsappTemplateCreate({
+        name, category, language: 'pt_BR', bodyText,
+        footer: footer.trim() || undefined,
+        example: nVars > 0 ? [example || 'Rafael'] : [],
+      });
+      setOk({ status: r.status || 'PENDING' });
+    } catch (e: any) {
+      setErro(e?.message || 'Falha ao enviar o template para a Meta.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="camp-modal__backdrop" onClick={enviando ? undefined : onClose}>
+      <div className="camp-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
+        <div className="camp-modal__head">
+          <h2>Novo template de WhatsApp</h2>
+          <button className="camp-modal__close" onClick={onClose} disabled={enviando}>✕</button>
+        </div>
+
+        <div className="camp-modal__body" style={{ display: 'block' }}>
+          {ok ? (
+            <div className="card" style={{ textAlign: 'center', padding: '28px 20px' }}>
+              <div style={{ fontSize: 40, marginBottom: 6 }}>✓</div>
+              <h3 style={{ margin: '0 0 6px' }}>Template enviado para a Meta</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
+                Status: <b>{ok.status}</b>. A aprovação leva de minutos a algumas horas. Quando ficar
+                <b> APROVADO</b>, o template <b>{name}</b> aparece na lista e já pode ser usado numa campanha.
+              </p>
+              <button className="btn btn--primary" style={{ marginTop: 14 }} onClick={onClose}>Fechar</button>
+            </div>
+          ) : (
+            <>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6, marginTop: 0 }}>
+                Este template é enviado para aprovação da Meta. Use <code>{'{{1}}'}</code> para o nome do
+                contato. Templates de <b>marketing</b> têm custo por mensagem no disparo.
+              </p>
+
+              <div className="field">
+                <label className="field__label">Nome (identificador)</label>
+                <input className="field__input" value={name} onChange={(e) => setName(e.target.value.toLowerCase())} placeholder="app_liberado" />
+                {!nomeValido && <div style={{ color: 'var(--color-danger)', fontSize: 11.5, marginTop: 4 }}>só minúsculas, números e _</div>}
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div className="field" style={{ flex: 1 }}>
+                  <label className="field__label">Categoria</label>
+                  <select className="field__select" value={category} onChange={(e) => setCategory(e.target.value as any)}>
+                    <option value="MARKETING">Marketing (anúncio/promoção)</option>
+                    <option value="UTILITY">Utilidade (aviso transacional)</option>
+                    <option value="AUTHENTICATION">Autenticação (código)</option>
+                  </select>
+                </div>
+                <div className="field" style={{ width: 140 }}>
+                  <label className="field__label">Idioma</label>
+                  <input className="field__input" value="Português" disabled />
+                </div>
+              </div>
+
+              <div className="field">
+                <label className="field__label">Corpo da mensagem</label>
+                <textarea className="field__input" value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={5} style={{ resize: 'vertical', fontFamily: 'inherit' }} />
+              </div>
+
+              {nVars > 0 && (
+                <div className="field">
+                  <label className="field__label">Exemplo para {'{{1}}'} (a Meta exige)</label>
+                  <input className="field__input" value={example} onChange={(e) => setExample(e.target.value)} placeholder="Rafael" />
+                </div>
+              )}
+
+              <div className="field">
+                <label className="field__label">Rodapé (opcional)</label>
+                <input className="field__input" value={footer} onChange={(e) => setFooter(e.target.value.slice(0, 60))} placeholder="Grupo Pons Imobiliário" />
+              </div>
+
+              <div style={{ marginTop: 14, background: 'var(--bg-subtle, #f6f7f9)', border: '1px solid var(--border-light)', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-secondary)', marginBottom: 6 }}>Prévia</div>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.55 }}>{preview}</div>
+                {footer && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>{footer}</div>}
+              </div>
+
+              {erro && <div className="card camp-erro" style={{ marginTop: 12 }}>{erro}</div>}
+            </>
+          )}
+        </div>
+
+        {!ok && (
+          <div className="camp-modal__foot">
+            <button className="btn btn--ghost" onClick={onClose} disabled={enviando}>Cancelar</button>
+            <button className="btn btn--primary" onClick={submeter} disabled={enviando || !nomeValido}>
+              {enviando ? 'Enviando…' : 'Enviar para aprovação da Meta'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
