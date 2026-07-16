@@ -140,7 +140,7 @@ export default function Login() {
               className="login-request-link"
               onClick={() => setShowRequest(true)}
             >
-              Não tem conta? Solicitar acesso
+              Não tem conta? Criar conta
             </button>
           )}
         </form>
@@ -153,78 +153,76 @@ export default function Login() {
 
       <footer className="login-foot">Grupo Pons Imobiliário ®</footer>
 
-      {showRequest && <RequestAccessModal onClose={() => setShowRequest(false)} />}
+      {showRequest && <CriarContaModal onClose={() => setShowRequest(false)} />}
     </div>
   );
 }
 
-// Modal de solicitação de acesso (web). Cria uma conta que fica pendente de
-// aprovação — não libera nada até um administrador aprovar.
-function RequestAccessModal({ onClose }: { onClose: () => void }) {
+// Modal "Criar conta" (web). Cria a conta de CORRETOR já aprovada e loga
+// direto no sistema — as contas nascem marcadas (origem + equipe de teste)
+// pra gestão identificar e direcionar leads.
+function CriarContaModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const { setUser } = useUser();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [telefone, setTelefone] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setBusy(true);
     try {
-      await Api.solicitarAcesso({ nome: nome.trim(), email: email.trim(), senha, telefone: telefone.trim() || undefined });
-      setDone(true);
+      const { token, user } = await Api.registrar({ name: nome.trim(), email: email.trim(), password: senha, phone: telefone.trim() || undefined });
+      Auth.set(token, user);
+      setUser(user);
+      sessionStorage.setItem('pons.welcome.show', '1');
+      navigate(landingFor(user), { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível enviar. Tente novamente.');
+      const msg = err instanceof ApiError && err.message === 'email_em_uso'
+        ? 'Esse e-mail já tem conta — use o login normal.'
+        : err instanceof ApiError ? err.message : 'Não foi possível criar a conta. Tente novamente.';
+      setError(msg);
       setBusy(false);
     }
   };
 
   return (
-    <div className="login-modal" role="dialog" aria-modal="true" aria-label="Solicitar acesso" onClick={onClose}>
+    <div className="login-modal" role="dialog" aria-modal="true" aria-label="Criar conta" onClick={onClose}>
       <div className="login-modal__card" onClick={(e) => e.stopPropagation()}>
         <button type="button" className="login-modal__close" aria-label="Fechar" onClick={onClose}>×</button>
-        {done ? (
-          <div className="login-modal__done">
-            <h2 className="login-card__title">Solicitação enviada</h2>
-            <p className="login-card__sub">
-              Recebemos o seu pedido. Você receberá acesso assim que um administrador aprovar a sua conta.
-            </p>
-            <button type="button" className="login-btn" onClick={onClose}>Fechar</button>
-          </div>
-        ) : (
-          <form onSubmit={submit}>
-            <div className="login-card__eyebrow">Novo por aqui?</div>
-            <h2 className="login-card__title">Solicitar acesso</h2>
-            <p className="login-card__sub">Crie sua conta — a liberação é feita por um administrador.</p>
+        <form onSubmit={submit}>
+          <div className="login-card__eyebrow">Novo por aqui?</div>
+          <h2 className="login-card__title">Criar conta</h2>
+          <p className="login-card__sub">Preencha os dados e entre direto no sistema como corretor.</p>
 
-            {error && <div className="login-card__error">{error}</div>}
+          {error && <div className="login-card__error">{error}</div>}
 
-            <label className="login-field">
-              <span className="login-field__label">Nome completo</span>
-              <input className="login-field__input" type="text" required value={nome} onChange={(e) => setNome(e.target.value)} />
-            </label>
-            <label className="login-field">
-              <span className="login-field__label">Email</span>
-              <input className="login-field__input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            </label>
-            <label className="login-field">
-              <span className="login-field__label">Telefone (opcional)</span>
-              <input className="login-field__input" type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
-            </label>
-            <label className="login-field">
-              <span className="login-field__label">Senha</span>
-              <input className="login-field__input" type="password" autoComplete="new-password" required value={senha} onChange={(e) => setSenha(e.target.value)} />
-              <span className="login-field__hint">8+ caracteres, com maiúscula, minúscula, número e símbolo.</span>
-            </label>
+          <label className="login-field">
+            <span className="login-field__label">Nome completo</span>
+            <input className="login-field__input" type="text" required minLength={3} value={nome} onChange={(e) => setNome(e.target.value)} />
+          </label>
+          <label className="login-field">
+            <span className="login-field__label">Email</span>
+            <input className="login-field__input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          </label>
+          <label className="login-field">
+            <span className="login-field__label">Telefone (opcional)</span>
+            <input className="login-field__input" type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+          </label>
+          <label className="login-field">
+            <span className="login-field__label">Senha</span>
+            <input className="login-field__input" type="password" autoComplete="new-password" required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} />
+            <span className="login-field__hint">Mínimo de 6 caracteres.</span>
+          </label>
 
-            <button type="submit" className="login-btn" disabled={busy}>
-              {busy ? 'Enviando…' : 'Solicitar acesso'}
-            </button>
-          </form>
-        )}
+          <button type="submit" className="login-btn" disabled={busy}>
+            {busy ? 'Criando…' : 'Criar conta e entrar'}
+          </button>
+        </form>
       </div>
     </div>
   );

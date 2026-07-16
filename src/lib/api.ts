@@ -182,6 +182,10 @@ export const Api = {
   solicitarAcesso: (data: { nome: string; email: string; senha: string; telefone?: string }) =>
     request<{ ok: boolean; message: string }>('/solicitar-acesso', { method: 'POST', body: data, auth: false }),
 
+  // "Criar conta" do login → CORRETOR já aprovado, loga direto (conta marcada como teste).
+  registrar: (data: { name: string; email: string; password: string; phone?: string }) =>
+    request<{ token: string; user: import('./auth').User }>('/auth/registrar', { method: 'POST', body: data, auth: false }),
+
   // Push nativa: registra o device token do aparelho + dispara push de teste.
   registerDevice: (token: string, platform: 'ios' | 'android') =>
     request<{ id: number; platform: string }>('/notifications/device-token', { method: 'POST', body: { token, platform } }),
