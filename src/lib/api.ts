@@ -244,6 +244,9 @@ export const Api = {
 
   // Leads
   leads: (params: any = {}) => request<any[]>(`/leads${qs(params)}`),
+  // Com `page` a resposta vira { total, page, limit, leads } (filtros server-side)
+  leadsPaginado: (params: any = {}) => request<{ total: number; page: number; limit: number; leads: any[] }>(`/leads${qs(params)}`),
+  leadFiltrosOpcoes: () => request<{ origens: string[]; campanhas: string[] }>('/leads/filtros-opcoes'),
   leadsBuscar: (q: string) => request<any[]>(`/leads/buscar${qs({ q })}`),
   lead: (id: number) => request<any>(`/leads/${id}`), // ficha completa (form + anúncio + corretor)
   leadStats: () => request<any>('/leads/stats'),

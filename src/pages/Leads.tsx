@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
@@ -26,37 +26,63 @@ const STATUS_MAP: Record<string, [string, string]> = {
 };
 const STATUSES = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
 
+const PAGE_SIZE = 100;
+
 export default function Leads() {
  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+ // Painel de filtros (server-side — a busca roda no banco, não na página carregada)
+ const [mostrarFiltros, setMostrarFiltros] = useState(false);
  const [filtroOrigem, setFiltroOrigem] = useState('');
- const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | nome do corretor
+ const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | id do corretor
+ const [filtroCampanha, setFiltroCampanha] = useState('');
+ const [filtroEmp, setFiltroEmp] = useState(''); // empreendimento de interesse (Produto)
+ const [dataInicial, setDataInicial] = useState('');
+ const [dataFinal, setDataFinal] = useState('');
  const [busca, setBusca] = useState('');
+ const [buscaDeb, setBuscaDeb] = useState('');
+ const [page, setPage] = useState(1);
  const [open, setOpen] = useState(false);
  const [campoLead, setCampoLead] = useState<any>(null);
- const { data: leads, loading: lLoad, error: lErr, reload } = useApi<any[]>(() => Api.leads());
+
+ // Busca com debounce (não bater na API a cada tecla)
+ useEffect(() => {
+ const t = setTimeout(() => { setBuscaDeb(busca.trim()); setPage(1); }, 400);
+ return () => clearTimeout(t);
+ }, [busca]);
+
+ const params: any = { page, limit: PAGE_SIZE };
+ if (filterStatus) params.status = filterStatus;
+ if (filtroOrigem) params.origem = filtroOrigem;
+ if (filtroCampanha) params.campanha = filtroCampanha;
+ if (filtroEmp) params.empreendimentoId = filtroEmp;
+ if (filtroCorretor === 'sem') params.semCorretor = 'true';
+ else if (filtroCorretor) params.corretorId = filtroCorretor;
+ if (dataInicial) params.dataInicial = dataInicial;
+ if (dataFinal) params.dataFinal = dataFinal;
+ if (buscaDeb) params.q = buscaDeb;
+ const paramsKey = JSON.stringify(params);
+
+ const { data: resp, loading: lLoad, error: lErr, reload } = useApi<{ total: number; leads: any[] }>(() => Api.leadsPaginado(params), [paramsKey]);
  const { data: stats, reload: reloadStats } = useApi<any>(() => Api.leadStats());
  const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
+ const { data: corretores } = useApi<any[]>(() => Api.corretores());
+ const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[] }>(() => Api.leadFiltrosOpcoes());
  const toast = useToast();
 
- if (lLoad) return <LeadsShell onNew={() => setOpen(true)}><LoadingBlock /></LeadsShell>;
- if (lErr) return <LeadsShell onNew={() => setOpen(true)}><ErrorBlock error={lErr} label="Erro ao carregar leads" /></LeadsShell>;
- if (!leads) return null;
+ if (lLoad && !resp) return <LeadsShell onNew={() => setOpen(true)}><LoadingBlock /></LeadsShell>;
+ if (lErr && !resp) return <LeadsShell onNew={() => setOpen(true)}><ErrorBlock error={lErr} label="Erro ao carregar leads" /></LeadsShell>;
+ if (!resp) return null;
 
- const counts = leads.reduce<Record<string, number>>((acc, l) => {
- acc[l.status] = (acc[l.status] || 0) + 1;
- return acc;
- }, {});
-
- const origensDisp = [...new Set(leads.map((l) => l.origem).filter(Boolean))].sort();
- const corretoresDisp = [...new Set(leads.filter((l) => l.corretor).map((l) => l.corretor.nome))].sort();
- const filtered = leads.filter((l) => {
- if (filterStatus && l.status !== filterStatus) return false;
- if (filtroOrigem && (l.origem || '') !== filtroOrigem) return false;
- if (filtroCorretor === 'sem' && l.corretor) return false;
- if (filtroCorretor && filtroCorretor !== 'sem' && (l.corretor?.nome || '') !== filtroCorretor) return false;
- if (busca) { const q = busca.toLowerCase(); if (!`${l.nome || ''} ${l.telefone || ''} ${l.email || ''}`.toLowerCase().includes(q)) return false; }
- return true;
- });
+ const leads = resp.leads || [];
+ const total = resp.total ?? leads.length;
+ const filtered = leads;
+ const temFiltro = !!(filtroOrigem || filtroCorretor || filtroCampanha || filtroEmp || dataInicial || dataFinal || buscaDeb || filterStatus);
+ const limparFiltros = () => {
+ setFilterStatus(null); setFiltroOrigem(''); setFiltroCorretor(''); setFiltroCampanha('');
+ setFiltroEmp(''); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
+ };
+ // troca de filtro sempre volta pra página 1
+ const aoFiltrar = (setter: (v: any) => void) => (v: any) => { setter(v); setPage(1); };
 
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -110,36 +136,85 @@ export default function Leads() {
  <div className="filter-bar">
  <span
  className={'filter-chip ' + (!filterStatus ? 'filter-chip--active' : '')}
- onClick={() => setFilterStatus(null)}
+ onClick={() => { setFilterStatus(null); setPage(1); }}
  >
- Todos · {leads.length}
+ Todos
  </span>
  {STATUSES.map((s) => (
  <span
  key={s}
  className={'filter-chip ' + (filterStatus === s ? 'filter-chip--active' : '')}
- onClick={() => setFilterStatus(s)}
+ onClick={() => { setFilterStatus(s); setPage(1); }}
  >
- {s} ({counts[s] || 0})
+ {STATUS_MAP[s]?.[1] || s}
  </span>
  ))}
- {/* Filtros de controle */}
- <input className="field__input" style={{ marginLeft: 'auto', width: 180, height: 32 }} placeholder="Buscar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} />
- <select className="field__select" style={{ width: 'auto', height: 32 }} value={filtroOrigem} onChange={(e) => setFiltroOrigem(e.target.value)}>
- <option value="">Origem: todas</option>
- {origensDisp.map((o) => <option key={o} value={o}>{o}</option>)}
+ <input className="field__input" style={{ marginLeft: 'auto', width: 180, height: 32 }} placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+ <button className={'btn btn--sm ' + (mostrarFiltros ? 'btn--primary' : 'btn--secondary')} onClick={() => setMostrarFiltros((v) => !v)}>
+ <Icon name="settings" size={13} /> {mostrarFiltros ? 'Fechar Filtros' : 'Filtros'}
+ </button>
+ </div>
+
+ {mostrarFiltros && (
+ <div className="card fade-in" style={{ padding: '16px 18px', marginBottom: 14 }}>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px 24px' }}>
+ <div>
+ <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="calendar" size={13} /> Período</div>
+ <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+ <input type="date" className="field__input" value={dataInicial} onChange={(e) => aoFiltrar(setDataInicial)(e.target.value)} />
+ <span className="text-xs text-secondary">–</span>
+ <input type="date" className="field__input" value={dataFinal} onChange={(e) => aoFiltrar(setDataFinal)(e.target.value)} />
+ </div>
+ <div className="field__hint" style={{ marginTop: 4 }}>Data de entrada do lead no sistema.</div>
+ </div>
+ <div>
+ <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="target" size={13} /> Jornada do lead</div>
+ <div style={{ display: 'flex', gap: 8 }}>
+ <select className="field__select" value={filtroOrigem} onChange={(e) => aoFiltrar(setFiltroOrigem)(e.target.value)}>
+ <option value="">Origem</option>
+ {(opcoes?.origens || []).map((o) => <option key={o} value={o}>{o}</option>)}
  </select>
- <select className="field__select" style={{ width: 'auto', height: 32 }} value={filtroCorretor} onChange={(e) => setFiltroCorretor(e.target.value)}>
- <option value="">Corretor: todos</option>
- <option value="sem">Sem corretor (bolsão)</option>
- {corretoresDisp.map((c) => <option key={c} value={c}>{c}</option>)}
+ <select className="field__select" value={filterStatus || ''} onChange={(e) => aoFiltrar(setFilterStatus)(e.target.value || null)}>
+ <option value="">Status</option>
+ {STATUSES.map((s) => <option key={s} value={s}>{STATUS_MAP[s]?.[1] || s}</option>)}
  </select>
  </div>
- {(filtroOrigem || filtroCorretor || busca) && (
- <div className="text-xs text-secondary" style={{ marginTop: -8, marginBottom: 8 }}>
- {filtered.length} resultado(s) · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setFiltroOrigem(''); setFiltroCorretor(''); setBusca(''); }}>limpar filtros</span>
+ </div>
+ <div>
+ <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="layers" size={13} /> Segmentação</div>
+ <div style={{ display: 'flex', gap: 8 }}>
+ <select className="field__select" value={filtroEmp} onChange={(e) => aoFiltrar(setFiltroEmp)(e.target.value)}>
+ <option value="">Produto</option>
+ {(empreendimentos || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
+ </select>
+ <select className="field__select" value={filtroCampanha} onChange={(e) => aoFiltrar(setFiltroCampanha)(e.target.value)}>
+ <option value="">Campanha</option>
+ {(opcoes?.campanhas || []).map((c) => <option key={c} value={c}>{c}</option>)}
+ </select>
+ </div>
+ </div>
+ <div>
+ <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="users" size={13} /> Equipe</div>
+ <select className="field__select" value={filtroCorretor} onChange={(e) => aoFiltrar(setFiltroCorretor)(e.target.value)}>
+ <option value="">Corretor</option>
+ <option value="sem">Sem corretor (bolsão)</option>
+ {(corretores || []).map((c: any) => <option key={c.id} value={c.id}>{c.nome || c.user?.name}</option>)}
+ </select>
+ </div>
+ </div>
  </div>
  )}
+
+ <div className="text-xs text-secondary" style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+ <span>Mostrando <strong>{leads.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{(page - 1) * PAGE_SIZE + leads.length}</strong> de <strong>{total.toLocaleString('pt-BR')}</strong></span>
+ {temFiltro && (
+ <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={limparFiltros}>limpar filtros</span>
+ )}
+ <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
+ <button className="btn btn--ghost btn--sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Anterior</button>
+ <button className="btn btn--ghost btn--sm" disabled={page * PAGE_SIZE >= total} onClick={() => setPage((p) => p + 1)}>Próxima →</button>
+ </span>
+ </div>
 
  <div className="card fade-in" style={{ padding: 0 }}>
  <table className="table row-hover">
