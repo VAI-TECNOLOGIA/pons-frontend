@@ -284,7 +284,8 @@ export default function Tarefas() {
               <label className="field__label">Responsável</label>
               <select name="responsavelId" className="field__select" defaultValue="">
                 <option value="">— Sem atribuir —</option>
-                {(users || []).map((u: any) => (
+                {/* Corretores ficam FORA da atribuição de tarefas (pedido da Namíta) */}
+                {(users || []).filter((u: any) => u.role !== 'CORRETOR').map((u: any) => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
@@ -369,7 +370,8 @@ export default function Tarefas() {
                 <label className="field__label">Responsável</label>
                 <select name="responsavelId" className="field__select" defaultValue={editTarefa.responsavelId ?? ''}>
                   <option value="">— Sem atribuir —</option>
-                  {(users || []).map((u: any) => (
+                  {/* Sem corretores; mantém só o responsável atual se a tarefa antiga já apontar pra um */}
+                  {(users || []).filter((u: any) => u.role !== 'CORRETOR' || u.id === editTarefa.responsavelId).map((u: any) => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
