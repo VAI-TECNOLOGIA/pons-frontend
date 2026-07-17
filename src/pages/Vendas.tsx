@@ -695,49 +695,24 @@ export default function Vendas() {
  )}
 
  {sel && (
- <div
- role="dialog"
- onClick={(e) => {
- if (e.target === e.currentTarget) setSelected(null);
- }}
- style={{
- position: 'fixed',
- inset: 0,
- background: 'rgba(38,54,84,0.5)',
- display: 'flex',
- alignItems: 'center',
- justifyContent: 'center',
- zIndex: 500,
- }}
+ <Modal
+ open={!!sel}
+ onClose={() => setSelected(null)}
+ size="lg"
+ title={String(sel.clienteNome || sel.cliente || 'Venda')}
+ subtitle={`Venda #${String(sel.id).padStart(5, '0')} · ${(typeof sel.empreendimento === 'string' ? sel.empreendimento : sel.empreendimento?.nome) || ''} · ${sel.unidade || ''} · ${sel.corretorTitular?.user?.name || sel.corretor?.nome || sel.corretor || ''}`}
+ footer={
+ <>
+ <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
+ <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyShort(sel.valorVenda ?? sel.valor)}</strong>
+ <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyShort(sel.comissao ?? (sel.valorVenda ?? sel.valor) * 0.05)}</strong></span>
+ </div>
+ <button className="btn btn--secondary" onClick={() => setSelected(null)}>Fechar</button>
+ </>
+ }
  >
- <div style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', borderRadius: 14, maxWidth: 860, width: '96%', boxShadow: 'var(--shadow-xl)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
- <div style={{ background: 'linear-gradient(135deg,#15171C,#0B0C10)', color: '#fff', padding: '18px 28px', flexShrink: 0 }}>
- <div className="flex-between" style={{ alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
- <div style={{ minWidth: 0 }}>
- <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 8 }}>
- Venda #{String(sel.id).padStart(5, '0')}
- <span className={`badge badge--${(STATUS_MAP[sel.status] || ['neutral'])[0]}`} style={{ fontSize: 10 }}>{(STATUS_MAP[sel.status] || [, sel.status])[1]}</span>
- </div>
- <div style={{ fontSize: 21, fontWeight: 800, marginTop: 4 }}>{sel.clienteNome || sel.cliente}</div>
- <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
- {(typeof sel.empreendimento === 'string' ? sel.empreendimento : sel.empreendimento?.nome) || ''} · {sel.unidade} · {sel.corretorTitular?.user?.name || sel.corretor?.nome || sel.corretor}
- </div>
- </div>
- <div style={{ textAlign: 'right' }}>
- <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
- Valor da venda
- </div>
- <div style={{ fontSize: 24, fontWeight: 900, fontStyle: 'italic', color: '#88C559', lineHeight: 1.1 }}>
- {formatCurrencyShort(sel.valorVenda ?? sel.valor)}
- </div>
- <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
- Comissão estimada: <strong>{formatCurrencyShort(sel.comissao ?? (sel.valorVenda ?? sel.valor) * 0.05)}</strong>
- </div>
- </div>
- </div>
- </div>
- <div style={{ padding: '18px 28px', overflowY: 'auto', flex: 1 }}>
  <div style={{ padding: '12px 16px', background: 'var(--bg-card-hover)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+ <span className={`badge badge--${(STATUS_MAP[sel.status] || ['neutral'])[0]}`}>{(STATUS_MAP[sel.status] || [, sel.status])[1]}</span>
  <div className="uppercase-tag">Status da venda</div>
  {podeEditarStatus ? (
  <select
@@ -814,14 +789,7 @@ export default function Vendas() {
  <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
- </div>
- <div style={{ padding: '12px 28px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', flexShrink: 0, background: 'var(--bg-card)' }}>
- <button className="btn btn--secondary" onClick={() => setSelected(null)}>
- Fechar
- </button>
- </div>
- </div>
- </div>
+ </Modal>
  )}
 
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Formulário oficial GPI — preencha etapa por etapa" size="lg">
