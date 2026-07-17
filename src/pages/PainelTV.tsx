@@ -44,7 +44,6 @@ export default function PainelTV() {
   const { data: dash } = useApi<any>(() => Api.dashboard());
   const { data: funilEmpresa } = useApi<any>(() => Api.funilEmpresa());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
-  const { data: avisos } = useApi<any[]>(() => Api.avisos());
 
   // Lookup pra cor da equipe por id (vinda do /api/corretores)
   const corPorEquipe = useMemo(() => {
@@ -84,29 +83,14 @@ export default function PainelTV() {
   // Tacômetro: arco semi-circular de 0 a 100%
   const pct = Math.min(100, Math.max(0, a.progressoMeta || 0));
 
-  const avisosTicker = (avisos || []).filter((a: any) => a.fixado || a.tipo === 'CAMPANHA' || a.tipo === 'URGENTE').slice(0, 5);
 
   return (
     <div className="tv">
       <TvEventoOverlay />
       <TVFiltroSelector unidadeId={unidadeId} equipeId={equipeId} />
-      {avisosTicker.length > 0 && (
-        // Faixa ESCURA com acento vermelho — faixa vermelha chapada no topo fazia
-        // o Safari tingir a barra do navegador inteira de vermelho.
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
-          background: 'rgba(10,11,14,0.94)', color: 'rgba(255,255,255,0.9)',
-          borderBottom: '1px solid rgba(225,6,0,0.45)', padding: '6px 16px',
-          fontSize: 13, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap',
-        }}>
-          <div style={{ display: 'inline-block', animation: 'tvTicker 30s linear infinite' }}>
-            {avisosTicker.map((a: any) => `AVISO: ${a.titulo} · ${a.conteudo}`).join('     •     ')}
-          </div>
-        </div>
-      )}
       {(unidadeId || equipeId) && (
         <div style={{
-          position: 'fixed', top: avisosTicker.length > 0 ? 36 : 8, right: 16, zIndex: 10,
+          position: 'fixed', top: 8, right: 16, zIndex: 10,
           fontSize: 12, color: '#fff', fontWeight: 700,
           background: state?.equipeCor ? `${state.equipeCor}cc` : 'rgba(0,0,0,0.5)',
           padding: '4px 10px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)',
