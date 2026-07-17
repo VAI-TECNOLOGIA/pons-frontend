@@ -8,6 +8,8 @@ import { Api } from '../lib/api';
 import { FichaLeadModal } from '../components/FichaLeadModal';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
+import { Auth } from '../lib/auth';
 
 const STATUS_MAP: Record<string, [string, string]> = {
  NOVO: ['neutral', 'Tentando Contato'],
@@ -68,6 +70,52 @@ export default function Leads() {
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
  const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[] }>(() => Api.leadFiltrosOpcoes());
  const toast = useToast();
+ const confirm = useConfirm();
+
+ // ── Seleção em massa (checkboxes) — mesma mecânica da Distribuição/bolsão,
+ // replicada aqui de propósito: com os filtros novos dá pra filtrar e
+ // transferir/arquivar direto da listagem. ──────────────────────────────
+ const role = Auth.user?.role || '';
+ const podeTransferir = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GERENTE_EQUIPE'].includes(role);
+ const podeArquivar = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'].includes(role);
+ const [sel, setSel] = useState<Set<number>>(new Set());
+ const [alvoTransf, setAlvoTransf] = useState<number | ''>('');
+ const [transferindo, setTransferindo] = useState(false);
+ const [arquivando, setArquivando] = useState(false);
+ const toggleSel = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+ // Limpa a seleção quando filtro/página muda (evita id selecionado fora da tela)
+ useEffect(() => { setSel(new Set()); }, [paramsKey]);
+
+ const transferirSelecionados = async () => {
+ if (!sel.size || !alvoTransf) return;
+ setTransferindo(true);
+ try {
+ const r = await Api.roletaTransferirMassa([...sel], Number(alvoTransf));
+ toast.success(`${r.transferidos} lead(s) transferido(s) para ${r.corretor}.`);
+ setSel(new Set()); setAlvoTransf('');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ } finally {
+ setTransferindo(false);
+ }
+ };
+ const arquivarSelecionados = async () => {
+ if (!sel.size) return;
+ const ok = await confirm({ title: `Arquivar ${sel.size} lead(s)?`, message: 'Eles somem das telas (útil pra duplicatas/testes), mas ficam preservados no banco.', tone: 'danger' });
+ if (!ok) return;
+ setArquivando(true);
+ try {
+ const r = await Api.leadsArquivar([...sel]);
+ toast.success(`${r.arquivados} lead(s) arquivado(s).`);
+ setSel(new Set());
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ } finally {
+ setArquivando(false);
+ }
+ };
 
  if (lLoad && !resp) return <LeadsShell onNew={() => setOpen(true)}><LoadingBlock /></LeadsShell>;
  if (lErr && !resp) return <LeadsShell onNew={() => setOpen(true)}><ErrorBlock error={lErr} label="Erro ao carregar leads" /></LeadsShell>;
@@ -218,10 +266,36 @@ export default function Leads() {
  </span>
  </div>
 
+ {/* Barra de ação em massa — aparece com leads selecionados (igual à da Distribuição) */}
+ {podeTransferir && sel.size > 0 && (
+ <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan, #52f7fe)', borderRadius: 10 }}>
+ <strong style={{ fontSize: 14 }}>{sel.size} selecionado(s)</strong>
+ <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
+ {podeArquivar && (
+ <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
+ )}
+ <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
+ <select className="field__select" style={{ width: 'auto', height: 34 }} value={alvoTransf} onChange={(e) => setAlvoTransf(e.target.value ? Number(e.target.value) : '')}>
+ <option value="">Escolher corretor…</option>
+ {(corretores || []).filter((c: any) => c.ativo !== false).map((c: any) => (
+ <option key={c.id} value={c.id}>{c.nome || c.user?.name}{c.equipe?.nome ? ` · ${c.equipe.nome}` : ''}</option>
+ ))}
+ </select>
+ <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
+ {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
+ </button>
+ </div>
+ )}
+
  <div className="card fade-in" style={{ padding: 0 }}>
  <table className="table row-hover">
  <thead>
  <tr>
+ {podeTransferir && (
+ <th style={{ width: 34 }}>
+ <input type="checkbox" checked={sel.size >= filtered.length && filtered.length > 0} onChange={() => setSel((s) => s.size >= filtered.length ? new Set() : new Set(filtered.map((l: any) => l.id)))} title="Selecionar todos os da página" />
+ </th>
+ )}
  <th>Lead</th>
  <th>Origem</th>
  <th>Interesse</th>
@@ -234,7 +308,7 @@ export default function Leads() {
  <tbody>
  {filtered.length === 0 ? (
  <tr>
- <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
+ <td colSpan={podeTransferir ? 8 : 7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
  Nenhum lead
  </td>
  </tr>
@@ -242,7 +316,10 @@ export default function Leads() {
  filtered.map((l) => {
  const [k, lab] = STATUS_MAP[l.status] || ['neutral', l.status];
  return (
- <tr key={l.id}>
+ <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : undefined}>
+ {podeTransferir && (
+ <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggleSel(l.id)} /></td>
+ )}
  <td>
  <div className="flex gap-3" style={{ alignItems: 'center' }}>
  <div className="avatar avatar--sm">{initials(l.nome)}</div>
