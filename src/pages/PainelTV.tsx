@@ -83,8 +83,6 @@ export default function PainelTV() {
 
   // Tacômetro: arco semi-circular de 0 a 100%
   const pct = Math.min(100, Math.max(0, a.progressoMeta || 0));
-  const gaugeAngle = (pct / 100) * 180 - 180; // -180 (esquerda) a 0 (direita)
-  const gaugeColor = pct >= 80 ? '#88C559' : pct >= 50 ? '#F2B544' : '#E10600';
 
   const avisosTicker = (avisos || []).filter((a: any) => a.fixado || a.tipo === 'CAMPANHA' || a.tipo === 'URGENTE').slice(0, 5);
 
@@ -120,7 +118,7 @@ export default function PainelTV() {
           <span className="tvh__brand-divider" />
           <div className="tvh__brand-meta">
             <div className="tvh__brand-label">VAI Sistema</div>
-            <div className="tvh__brand-title">Sala de Guerra · Telemetria</div>
+            <div className="tvh__brand-title">Sala de Guerra - Telemetria</div>
           </div>
         </div>
         <div className="tvh__right">
@@ -140,11 +138,11 @@ export default function PainelTV() {
         <div className="kcard kcard--hero">
           <div className="kcard__l">
             <Icon name="dollar" size={14} />
-            VGV no mês
+            VGV Mensal
           </div>
           <div className="kcard__v">{formatCurrencyShort(a.realizadoMes)}</div>
           <div className="kcard__sub">
-            {pct}% da meta · {formatCurrencyShort(a.metaCasa)}
+            {pct}% da meta - {formatCurrencyShort(a.metaCasa)}
           </div>
         </div>
         <div className="kcard">
@@ -177,7 +175,7 @@ export default function PainelTV() {
         <div className="panel panel--ranking">
           <div className="panel__t">
             <Icon name="trophy" size={16} />
-            Grid de Largada · {state?.equipeNome ? `Equipe ${state.equipeNome}` : 'Pilotos do Mês'}
+            Grid de Largada - {state?.equipeNome ? `Equipe ${state.equipeNome}` : 'Piloto do Mês'}
           </div>
 
           <div className="podium">
@@ -192,20 +190,24 @@ export default function PainelTV() {
             )}
             {/* IMPORTANTE: o cliente proibiu mostrar valor faturado por corretor no painel TV.
                 Aqui exibimos APENAS score do mês — sem VGV, sem volume, sem faturamento. */}
-            {resto.map((c: any, i: number) => (
-              <div className="grid-row" key={c.id} style={{ ['--tc' as any]: c.equipeCor || '#3FB6D4' }}>
-                <div className="grid-row__pos">P{i + 4}</div>
-                <div className="grid-row__lane" />
-                <div className="grid-row__avatar">{c.initials}</div>
-                <div className="grid-row__main">
-                  <div className="grid-row__name">{c.nome}</div>
+            {resto.map((c: any, i: number) => {
+              const partes = String(c.nome || '').trim().split(' ');
+              const sobrenome = partes.length > 1 ? partes.pop() : '';
+              return (
+                <div className="grid-row" key={c.id} style={{ ['--tc' as any]: c.equipeCor || '#3FB6D4' }}>
+                  <div className="grid-row__pos">P{i + 4}</div>
+                  <div className="grid-row__lane" />
+                  <div className="grid-row__avatar">{c.initials}</div>
+                  <div className="grid-row__main">
+                    <div className="grid-row__name">{partes.join(' ')} {sobrenome && <em>{sobrenome}</em>}</div>
+                  </div>
+                  <div className="grid-row__stats">
+                    <div className="grid-row__val">{c.scoreMes ?? 0} pts</div>
+                    <div className="grid-row__sales">score</div>
+                  </div>
                 </div>
-                <div className="grid-row__stats">
-                  <div className="grid-row__val">{c.scoreMes ?? 0} pts</div>
-                  <div className="grid-row__sales">score</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -213,69 +215,41 @@ export default function PainelTV() {
           <div className="panel panel--gauge">
             <div className="panel__t">
               <Icon name="speed" size={16} />
-              Meta · RPM
+              Meta - RPM
             </div>
             <div className="gauge">
-              <svg viewBox="0 0 200 130" width="100%" height="200" preserveAspectRatio="xMidYMid meet">
+              {/* Anel circular (280°) com gradiente ciano — desenho do layout aprovado */}
+              <svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">
                 <defs>
-                  <linearGradient id="rpmTrack" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#88C559" />
-                    <stop offset="50%" stopColor="#F2B544" />
-                    <stop offset="100%" stopColor="#E10600" />
+                  <linearGradient id="rpmTrack" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="45%" stopColor="#52f7fe" />
+                    <stop offset="100%" stopColor="#0E7C9B" />
                   </linearGradient>
                 </defs>
-                {[0, 25, 50, 75, 100].map((mk) => {
-                  const ang = (mk / 100) * 180 - 180;
-                  const rad = (ang * Math.PI) / 180;
-                  const x1 = 100 + Math.cos(rad) * 70;
-                  const y1 = 110 + Math.sin(rad) * 70;
-                  const x2 = 100 + Math.cos(rad) * 80;
-                  const y2 = 110 + Math.sin(rad) * 80;
+                {(() => {
+                  const R = 88;
+                  const CIRC = 2 * Math.PI * R;
+                  const ARCO = 280 / 360; // anel aberto embaixo
                   return (
-                    <line key={mk} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                    <g transform="rotate(130 110 110)">
+                      <circle
+                        cx="110" cy="110" r={R} fill="none"
+                        stroke="rgba(255,255,255,0.08)" strokeWidth="16" strokeLinecap="round"
+                        strokeDasharray={`${CIRC * ARCO} ${CIRC}`}
+                      />
+                      <circle
+                        cx="110" cy="110" r={R} fill="none"
+                        stroke="url(#rpmTrack)" strokeWidth="16" strokeLinecap="round"
+                        strokeDasharray={`${CIRC * ARCO * (pct / 100)} ${CIRC}`}
+                        style={{ transition: 'stroke-dasharray 1s ease' }}
+                      />
+                    </g>
                   );
-                })}
-                <path
-                  d="M 20 110 A 80 80 0 0 1 180 110"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.08)"
-                  strokeWidth="16"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 20 110 A 80 80 0 0 1 180 110"
-                  fill="none"
-                  stroke="url(#rpmTrack)"
-                  strokeWidth="16"
-                  strokeLinecap="round"
-                  strokeDasharray="251 251"
-                  strokeDashoffset={251 - (pct / 100) * 251}
-                  style={{ transition: 'stroke-dashoffset 1s ease' }}
-                />
-                <line
-                  x1="100"
-                  y1="110"
-                  x2={100 + Math.cos((gaugeAngle * Math.PI) / 180) * 55}
-                  y2={110 + Math.sin((gaugeAngle * Math.PI) / 180) * 55}
-                  stroke={gaugeColor}
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  style={{ transition: 'all 1s ease' }}
-                />
-                <circle cx="100" cy="110" r="5" fill={gaugeColor} />
-                {/* Porcentagem dentro do SVG, no centro-baixo do arco onde o ponteiro
-                    não alcança. Mantém alinhamento perfeito em qualquer tamanho. */}
-                <text
-                  x="100"
-                  y="128"
-                  textAnchor="middle"
-                  fontSize="22"
-                  fontWeight="900"
-                  fontStyle="italic"
-                  fill={gaugeColor}
-                  style={{ filter: 'drop-shadow(0 0 8px currentColor)' }}
-                >
-                  {pct}%
+                })()}
+                <text x="110" y="118" textAnchor="middle" fontSize="44" fontWeight="900" fontStyle="italic" fill="#fff">
+                  {pct}
+                  <tspan fontSize="22" fontWeight="800">%</tspan>
                 </text>
               </svg>
               <div className="gauge__l">{a.noRitmo ? 'NO RITMO' : 'ABAIXO DO RITMO'}</div>
@@ -286,7 +260,7 @@ export default function PainelTV() {
           <div className="panel panel--funil">
             <div className="panel__t">
               <Icon name="chart" size={16} />
-              Funil · Telemetria
+              Funil - Telemetria
             </div>
             {funil.map((f: any) => (
               <div className="frow" key={f.label}>
@@ -307,16 +281,15 @@ export default function PainelTV() {
 
 function Podium({ pos, medal, piloto, highlight }: { pos: number; medal: string; piloto: any; highlight?: boolean }) {
   // IMPORTANTE: cliente proibiu valor faturado por corretor na TV.
-  // Mostramos apenas nome + score do mês.
+  // Mostramos apenas nome + score do mês. (Fotos dos pilotos entram depois.)
   return (
     <div className={'pod pod--' + pos + (highlight ? ' pod--p1' : '')}>
-      <div className="pod__medal">{medal}</div>
-      <div className="pod__avatar" style={{ background: piloto.equipeCor + '33', borderColor: piloto.equipeCor }}>
-        {piloto.initials}
+      <div className="pod__p">{medal}</div>
+      <div className="pod__badge">{piloto.nome}</div>
+      <div className="pod__pts">
+        <b>{piloto.scoreMes ?? 0}</b>
+        <span>Pontos</span>
       </div>
-      <div className="pod__name">{piloto.nome}</div>
-      <div className="pod__val">{piloto.scoreMes ?? 0}</div>
-      <div className="pod__sales">pontos de performance</div>
     </div>
   );
 }
