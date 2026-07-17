@@ -91,13 +91,16 @@ export default function PainelTV() {
       <TvEventoOverlay />
       <TVFiltroSelector unidadeId={unidadeId} equipeId={equipeId} />
       {avisosTicker.length > 0 && (
+        // Faixa ESCURA com acento vermelho — faixa vermelha chapada no topo fazia
+        // o Safari tingir a barra do navegador inteira de vermelho.
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
-          background: 'rgba(225,6,0,0.85)', color: '#fff', padding: '6px 16px',
+          background: 'rgba(10,11,14,0.94)', color: 'rgba(255,255,255,0.9)',
+          borderBottom: '1px solid rgba(225,6,0,0.45)', padding: '6px 16px',
           fontSize: 13, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap',
         }}>
           <div style={{ display: 'inline-block', animation: 'tvTicker 30s linear infinite' }}>
-            {avisosTicker.map((a: any) => `• ${a.titulo} · ${a.conteudo}`).join('     •     ')}
+            {avisosTicker.map((a: any) => `AVISO: ${a.titulo} · ${a.conteudo}`).join('     •     ')}
           </div>
         </div>
       )}
