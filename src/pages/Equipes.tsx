@@ -3,6 +3,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 
@@ -11,6 +12,7 @@ export default function Equipes() {
  const [open, setOpen] = useState(false);
  const { data: equipes, loading, error, reload } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
+ const podeGerir = Auth.user?.role !== 'CORRETOR';
 
  // ── Transferência de corretor entre equipes (gestores) ────────────────
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
@@ -18,7 +20,59 @@ export default function Equipes() {
  const [transfCorretor, setTransfCorretor] = useState('');
  const [transfDestino, setTransfDestino] = useState('');
  const [transfBusy, setTransfBusy] = useState(false);
+ const [transfBusca, setTransfBusca] = useState('');
+ const [transfFiltroEquipe, setTransfFiltroEquipe] = useState('');
  const pendentes = (transfs || []).filter((t: any) => t.status === 'PENDENTE');
+
+ // Busca por nome/telefone + filtro por equipe atual no seletor de corretor
+ const normaliza = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+ const soDigitos = (s: string) => (s || '').replace(/\D/g, '');
+ const corretoresFiltrados = (corretores || []).filter((c: any) => {
+ if (transfFiltroEquipe && String(c.equipe?.id || '') !== transfFiltroEquipe) return false;
+ if (!transfBusca.trim()) return true;
+ const q = transfBusca.trim();
+ const porNome = normaliza(c.nome || c.user?.name || '').includes(normaliza(q));
+ const dig = soDigitos(q);
+ const porFone = dig.length >= 4 && soDigitos(c.phone || '').includes(dig);
+ return porNome || porFone;
+ });
+
+ // ── Atribuir líder ─────────────────────────────────────────────────────
+ const [liderEquipe, setLiderEquipe] = useState<any | null>(null);
+ const [liderBusca, setLiderBusca] = useState('');
+ const [liderBusy, setLiderBusy] = useState(false);
+
+ const atribuirLider = async (userId: number, nome: string) => {
+ if (!liderEquipe) return;
+ setLiderBusy(true);
+ try {
+ await Api.equipeAtribuirLider(liderEquipe.id, userId);
+ toast.success(`${nome} agora é líder de ${liderEquipe.nome}.`);
+ setLiderEquipe(null); setLiderBusca('');
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message === 'sem_permissao' ? 'só admin ou o gestor da equipe pode atribuir líder.' : err.message || 'falha'));
+ } finally {
+ setLiderBusy(false);
+ }
+ };
+
+ // Candidatos a líder: corretores + gestores (sócias/gerentes sem registro de
+ // corretor também podem liderar — o backend cria o vínculo na hora). A lista
+ // de gestores é admin-only no backend; se vier 403, segue só com corretores.
+ const { data: gestoresData } = useApi<any[]>(() => Api.gestoresEquipes().catch(() => []));
+ const candidatosBase = [
+ ...(corretores || []).map((c: any) => ({ userId: c.userId, nome: c.nome, phone: c.phone, sub: c.equipe?.nome || 'sem equipe' })),
+ ...(gestoresData || [])
+ .filter((g: any) => !(corretores || []).some((c: any) => c.userId === g.id))
+ .map((g: any) => ({ userId: g.id, nome: g.nome, phone: '', sub: g.role })),
+ ];
+ const candidatosLider = candidatosBase.filter((c: any) => {
+ if (!liderBusca.trim()) return true;
+ const q = liderBusca.trim();
+ const dig = soDigitos(q);
+ return normaliza(c.nome || '').includes(normaliza(q)) || (dig.length >= 4 && soDigitos(c.phone || '').includes(dig));
+ });
 
  const solicitarTransf = async () => {
  if (!transfCorretor || !transfDestino) return;
@@ -120,10 +174,23 @@ export default function Equipes() {
  {/* Transferir corretor: direto entre equipes do mesmo gestor; senão pende aprovação */}
  <div className="card" style={{ marginBottom: 16 }}>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Transferir corretor de equipe</div>
+ <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+ <input
+ className="field__input"
+ style={{ flex: '2 1 220px', minWidth: 0, height: 34 }}
+ placeholder="Buscar por nome ou telefone…"
+ value={transfBusca}
+ onChange={(e) => { setTransfBusca(e.target.value); setTransfCorretor(''); }}
+ />
+ <select className="field__select" style={{ flex: '1 1 160px', minWidth: 0, height: 34 }} value={transfFiltroEquipe} onChange={(e) => { setTransfFiltroEquipe(e.target.value); setTransfCorretor(''); }}>
+ <option value="">Todas as equipes</option>
+ {equipes.map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+ </select>
+ </div>
  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
  <select className="field__select" style={{ flex: '1 1 200px', minWidth: 0, height: 34 }} value={transfCorretor} onChange={(e) => setTransfCorretor(e.target.value)}>
- <option value="">Corretor…</option>
- {(corretores || []).map((c: any) => (
+ <option value="">{corretoresFiltrados.length ? `Corretor… (${corretoresFiltrados.length})` : 'Nenhum corretor encontrado'}</option>
+ {corretoresFiltrados.map((c: any) => (
  <option key={c.id} value={c.id}>{c.nome || c.user?.name}{c.equipe?.nome ? ` · ${c.equipe.nome}` : ' · sem equipe'}</option>
  ))}
  </select>
@@ -173,15 +240,26 @@ export default function Equipes() {
  </span>
  </div>
 
- {lider && (
  <div style={{ padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, marginBottom: 12 }}>
- <div className="uppercase-tag" style={{ marginBottom: 4 }}>Líder</div>
- <div className="flex gap-2" style={{ alignItems: 'center' }}>
+ <div className="flex-between" style={{ alignItems: 'center', gap: 8 }}>
+ {lider ? (
+ <div className="flex gap-2" style={{ alignItems: 'center', minWidth: 0 }}>
  <div className="avatar avatar--sm">{liderInit}</div>
- <span className="font-semibold text-sm">{lider}</span>
+ <div style={{ minWidth: 0 }}>
+ <div className="uppercase-tag">Líder</div>
+ <span className="font-semibold text-sm" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lider}</span>
  </div>
  </div>
+ ) : (
+ <span className="text-secondary text-sm">Sem líder definido</span>
  )}
+ {podeGerir && (
+ <button className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }} onClick={() => { setLiderEquipe(eq); setLiderBusca(''); }}>
+ {lider ? 'Trocar líder' : 'Atribuir líder'}
+ </button>
+ )}
+ </div>
+ </div>
 
  {(eq.vendasMes != null || eq.volumeMes != null) && (
  <div className="flex-between" style={{ marginTop: 12 }}>
@@ -244,6 +322,39 @@ export default function Equipes() {
  </>
  )}
  </div>
+
+ <Modal open={!!liderEquipe} onClose={() => setLiderEquipe(null)} title={liderEquipe ? `Líder de ${liderEquipe.nome}` : ''} subtitle="Busque por nome ou telefone e clique pra atribuir">
+ {liderEquipe && (
+ <div>
+ <input
+ className="field__input"
+ style={{ marginBottom: 10 }}
+ placeholder="Buscar por nome ou telefone…"
+ value={liderBusca}
+ onChange={(e) => setLiderBusca(e.target.value)}
+ autoFocus
+ />
+ <div style={{ display: 'grid', gap: 6, maxHeight: 'min(48vh, 380px)', overflowY: 'auto' }}>
+ {candidatosLider.slice(0, 60).map((c: any) => (
+ <button
+ key={c.userId}
+ className="btn btn--secondary"
+ disabled={liderBusy}
+ style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-start', textAlign: 'left' }}
+ onClick={() => atribuirLider(c.userId, c.nome)}
+ >
+ <span className="avatar avatar--sm" style={{ flexShrink: 0 }}>{(c.nome || '?').split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase()}</span>
+ <span style={{ minWidth: 0 }}>
+ <span className="font-semibold text-sm" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</span>
+ <span className="text-secondary" style={{ fontSize: 12 }}>{c.sub}{c.phone ? ` · ${c.phone}` : ''}</span>
+ </span>
+ </button>
+ ))}
+ {!candidatosLider.length && <span className="text-secondary text-sm">Ninguém encontrado com essa busca.</span>}
+ </div>
+ </div>
+ )}
+ </Modal>
 
  <Modal open={open} onClose={() => setOpen(false)} title="Nova Equipe" subtitle="Escuderia comercial">
  <form onSubmit={submit}>

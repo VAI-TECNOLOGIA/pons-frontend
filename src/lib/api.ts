@@ -238,6 +238,8 @@ export const Api = {
   equipeTransferencias: (params: any = {}) => request<any[]>(`/equipes/transferencias${qs(params)}`),
   equipeTransfDecidir: (id: number, aprovar: boolean) =>
     request<{ ok: boolean; status: string }>(`/equipes/transferencias/${id}/decidir`, { method: 'POST', body: { aprovar } }),
+  equipeAtribuirLider: (equipeId: number, userId: number) =>
+    request<{ ok: boolean }>(`/equipes/${equipeId}/lider`, { method: 'POST', body: { userId } }),
   // Painel admin: quais equipes cada gestor enxerga (relação Equipe.gestores)
   gestoresEquipes: () => request<any[]>('/equipes/gestores'),
   gestorEquipesSalvar: (userId: number, equipeIds: number[]) =>
