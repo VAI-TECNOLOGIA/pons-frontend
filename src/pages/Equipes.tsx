@@ -1,17 +1,21 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
 import { formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import './equipes.css';
 
 export default function Equipes() {
  const [view, setView] = useState<'escuderias' | 'resultados'>('escuderias');
  const [open, setOpen] = useState(false);
  const { data: equipes, loading, error, reload } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
+ const nav = useNavigate();
  const podeGerir = Auth.user?.role !== 'CORRETOR';
 
  // ── Transferência de corretor entre equipes (gestores) ────────────────
@@ -172,35 +176,110 @@ export default function Equipes() {
  )}
 
  {/* Transferir corretor: direto entre equipes do mesmo gestor; senão pende aprovação */}
- <div className="card" style={{ marginBottom: 16 }}>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Transferir corretor de equipe</div>
- <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+ <div className="card transf-card">
+ <div className="flex-between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+ <div className="uppercase-tag">Transferir corretor de equipe</div>
+ {podeGerir && (
+ <button className="btn btn--ghost btn--sm" onClick={() => nav('/configuracoes?secao=gestores')}>
+ <Icon name="users" size={13} /> Gestores das equipes
+ </button>
+ )}
+ </div>
+ <div className="transf-grid">
+ <div className="transf-col">
+ <div className="transf-col__label">1 · Escolha o corretor</div>
+ <div className="transf-filtros">
+ <div className="transf-busca">
+ <Icon name="search" size={14} />
  <input
- className="field__input"
- style={{ flex: '2 1 220px', minWidth: 0, height: 34 }}
- placeholder="Buscar por nome ou telefone…"
+ placeholder="Nome ou telefone…"
  value={transfBusca}
- onChange={(e) => { setTransfBusca(e.target.value); setTransfCorretor(''); }}
+ onChange={(e) => setTransfBusca(e.target.value)}
  />
- <select className="field__select" style={{ flex: '1 1 160px', minWidth: 0, height: 34 }} value={transfFiltroEquipe} onChange={(e) => { setTransfFiltroEquipe(e.target.value); setTransfCorretor(''); }}>
+ {transfBusca && (
+ <button className="transf-busca__clear" onClick={() => setTransfBusca('')} title="Limpar busca">
+ <Icon name="x" size={12} />
+ </button>
+ )}
+ </div>
+ <select className="field__select transf-filtro-equipe" value={transfFiltroEquipe} onChange={(e) => setTransfFiltroEquipe(e.target.value)}>
  <option value="">Todas as equipes</option>
  {equipes.map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
  </select>
  </div>
- <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
- <select className="field__select" style={{ flex: '1 1 200px', minWidth: 0, height: 34 }} value={transfCorretor} onChange={(e) => setTransfCorretor(e.target.value)}>
- <option value="">{corretoresFiltrados.length ? `Corretor… (${corretoresFiltrados.length})` : 'Nenhum corretor encontrado'}</option>
- {corretoresFiltrados.map((c: any) => (
- <option key={c.id} value={c.id}>{c.nome || c.user?.name}{c.equipe?.nome ? ` · ${c.equipe.nome}` : ' · sem equipe'}</option>
- ))}
- </select>
- <select className="field__select" style={{ flex: '1 1 180px', minWidth: 0, height: 34 }} value={transfDestino} onChange={(e) => setTransfDestino(e.target.value)}>
- <option value="">Equipe de destino…</option>
- {equipes.map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
- </select>
- <button className="btn btn--primary btn--sm" disabled={!transfCorretor || !transfDestino || transfBusy} onClick={solicitarTransf}>
- {transfBusy ? 'Enviando…' : 'Transferir'}
+ <div className="transf-lista">
+ {corretoresFiltrados.slice(0, 30).map((c: any) => {
+ const on = transfCorretor === String(c.id);
+ return (
+ <button
+ key={c.id}
+ className={'transf-item' + (on ? ' transf-item--on' : '')}
+ onClick={() => setTransfCorretor(on ? '' : String(c.id))}
+ >
+ <span className="avatar avatar--sm" style={{ flexShrink: 0 }}>{(c.nome || '?').split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase()}</span>
+ <span className="transf-item__info">
+ <span className="transf-item__nome">{c.nome || c.user?.name}</span>
+ <span className="transf-item__sub">
+ {c.equipe?.nome ? (
+ <span className="transf-item__equipe" style={{ ['--eq-cor' as any]: c.equipe?.cor || 'var(--pons-blue)' }}>{c.equipe.nome}</span>
+ ) : 'sem equipe'}
+ {c.phone ? ` · ${c.phone}` : ''}
+ </span>
+ </span>
+ <span className="transf-item__check"><Icon name="check" size={13} /></span>
  </button>
+ );
+ })}
+ {!corretoresFiltrados.length && (
+ <div className="transf-vazio">Nenhum corretor encontrado com essa busca.</div>
+ )}
+ </div>
+ {corretoresFiltrados.length > 30 && (
+ <div className="field__hint" style={{ marginTop: 6 }}>Mostrando 30 de {corretoresFiltrados.length} — refine a busca pra ver os demais.</div>
+ )}
+ </div>
+ <div className="transf-col">
+ <div className="transf-col__label">2 · Equipe de destino</div>
+ <div className="transf-chips">
+ {equipes.filter((eq: any) => {
+ const sel = (corretores || []).find((c: any) => String(c.id) === transfCorretor);
+ return !sel || sel.equipe?.id !== eq.id;
+ }).map((eq: any) => {
+ const on = transfDestino === String(eq.id);
+ return (
+ <button
+ key={eq.id}
+ className={'transf-chip' + (on ? ' transf-chip--on' : '')}
+ onClick={() => setTransfDestino(on ? '' : String(eq.id))}
+ >
+ <span className="transf-chip__dot" style={{ background: eq.cor }} />
+ {eq.nome}
+ </button>
+ );
+ })}
+ </div>
+ {(() => {
+ const sel = (corretores || []).find((c: any) => String(c.id) === transfCorretor);
+ const dest = equipes.find((eq: any) => String(eq.id) === transfDestino);
+ return (
+ <div className="transf-resumo">
+ {sel && dest ? (
+ <>
+ <strong>{sel.nome}</strong>
+ <span className="text-secondary"> · {sel.equipe?.nome || 'sem equipe'}</span>
+ <Icon name="chevron-right" size={13} />
+ <strong style={{ color: dest.cor }}>{dest.nome}</strong>
+ </>
+ ) : (
+ <span className="text-secondary">Escolha o corretor e a equipe de destino.</span>
+ )}
+ </div>
+ );
+ })()}
+ <button className="btn btn--primary transf-enviar" disabled={!transfCorretor || !transfDestino || transfBusy} onClick={solicitarTransf}>
+ {transfBusy ? 'Enviando…' : 'Transferir corretor'}
+ </button>
+ </div>
  </div>
  <div className="field__hint" style={{ marginTop: 6 }}>
  Entre equipes do mesmo gestor a transferência é imediata; pra equipe de outro gestor, ele recebe a solicitação e aprova.
