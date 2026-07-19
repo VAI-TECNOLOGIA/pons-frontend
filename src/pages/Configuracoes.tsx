@@ -1237,77 +1237,76 @@ function PanelGestores() {
  if (error) return <ErrorBlock error={error} />;
  const gestores = data || [];
  const equipes = (equipesData || []).filter((e: any) => e.ativo !== false);
+ const ROLE_LABEL: Record<string, string> = {
+ CEO: 'CEO', DIRETOR_COMERCIAL: 'Diretor Comercial', DIRETOR_FINANCEIRO: 'Diretor Financeiro',
+ DIRETOR_JURIDICO: 'Diretor Jurídico', SOCIO_UNIDADE: 'Sócio de Unidade', GERENTE_EQUIPE: 'Gerente',
+ MARKETING: 'Marketing', ASSESSORA: 'Assessora', ASSESSORA_MARKETING: 'Assessora de Marketing',
+ GESTOR_TRAFEGO: 'Gestor de Tráfego', FINANCEIRO: 'Financeiro', ADMINISTRATIVO: 'Administrativo', DEV: 'Dev',
+ };
 
  return (
  <>
- <div className="card" style={{ padding: 0 }}>
- <table className="table">
- <thead>
- <tr>
- <th>Gestor</th>
- <th>Papel</th>
- <th>Equipes que vê</th>
- <th></th>
- </tr>
- </thead>
- <tbody>
- {gestores.map((g: any) => (
- <tr key={g.id} style={{ cursor: 'pointer' }} onClick={() => abrir(g)}>
- <td className="font-semibold">{g.nome}</td>
- <td><span className="badge">{g.role}</span></td>
- <td>
- {g.equipes.length || g.lideradas.length ? (
- <div className="flex gap-1" style={{ flexWrap: 'wrap' }}>
- {g.lideradas.map((e: any) => (
- <span key={'l' + e.id} className="badge badge--success" title="Líder formal da equipe">{e.nome}</span>
- ))}
- {g.equipes.filter((e: any) => !g.lideradas.some((l: any) => l.id === e.id)).map((e: any) => (
- <span key={e.id} className="badge">{e.nome}</span>
- ))}
+ <div className="gest-grid">
+ {gestores.map((g: any) => {
+ const extras = g.equipes.filter((e: any) => !g.lideradas.some((l: any) => l.id === e.id));
+ const todas = [...g.lideradas.map((e: any) => ({ ...e, lider: true })), ...extras];
+ return (
+ <button key={g.id} className="gest-card" onClick={() => abrir(g)}>
+ <div className="gest-card__head">
+ <span className="gest-card__avatar">{g.initials || g.nome.slice(0, 2).toUpperCase()}</span>
+ <span className="gest-card__id">
+ <span className="gest-card__nome">{g.nome}</span>
+ <span className="gest-card__role">{ROLE_LABEL[g.role] || g.role}</span>
+ </span>
+ <span className="gest-card__edit"><Icon name="pencil" size={14} /></span>
  </div>
- ) : (
- <span className="text-secondary">—</span>
+ <div className="gest-card__equipes">
+ {todas.length ? todas.map((e: any) => (
+ <span key={e.id} className={'gest-chip' + (e.lider ? ' gest-chip--lider' : '')} title={e.lider ? 'Líder formal da equipe' : undefined}>
+ <span className="gest-chip__dot" style={{ background: (equipes.find((x: any) => x.id === e.id) || {}).cor || 'var(--pons-blue)' }} />
+ {e.nome}
+ </span>
+ )) : (
+ <span className="gest-card__vazio">Nenhuma equipe vinculada</span>
  )}
- </td>
- <td style={{ textAlign: 'right' }}>
- <button className="btn btn--secondary btn--sm" onClick={(ev) => { ev.stopPropagation(); abrir(g); }}>Editar</button>
- </td>
- </tr>
- ))}
- </tbody>
- </table>
+ </div>
+ </button>
+ );
+ })}
  </div>
 
  <Modal open={!!editing} onClose={() => setEditing(null)} title={editing ? `Equipes de ${editing.nome}` : ''}>
  {editing && (
- <div>
- <p className="text-secondary" style={{ marginBottom: 12 }}>
+ <div className="gest-modal">
+ <p className="gest-modal__hint">
  Marque as equipes que este gestor pode ver. Entre as equipes marcadas ele também
  transfere corretores direto, sem precisar de aprovação.
  </p>
- <div style={{ display: 'grid', gap: 6, maxHeight: 360, overflowY: 'auto' }}>
+ <div className="gest-modal__lista">
  {equipes.map((e: any) => {
  const lidera = (editing.lideradas || []).some((l: any) => l.id === e.id);
+ const on = lidera || marcadas.includes(e.id);
  return (
- <label key={e.id} className="flex gap-2" style={{ alignItems: 'center', padding: '6px 8px', borderRadius: 8, background: 'var(--surface-2, rgba(0,0,0,0.03))' }}>
- <input
- type="checkbox"
- checked={lidera || marcadas.includes(e.id)}
- disabled={lidera}
- onChange={() => toggle(e.id)}
- />
- <span style={{ display: 'inline-block', width: 10, height: 10, background: e.cor, borderRadius: 3 }} />
- <span>{e.nome}</span>
- {lidera && <span className="badge badge--success" style={{ marginLeft: 'auto' }}>Líder</span>}
+ <label key={e.id} className={'gest-eq' + (on ? ' gest-eq--on' : '') + (lidera ? ' gest-eq--lider' : '')}>
+ <input type="checkbox" checked={on} disabled={lidera} onChange={() => toggle(e.id)} />
+ <span className="gest-eq__check"><Icon name="check" size={12} /></span>
+ <span className="gest-eq__dot" style={{ background: e.cor }} />
+ <span className="gest-eq__nome">{e.nome}</span>
+ {lidera && <span className="gest-eq__badge">Líder</span>}
  </label>
  );
  })}
  </div>
- <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
+ <div className="gest-modal__foot">
+ <span className="gest-modal__count">
+ {(editing.lideradas || []).length + marcadas.filter((id: number) => !(editing.lideradas || []).some((l: any) => l.id === id)).length} equipe(s) selecionada(s)
+ </span>
+ <div className="gest-modal__acoes">
  <button className="btn btn--secondary" onClick={() => setEditing(null)}>Cancelar</button>
  <button className="btn btn--primary" disabled={salvando} onClick={salvar}>
  {salvando ? 'Salvando...' : 'Salvar'}
  </button>
+ </div>
  </div>
  </div>
  )}
