@@ -17,7 +17,7 @@ import { parseFunil, FUNIL_SETTING_KEY, type Fase } from '../lib/funil';
 
 import './configuracoes.css';
 
-type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas' | 'funil' | 'score';
+type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'gestores' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas' | 'funil' | 'score';
 
 const GROUPS: { label: string; items: { value: Tab; label: string; icon: string; sub: string }[] }[] = [
  {
@@ -33,6 +33,7 @@ const GROUPS: { label: string; items: { value: Tab; label: string; icon: string;
  { value: 'funil', label: 'Funil de vendas', icon: 'pipeline', sub: 'Renomear as fases do funil' },
  { value: 'score', label: 'Score dos corretores', icon: 'star', sub: 'Pontos por ação (ganho/perda)' },
  { value: 'equipes', label: 'Equipes', icon: 'shield', sub: 'Escuderias e cores' },
+ { value: 'gestores', label: 'Gestores', icon: 'users', sub: 'Quais equipes cada gestor vê' },
  { value: 'filiais', label: 'Filiais & CNPJ', icon: 'building', sub: 'Vincular cada sala ao CNPJ' },
  { value: 'corretores', label: 'Corretores', icon: 'users', sub: 'Acessos e CRECIs' },
  { value: 'politicas', label: 'Políticas de comissão', icon: 'dollar', sub: 'Rateios, splits' },
@@ -115,6 +116,7 @@ export default function Configuracoes() {
  {tab === 'integracoes' && <PanelIntegracoes />}
  {tab === 'acessos' && <PanelAcessos />}
  {tab === 'equipes' && <PanelEquipes />}
+ {tab === 'gestores' && <PanelGestores />}
  {tab === 'filiais' && <PanelFiliais />}
  {tab === 'corretores' && (
  <div className="card">
@@ -1193,6 +1195,124 @@ function PanelAcessos() {
  </tbody>
  </table>
  </div>
+ );
+}
+
+// Quais equipes cada gestor enxerga: lista os perfis não-corretores; clicar
+// abre modal com checkbox por equipe. Salvo em Equipe.gestores — alimenta a
+// visibilidade (leads/vendas/equipe) e a transferência direta entre as marcadas.
+function PanelGestores() {
+ const { data, loading, error, reload } = useApi<any[]>(() => Api.gestoresEquipes());
+ const { data: equipesData } = useApi<any[]>(() => Api.equipes());
+ const [editing, setEditing] = useState<any | null>(null);
+ const [marcadas, setMarcadas] = useState<number[]>([]);
+ const [salvando, setSalvando] = useState(false);
+ const toast = useToast();
+
+ const abrir = (g: any) => {
+ setEditing(g);
+ setMarcadas(g.equipeIds || []);
+ };
+
+ const toggle = (id: number) => {
+ setMarcadas((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+ };
+
+ const salvar = async () => {
+ if (!editing) return;
+ setSalvando(true);
+ try {
+ await Api.gestorEquipesSalvar(editing.id, marcadas);
+ toast.success(`Equipes de ${editing.nome} atualizadas`);
+ setEditing(null);
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ } finally {
+ setSalvando(false);
+ }
+ };
+
+ if (loading) return <LoadingBlock />;
+ if (error) return <ErrorBlock error={error} />;
+ const gestores = data || [];
+ const equipes = (equipesData || []).filter((e: any) => e.ativo !== false);
+
+ return (
+ <>
+ <div className="card" style={{ padding: 0 }}>
+ <table className="table">
+ <thead>
+ <tr>
+ <th>Gestor</th>
+ <th>Papel</th>
+ <th>Equipes que vê</th>
+ <th></th>
+ </tr>
+ </thead>
+ <tbody>
+ {gestores.map((g: any) => (
+ <tr key={g.id} style={{ cursor: 'pointer' }} onClick={() => abrir(g)}>
+ <td className="font-semibold">{g.nome}</td>
+ <td><span className="badge">{g.role}</span></td>
+ <td>
+ {g.equipes.length || g.lideradas.length ? (
+ <div className="flex gap-1" style={{ flexWrap: 'wrap' }}>
+ {g.lideradas.map((e: any) => (
+ <span key={'l' + e.id} className="badge badge--success" title="Líder formal da equipe">{e.nome}</span>
+ ))}
+ {g.equipes.filter((e: any) => !g.lideradas.some((l: any) => l.id === e.id)).map((e: any) => (
+ <span key={e.id} className="badge">{e.nome}</span>
+ ))}
+ </div>
+ ) : (
+ <span className="text-secondary">—</span>
+ )}
+ </td>
+ <td style={{ textAlign: 'right' }}>
+ <button className="btn btn--secondary btn--sm" onClick={(ev) => { ev.stopPropagation(); abrir(g); }}>Editar</button>
+ </td>
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
+
+ <Modal open={!!editing} onClose={() => setEditing(null)} title={editing ? `Equipes de ${editing.nome}` : ''}>
+ {editing && (
+ <div>
+ <p className="text-secondary" style={{ marginBottom: 12 }}>
+ Marque as equipes que este gestor pode ver. Entre as equipes marcadas ele também
+ transfere corretores direto, sem precisar de aprovação.
+ </p>
+ <div style={{ display: 'grid', gap: 6, maxHeight: 360, overflowY: 'auto' }}>
+ {equipes.map((e: any) => {
+ const lidera = (editing.lideradas || []).some((l: any) => l.id === e.id);
+ return (
+ <label key={e.id} className="flex gap-2" style={{ alignItems: 'center', padding: '6px 8px', borderRadius: 8, background: 'var(--surface-2, rgba(0,0,0,0.03))' }}>
+ <input
+ type="checkbox"
+ checked={lidera || marcadas.includes(e.id)}
+ disabled={lidera}
+ onChange={() => toggle(e.id)}
+ />
+ <span style={{ display: 'inline-block', width: 10, height: 10, background: e.cor, borderRadius: 3 }} />
+ <span>{e.nome}</span>
+ {lidera && <span className="badge badge--success" style={{ marginLeft: 'auto' }}>Líder</span>}
+ </label>
+ );
+ })}
+ </div>
+ <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
+ <button className="btn btn--secondary" onClick={() => setEditing(null)}>Cancelar</button>
+ <button className="btn btn--primary" disabled={salvando} onClick={salvar}>
+ {salvando ? 'Salvando...' : 'Salvar'}
+ </button>
+ </div>
+ </div>
+ )}
+ </Modal>
+ </>
  );
 }
 

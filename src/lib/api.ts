@@ -238,6 +238,10 @@ export const Api = {
   equipeTransferencias: (params: any = {}) => request<any[]>(`/equipes/transferencias${qs(params)}`),
   equipeTransfDecidir: (id: number, aprovar: boolean) =>
     request<{ ok: boolean; status: string }>(`/equipes/transferencias/${id}/decidir`, { method: 'POST', body: { aprovar } }),
+  // Painel admin: quais equipes cada gestor enxerga (relação Equipe.gestores)
+  gestoresEquipes: () => request<any[]>('/equipes/gestores'),
+  gestorEquipesSalvar: (userId: number, equipeIds: number[]) =>
+    request<{ ok: boolean; equipeIds: number[] }>(`/equipes/gestores/${userId}`, { method: 'PUT', body: { equipeIds } }),
   equipeUpdate: (id: number, data: any) => request<any>(`/equipes/${id}`, { method: 'PATCH', body: data }),
   equipeDelete: (id: number) => request<{ ok: boolean }>(`/equipes/${id}`, { method: 'DELETE' }),
   equipesResultados: (params: any = {}) => request<any>(`/equipes/resultados${qs(params)}`),
