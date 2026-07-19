@@ -12,6 +12,39 @@ export default function Equipes() {
  const { data: equipes, loading, error, reload } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
 
+ // ── Transferência de corretor entre equipes (gestores) ────────────────
+ const { data: corretores } = useApi<any[]>(() => Api.corretores());
+ const { data: transfs, reload: reloadTransfs } = useApi<any[]>(() => Api.equipeTransferencias());
+ const [transfCorretor, setTransfCorretor] = useState('');
+ const [transfDestino, setTransfDestino] = useState('');
+ const [transfBusy, setTransfBusy] = useState(false);
+ const pendentes = (transfs || []).filter((t: any) => t.status === 'PENDENTE');
+
+ const solicitarTransf = async () => {
+ if (!transfCorretor || !transfDestino) return;
+ setTransfBusy(true);
+ try {
+ const r = await Api.equipeTransferir({ corretorId: Number(transfCorretor), equipeDestinoId: Number(transfDestino) });
+ toast.success(r.efetivada ? 'Transferência efetivada.' : 'Solicitação enviada — aguardando aprovação do gestor da equipe de destino.');
+ setTransfCorretor(''); setTransfDestino('');
+ reload(); reloadTransfs();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message === 'sem_permissao' ? 'só o gestor da equipe atual do corretor pode transferir.' : err.message || 'falha'));
+ } finally {
+ setTransfBusy(false);
+ }
+ };
+
+ const decidirTransf = async (id: number, aprovar: boolean) => {
+ try {
+ await Api.equipeTransfDecidir(id, aprovar);
+ toast.success(aprovar ? 'Transferência aprovada.' : 'Transferência recusada.');
+ reload(); reloadTransfs();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
@@ -58,6 +91,54 @@ export default function Equipes() {
  title="Equipes Comerciais"
  subtitle="Organização do time de corretores por empreendimento ou foco"
  />
+
+ {/* Pendências de transferência — aparece pra quem pode aprovar/acompanhar */}
+ {pendentes.length > 0 && (
+ <div className="card" style={{ marginBottom: 16, border: '1px solid rgba(245,158,11,0.4)' }}>
+ <div className="uppercase-tag" style={{ marginBottom: 10 }}>Transferências aguardando aprovação</div>
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+ {pendentes.map((t: any) => (
+ <div key={t.id} className="flex-between" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'center', padding: '8px 10px', background: 'var(--bg-elevated)', borderRadius: 8 }}>
+ <div style={{ fontSize: 13 }}>
+ <strong>{t.corretor?.nome}</strong>
+ <span className="text-secondary"> · {t.origem?.nome || 'sem equipe'} → <strong>{t.destino?.nome}</strong></span>
+ </div>
+ {t.podeAprovar ? (
+ <div className="flex gap-2">
+ <button className="btn btn--primary btn--sm" onClick={() => decidirTransf(t.id, true)}>Aprovar</button>
+ <button className="btn btn--ghost btn--sm" onClick={() => decidirTransf(t.id, false)}>Recusar</button>
+ </div>
+ ) : (
+ <span className="badge badge--analysis" style={{ fontSize: 10 }}>Aguardando gestor de {t.destino?.nome}</span>
+ )}
+ </div>
+ ))}
+ </div>
+ </div>
+ )}
+
+ {/* Transferir corretor: direto entre equipes do mesmo gestor; senão pende aprovação */}
+ <div className="card" style={{ marginBottom: 16 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Transferir corretor de equipe</div>
+ <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+ <select className="field__select" style={{ flex: '1 1 200px', minWidth: 0, height: 34 }} value={transfCorretor} onChange={(e) => setTransfCorretor(e.target.value)}>
+ <option value="">Corretor…</option>
+ {(corretores || []).map((c: any) => (
+ <option key={c.id} value={c.id}>{c.nome || c.user?.name}{c.equipe?.nome ? ` · ${c.equipe.nome}` : ' · sem equipe'}</option>
+ ))}
+ </select>
+ <select className="field__select" style={{ flex: '1 1 180px', minWidth: 0, height: 34 }} value={transfDestino} onChange={(e) => setTransfDestino(e.target.value)}>
+ <option value="">Equipe de destino…</option>
+ {equipes.map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+ </select>
+ <button className="btn btn--primary btn--sm" disabled={!transfCorretor || !transfDestino || transfBusy} onClick={solicitarTransf}>
+ {transfBusy ? 'Enviando…' : 'Transferir'}
+ </button>
+ </div>
+ <div className="field__hint" style={{ marginTop: 6 }}>
+ Entre equipes do mesmo gestor a transferência é imediata; pra equipe de outro gestor, ele recebe a solicitação e aprova.
+ </div>
+ </div>
 
  <div className="tabs">
  <button className={'tab ' + (view === 'escuderias' ? 'tab--active' : '')} onClick={() => setView('escuderias')}>

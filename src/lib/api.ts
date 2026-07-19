@@ -231,6 +231,13 @@ export const Api = {
   // Equipes
   equipes: () => request<any[]>('/equipes'),
   equipeCreate: (data: any) => request<any>('/equipes', { method: 'POST', body: data }),
+  // Transferência de corretor entre equipes (gestores): direta entre equipes do
+  // mesmo gestor; senão pende aprovação do gestor da equipe de destino.
+  equipeTransferir: (data: { corretorId: number; equipeDestinoId: number; motivo?: string }) =>
+    request<{ ok: boolean; efetivada: boolean; pendente?: boolean }>('/equipes/transferencias', { method: 'POST', body: data }),
+  equipeTransferencias: (params: any = {}) => request<any[]>(`/equipes/transferencias${qs(params)}`),
+  equipeTransfDecidir: (id: number, aprovar: boolean) =>
+    request<{ ok: boolean; status: string }>(`/equipes/transferencias/${id}/decidir`, { method: 'POST', body: { aprovar } }),
   equipeUpdate: (id: number, data: any) => request<any>(`/equipes/${id}`, { method: 'PATCH', body: data }),
   equipeDelete: (id: number) => request<{ ok: boolean }>(`/equipes/${id}`, { method: 'DELETE' }),
   equipesResultados: (params: any = {}) => request<any>(`/equipes/resultados${qs(params)}`),
