@@ -183,7 +183,6 @@ export default function PainelTV() {
               return (
                 <div className="grid-row" key={c.id} style={{ ['--tc' as any]: c.equipeCor || '#3FB6D4' }}>
                   <div className="grid-row__pos">P{i + 4}</div>
-                  <div className="grid-row__lane" />
                   <div className="grid-row__avatar">{c.initials}</div>
                   <div className="grid-row__main">
                     <div className="grid-row__name">{partes.join(' ')} {sobrenome && <em>{sobrenome}</em>}</div>
