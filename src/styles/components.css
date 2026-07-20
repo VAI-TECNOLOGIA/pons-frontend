@@ -2146,24 +2146,6 @@
   position: relative;
 }
 
-/* speed lines decorativas no fundo */
-.tv::before, .tv::after {
-  content: '';
-  position: absolute;
-  height: 1px;
-  width: 140%;
-  left: -20%;
-  background: linear-gradient(90deg, transparent, rgba(82,247,254,0.5), transparent);
-  animation: tv-streak 3s linear infinite;
-}
-.tv::before { top: 32%; animation-delay: 0s; }
-.tv::after  { top: 68%; animation-delay: 1.5s; }
-@keyframes tv-streak {
-  0%   { transform: translateX(-30%); opacity: 0; }
-  20%  { opacity: 1; }
-  100% { transform: translateX(30%); opacity: 0; }
-}
-
 .tv__header {
   display: flex;
   align-items: center;
