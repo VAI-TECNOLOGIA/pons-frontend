@@ -29,6 +29,7 @@ export default function Templates() {
  const [novo, setNovo] = useState(false);
  const [teste, setTeste] = useState<any | null>(null);
  const [testeFone, setTesteFone] = useState('');
+ const [testeParams, setTesteParams] = useState<string[]>([]);
  const [testeBusy, setTesteBusy] = useState(false);
  const toast = useToast();
  const confirm = useConfirm();
@@ -50,11 +51,17 @@ export default function Templates() {
  }
  };
 
+ const abrirTeste = (t: any) => {
+ setTeste(t);
+ setTesteFone('');
+ setTesteParams(Array.from({ length: t.varCount || 0 }, () => ''));
+ };
+
  const enviarTeste = async () => {
  if (!teste || !testeFone.trim()) return;
  setTesteBusy(true);
  try {
- const params = Array.from({ length: teste.varCount || 0 }, (_, i) => `Exemplo ${i + 1}`);
+ const params = testeParams.map((v, i) => v.trim() || `Exemplo ${i + 1}`);
  const temDoc = (teste.components || []).some((c: any) => c.type === 'HEADER' && c.format === 'DOCUMENT');
  await Api.whatsappTemplateTestSend({
  name: teste.name,
@@ -107,7 +114,7 @@ export default function Templates() {
  <div className="tpl-preview__body">{renderPreview(t.bodyText) || '(sem corpo)'}</div>
  </div>
  <div className="tpl-card__acoes">
- <button className="btn btn--secondary btn--sm" disabled={t.status !== 'APPROVED'} title={t.status !== 'APPROVED' ? 'Só templates aprovados podem ser testados' : undefined} onClick={() => { setTeste(t); setTesteFone(''); }}>
+ <button className="btn btn--secondary btn--sm" disabled={t.status !== 'APPROVED'} title={t.status !== 'APPROVED' ? 'Só templates aprovados podem ser testados' : undefined} onClick={() => abrirTeste(t)}>
  <Icon name="send" size={12} /> Testar envio
  </button>
  <button className="btn btn--ghost btn--sm" onClick={() => excluir(t)} title="Excluir template na Meta">
@@ -124,15 +131,35 @@ export default function Templates() {
 
  {novo && <NovoTemplateModal onClose={() => { setNovo(false); reload(); }} />}
 
- <Modal open={!!teste} onClose={() => setTeste(null)} title={teste ? `Testar ${teste.name}` : ''} subtitle="Envia o template com valores de exemplo">
+ <Modal open={!!teste} onClose={() => setTeste(null)} title={teste ? `Testar ${teste.name}` : ''} subtitle="Preencha as variáveis e o número de destino">
  {teste && (
  <div>
  <div className="field">
  <label className="field__label">WhatsApp de destino (com DDD)</label>
  <input className="field__input" value={testeFone} onChange={(e) => setTesteFone(e.target.value)} placeholder="47 99999-9999" autoFocus />
  </div>
+ {testeParams.length > 0 && (
+ <div className="field" style={{ marginTop: 10 }}>
+ <label className="field__label">Variáveis do template ({testeParams.length})</label>
+ <div className="tpl-teste-vars">
+ {testeParams.map((v, i) => (
+ <div key={i} className="tpl-teste-var">
+ <span className="tpl-teste-var__tag">{`{{${i + 1}}}`}</span>
+ <input
+ className="field__input"
+ value={v}
+ onChange={(e) => setTesteParams((cur) => { const nx = [...cur]; nx[i] = e.target.value; return nx; })}
+ placeholder={`Exemplo ${i + 1}`}
+ />
+ </div>
+ ))}
+ </div>
+ <p className="field__hint" style={{ marginTop: 6 }}>Campo vazio sai como "Exemplo N".</p>
+ </div>
+ )}
  <p className="field__hint" style={{ marginTop: 6 }}>
- As variáveis vão preenchidas como "Exemplo 1", "Exemplo 2"… e o PDF (se o template tiver) vai como documento de amostra. Sai pelo número padrão do CRM.
+ {(teste.components || []).some((c: any) => c.type === 'HEADER' && c.format === 'DOCUMENT') ? 'O PDF vai como documento de amostra. ' : ''}
+ Sai pelo número padrão do CRM.
  </p>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
  <button className="btn btn--secondary" onClick={() => setTeste(null)}>Cancelar</button>
