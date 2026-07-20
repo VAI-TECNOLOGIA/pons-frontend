@@ -1,0 +1,121 @@
+/* ── Tela Templates de WhatsApp ──────────────────────────────────────────── */
+.tpl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tpl-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tpl-card__id { min-width: 0; }
+.tpl-card__name {
+  display: block;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tpl-card__meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.tpl-status {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+}
+.tpl-status--ok { background: rgba(14, 159, 110, 0.14); color: #0E9F6E; }
+.tpl-status--wait { background: rgba(245, 158, 11, 0.14); color: #B45309; }
+.tpl-status--bad { background: rgba(225, 6, 0, 0.12); color: #DC2626; }
+[data-theme="dark"] .tpl-status--wait { color: #FBBF24; }
+[data-theme="dark"] .tpl-status--bad { color: #F87171; }
+
+/* Prévia estilo bolha de WhatsApp */
+.tpl-preview {
+  background: #0b141a;
+  border-radius: 10px;
+  padding: 10px;
+  flex: 1;
+}
+.tpl-preview__doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #111b21;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  color: #e9edef;
+  font-size: 12px;
+}
+.tpl-preview__pdf {
+  width: 26px;
+  height: 32px;
+  border-radius: 4px;
+  background: #d93025;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.tpl-preview__img {
+  height: 56px;
+  border-radius: 6px;
+  background: linear-gradient(158deg, #17181b, #0a0a0c);
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+.tpl-preview__body {
+  background: #202c33;
+  color: #e9edef;
+  border-radius: 8px;
+  border-top-left-radius: 0;
+  padding: 9px 11px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.tpl-card__acoes {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .tpl-grid { grid-template-columns: 1fr; }
+}

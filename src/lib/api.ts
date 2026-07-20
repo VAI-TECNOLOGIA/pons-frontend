@@ -910,6 +910,11 @@ export const Api = {
       bodyText: string;
       varCount: number;
     }>; cached: boolean; reason?: string }>(`/whatsapp/templates${refresh ? '?refresh=1' : ''}`),
+  // Gestão de templates (tela Templates): lista TODOS os status, exclui e testa
+  whatsappTemplatesAll: () => request<{ items: any[]; reason?: string }>('/whatsapp/templates?all=1'),
+  whatsappTemplateDelete: (name: string) => request<{ ok: boolean }>(`/whatsapp/templates/${name}`, { method: 'DELETE' }),
+  whatsappTemplateTestSend: (body: { name: string; telefone: string; bodyParams?: string[]; headerDocumentUrl?: string }) =>
+    request<{ ok: boolean }>('/whatsapp/templates/test-send', { method: 'POST', body }),
   whatsappSendTemplate: (leadId: number, body: { name: string; language?: string; bodyParams: string[] }) =>
     request<{ ok: boolean; messageId: number; externalId?: string }>(
       `/whatsapp/leads/${leadId}/send-template`,
