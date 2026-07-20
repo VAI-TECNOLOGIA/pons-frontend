@@ -5,7 +5,6 @@ import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
-import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import './equipes.css';
@@ -16,7 +15,6 @@ export default function Equipes() {
  const { data: equipes, loading, error, reload } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
  const nav = useNavigate();
- const podeGerir = Auth.user?.role !== 'CORRETOR' || !!Auth.user?.corretor?.lidera;
 
  // ── Transferência de corretor entre equipes (gestores) ────────────────
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
@@ -28,10 +26,16 @@ export default function Equipes() {
  const [transfFiltroEquipe, setTransfFiltroEquipe] = useState('');
  const pendentes = (transfs || []).filter((t: any) => t.status === 'PENDENTE');
 
+ // O que o usuário logado comanda (líder formal ou gestor marcado no painel):
+ // só pode transferir corretor DESSAS equipes — a lista já nem mostra os demais.
+ const { data: minhas } = useApi<{ admin: boolean; equipeIds: number[] }>(() => Api.equipesMinhas());
+ const comando = (equipeId?: number) => !!minhas && (minhas.admin || (!!equipeId && minhas.equipeIds.includes(equipeId)));
+
  // Busca por nome/telefone + filtro por equipe atual no seletor de corretor
  const normaliza = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
  const soDigitos = (s: string) => (s || '').replace(/\D/g, '');
  const corretoresFiltrados = (corretores || []).filter((c: any) => {
+ if (!comando(c.equipe?.id)) return false;
  if (transfFiltroEquipe && String(c.equipe?.id || '') !== transfFiltroEquipe) return false;
  if (!transfBusca.trim()) return true;
  const q = transfBusca.trim();
@@ -179,7 +183,7 @@ export default function Equipes() {
  <div className="card transf-card">
  <div className="flex-between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
  <div className="uppercase-tag">Transferir corretor de equipe</div>
- {podeGerir && (
+ {minhas?.admin && (
  <button className="btn btn--ghost btn--sm" onClick={() => nav('/gestores')}>
  <Icon name="users" size={13} /> Gestores das equipes
  </button>
@@ -203,8 +207,8 @@ export default function Equipes() {
  )}
  </div>
  <select className="field__select transf-filtro-equipe" value={transfFiltroEquipe} onChange={(e) => setTransfFiltroEquipe(e.target.value)}>
- <option value="">Todas as equipes</option>
- {equipes.map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+ <option value="">{minhas?.admin ? 'Todas as equipes' : 'Minhas equipes'}</option>
+ {equipes.filter((eq: any) => comando(eq.id)).map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
  </select>
  </div>
  <div className="transf-lista">
@@ -332,7 +336,7 @@ export default function Equipes() {
  ) : (
  <span className="text-secondary text-sm">Sem líder definido</span>
  )}
- {podeGerir && (
+ {comando(eq.id) && (
  <button className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }} onClick={() => { setLiderEquipe(eq); setLiderBusca(''); }}>
  {lider ? 'Trocar líder' : 'Atribuir líder'}
  </button>
