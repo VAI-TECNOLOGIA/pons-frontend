@@ -180,7 +180,7 @@ export default function Equipes() {
  <div className="flex-between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
  <div className="uppercase-tag">Transferir corretor de equipe</div>
  {podeGerir && (
- <button className="btn btn--ghost btn--sm" onClick={() => nav('/configuracoes?secao=gestores')}>
+ <button className="btn btn--ghost btn--sm" onClick={() => nav('/gestores')}>
  <Icon name="users" size={13} /> Gestores das equipes
  </button>
  )}
