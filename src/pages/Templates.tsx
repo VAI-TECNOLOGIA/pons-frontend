@@ -124,9 +124,14 @@ export default function Templates() {
  </button>
  )}
  </div>
+ <div className="tpl-toolbar__acoes">
  <button className="btn btn--secondary btn--sm" onClick={atualizar} disabled={atualizando} title="Buscar status atualizado na Meta">
  <Icon name="refresh" size={13} /> {atualizando ? 'Atualizando…' : 'Atualizar status'}
  </button>
+ <button className="btn btn--primary btn--sm" onClick={() => setNovo(true)}>
+ <Icon name="plus" size={13} /> Novo template
+ </button>
+ </div>
  </div>
 
  <div className="tpl-grid">
@@ -182,9 +187,17 @@ export default function Templates() {
 
  {novo && <NovoTemplateModal onClose={() => { setNovo(false); reload(); }} />}
 
- <Modal open={!!teste} onClose={() => setTeste(null)} title={teste ? `Testar ${teste.name}` : ''} subtitle="Preencha as variáveis e o número de destino">
- {teste && (
+ <Modal open={!!teste} onClose={() => setTeste(null)} size="lg" title={teste ? `Testar ${teste.name}` : ''} subtitle="Preencha as variáveis e veja a mensagem se montando ao lado">
+ {teste && (() => {
+ const temDoc = (teste.components || []).some((c: any) => c.type === 'HEADER' && c.format === 'DOCUMENT');
+ const aoVivo = (teste.bodyText || '').replace(/\{\{(\d+)\}\}/g, (m: string, n: string) => {
+ const v = testeParams[Number(n) - 1];
+ return v?.trim() || `Exemplo ${n}`;
+ });
+ return (
  <div>
+ <div className="tpl-teste-grid">
+ <div className="tpl-teste-form">
  <div className="field">
  <label className="field__label">WhatsApp de destino (com DDD)</label>
  <input className="field__input" value={testeFone} onChange={(e) => setTesteFone(e.target.value)} placeholder="47 99999-9999" autoFocus />
@@ -209,9 +222,23 @@ export default function Templates() {
  </div>
  )}
  <p className="field__hint" style={{ marginTop: 6 }}>
- {(teste.components || []).some((c: any) => c.type === 'HEADER' && c.format === 'DOCUMENT') ? 'O PDF vai como documento de amostra. ' : ''}
+ {temDoc ? 'O PDF vai como documento de amostra. ' : ''}
  Sai pelo número padrão do CRM.
  </p>
+ </div>
+ <div className="tpl-teste-preview">
+ <div className="tpl-teste-preview__titulo">Mensagem que vai chegar</div>
+ <div className="tpl-preview">
+ {temDoc && (
+ <div className="tpl-preview__doc">
+ <span className="tpl-preview__pdf">PDF</span>
+ <span>documento.pdf</span>
+ </div>
+ )}
+ <div className="tpl-preview__body tpl-preview__body--alto">{aoVivo}</div>
+ </div>
+ </div>
+ </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
  <button className="btn btn--secondary" onClick={() => setTeste(null)}>Cancelar</button>
  <button className="btn btn--primary" disabled={testeBusy || !testeFone.trim()} onClick={enviarTeste}>
@@ -219,19 +246,17 @@ export default function Templates() {
  </button>
  </div>
  </div>
- )}
+ );
+ })()}
  </Modal>
  </Shell>
  );
 }
 
-function Shell({ children, onNovo }: { children: React.ReactNode; onNovo: () => void }) {
+function Shell({ children }: { children: React.ReactNode; onNovo?: () => void }) {
  return (
  <>
- <Topbar
- title="Templates"
- right={<button className="btn btn--primary btn--sm" onClick={onNovo}>+ Novo template</button>}
- />
+ <Topbar title="Templates" />
  <div className="main__content">
  <PageHeader
  breadcrumb="Marketing · WhatsApp"

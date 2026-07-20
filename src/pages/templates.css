@@ -263,3 +263,30 @@
   .tpl-toolbar { align-items: stretch; flex-direction: column; }
   .tpl-busca { max-width: none; }
 }
+
+/* Toolbar: ações à direita */
+.tpl-toolbar__acoes { display: flex; gap: 8px; margin-left: auto; }
+
+/* Modal de teste: form + mensagem ao vivo */
+.tpl-teste-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: 16px;
+}
+.tpl-teste-form { min-width: 0; }
+.tpl-teste-preview { min-width: 0; }
+.tpl-teste-preview__titulo {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.tpl-preview__body--alto { max-height: 340px; }
+
+@media (max-width: 700px) {
+  .tpl-teste-grid { grid-template-columns: 1fr; }
+  .tpl-toolbar__acoes { margin-left: 0; }
+  .tpl-toolbar__acoes .btn { flex: 1; }
+}
