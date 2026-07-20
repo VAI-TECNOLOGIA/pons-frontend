@@ -142,8 +142,9 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
     'Toque no botão abaixo para baixar o app e, logo após, realize o seu cadastro.',
   );
   const [footer, setFooter] = useState('Grupo Pons Imobiliário');
-  const [example, setExample] = useState('Rafael');
+  const [examples, setExamples] = useState<string[]>(['Rafael']);
   const [comLogo, setComLogo] = useState(true);
+  const [comPdf, setComPdf] = useState(false);
   const [comBotao, setComBotao] = useState(true);
   const [botaoText, setBotaoText] = useState('Baixar o app');
   const [botaoUrl, setBotaoUrl] = useState(APP_STORE_URL);
@@ -155,7 +156,8 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
   const nVars = useMemo(() => new Set((bodyText.match(/\{\{\d+\}\}/g) || [])).size, [bodyText]);
   const nomeValido = /^[a-z0-9_]+$/.test(name);
   const botaoUrlOk = /^https?:\/\/.+/.test(botaoUrl);
-  const preview = bodyText.replace(/\{\{1\}\}/g, example || '{{1}}');
+  const setExemplo = (i: number, v: string) => setExamples((cur) => { const nx = [...cur]; nx[i] = v; return nx; });
+  const preview = bodyText.replace(/\{\{(\d+)\}\}/g, (m, n) => examples[Number(n) - 1] || m);
 
   async function submeter() {
     setErro('');
@@ -167,8 +169,9 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
       const r = await Api.whatsappTemplateCreate({
         name, category, language: 'pt_BR', bodyText,
         footer: footer.trim() || undefined,
-        example: nVars > 0 ? [example || 'Rafael'] : [],
-        comLogo,
+        example: nVars > 0 ? Array.from({ length: nVars }, (_, i) => examples[i]?.trim() || `exemplo${i + 1}`) : [],
+        comLogo: comPdf ? false : comLogo,
+        headerDocument: comPdf,
         botao: comBotao ? { text: botaoText.trim() || 'Baixar', url: botaoUrl.trim() } : undefined,
       });
       setOk({ status: r.status || 'PENDING' });
@@ -233,8 +236,19 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
 
               {nVars > 0 && (
                 <div className="field">
-                  <label className="field__label">Exemplo para {'{{1}}'} (a Meta exige)</label>
-                  <input className="field__input" value={example} onChange={(e) => setExample(e.target.value)} placeholder="Rafael" />
+                  <label className="field__label">Exemplos das variáveis (a Meta exige um por {'{{n}}'})</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 6, maxHeight: 180, overflowY: 'auto', padding: 2 }}>
+                    {Array.from({ length: nVars }, (_, i) => (
+                      <input
+                        key={i}
+                        className="field__input"
+                        style={{ height: 32, fontSize: 13 }}
+                        value={examples[i] || ''}
+                        onChange={(e) => setExemplo(i, e.target.value)}
+                        placeholder={`{{${i + 1}}}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -244,10 +258,22 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
               </div>
 
               {/* Logo da marca no topo (header de imagem) */}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '4px 0 2px', cursor: 'pointer', fontSize: 14 }}>
-                <input type="checkbox" checked={comLogo} onChange={(e) => setComLogo(e.target.checked)} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '4px 0 2px', cursor: 'pointer', fontSize: 14, opacity: comPdf ? 0.5 : 1 }}>
+                <input type="checkbox" checked={comLogo && !comPdf} disabled={comPdf} onChange={(e) => setComLogo(e.target.checked)} />
                 Logo do Grupo Pons no topo da mensagem
               </label>
+
+              {/* Header DOCUMENT: a mensagem chega com um PDF anexado no topo
+                  (ex.: protocolo da venda). Exclusivo com a logo — 1 header só. */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '10px 0 2px', cursor: 'pointer', fontSize: 14 }}>
+                <input type="checkbox" checked={comPdf} onChange={(e) => setComPdf(e.target.checked)} />
+                PDF anexado no topo (ex.: protocolo da venda)
+              </label>
+              {comPdf && (
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '2px 0 0 26px' }}>
+                  No disparo, o sistema informa qual PDF vai na mensagem. Substitui a logo (a Meta só aceita um topo).
+                </div>
+              )}
 
               {/* Botão de link (CTA) */}
               <label style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '10px 0 2px', cursor: 'pointer', fontSize: 14 }}>
@@ -271,8 +297,12 @@ function NovoTemplateModal({ onClose }: { onClose: () => void }) {
               <div style={{ marginTop: 14, background: '#0b141a', borderRadius: 12, padding: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#8696a0', marginBottom: 8 }}>Prévia no WhatsApp</div>
                 <div style={{ background: '#202c33', color: '#e9edef', borderRadius: 8, borderTopLeftRadius: 0, overflow: 'hidden', maxWidth: 320 }}>
-                  {comLogo && <div style={{ height: 92, background: 'linear-gradient(158deg,#17181b,#0a0a0c)', display: 'grid', placeItems: 'center' }}>
+                  {comLogo && !comPdf && <div style={{ height: 92, background: 'linear-gradient(158deg,#17181b,#0a0a0c)', display: 'grid', placeItems: 'center' }}>
                     <span style={{ fontFamily: 'var(--f1, sans-serif)', letterSpacing: '.18em', fontWeight: 800, color: '#fff', fontSize: 15 }}>GRUPO&nbsp;PONS</span>
+                  </div>}
+                  {comPdf && <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#111b21', padding: '10px 12px' }}>
+                    <span style={{ width: 30, height: 36, borderRadius: 4, background: '#d93025', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}>PDF</span>
+                    <span style={{ fontSize: 12.5, color: '#e9edef' }}>documento.pdf</span>
                   </div>}
                   <div style={{ padding: '9px 11px 7px' }}>
                     <div style={{ whiteSpace: 'pre-wrap', fontSize: 13.5, lineHeight: 1.5 }}>{preview}</div>
