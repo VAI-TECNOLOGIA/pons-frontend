@@ -386,3 +386,15 @@ body:has(.tv) {
   0%   { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
 }
+
+/* TV é só exibição: esconde toda scrollbar (overlay piscava a cada re-render
+   do relógio — aparecia como risquinhos azuis intermitentes na tela). */
+.tv, .tv * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tv::-webkit-scrollbar, .tv *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
