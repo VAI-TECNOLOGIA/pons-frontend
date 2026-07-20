@@ -27,6 +27,9 @@ function renderPreview(body: string) {
 export default function Templates() {
  const { data, loading, error, reload } = useApi<{ items: any[]; reason?: string }>(() => Api.whatsappTemplatesAll());
  const [novo, setNovo] = useState(false);
+ const [busca, setBusca] = useState('');
+ const [filtro, setFiltro] = useState('');
+ const [atualizando, setAtualizando] = useState(false);
  const [teste, setTeste] = useState<any | null>(null);
  const [testeFone, setTesteFone] = useState('');
  const [testeParams, setTesteParams] = useState<string[]>([]);
@@ -81,6 +84,16 @@ export default function Templates() {
  if (loading) return <Shell onNovo={() => setNovo(true)}><LoadingBlock /></Shell>;
  if (error) return <Shell onNovo={() => setNovo(true)}><ErrorBlock error={error} /></Shell>;
  const items = data?.items || [];
+ const contagem = (s: string) => items.filter((t: any) => t.status === s).length;
+ const filtrados = items.filter((t: any) => {
+ if (filtro && t.status !== filtro) return false;
+ if (busca.trim() && !t.name.includes(busca.trim().toLowerCase())) return false;
+ return true;
+ });
+ const atualizar = async () => {
+ setAtualizando(true);
+ try { await reload(); } finally { setAtualizando(false); }
+ };
 
  return (
  <Shell onNovo={() => setNovo(true)}>
@@ -89,19 +102,54 @@ export default function Templates() {
  <p className="text-secondary">WhatsApp não configurado — conecte a WABA nas Integrações pra gerenciar templates.</p>
  </div>
  )}
+
+ <div className="tpl-toolbar">
+ <div className="tpl-busca">
+ <Icon name="search" size={14} />
+ <input placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+ </div>
+ <div className="tpl-filtros">
+ <button className={'tpl-filtro' + (!filtro ? ' tpl-filtro--on' : '')} onClick={() => setFiltro('')}>
+ Todos <span className="tpl-filtro__n">{items.length}</span>
+ </button>
+ <button className={'tpl-filtro tpl-filtro--ok' + (filtro === 'APPROVED' ? ' tpl-filtro--on' : '')} onClick={() => setFiltro(filtro === 'APPROVED' ? '' : 'APPROVED')}>
+ Aprovados <span className="tpl-filtro__n">{contagem('APPROVED')}</span>
+ </button>
+ <button className={'tpl-filtro tpl-filtro--wait' + (filtro === 'PENDING' ? ' tpl-filtro--on' : '')} onClick={() => setFiltro(filtro === 'PENDING' ? '' : 'PENDING')}>
+ Em análise <span className="tpl-filtro__n">{contagem('PENDING')}</span>
+ </button>
+ {contagem('REJECTED') > 0 && (
+ <button className={'tpl-filtro tpl-filtro--bad' + (filtro === 'REJECTED' ? ' tpl-filtro--on' : '')} onClick={() => setFiltro(filtro === 'REJECTED' ? '' : 'REJECTED')}>
+ Rejeitados <span className="tpl-filtro__n">{contagem('REJECTED')}</span>
+ </button>
+ )}
+ </div>
+ <button className="btn btn--secondary btn--sm" onClick={atualizar} disabled={atualizando} title="Buscar status atualizado na Meta">
+ <Icon name="refresh" size={13} /> {atualizando ? 'Atualizando…' : 'Atualizar status'}
+ </button>
+ </div>
+
  <div className="tpl-grid">
- {items.map((t: any) => {
+ {filtrados.map((t: any) => {
  const st = STATUS_META[t.status] || { label: t.status, cls: '' };
  const temDoc = (t.components || []).some((c: any) => c.type === 'HEADER' && c.format === 'DOCUMENT');
  const temImg = (t.components || []).some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE');
+ const temBotao = (t.components || []).some((c: any) => c.type === 'BUTTONS');
  return (
  <div key={t.name + t.language} className="tpl-card">
  <div className="tpl-card__head">
+ <span className="tpl-card__icone"><Icon name="whatsapp" size={16} /></span>
  <div className="tpl-card__id">
  <span className="tpl-card__name">{t.name}</span>
- <span className="tpl-card__meta">{CAT_LABEL[t.category] || t.category} · {t.language} · {t.varCount} variável(is)</span>
+ <div className="tpl-card__tags">
+ <span className="tpl-tag">{CAT_LABEL[t.category] || t.category}</span>
+ <span className="tpl-tag">{t.varCount} var</span>
+ {temDoc && <span className="tpl-tag tpl-tag--doc">PDF</span>}
+ {temImg && <span className="tpl-tag">Logo</span>}
+ {temBotao && <span className="tpl-tag">Botão</span>}
  </div>
- <span className={'tpl-status ' + st.cls}>{st.label}</span>
+ </div>
+ <span className={'tpl-status ' + st.cls}><i />{st.label}</span>
  </div>
  <div className="tpl-preview">
  {temDoc && (
@@ -114,6 +162,7 @@ export default function Templates() {
  <div className="tpl-preview__body">{renderPreview(t.bodyText) || '(sem corpo)'}</div>
  </div>
  <div className="tpl-card__acoes">
+ {t.status === 'PENDING' && <span className="tpl-card__nota">Aguardando aprovação da Meta</span>}
  <button className="btn btn--secondary btn--sm" disabled={t.status !== 'APPROVED'} title={t.status !== 'APPROVED' ? 'Só templates aprovados podem ser testados' : undefined} onClick={() => abrirTeste(t)}>
  <Icon name="send" size={12} /> Testar envio
  </button>
@@ -124,8 +173,10 @@ export default function Templates() {
  </div>
  );
  })}
- {!items.length && !data?.reason && (
- <div className="card"><p className="text-secondary">Nenhum template ainda — crie o primeiro.</p></div>
+ {!filtrados.length && !data?.reason && (
+ <div className="card tpl-vazio">
+ <p className="text-secondary">{items.length ? 'Nenhum template bate com a busca ou o filtro.' : 'Nenhum template ainda — crie o primeiro.'}</p>
+ </div>
  )}
  </div>
 
