@@ -36,6 +36,7 @@ export interface User {
     scoreAtual?: number;
     scoreMes?: number;
     scoreAno?: number;
+    lidera?: boolean; // é líder formal de alguma equipe (libera tela Equipes pro corretor)
   } | null;
 }
 

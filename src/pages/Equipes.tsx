@@ -16,7 +16,7 @@ export default function Equipes() {
  const { data: equipes, loading, error, reload } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
  const nav = useNavigate();
- const podeGerir = Auth.user?.role !== 'CORRETOR';
+ const podeGerir = Auth.user?.role !== 'CORRETOR' || !!Auth.user?.corretor?.lidera;
 
  // ── Transferência de corretor entre equipes (gestores) ────────────────
  const { data: corretores } = useApi<any[]>(() => Api.corretores());

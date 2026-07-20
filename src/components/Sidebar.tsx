@@ -156,6 +156,8 @@ function canSee(it: NavItem, role: Role, email?: string): boolean {
   if (role === 'FINANCEIRO') return it.to === '/dashboard' || (!!it.roles && it.roles.includes('FINANCEIRO'));
   // Gestor: vê tudo, exceto os destinos bloqueados acima.
   if (role === 'GESTOR') return !GESTOR_BLOQUEADO.has(it.to);
+  // Corretor promovido a líder de equipe: ganha a tela Equipes (transferir/aprovar).
+  if (it.to === '/equipes' && Auth.user?.corretor?.lidera) return true;
   if (!it.roles) return true;
   const efetivos = papeisEfetivos(role);
   return it.roles.some((r) => efetivos.includes(r));
