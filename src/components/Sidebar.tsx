@@ -45,7 +45,7 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/empreendimentos', label: 'Empreendimentos', icon: 'building' },
   { to: '/construtoras', label: 'Construtoras', icon: 'building', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', SOCIO] },
   { to: '/ranking', label: 'Ranking', icon: 'trophy' },
-  { to: '/executivo', label: 'Agenda', icon: 'calendar', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA'] },
+  { to: '/executivo', label: 'Agenda', icon: 'calendar', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA', 'ADMINISTRATIVO'] },
   { to: '/pessoal', label: 'Meu Espaço', icon: 'crown', emails: ['paulo@grupopons.com.br'] },
 ];
 
@@ -63,7 +63,7 @@ const GROUPS: NavGroup[] = [
       { to: '/roletas', label: 'Roletas (avançado)', icon: 'roulette', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/bolsoes', label: 'Bolsões', icon: 'database', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/transferencias', label: 'Transferências', icon: 'arrow_right', roles: ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'] },
-      { to: '/tarefas', label: 'Tarefas', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA', 'CORRETOR', 'GERENTE_EQUIPE'] },
+      { to: '/tarefas', label: 'Tarefas', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA', 'ADMINISTRATIVO', 'CORRETOR', 'GERENTE_EQUIPE'] },
     ],
   },
   {
