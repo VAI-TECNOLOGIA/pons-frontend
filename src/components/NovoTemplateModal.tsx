@@ -54,6 +54,15 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  });
  };
 
+ // Remove a variável de maior número (todas as ocorrências) e o exemplo dela.
+ const removerVariavel = () => {
+ const usados = [...bodyText.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1]));
+ if (!usados.length) return;
+ const max = Math.max(...usados);
+ setBodyText(bodyText.replaceAll(`{{${max}}}`, ''));
+ setExamples((cur) => cur.slice(0, max - 1));
+ };
+
  async function submeter() {
  setErro('');
  if (!nomeValido) { setErro('O nome deve ser snake_case: só letras minúsculas, números e _.'); return; }
@@ -124,6 +133,11 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  <button type="button" className="tplm__add-var" onClick={adicionarVariavel} title="Insere a próxima variável na posição do cursor">
  <Icon name="plus" size={11} /> Variável
  </button>
+ {nVars > 0 && (
+ <button type="button" className="tplm__add-var tplm__add-var--rm" onClick={removerVariavel} title="Remove a última variável e o exemplo dela">
+ <Icon name="x" size={11} /> Remover
+ </button>
+ )}
  <span className={'tplm__contador' + (estourou ? ' tplm__contador--estourou' : chars > LIMITE_META * 0.9 ? ' tplm__contador--quase' : '')}>
  {chars}/{LIMITE_META}
  </span>
@@ -160,7 +174,10 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  ))}
  </div>
  {topo === 'pdf' && (
- <p className="tplm__nota">No disparo, o sistema informa qual PDF vai na mensagem (ex.: o protocolo gerado da venda).</p>
+ <p className="tplm__nota">Não precisa anexar nada aqui: a amostra pra Meta vai automática. O PDF de verdade é definido em cada envio — na venda aprovada, o sistema anexa o protocolo sozinho; no teste, você pode colar um link de PDF.</p>
+ )}
+ {topo === 'logo' && (
+ <p className="tplm__nota">A logo oficial do Grupo Pons entra automaticamente em todos os envios deste template.</p>
  )}
 
  <div className="tplm__secao">Extras</div>

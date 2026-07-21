@@ -33,6 +33,7 @@ export default function Templates() {
  const [teste, setTeste] = useState<any | null>(null);
  const [testeFone, setTesteFone] = useState('');
  const [testeParams, setTesteParams] = useState<string[]>([]);
+ const [testePdf, setTestePdf] = useState('');
  const [testeBusy, setTesteBusy] = useState(false);
  const toast = useToast();
  const confirm = useConfirm();
@@ -57,6 +58,7 @@ export default function Templates() {
  const abrirTeste = (t: any) => {
  setTeste(t);
  setTesteFone('');
+ setTestePdf('');
  setTesteParams(Array.from({ length: t.varCount || 0 }, () => ''));
  };
 
@@ -70,7 +72,8 @@ export default function Templates() {
  name: teste.name,
  telefone: testeFone.trim(),
  bodyParams: params,
- headerDocumentUrl: temDoc ? 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' : undefined,
+ // PDF: usa o link colado; vazio → o backend anexa a amostra sozinho.
+ headerDocumentUrl: temDoc && testePdf.trim() ? testePdf.trim() : undefined,
  });
  toast.success('Teste enviado — confere o WhatsApp.');
  setTeste(null); setTesteFone('');
@@ -221,10 +224,14 @@ export default function Templates() {
  <p className="field__hint" style={{ marginTop: 6 }}>Campo vazio sai como "Exemplo N".</p>
  </div>
  )}
- <p className="field__hint" style={{ marginTop: 6 }}>
- {temDoc ? 'O PDF vai como documento de amostra. ' : ''}
- Sai pelo número padrão do CRM.
- </p>
+ {temDoc && (
+ <div className="field" style={{ marginTop: 10 }}>
+ <label className="field__label">Link do PDF (opcional)</label>
+ <input className="field__input" value={testePdf} onChange={(e) => setTestePdf(e.target.value)} placeholder="https://… (vazio = amostra automática)" />
+ <p className="field__hint" style={{ marginTop: 4 }}>Nos envios reais (venda aprovada), o sistema anexa o protocolo sozinho.</p>
+ </div>
+ )}
+ <p className="field__hint" style={{ marginTop: 6 }}>Sai pelo número padrão do CRM. Logo e PDF do topo entram automaticamente conforme o template.</p>
  </div>
  <div className="tpl-teste-preview">
  <div className="tpl-teste-preview__titulo">Mensagem que vai chegar</div>
