@@ -24,7 +24,7 @@ const FASES: { key: string; label: string; hint: string }[] = [
   { key: 'PAGO', label: 'Pago', hint: 'Entrada paga — processo concluído.' },
 ];
 const PROXIMA_FASE: Record<string, { para: string; rotulo: string }> = {
-  PRE_ANALISE: { para: 'AGUARDANDO_CONSTRUTORA', rotulo: 'Confirmar venda → enviar à construtora' },
+  PRE_ANALISE: { para: 'AGUARDANDO_CONSTRUTORA', rotulo: 'Confirmar venda' },
   AGUARDANDO_CONSTRUTORA: { para: 'CONTRATO_EM_CONFECCAO', rotulo: 'Construtora iniciou a confecção' },
   CONTRATO_EM_CONFECCAO: { para: 'CONTRATO_EM_CONFERENCIA', rotulo: 'Contrato recebido → conferência' },
   CONTRATO_EM_CONFERENCIA: { para: 'EM_ASSINATURA', rotulo: 'Conferido → enviar pra assinatura' },
