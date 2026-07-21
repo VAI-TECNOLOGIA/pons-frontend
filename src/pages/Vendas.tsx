@@ -423,11 +423,29 @@ export default function Vendas() {
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [openNew, corretorTitularId]);
 
- // Vincular lead: preenche comprador + origem automática
+ // Preenche um campo nativo do formulário SEM sobrescrever o que já foi digitado
+ // (o usuário sempre pode clicar e alterar depois).
+ const preencherCampoNativo = (nomeCampo: string, v?: string | null) => {
+ const el = formRef.current?.querySelector(`[name="${nomeCampo}"]`) as HTMLInputElement | null;
+ if (el && !el.value && v) {
+ const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+ setter.call(el, v);
+ el.dispatchEvent(new Event('input', { bubbles: true }));
+ }
+ };
+
+ // Vincular lead: preenche o comprador com TUDO que o sistema já sabe do lead
+ // (nome, telefone, e-mail, CPF, cidade) + origem automática. Campos seguem editáveis.
  const vincularLead = (l: any) => {
  setLeadSel(l);
  setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
- setCliente({ nome: l?.nome || '', email: l?.email || '', telefone: l?.telefone || '' });
+ setCliente((c) => ({
+ nome: l?.nome || c.nome || '',
+ email: l?.email || c.email || '',
+ telefone: l?.telefone || c.telefone || '',
+ }));
+ preencherCampoNativo('clienteCpf', l?.cpf);
+ if (l?.cidade) setEndPF((c) => ({ ...c, cidade: c.cidade || l.cidade }));
  setContestarOpen(false); setContestacao('');
  };
 
