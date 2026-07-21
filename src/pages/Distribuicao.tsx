@@ -94,7 +94,7 @@ export default function Distribuicao() {
     [filtrosKey],
   );
   const temFiltroExtra = JSON.stringify({ ...filtros, corretorId: '' }) !== JSON.stringify({ ...FILTROS_LEAD_VAZIO, corretorId: '' }) || (filtros.corretorId && filtros.corretorId !== 'sem');
-  const { data: opcoesFiltro } = useApi<{ origens: string[]; campanhas: string[] }>(() => Api.leadFiltrosOpcoes());
+  const { data: opcoesFiltro } = useApi<{ origens: string[]; campanhas: string[]; formularios?: string[] }>(() => Api.leadFiltrosOpcoes());
   const { data: empreendimentosFiltro } = useApi<any[]>(() => Api.empreendimentos());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   // Seleção em massa + transferência manual (pedido do cliente)
@@ -289,7 +289,7 @@ export default function Distribuicao() {
           )}
           {bolsao && bolsao.total === 0 && (
             <div className="text-xs text-secondary" style={{ marginTop: 8 }}>
-              {temFiltroExtra || filtros.dataInicial || filtros.origem || filtros.campanha || filtros.empreendimentoId || filtros.status
+              {temFiltroExtra || filtros.dataInicial || filtros.origem || filtros.campanha || filtros.formulario || filtros.empreendimentoId || filtros.status
                 ? 'Nenhum lead bate com os filtros atuais.'
                 : <>Bolsão vazio. Importe leads em <strong>Importar Leads</strong> — eles caem aqui e podem ser distribuídos pelas regras abaixo (botão ▶ Executar).</>}
             </div>

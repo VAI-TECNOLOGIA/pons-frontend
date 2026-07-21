@@ -38,6 +38,7 @@ export default function Leads() {
  const [filtroOrigem, setFiltroOrigem] = useState('');
  const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | id do corretor
  const [filtroCampanha, setFiltroCampanha] = useState('');
+ const [filtroFormulario, setFiltroFormulario] = useState('');
  const [filtroEmp, setFiltroEmp] = useState(''); // empreendimento de interesse (Produto)
  const [dataInicial, setDataInicial] = useState('');
  const [dataFinal, setDataFinal] = useState('');
@@ -57,6 +58,7 @@ export default function Leads() {
  if (filterStatus) params.status = filterStatus;
  if (filtroOrigem) params.origem = filtroOrigem;
  if (filtroCampanha) params.campanha = filtroCampanha;
+ if (filtroFormulario) params.formulario = filtroFormulario;
  if (filtroEmp) params.empreendimentoId = filtroEmp;
  if (filtroCorretor === 'sem') params.semCorretor = 'true';
  else if (filtroCorretor) params.corretorId = filtroCorretor;
@@ -69,7 +71,7 @@ export default function Leads() {
  const { data: stats, reload: reloadStats } = useApi<any>(() => Api.leadStats());
  const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
- const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[] }>(() => Api.leadFiltrosOpcoes());
+ const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[]; formularios?: string[] }>(() => Api.leadFiltrosOpcoes());
  const toast = useToast();
  const confirm = useConfirm();
 
@@ -125,9 +127,9 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem || filtroCorretor || filtroCampanha || filtroEmp || dataInicial || dataFinal || buscaDeb || filterStatus);
+ const temFiltro = !!(filtroOrigem || filtroCorretor || filtroCampanha || filtroFormulario || filtroEmp || dataInicial || dataFinal || buscaDeb || filterStatus);
  const limparFiltros = () => {
- setFilterStatus(null); setFiltroOrigem(''); setFiltroCorretor(''); setFiltroCampanha('');
+ setFilterStatus(null); setFiltroOrigem(''); setFiltroCorretor(''); setFiltroCampanha(''); setFiltroFormulario('');
  setFiltroEmp(''); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
  };
  // troca de filtro sempre volta pra página 1
@@ -206,13 +208,14 @@ export default function Leads() {
 
  {mostrarFiltros && (
  <LeadsFiltrosPanel
- v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus || '', campanha: filtroCampanha, empreendimentoId: filtroEmp, corretorId: filtroCorretor }}
+ v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus || '', campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor }}
  onChange={(p) => {
  if (p.dataInicial !== undefined) setDataInicial(p.dataInicial);
  if (p.dataFinal !== undefined) setDataFinal(p.dataFinal);
  if (p.origem !== undefined) setFiltroOrigem(p.origem);
  if (p.status !== undefined) setFilterStatus(p.status || null);
  if (p.campanha !== undefined) setFiltroCampanha(p.campanha);
+ if (p.formulario !== undefined) setFiltroFormulario(p.formulario);
  if (p.empreendimentoId !== undefined) setFiltroEmp(p.empreendimentoId);
  if (p.corretorId !== undefined) setFiltroCorretor(p.corretorId);
  setPage(1);

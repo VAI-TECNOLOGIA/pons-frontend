@@ -9,12 +9,13 @@ export interface FiltrosLead {
  origem: string;
  status: string;
  campanha: string;
+ formulario: string; // nome do Lead Form (aparece como "Interesse" na ficha)
  empreendimentoId: string;
  corretorId: string; // '' = todos · 'sem' = bolsão · id
 }
 
 export const FILTROS_LEAD_VAZIO: FiltrosLead = {
- dataInicial: '', dataFinal: '', origem: '', status: '', campanha: '', empreendimentoId: '', corretorId: '',
+ dataInicial: '', dataFinal: '', origem: '', status: '', campanha: '', formulario: '', empreendimentoId: '', corretorId: '',
 };
 
 // Converte os filtros nos params do GET /leads (mesma convenção da tela Leads).
@@ -23,6 +24,7 @@ export function filtrosLeadParams(f: FiltrosLead): Record<string, string> {
  if (f.status) p.status = f.status;
  if (f.origem) p.origem = f.origem;
  if (f.campanha) p.campanha = f.campanha;
+ if (f.formulario) p.formulario = f.formulario;
  if (f.empreendimentoId) p.empreendimentoId = f.empreendimentoId;
  if (f.corretorId === 'sem') p.semCorretor = 'true';
  else if (f.corretorId) p.corretorId = f.corretorId;
@@ -35,7 +37,7 @@ interface Props {
  v: FiltrosLead;
  onChange: (patch: Partial<FiltrosLead>) => void;
  statuses: { key: string; label: string }[];
- opcoes?: { origens?: string[]; campanhas?: string[] } | null;
+ opcoes?: { origens?: string[]; campanhas?: string[]; formularios?: string[] } | null;
  corretores?: any[] | null;
  empreendimentos?: any[] | null;
 }
@@ -76,6 +78,10 @@ export function LeadsFiltrosPanel({ v, onChange, statuses, opcoes, corretores, e
  <select className="field__select" value={v.campanha} onChange={(e) => onChange({ campanha: e.target.value })}>
  <option value="">Campanha</option>
  {(opcoes?.campanhas || []).map((c) => <option key={c} value={c}>{c}</option>)}
+ </select>
+ <select className="field__select" value={v.formulario} onChange={(e) => onChange({ formulario: e.target.value })}>
+ <option value="">Formulário</option>
+ {(opcoes?.formularios || []).map((f) => <option key={f} value={f}>{f}</option>)}
  </select>
  </div>
  </div>
