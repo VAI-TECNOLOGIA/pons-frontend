@@ -479,6 +479,16 @@ export default function Vendas() {
  // Reconciliação: na Negociação, os valores preenchidos têm que FECHAR EXATO com
  // o VGV pra avançar (sem saldo em aberto). Nas outras etapas não trava.
  if (step === 2 && !recon.fecha) { toast.error('Os valores preenchidos precisam fechar com o valor da venda (VGV). Ajuste antes de avançar.'); return; }
+ // Entrada abaixo do mínimo do empreendimento: NÃO avança (regra 21/07 — antes
+ // só alertava e a venda seguia pra aprovação).
+ if (step === 2 && politicaVigente?.entradaMinimaPct != null) {
+ const vvNum = parseMoedaBR(valorVenda);
+ const etNum = parseMoedaBR(entradaTotal);
+ if (vvNum > 0 && (etNum / vvNum) * 100 < politicaVigente.entradaMinimaPct - 0.01) {
+ toast.error(`Entrada de ${((etNum / vvNum) * 100).toFixed(1)}% — o mínimo do empreendimento é ${politicaVigente.entradaMinimaPct}%. Aumente a entrada pra avançar.`);
+ return;
+ }
+ }
  // Parcelas da entrada: a soma tem que fechar com (entrada − arras).
  if (step === 2 && parcelasEntrada.length > 0) {
  const somaP = parcelasEntrada.reduce((a, p) => a + parseMoedaBR(p.valor), 0);
