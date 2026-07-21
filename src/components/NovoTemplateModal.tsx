@@ -81,7 +81,11 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  });
  setOk({ status: r.status || 'PENDING' });
  } catch (e: any) {
- setErro(e?.message || 'Falha ao enviar o template para a Meta.');
+ // Mostra o motivo REAL da recusa da Meta (nome repetido, variável no
+ // início/fim, etc.) — antes aparecia só "erro no servidor".
+ const meta = e?.details?.meta;
+ const detalhe = meta?.error_user_msg || meta?.message || e?.details?.message;
+ setErro(detalhe ? `Meta recusou: ${detalhe}` : (e?.message || 'Falha ao enviar o template para a Meta.'));
  } finally {
  setEnviando(false);
  }
