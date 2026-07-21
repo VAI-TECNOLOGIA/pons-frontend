@@ -230,7 +230,7 @@ function CardProtocoloWhatsapp() {
         </button>
       </div>
       <div className="field__hint" style={{ marginTop: 6 }}>
-        Quando uma venda é aprovada, o protocolo (mensagens + PDF) vai pra este número — quem confecciona o contrato.
+        Quando uma venda é aprovada, o protocolo (mensagens + PDF) vai pra este número — para confecção do contrato.
         Deixe vazio pra desativar: aí o protocolo vai pro corretor titular da venda.
       </div>
     </div>
