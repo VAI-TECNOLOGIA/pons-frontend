@@ -3,7 +3,7 @@
 // "Confirmar venda" → baixa o PROTOCOLO (PDF sem comissão) e envia à
 // construtora → acompanha as fases do contrato até assinado/pago.
 // Sem NADA de comissão/rateio nesta tela (visão administrativa).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
@@ -68,6 +68,8 @@ export default function AdminVendas() {
 
   return (
     <Shell>
+      <CardProtocoloWhatsapp />
+
       {/* Fila por fase do processo */}
       <div className="filter-bar" style={{ marginBottom: 14 }}>
         {FASES.map((f) => (
@@ -183,6 +185,55 @@ export default function AdminVendas() {
         </Modal>
       )}
     </Shell>
+  );
+}
+
+// WhatsApp que recebe o protocolo (templates + PDF) quando a venda é aprovada.
+// Vazio = desativado: o protocolo vai pro corretor titular, como sempre foi.
+function CardProtocoloWhatsapp() {
+  const [numero, setNumero] = useState('');
+  const [carregado, setCarregado] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    Api.protocoloWhatsapp().then((r) => { setNumero(r.numero || ''); setCarregado(true); }).catch(() => setCarregado(true));
+  }, []);
+
+  const salvar = async () => {
+    setSalvando(true);
+    try {
+      const r = await Api.protocoloWhatsappSave(numero.trim());
+      setNumero(r.numero);
+      toast.success(r.numero ? `Protocolo de venda vai pro WhatsApp ${r.numero}` : 'Desativado — protocolo volta a ir pro corretor');
+    } catch (e: any) {
+      toast.error('Erro: ' + (e?.details?.message || e.message || 'falha'));
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (!carregado) return null;
+  return (
+    <div className="card" style={{ marginBottom: 14 }}>
+      <div className="uppercase-tag" style={{ marginBottom: 8 }}>WhatsApp do protocolo de venda</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          className="field__input"
+          style={{ flex: '1 1 220px', maxWidth: 300, height: 36 }}
+          placeholder="DDD + número (ex.: 47 98488-9824)"
+          value={numero}
+          onChange={(e) => setNumero(e.target.value)}
+        />
+        <button className="btn btn--primary btn--sm" disabled={salvando} onClick={salvar}>
+          {salvando ? 'Salvando…' : 'Salvar'}
+        </button>
+      </div>
+      <div className="field__hint" style={{ marginTop: 6 }}>
+        Quando uma venda é aprovada, o protocolo (mensagens + PDF) vai pra este número — quem confecciona o contrato.
+        Deixe vazio pra desativar: aí o protocolo vai pro corretor titular da venda.
+      </div>
+    </div>
   );
 }
 

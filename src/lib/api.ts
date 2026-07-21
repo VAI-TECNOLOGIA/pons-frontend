@@ -466,6 +466,9 @@ export const Api = {
   // Configurações
   settings: () => request<Record<string, string>>('/config/settings'),
   settingsSave: (obj: Record<string, string>) => request<any>('/config/settings', { method: 'PUT', body: obj }),
+  // WhatsApp que recebe o protocolo da venda aprovada (vazio = vai pro corretor)
+  protocoloWhatsapp: () => request<{ numero: string }>('/config/protocolo-whatsapp'),
+  protocoloWhatsappSave: (numero: string) => request<{ numero: string }>('/config/protocolo-whatsapp', { method: 'PUT', body: { numero } }),
   nfAliquota: () => request<{ pct: number }>('/config/nf-aliquota'),
   nfAliquotaSave: (pct: number) => request<{ pct: number }>('/config/nf-aliquota', { method: 'PUT', body: { pct } }),
   // Score: pontos por ação (editável)
