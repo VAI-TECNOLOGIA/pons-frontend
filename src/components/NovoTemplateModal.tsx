@@ -34,6 +34,11 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  const botaoUrlOk = /^https?:\/\/.+/.test(botaoUrl);
  const chars = len16(bodyText);
  const estourou = chars > LIMITE_META;
+ // Regras da Meta validadas ANTES do envio (evita recusa desnecessária):
+ const comecaComVar = /^\s*\{\{\d+\}\}/.test(bodyText);
+ const terminaComVar = /\{\{\d+\}\}\s*[*_~]?\s*$/.test(bodyText);
+ const textoFixo = bodyText.replace(/\{\{\d+\}\}/g, '').replace(/\s+/g, ' ').trim().length;
+ const poucoTexto = nVars > 0 && textoFixo / nVars < 9; // heurística: Meta recusa var demais pra texto de menos
  const setExemplo = (i: number, v: string) => setExamples((cur) => { const nx = [...cur]; nx[i] = v; return nx; });
  const preview = bodyText.replace(/\{\{(\d+)\}\}/g, (m, n) => examples[Number(n) - 1] || m);
 
@@ -68,6 +73,8 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  if (!nomeValido) { setErro('O nome deve ser snake_case: só letras minúsculas, números e _.'); return; }
  if (!bodyText.trim()) { setErro('O corpo do template não pode ficar vazio.'); return; }
  if (estourou) { setErro(`O corpo tem ${chars} caracteres — o limite da Meta é ${LIMITE_META}.`); return; }
+ if (comecaComVar) { setErro('A Meta não aceita template COMEÇANDO com variável — escreva algum texto antes da primeira {{n}}.'); return; }
+ if (terminaComVar) { setErro('A Meta não aceita template TERMINANDO com variável — escreva algum texto depois da última {{n}}.'); return; }
  if (comBotao && !botaoUrlOk) { setErro('O link do botão precisa começar com http:// ou https://.'); return; }
  setEnviando(true);
  try {
@@ -148,6 +155,9 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  </div>
  </div>
  <textarea ref={bodyRef} className="field__input tplm__textarea" value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={7} />
+ {comecaComVar && <div className="tplm__regra tplm__regra--erro">Não pode começar com variável — escreva um texto antes da {'{{1}}'} (ex.: "Olá {'{{1}}'}").</div>}
+ {terminaComVar && <div className="tplm__regra tplm__regra--erro">Não pode terminar com variável — feche com um texto fixo depois da última {'{{n}}'} (uma saudação ou assinatura resolve).</div>}
+ {!comecaComVar && !terminaComVar && poucoTexto && <div className="tplm__regra tplm__regra--aviso">Muitas variáveis pra pouco texto fixo — a Meta costuma recusar. Escreva rótulos/frases entre as variáveis.</div>}
  <p className="tplm__nota" style={{ margin: '4px 0 0' }}>Clique em "+ Variável" pra inserir um campo dinâmico ({'{{1}}'}, {'{{2}}'}…) onde o cursor estiver.</p>
  </div>
  {nVars > 0 && (
@@ -205,6 +215,17 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  </div>
  </div>
  )}
+
+ <div className="tplm__dicas">
+ <div className="tplm__dicas-titulo"><Icon name="lightbulb" size={13} /> Regras da Meta pra aprovar de primeira</div>
+ <ul>
+ <li>Não pode começar nem terminar com variável — sempre um texto fixo nas pontas</li>
+ <li>Escreva rótulos e frases entre as variáveis (variável demais pra texto de menos é recusado)</li>
+ <li>O nome precisa ser inédito — mesmo excluído, um nome fica travado por ~30 dias</li>
+ <li>Máximo de 1024 caracteres já contando as variáveis preenchidas no envio</li>
+ <li>Categoria certa ajuda: aviso de sistema é Utilidade; promoção é Marketing</li>
+ </ul>
+ </div>
  </div>
 
  <aside className="tplm__preview">

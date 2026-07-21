@@ -309,3 +309,53 @@
   .tplm__foot-acoes .btn { width: 100%; }
   .tplm__foot-erro { text-align: center; }
 }
+
+/* Validação inline das regras da Meta */
+.tplm__regra {
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.tplm__regra--erro {
+  background: rgba(225, 6, 0, 0.09);
+  border: 1px solid rgba(225, 6, 0, 0.25);
+  color: #DC2626;
+}
+[data-theme="dark"] .tplm__regra--erro { color: #F87171; }
+.tplm__regra--aviso {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #B45309;
+}
+[data-theme="dark"] .tplm__regra--aviso { color: #FBBF24; }
+
+/* Box de dicas */
+.tplm__dicas {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+}
+[data-theme="dark"] .tplm__dicas {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.tplm__dicas-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--pons-blue);
+  margin-bottom: 6px;
+}
+[data-theme="dark"] .tplm__dicas-titulo { color: #93c5fd; }
+.tplm__dicas ul { margin: 0; padding-left: 18px; }
+.tplm__dicas li {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
