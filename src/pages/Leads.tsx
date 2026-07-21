@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
+import { LeadsFiltrosPanel } from '../components/LeadsFiltrosPanel';
 import { LeadCamposCustom } from '../components/LeadCamposCustom';
 import { timeAgo, initials } from '../lib/format';
 import { Api } from '../lib/api';
@@ -204,55 +205,23 @@ export default function Leads() {
  </div>
 
  {mostrarFiltros && (
- <div className="card fade-in" style={{ padding: '16px 18px', marginBottom: 14 }}>
- <div className="leads-filtros">
- <div className="leads-filtros__grupo">
- <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="calendar" size={13} /> Período</div>
- <div className="leads-filtros__linha">
- <input type="date" className="field__input" value={dataInicial} onChange={(e) => aoFiltrar(setDataInicial)(e.target.value)} />
- <span className="text-xs text-secondary leads-filtros__sep">–</span>
- <input type="date" className="field__input" value={dataFinal} onChange={(e) => aoFiltrar(setDataFinal)(e.target.value)} />
- </div>
- <div className="field__hint" style={{ marginTop: 4 }}>Data de entrada do lead no sistema.</div>
- </div>
- <div className="leads-filtros__grupo">
- <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="target" size={13} /> Jornada do lead</div>
- <div className="leads-filtros__linha">
- <select className="field__select" value={filtroOrigem} onChange={(e) => aoFiltrar(setFiltroOrigem)(e.target.value)}>
- <option value="">Origem</option>
- {(opcoes?.origens || []).map((o) => <option key={o} value={o}>{o}</option>)}
- </select>
- <select className="field__select" value={filterStatus || ''} onChange={(e) => aoFiltrar(setFilterStatus)(e.target.value || null)}>
- <option value="">Status</option>
- {STATUSES.map((s) => <option key={s} value={s}>{STATUS_MAP[s]?.[1] || s}</option>)}
- </select>
- </div>
- </div>
- <div className="leads-filtros__grupo">
- <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="layers" size={13} /> Segmentação</div>
- <div className="leads-filtros__linha">
- <select className="field__select" value={filtroEmp} onChange={(e) => aoFiltrar(setFiltroEmp)(e.target.value)}>
- <option value="">Produto</option>
- {(empreendimentos || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
- </select>
- <select className="field__select" value={filtroCampanha} onChange={(e) => aoFiltrar(setFiltroCampanha)(e.target.value)}>
- <option value="">Campanha</option>
- {(opcoes?.campanhas || []).map((c) => <option key={c} value={c}>{c}</option>)}
- </select>
- </div>
- </div>
- <div className="leads-filtros__grupo">
- <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="users" size={13} /> Equipe</div>
- <div className="leads-filtros__linha">
- <select className="field__select" value={filtroCorretor} onChange={(e) => aoFiltrar(setFiltroCorretor)(e.target.value)}>
- <option value="">Corretor</option>
- <option value="sem">Sem corretor (bolsão)</option>
- {(corretores || []).map((c: any) => <option key={c.id} value={c.id}>{c.nome || c.user?.name}</option>)}
- </select>
- </div>
- </div>
- </div>
- </div>
+ <LeadsFiltrosPanel
+ v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus || '', campanha: filtroCampanha, empreendimentoId: filtroEmp, corretorId: filtroCorretor }}
+ onChange={(p) => {
+ if (p.dataInicial !== undefined) setDataInicial(p.dataInicial);
+ if (p.dataFinal !== undefined) setDataFinal(p.dataFinal);
+ if (p.origem !== undefined) setFiltroOrigem(p.origem);
+ if (p.status !== undefined) setFilterStatus(p.status || null);
+ if (p.campanha !== undefined) setFiltroCampanha(p.campanha);
+ if (p.empreendimentoId !== undefined) setFiltroEmp(p.empreendimentoId);
+ if (p.corretorId !== undefined) setFiltroCorretor(p.corretorId);
+ setPage(1);
+ }}
+ statuses={STATUSES.map((k) => ({ key: k, label: STATUS_MAP[k]?.[1] || k }))}
+ opcoes={opcoes}
+ corretores={corretores}
+ empreendimentos={empreendimentos}
+ />
  )}
 
  <div className="text-xs text-secondary" style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

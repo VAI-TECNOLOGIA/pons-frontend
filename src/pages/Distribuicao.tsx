@@ -6,6 +6,17 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { FichaLeadModal } from '../components/FichaLeadModal';
+import { Icon } from '../components/Icon';
+import { LeadsFiltrosPanel, FILTROS_LEAD_VAZIO, filtrosLeadParams, type FiltrosLead } from '../components/LeadsFiltrosPanel';
+
+// Mesmos rótulos de status da tela de Leads (funil da Ju)
+const STATUS_OPCOES = [
+  { key: 'NOVO', label: 'Tentando Contato' }, { key: 'NAO_RESPONDE', label: 'Não responde' },
+  { key: 'LISTA_VIP', label: 'Lista VIP' }, { key: 'EM_ATENDIMENTO', label: 'Em atendimento' },
+  { key: 'FLUXO', label: 'Fluxo' }, { key: 'POS_FLUXO', label: 'Pós Fluxo' },
+  { key: 'VISITA', label: 'Vídeo/Visita' }, { key: 'NEGOCIANDO', label: 'Em Negociação' },
+  { key: 'FECHADO', label: 'Venda' }, { key: 'PERDIDO', label: 'Perdido' },
+];
 
 const PRESETS: { label: string; expr: string }[] = [
   { label: 'Segunda 9h',       expr: '0 9 * * 1' },
@@ -71,8 +82,20 @@ export default function Distribuicao() {
   const { data, loading, error, reload } = useApi<any[]>(() => Api.distribuicaoList());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
   // Bolsão: leads aguardando distribuição. Mostra a "jornada" antes das regras.
+  // Filtros iguais aos da tela de Leads (pedido do marketing 21/07) — server-side
+  // no GET /leads; por padrão mostra o bolsão (sem corretor).
   const [bolsaoLimit, setBolsaoLimit] = useState(50);
-  const { data: bolsao, reload: reloadBolsao } = useApi<{ total: number; leads: any[] }>(() => Api.roletaBolsao({ limit: bolsaoLimit }), [bolsaoLimit]);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [filtros, setFiltros] = useState<FiltrosLead>({ ...FILTROS_LEAD_VAZIO, corretorId: 'sem' });
+  const filtroParams = filtrosLeadParams({ ...filtros, corretorId: filtros.corretorId || 'sem' });
+  const filtrosKey = JSON.stringify(filtroParams) + bolsaoLimit;
+  const { data: bolsao, reload: reloadBolsao } = useApi<{ total: number; leads: any[] }>(
+    () => Api.leadsPaginado({ page: 1, limit: bolsaoLimit, ...filtroParams }),
+    [filtrosKey],
+  );
+  const temFiltroExtra = JSON.stringify({ ...filtros, corretorId: '' }) !== JSON.stringify({ ...FILTROS_LEAD_VAZIO, corretorId: '' }) || (filtros.corretorId && filtros.corretorId !== 'sem');
+  const { data: opcoesFiltro } = useApi<{ origens: string[]; campanhas: string[] }>(() => Api.leadFiltrosOpcoes());
+  const { data: empreendimentosFiltro } = useApi<any[]>(() => Api.empreendimentos());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   // Seleção em massa + transferência manual (pedido do cliente)
   const [sel, setSel] = useState<Set<number>>(new Set());
@@ -240,11 +263,35 @@ export default function Distribuicao() {
               <div className="text-xs text-secondary">Leads no bolsão aguardando distribuição</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-warning)' }}>{bolsao?.total ?? '…'}</div>
             </div>
-            <button className="btn btn--ghost btn--sm" onClick={() => reloadBolsao()}>↻ Atualizar</button>
+            <div className="flex" style={{ gap: 8 }}>
+              <button className={'btn btn--sm ' + (mostrarFiltros ? 'btn--primary' : 'btn--secondary')} onClick={() => setMostrarFiltros((v) => !v)}>
+                <Icon name="settings" size={13} /> {mostrarFiltros ? 'Fechar Filtros' : 'Filtros'}
+              </button>
+              <button className="btn btn--ghost btn--sm" onClick={() => reloadBolsao()}>↻ Atualizar</button>
+            </div>
           </div>
+          {mostrarFiltros && (
+            <div style={{ marginTop: 12 }}>
+              <LeadsFiltrosPanel
+                v={filtros}
+                onChange={(p) => setFiltros((f) => ({ ...f, ...p }))}
+                statuses={STATUS_OPCOES}
+                opcoes={opcoesFiltro}
+                corretores={corretores}
+                empreendimentos={empreendimentosFiltro}
+              />
+              {temFiltroExtra && (
+                <div className="field__hint" style={{ marginTop: -8, marginBottom: 8 }}>
+                  Filtro ativo — a lista pode incluir leads fora do bolsão (ex.: com corretor). <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setFiltros({ ...FILTROS_LEAD_VAZIO, corretorId: 'sem' })}>Limpar filtros</span>
+                </div>
+              )}
+            </div>
+          )}
           {bolsao && bolsao.total === 0 && (
             <div className="text-xs text-secondary" style={{ marginTop: 8 }}>
-              Bolsão vazio. Importe leads em <strong>Importar Leads</strong> — eles caem aqui e podem ser distribuídos pelas regras abaixo (botão ▶ Executar).
+              {temFiltroExtra || filtros.dataInicial || filtros.origem || filtros.campanha || filtros.empreendimentoId || filtros.status
+                ? 'Nenhum lead bate com os filtros atuais.'
+                : <>Bolsão vazio. Importe leads em <strong>Importar Leads</strong> — eles caem aqui e podem ser distribuídos pelas regras abaixo (botão ▶ Executar).</>}
             </div>
           )}
           {bolsao && bolsao.leads.length > 0 && (
