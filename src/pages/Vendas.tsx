@@ -30,7 +30,7 @@ export const STATUS_MAP: Record<string, [string, string]> = {
 const ESTADO_CIVIL = [
  'Solteiro(a)',
  'Casado(a)',
- 'Casado(a) — separação de bens',
+ 'Casado(a) — comunhão total de bens',
  'Casado(a) — separação total de bens',
  'União estável',
  'Divorciado(a)',
@@ -39,7 +39,8 @@ const ESTADO_CIVIL = [
 
 // Estados civis que exigem dados do cônjuge/companheiro(a) no protocolo.
 // Separação TOTAL de bens: o cônjuge não anui na compra — não preenche.
-const EXIGE_CONJUGE = new Set(['Casado(a)', 'Casado(a) — separação de bens', 'União estável']);
+// Comunhão total de bens: dados do cônjuge são OPCIONAIS (regra do financeiro 21/07)
+const EXIGE_CONJUGE = new Set(['Casado(a)', 'União estável']);
 
 // Origem gravada no lead → rótulo humano + classificação de comissão.
 // Tráfego pago/portais = LEAD (desconto campanha); campanha WhatsApp/base = BASE; resto = orgânica.
@@ -87,8 +88,8 @@ function docsNecessarios(tipo: 'PF' | 'PJ', estadoCivil: string): string[] {
  switch (estadoCivil) {
  case 'Casado(a)':
  return [...base, 'Certidão de casamento', 'RG e CPF (ou CNH) do cônjuge', 'Pacto antenupcial registrado (se houver)'];
- case 'Casado(a) — separação de bens':
- return [...base, 'Certidão de casamento', 'RG e CPF (ou CNH) do cônjuge', 'Pacto antenupcial de separação de bens registrado'];
+ case 'Casado(a) — comunhão total de bens':
+ return [...base, 'Certidão de casamento', 'RG e CPF (ou CNH) do cônjuge', 'Pacto antenupcial de comunhão total de bens registrado'];
  case 'Casado(a) — separação total de bens':
  return [...base, 'Certidão de casamento', 'Pacto antenupcial de separação total de bens registrado'];
  case 'União estável':
@@ -509,6 +510,19 @@ export default function Vendas() {
  const num = (v: FormDataEntryValue | null) => parseMoedaBR(String(v || ''));
  const str = (k: string) => { const v = fd.get(k); return v ? String(v) : undefined; };
  const optNum = (k: string) => (fd.get(k) ? num(fd.get(k)) : undefined);
+ // Entrada abaixo do mínimo do empreendimento NÃO prossegue (antes só alertava
+ // e mandava pra aprovação — regra endurecida em 21/07).
+ if (politicaVigente?.entradaMinimaPct != null) {
+ const vvNum = num(valorVenda);
+ const etNum = num(fd.get('entradaTotal'));
+ if (vvNum > 0) {
+ const pctEntrada = (etNum / vvNum) * 100;
+ if (pctEntrada < politicaVigente.entradaMinimaPct - 0.01) {
+ toast.error(`Entrada de ${pctEntrada.toFixed(1)}% — o mínimo do empreendimento é ${politicaVigente.entradaMinimaPct}%. Aumente a entrada pra registrar a venda.`);
+ return;
+ }
+ }
+ }
  try {
  // Origem da comissão: negociação especial (admin) > lead vinculado (banco) > manual
  const origemComissaoFinal = (podeEditarRateio && comEspecial && fd.get('origemComissao'))
@@ -1317,7 +1331,7 @@ export default function Vendas() {
  if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {politicaVigente.entradaMinimaPct}% de entrada.</div>;
  const pct = (et / vv) * 100;
  return pct < politicaVigente.entradaMinimaPct
- ? <div className="field__hint" style={{ color: '#d97706' }}>Entrada de {pct.toFixed(1)}% — abaixo do mínimo de {politicaVigente.entradaMinimaPct}%. A venda vai pra aprovação do Paulo.</div>
+ ? <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(1)}% — abaixo do mínimo de {politicaVigente.entradaMinimaPct}%. A venda NÃO pode ser registrada assim.</div>
  : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(1)}% — dentro da política ({politicaVigente.entradaMinimaPct}% mín.).</div>;
  })()}
  </div>
