@@ -181,6 +181,9 @@ export default function Distribuicao() {
       cidade: String(fd.get('cidade') || '') || null,
       origemLead: String(fd.get('origemLead') || '') || null,
       statusLead: String(fd.get('statusLead') || '') || null,
+      campanhaLead: String(fd.get('campanhaLead') || '') || null,
+      formularioLead: String(fd.get('formularioLead') || '') || null,
+      empreendimentoInteresseId: fd.get('empreendimentoInteresseId') ? Number(fd.get('empreendimentoInteresseId')) : null,
       ativa: editing?.ativa ?? true,
       // Alvo específico tem prioridade — manda só pra esse corretor (ignora escopo)
       corretorId: alvoEspecifico,
@@ -379,7 +382,7 @@ export default function Distribuicao() {
                   <td>{d.qtdPorCorretor}</td>
                   <td className="text-xs">{escopoLabel(d)}</td>
                   <td className="text-xs">
-                    {[d.cidade && `cidade=${d.cidade}`, d.origemLead && `origem=${d.origemLead}`, d.statusLead && `status=${d.statusLead}`].filter(Boolean).join(' · ') || '—'}
+                    {[d.cidade && `cidade=${d.cidade}`, d.origemLead && `origem=${d.origemLead}`, d.statusLead && `status=${d.statusLead}`, d.campanhaLead && `campanha=${d.campanhaLead}`, d.formularioLead && `formulário=${d.formularioLead}`, d.empreendimentoInteresseId && `produto=#${d.empreendimentoInteresseId}`].filter(Boolean).join(' · ') || '—'}
                   </td>
                   <td className="text-xs text-secondary">{d.ultimaExecucaoAt ? new Date(d.ultimaExecucaoAt).toLocaleString('pt-BR') : '—'}</td>
                   <td>
@@ -551,7 +554,29 @@ export default function Distribuicao() {
               <label className="field__label">Origem (opcional)</label>
               <select name="origemLead" className="field__select" defaultValue={editing?.origemLead || ''}>
                 <option value="">Qualquer</option>
-                <option>META_ADS</option><option>GOOGLE</option><option>SITE</option><option>WHATSAPP</option><option>INDICACAO</option>
+                {(opcoesFiltro?.origens || ['META_ADS', 'GOOGLE', 'SITE', 'WHATSAPP', 'INDICACAO']).map((o) => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Campanha (opcional)</label>
+              <select name="campanhaLead" className="field__select" defaultValue={editing?.campanhaLead || ''}>
+                <option value="">Qualquer</option>
+                {(opcoesFiltro?.campanhas || []).map((c) => <option key={c}>{c}</option>)}
+              </select>
+              <div className="field__hint">Só distribui leads DESTA campanha — evita misturar bases.</div>
+            </div>
+            <div className="field">
+              <label className="field__label">Formulário (opcional)</label>
+              <select name="formularioLead" className="field__select" defaultValue={editing?.formularioLead || ''}>
+                <option value="">Qualquer</option>
+                {(opcoesFiltro?.formularios || []).map((f) => <option key={f}>{f}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Produto (opcional)</label>
+              <select name="empreendimentoInteresseId" className="field__select" defaultValue={editing?.empreendimentoInteresseId || ''}>
+                <option value="">Qualquer</option>
+                {(empreendimentosFiltro || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
               </select>
             </div>
             <div className="field">
