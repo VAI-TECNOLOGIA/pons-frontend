@@ -259,7 +259,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
   const STEPS = ['Config', 'Público', 'Mensagem', 'Envio'];
 
   return (
-    <div className="camp-modal__backdrop" onClick={enviando ? undefined : onClose}>
+    <div className="camp-modal__backdrop">
       <div className="camp-modal" onClick={(e) => e.stopPropagation()}>
         <div className="camp-modal__head">
           <h2>Nova Campanha</h2>

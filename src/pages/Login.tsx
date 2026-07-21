@@ -186,7 +186,7 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="login-modal" role="dialog" aria-modal="true" aria-label="Criar conta" onClick={onClose}>
+    <div className="login-modal" role="dialog" aria-modal="true" aria-label="Criar conta">
       <div className="login-modal__card" onClick={(e) => e.stopPropagation()}>
         <button type="button" className="login-modal__close" aria-label="Fechar" onClick={onClose}>×</button>
         <form onSubmit={submit}>

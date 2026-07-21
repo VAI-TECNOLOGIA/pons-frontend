@@ -1418,7 +1418,7 @@ function TemplatePickerModal({
   }
 
   return (
-    <div className="tpl-modal__backdrop" onClick={onClose}>
+    <div className="tpl-modal__backdrop">
       <div className="tpl-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="tpl-modal__header">

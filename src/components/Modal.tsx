@@ -26,21 +26,18 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
   useEffect(() => {
     const dlg = ref.current;
     if (!dlg) return;
-    const handleCancel = (e: Event) => {
-      e.preventDefault();
-      onClose();
-    };
+    // ESC não fecha: clique fora ou tecla errada fechavam modais de criação e
+    // o usuário perdia o formulário inteiro. Fechar SÓ pelo X (ou Cancelar).
+    const handleCancel = (e: Event) => e.preventDefault();
     dlg.addEventListener('cancel', handleCancel);
     return () => dlg.removeEventListener('cancel', handleCancel);
   }, [onClose]);
 
+  // Sem onClick no backdrop de propósito — clicar fora NÃO fecha (perda de dados).
   return (
     <dialog
       ref={ref}
       className={`modal modal--${size}`}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
-      }}
     >
       <div className="modal__content">
         <header className="modal__header">

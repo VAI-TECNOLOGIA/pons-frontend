@@ -337,7 +337,7 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
   };
 
   return (
-    <div className="user-drawer__overlay" onClick={onClose}>
+    <div className="user-drawer__overlay">
       <div className="user-drawer" onClick={(e) => e.stopPropagation()}>
         <header className="user-drawer__header">
           <div className="user-drawer__icon"><Icon name="pencil" size={22} /></div>
@@ -542,7 +542,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
   };
 
   return (
-    <div className="user-drawer__overlay" onClick={onClose}>
+    <div className="user-drawer__overlay">
       <div className="user-drawer" onClick={(e) => e.stopPropagation()}>
         <header className="user-drawer__header">
           <div className="user-drawer__icon">
