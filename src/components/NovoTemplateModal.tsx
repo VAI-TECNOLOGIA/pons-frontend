@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Api } from '../lib/api';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
@@ -36,6 +36,23 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  const estourou = chars > LIMITE_META;
  const setExemplo = (i: number, v: string) => setExamples((cur) => { const nx = [...cur]; nx[i] = v; return nx; });
  const preview = bodyText.replace(/\{\{(\d+)\}\}/g, (m, n) => examples[Number(n) - 1] || m);
+
+ // Insere a próxima {{n}} na posição do cursor — mais fácil que digitar na mão.
+ const bodyRef = useRef<HTMLTextAreaElement>(null);
+ const adicionarVariavel = () => {
+ const usados = [...bodyText.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1]));
+ const prox = usados.length ? Math.max(...usados) + 1 : 1;
+ const token = `{{${prox}}}`;
+ const el = bodyRef.current;
+ const ini = el?.selectionStart ?? bodyText.length;
+ const fim = el?.selectionEnd ?? ini;
+ setBodyText(bodyText.slice(0, ini) + token + bodyText.slice(fim));
+ requestAnimationFrame(() => {
+ if (!el) return;
+ el.focus();
+ el.selectionStart = el.selectionEnd = ini + token.length;
+ });
+ };
 
  async function submeter() {
  setErro('');
@@ -102,12 +119,18 @@ export function NovoTemplateModal({ onClose }: { onClose: () => void }) {
  <div className="tplm__secao">Mensagem</div>
  <div className="field">
  <div className="tplm__label-linha">
- <label className="field__label">Corpo — use {'{{1}}'}, {'{{2}}'}… nas partes variáveis</label>
+ <label className="field__label">Corpo da mensagem</label>
+ <div className="tplm__label-acoes">
+ <button type="button" className="tplm__add-var" onClick={adicionarVariavel} title="Insere a próxima variável na posição do cursor">
+ <Icon name="plus" size={11} /> Variável
+ </button>
  <span className={'tplm__contador' + (estourou ? ' tplm__contador--estourou' : chars > LIMITE_META * 0.9 ? ' tplm__contador--quase' : '')}>
  {chars}/{LIMITE_META}
  </span>
  </div>
- <textarea className="field__input tplm__textarea" value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={7} />
+ </div>
+ <textarea ref={bodyRef} className="field__input tplm__textarea" value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={7} />
+ <p className="tplm__nota" style={{ margin: '4px 0 0' }}>Clique em "+ Variável" pra inserir um campo dinâmico ({'{{1}}'}, {'{{2}}'}…) onde o cursor estiver.</p>
  </div>
  {nVars > 0 && (
  <div className="field">
