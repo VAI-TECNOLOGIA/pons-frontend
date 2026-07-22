@@ -282,6 +282,7 @@ export default function Distribuicao() {
                 opcoes={opcoesFiltro}
                 corretores={corretores}
                 empreendimentos={empreendimentosFiltro}
+                equipes={equipes}
               />
               {temFiltroExtra && (
                 <div className="field__hint" style={{ marginTop: -8, marginBottom: 8 }}>
