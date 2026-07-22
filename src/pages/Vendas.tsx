@@ -395,6 +395,9 @@ export default function Vendas() {
 
  // ── Confirmação: snapshot do form pro resumo final ──
  const [resumo, setResumo] = useState<any>(null);
+ // Trava anti clique-duplo: o "Avançar" vira o botão de salvar NA MESMA posição —
+ // sem essa espera, um clique rápido criava a venda sem a pessoa ver a Confirmação.
+ const [podeSalvar, setPodeSalvar] = useState(false);
 
  // Reabrir o modal zera o fluxo inteiro
  useEffect(() => {
@@ -518,6 +521,8 @@ export default function Vendas() {
  if (prox === stepConfirma && formRef.current) {
  const fd = new FormData(formRef.current);
  setResumo(Object.fromEntries(fd.entries()));
+ setPodeSalvar(false);
+ setTimeout(() => setPodeSalvar(true), 800);
  }
  setStep(prox);
  };
@@ -526,6 +531,8 @@ export default function Vendas() {
  e.preventDefault();
  // Enter antes da última etapa só avança — não cria a venda sem querer
  if (step < PASSOS.length - 1) { proximaEtapa(); return; }
+ // Recém-chegou na Confirmação: ignora o clique/Enter herdado do "Avançar"
+ if (!podeSalvar) return;
  // Com noValidate, valida na mão: pula pra etapa do primeiro campo inválido
  const invalido = formRef.current?.querySelector(':invalid') as HTMLInputElement | null;
  if (invalido) {
@@ -1629,8 +1636,8 @@ export default function Vendas() {
  Avançar <Icon name="arrow_right" size={13} />
  </button>
  ) : (
- <button type="submit" className="btn btn--primary">
- <Icon name="check" size={14} /> Confirmar e enviar para contrato
+ <button type="submit" className="btn btn--primary" disabled={!podeSalvar}>
+ <Icon name="check" size={14} /> {podeSalvar ? 'Salvar venda' : 'Revise o resumo acima…'}
  </button>
  )}
  </div>
