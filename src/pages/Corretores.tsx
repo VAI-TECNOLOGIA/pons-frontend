@@ -147,6 +147,15 @@ export default function Corretores() {
  />
 
  <div className="filter-bar">
+ {/* Busca também aqui dentro — a da topbar some no celular */}
+ <input
+ type="text"
+ className="field__input filtro-sel"
+ style={{ height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, minWidth: 180, flex: '1 1 180px' }}
+ placeholder="Buscar por nome, CRECI, telefone…"
+ value={search}
+ onChange={(e) => setSearch(e.target.value)}
+ />
  <select
  className="field__select filtro-sel"
  style={{ height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
