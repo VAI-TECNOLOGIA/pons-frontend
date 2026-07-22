@@ -12,10 +12,11 @@ export interface FiltrosLead {
  formulario: string; // nome do Lead Form (aparece como "Interesse" na ficha)
  empreendimentoId: string;
  corretorId: string; // '' = todos · 'sem' = bolsão · id
+ equipeId: string; // '' = todas · id da equipe (leads dos corretores dela)
 }
 
 export const FILTROS_LEAD_VAZIO: FiltrosLead = {
- dataInicial: '', dataFinal: '', origem: '', status: '', campanha: '', formulario: '', empreendimentoId: '', corretorId: '',
+ dataInicial: '', dataFinal: '', origem: '', status: '', campanha: '', formulario: '', empreendimentoId: '', corretorId: '', equipeId: '',
 };
 
 // Converte os filtros nos params do GET /leads (mesma convenção da tela Leads).
@@ -28,6 +29,7 @@ export function filtrosLeadParams(f: FiltrosLead): Record<string, string> {
  if (f.empreendimentoId) p.empreendimentoId = f.empreendimentoId;
  if (f.corretorId === 'sem') p.semCorretor = 'true';
  else if (f.corretorId) p.corretorId = f.corretorId;
+ if (f.equipeId) p.equipeId = f.equipeId;
  if (f.dataInicial) p.dataInicial = f.dataInicial;
  if (f.dataFinal) p.dataFinal = f.dataFinal;
  return p;
@@ -40,9 +42,10 @@ interface Props {
  opcoes?: { origens?: string[]; campanhas?: string[]; formularios?: string[] } | null;
  corretores?: any[] | null;
  empreendimentos?: any[] | null;
+ equipes?: any[] | null;
 }
 
-export function LeadsFiltrosPanel({ v, onChange, statuses, opcoes, corretores, empreendimentos }: Props) {
+export function LeadsFiltrosPanel({ v, onChange, statuses, opcoes, corretores, empreendimentos, equipes }: Props) {
  return (
  <div className="card fade-in" style={{ padding: '16px 18px', marginBottom: 14 }}>
  <div className="leads-filtros">
@@ -88,6 +91,12 @@ export function LeadsFiltrosPanel({ v, onChange, statuses, opcoes, corretores, e
  <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="users" size={13} /> Equipe</div>
  <div className="leads-filtros__linha">
+ {(equipes || []).length > 0 && (
+ <select className="field__select" value={v.equipeId} onChange={(e) => onChange({ equipeId: e.target.value })}>
+ <option value="">Equipe (todas)</option>
+ {(equipes || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
+ </select>
+ )}
  <select className="field__select" value={v.corretorId} onChange={(e) => onChange({ corretorId: e.target.value })}>
  <option value="">Corretor</option>
  <option value="sem">Sem corretor (bolsão)</option>

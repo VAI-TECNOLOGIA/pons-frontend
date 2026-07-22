@@ -38,6 +38,7 @@ export default function Leads() {
  const [mostrarFiltros, setMostrarFiltros] = useState(false);
  const [filtroOrigem, setFiltroOrigem] = useState('');
  const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | id do corretor
+ const [filtroEquipe, setFiltroEquipe] = useState(''); // '' | id da equipe
  const [filtroCampanha, setFiltroCampanha] = useState('');
  const [filtroFormulario, setFiltroFormulario] = useState('');
  const [filtroEmp, setFiltroEmp] = useState(''); // empreendimento de interesse (Produto)
@@ -63,6 +64,7 @@ export default function Leads() {
  if (filtroEmp) params.empreendimentoId = filtroEmp;
  if (filtroCorretor === 'sem') params.semCorretor = 'true';
  else if (filtroCorretor) params.corretorId = filtroCorretor;
+ if (filtroEquipe) params.equipeId = filtroEquipe;
  if (dataInicial) params.dataInicial = dataInicial;
  if (dataFinal) params.dataFinal = dataFinal;
  if (buscaDeb) params.q = buscaDeb;
@@ -72,6 +74,7 @@ export default function Leads() {
  const { data: stats, reload: reloadStats } = useApi<any>(() => Api.leadStats());
  const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+ const { data: equipesFiltro } = useApi<any[]>(() => Api.equipes());
  const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[]; formularios?: string[] }>(() => Api.leadFiltrosOpcoes());
  const toast = useToast();
  const confirm = useConfirm();
@@ -128,9 +131,9 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem || filtroCorretor || filtroCampanha || filtroFormulario || filtroEmp || dataInicial || dataFinal || buscaDeb || filterStatus);
+ const temFiltro = !!(filtroOrigem || filtroCorretor || filtroEquipe || filtroCampanha || filtroFormulario || filtroEmp || dataInicial || dataFinal || buscaDeb || filterStatus);
  const limparFiltros = () => {
- setFilterStatus(null); setFiltroOrigem(''); setFiltroCorretor(''); setFiltroCampanha(''); setFiltroFormulario('');
+ setFilterStatus(null); setFiltroOrigem(''); setFiltroCorretor(''); setFiltroEquipe(''); setFiltroCampanha(''); setFiltroFormulario('');
  setFiltroEmp(''); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
  };
  // troca de filtro sempre volta pra página 1
@@ -174,7 +177,7 @@ export default function Leads() {
  <div className="main__content">
  <PageHeader
  breadcrumb="Comercial · Leads"
- title={`${stats?.total ?? leads.length} leads no sistema`}
+ title={temFiltro ? `${total.toLocaleString('pt-BR')} leads no filtro` : `${stats?.total ?? leads.length} leads no sistema`}
  subtitle={`${stats?.novosHoje ?? 0} novos hoje · ${stats?.qualificados ?? 0} em negociação · ${stats?.semFollowup ?? 0} sem follow-up há +3 dias`}
  />
 
@@ -209,7 +212,7 @@ export default function Leads() {
 
  {mostrarFiltros && (
  <LeadsFiltrosPanel
- v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus || '', campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor }}
+ v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus || '', campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe }}
  onChange={(p) => {
  if (p.dataInicial !== undefined) setDataInicial(p.dataInicial);
  if (p.dataFinal !== undefined) setDataFinal(p.dataFinal);
@@ -219,12 +222,14 @@ export default function Leads() {
  if (p.formulario !== undefined) setFiltroFormulario(p.formulario);
  if (p.empreendimentoId !== undefined) setFiltroEmp(p.empreendimentoId);
  if (p.corretorId !== undefined) setFiltroCorretor(p.corretorId);
+ if (p.equipeId !== undefined) setFiltroEquipe(p.equipeId);
  setPage(1);
  }}
  statuses={STATUSES.map((k) => ({ key: k, label: STATUS_MAP[k]?.[1] || k }))}
  opcoes={opcoes}
  corretores={corretores}
  empreendimentos={empreendimentos}
+ equipes={equipesFiltro}
  />
  )}
 
