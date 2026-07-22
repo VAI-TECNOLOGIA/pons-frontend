@@ -318,10 +318,10 @@ export default function Chat() {
   };
 
   const confirmarLiberar = async () => {
-    if (!activeId || liberarSending) return;
+    if (!activeId || liberarSending || !liberarJustif.trim()) return;
     setLiberarSending(true);
     try {
-      const r = await Api.leadLiberarContato(activeId, liberarJustif.trim() || undefined);
+      const r = await Api.leadLiberarContato(activeId, liberarJustif.trim());
       toast.success(`Telefone liberado: ${r.telefone}`);
       setLiberarOpen(false);
       reloadConv();
@@ -924,14 +924,14 @@ export default function Chat() {
                     <button className="btn btn--ghost" onClick={() => setLiberarOpen(false)} disabled={liberarSending}>
                       Cancelar
                     </button>
-                    <button className="btn btn--primary" onClick={confirmarLiberar} disabled={liberarSending}>
+                    <button className="btn btn--primary" onClick={confirmarLiberar} disabled={liberarSending || !liberarJustif.trim()}>
                       {liberarSending ? 'Liberando…' : 'Liberar contato'}
                     </button>
                   </div>
                 }
               >
                 <label className="field__label" style={{ fontSize: 12, marginBottom: 6, display: 'block' }}>
-                  Motivo (opcional)
+                  Motivo (obrigatório)
                 </label>
                 <textarea
                   className="field__textarea"
@@ -942,7 +942,7 @@ export default function Chat() {
                   style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
                 />
                 <p className="text-xs text-secondary" style={{ marginTop: 8 }}>
-                  Motivo entra no audit log e na notificação enviada aos admins.
+                  Obrigatório: sem descrever o motivo não dá pra liberar. O texto entra no audit log e na notificação enviada aos admins.
                 </p>
               </Modal>
               <Modal
