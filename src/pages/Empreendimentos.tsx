@@ -762,8 +762,8 @@ function NovoEmpreendimentoModal({
 
         <div>
           <label className="field__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Fotos do empreendimento (até 8)</span>
-            <span className="text-xs text-secondary">{pendingFiles.length}/8 selecionadas</span>
+            <span>Fotos do empreendimento</span>
+            <span className="text-xs text-secondary">{pendingFiles.length} selecionada{pendingFiles.length === 1 ? '' : 's'}</span>
           </label>
           <input
             id="emp-novo-file"
@@ -773,8 +773,8 @@ function NovoEmpreendimentoModal({
             multiple
             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
             onChange={(e) => {
-              const files = Array.from(e.target.files || []).slice(0, 8 - pendingFiles.length);
-              setPendingFiles((cur) => [...cur, ...files].slice(0, 8));
+              const files = Array.from(e.target.files || []);
+              setPendingFiles((cur) => [...cur, ...files]);
               if (inputFileRef.current) inputFileRef.current.value = '';
             }}
           />
@@ -783,9 +783,7 @@ function NovoEmpreendimentoModal({
             className="btn btn--secondary btn--sm"
             style={{
               display: 'inline-flex',
-              cursor: pendingFiles.length >= 8 ? 'not-allowed' : 'pointer',
-              opacity: pendingFiles.length >= 8 ? 0.5 : 1,
-              pointerEvents: pendingFiles.length >= 8 ? 'none' : 'auto',
+              cursor: 'pointer',
             }}
           >
             <Icon name="plus" size={14} /> Adicionar fotos
@@ -1037,10 +1035,9 @@ function GaleriaFotosModal({
   }, []);
 
   const fotos = emp.fotos || [];
-  const slotsLivres = 8 - fotos.length;
 
   const handleUpload = async (files: FileList | File[]) => {
-    const list = Array.from(files).slice(0, slotsLivres);
+    const list = Array.from(files);
     if (!list.length) return;
     setBusy(true);
     try {
@@ -1251,7 +1248,7 @@ function GaleriaFotosModal({
                 </div>
               );
             })}
-            {slotsLivres > 0 && (
+            {(
               <label
                 htmlFor="emp-galeria-file"
                 style={{
@@ -1272,7 +1269,7 @@ function GaleriaFotosModal({
                 }}
               >
                 <Icon name="plus" size={20} />
-                Carregar ({slotsLivres} {slotsLivres === 1 ? 'slot' : 'slots'} livres)
+                Carregar fotos
               </label>
             )}
           </div>

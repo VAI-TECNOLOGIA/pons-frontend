@@ -308,18 +308,24 @@ export const Api = {
   empreendimentoDelete: (id: number) =>
     request<any>(`/empreendimentos/${id}`, { method: 'DELETE' }),
   empreendimentoFotoUpload: async (id: number, files: File[]) => {
-    const form = new FormData();
-    for (const f of files.slice(0, 8)) form.append('files', f);
-    const r = await fetch(`${BASE}/empreendimentos/${id}/fotos`, {
-      method: 'POST',
-      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
-      body: form,
-    });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      throw new Error(j.error || j.message || 'upload_failed');
+    // Sem teto de fotos: envia em lotes de 40 (limite por requisição do backend).
+    const todas: any[] = [];
+    for (let i = 0; i < files.length; i += 40) {
+      const form = new FormData();
+      for (const f of files.slice(i, i + 40)) form.append('files', f);
+      const r = await fetch(`${BASE}/empreendimentos/${id}/fotos`, {
+        method: 'POST',
+        headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+        body: form,
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || j.message || 'upload_failed');
+      }
+      const j = await r.json();
+      todas.push(...(j.fotos || []));
     }
-    return r.json();
+    return { ok: true, fotos: todas };
   },
   empreendimentoFotoDelete: (id: number, fotoId: number) =>
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
