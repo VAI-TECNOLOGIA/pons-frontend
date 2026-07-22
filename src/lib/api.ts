@@ -609,6 +609,9 @@ export const Api = {
       meta?: any;
       vai?: any;
     }>(`/conversations/${leadId}/messages`, { method: 'POST', body: { texto, autor, ...(media || {}) } }),
+  // Nota interna na conversa — NÃO é enviada pro lead (registro roxo no thread)
+  conversationNota: (leadId: number, texto: string) =>
+    request<{ ok: boolean; id: number }>(`/conversations/${leadId}/nota`, { method: 'POST', body: { texto } }),
   // Upload de mídia do chat → R2 (prefixo uploads). Retorna { url, key, size, contentType }.
   conversationUploadMedia: async (file: File) => {
     const form = new FormData();

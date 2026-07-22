@@ -173,6 +173,41 @@
   align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
+/* Nota interna: balão ROXO, alinhado como mensagem própria, mas nunca vai pro lead */
+.bubble--NOTA {
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  box-shadow: var(--shadow-xs);
+}
+.bubble__nota-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+.composer__nota-btn--on {
+  background: #7C3AED !important;
+  border-color: #7C3AED !important;
+  color: #fff !important;
+}
+.composer__nota-send {
+  background: #7C3AED;
+  border: 1px solid #7C3AED;
+  color: #fff;
+}
+.composer__nota-send:hover { filter: brightness(1.08); }
+.composer__input--nota {
+  border-color: #7C3AED !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18) !important;
+}
+
 .bubble--SISTEMA {
   background: transparent;
   align-self: center;

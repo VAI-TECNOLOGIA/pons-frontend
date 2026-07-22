@@ -45,7 +45,7 @@ const statusLabel = (codigo?: string) =>
 
 type Mensagem = {
   id: number;
-  autor: 'LEAD' | 'IA' | 'CORRETOR' | 'SISTEMA';
+  autor: 'LEAD' | 'IA' | 'CORRETOR' | 'SISTEMA' | 'NOTA';
   texto: string;
   direction?: 'inbound' | 'outbound';
   contentType?: string;
@@ -113,6 +113,7 @@ export default function Chat() {
   const [anexo, setAnexo] = useState<{ url: string; fileName: string; contentType: string } | null>(null);
   const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
+  const [notaMode, setNotaMode] = useState(false); // composer em modo NOTA interna (não envia pro lead)
   const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
   const [recording, setRecording] = useState(false); // gravando áudio
   const [recSecs, setRecSecs] = useState(0);
@@ -258,6 +259,22 @@ export default function Chat() {
     if (!activeId || sending || uploadingAnexo) return;
     const texto = draft.trim();
     if (!texto && !anexo) return;
+    // Modo NOTA: registra na conversa e NÃO envia nada pro lead.
+    if (notaMode) {
+      if (!texto) return;
+      setDraft('');
+      setSending(true);
+      try {
+        await Api.conversationNota(activeId, texto);
+        reloadConv();
+      } catch (err: any) {
+        setDraft(texto);
+        toast.error('Erro ao salvar nota: ' + (err?.message || 'falha'));
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
     const media = anexo
       ? { mediaUrl: anexo.url, mediaType: tipoMedia(anexo.contentType), fileName: anexo.fileName }
       : undefined;
@@ -878,8 +895,17 @@ export default function Chat() {
                         >
                           <Icon name="doc" size={14} /> Template
                         </button>
+                        <button
+                          className={'btn btn--sm' + (notaMode ? ' composer__nota-btn--on' : ' btn--secondary')}
+                          title={notaMode ? 'Modo nota ativo — o lead NÃO recebe. Clique pra voltar ao envio normal.' : 'Escrever nota interna (o lead não recebe)'}
+                          onClick={() => setNotaMode((v) => !v)}
+                          disabled={sending}
+                        >
+                          <Icon name="pencil" size={14} /> Nota
+                        </button>
                         <textarea
-                          placeholder={anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
+                          className={notaMode ? 'composer__input--nota' : undefined}
+                          placeholder={notaMode ? 'Nota interna — o lead NÃO recebe…' : anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
                           onKeyDown={(e) => {
@@ -899,11 +925,11 @@ export default function Chat() {
                           <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" /></svg>
                         </button>
                         <button
-                          className="btn btn--primary"
+                          className={'btn ' + (notaMode ? 'composer__nota-send' : 'btn--primary')}
                           onClick={enviar}
-                          disabled={sending || uploadingAnexo || (!draft.trim() && !anexo)}
+                          disabled={sending || uploadingAnexo || (notaMode ? !draft.trim() : (!draft.trim() && !anexo))}
                         >
-                          {sending ? 'Enviando…' : 'Enviar'}
+                          {sending ? 'Salvando…' : notaMode ? 'Salvar nota' : 'Enviar'}
                         </button>
                       </>
                     )}
@@ -1060,6 +1086,15 @@ export default function Chat() {
 function MessageBubble({ m }: { m: Mensagem }) {
   if (m.autor === 'SISTEMA') {
     return <div className="bubble bubble--SISTEMA">{m.texto}</div>;
+  }
+  if (m.autor === 'NOTA') {
+    return (
+      <div className="bubble bubble--NOTA">
+        <div className="bubble__nota-tag"><Icon name="pencil" size={10} /> Nota interna — o lead não recebe</div>
+        {m.texto}
+        <div className="bubble__meta">{timeAgo(m.createdAt)}</div>
+      </div>
+    );
   }
   const who = m.autor === 'IA' ? 'SDR Pons IA' : m.autor === 'CORRETOR' ? 'Você' : 'Lead';
   const isOutbound = m.direction === 'outbound' || m.autor === 'CORRETOR' || m.autor === 'IA';
