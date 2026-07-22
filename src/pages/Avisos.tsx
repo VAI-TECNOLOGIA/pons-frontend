@@ -9,7 +9,7 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Auth } from '../lib/auth';
 
-const PODE_PUBLICAR = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE']);
+const PODE_PUBLICAR = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO', 'GESTOR_MARKETING', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE']);
 // Gestor publica SÓ pras equipes dele (o backend restringe); admin publica geral
 const AVISO_GERAL = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO']);
 

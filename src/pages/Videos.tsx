@@ -29,7 +29,7 @@ const CAT_BADGE: Record<string, [string, string]> = {
   TREINAMENTO: ['badge--signature', 'Treinamento'],
 };
 
-const PODE_GERIR_VIDEOS = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO']);
+const PODE_GERIR_VIDEOS = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO', 'GESTOR_MARKETING']);
 
 export default function Videos() {
   const podeGerir = PODE_GERIR_VIDEOS.has(Auth.user?.role || '');

@@ -50,7 +50,8 @@ export function GestoresEquipes() {
  CEO: 'CEO', DIRETOR_COMERCIAL: 'Diretor Comercial', DIRETOR_FINANCEIRO: 'Diretor Financeiro',
  DIRETOR_JURIDICO: 'Diretor Jurídico', SOCIO_UNIDADE: 'Sócio de Unidade', GERENTE_EQUIPE: 'Gerente',
  MARKETING: 'Marketing', ASSESSORA: 'Assessora', ASSESSORA_MARKETING: 'Assessora de Marketing',
- GESTOR_TRAFEGO: 'Gestor de Tráfego', FINANCEIRO: 'Financeiro', ADMINISTRATIVO: 'Administrativo', DEV: 'Dev',
+ GESTOR_TRAFEGO: 'Gestor de Tráfego', GESTOR_MARKETING: 'Diretor de Marketing e Gestor Comercial da 2ª Avenida',
+ FINANCEIRO: 'Financeiro', ADMINISTRATIVO: 'Administrativo', DEV: 'Dev',
  };
 
  return (
