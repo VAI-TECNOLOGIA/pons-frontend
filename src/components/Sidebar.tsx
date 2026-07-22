@@ -57,8 +57,8 @@ const GROUPS: NavGroup[] = [
     icon: 'users',
     items: [
       { to: '/corretores', label: 'Corretores', icon: 'users', roles: ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE', 'MARKETING', SOCIO, 'DIRETOR_FINANCEIRO', 'FINANCEIRO'] },
-      { to: '/equipes', label: 'Equipes', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', SOCIO, 'GERENTE_EQUIPE'] },
-      { to: '/gestores', label: 'Gestores', icon: 'hierarchy', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+      { to: '/equipes', label: 'Equipes', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING', SOCIO, 'GERENTE_EQUIPE'] },
+      { to: '/gestores', label: 'Gestores', icon: 'hierarchy', roles: ['CEO', 'DIRETOR_FINANCEIRO'] },
       { to: '/filas-atendimento', label: 'Filas de Atendimento', icon: 'layers', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/roletas', label: 'Roletas (avançado)', icon: 'roulette', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/bolsoes', label: 'Bolsões', icon: 'database', roles: ['CEO', 'DIRETOR_COMERCIAL'] },

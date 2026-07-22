@@ -158,8 +158,8 @@ export default function Equipes() {
  subtitle="Organização do time de corretores por empreendimento ou foco"
  />
 
- {/* Pendências de transferência — aparece pra quem pode aprovar/acompanhar */}
- {pendentes.length > 0 && (
+ {/* Pendências de transferência — SÓ admin (CEO/Marcelo) transfere e aprova */}
+ {minhas?.admin && pendentes.length > 0 && (
  <div className="card" style={{ marginBottom: 16, border: '1px solid rgba(245,158,11,0.4)' }}>
  <div className="uppercase-tag" style={{ marginBottom: 10 }}>Transferências aguardando aprovação</div>
  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -183,7 +183,8 @@ export default function Equipes() {
  </div>
  )}
 
- {/* Transferir corretor: direto entre equipes do mesmo gestor; senão pende aprovação */}
+ {/* Transferir corretor — restrito ao CEO e ao Marcelo (financeiro administrativo) */}
+ {minhas?.admin && (
  <div className="card transf-card">
  <div className="flex-between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
  <div className="uppercase-tag">Transferir corretor de equipe</div>
@@ -290,9 +291,10 @@ export default function Equipes() {
  </div>
  </div>
  <div className="field__hint" style={{ marginTop: 6 }}>
- Entre equipes do mesmo gestor a transferência é imediata; pra equipe de outro gestor, ele recebe a solicitação e aprova.
+ Transferência restrita: só CEO e Financeiro Administrativo movem corretores entre equipes.
  </div>
  </div>
+ )}
 
  <div className="tabs">
  <button className={'tab ' + (view === 'escuderias' ? 'tab--active' : '')} onClick={() => setView('escuderias')}>
@@ -340,7 +342,7 @@ export default function Equipes() {
  ) : (
  <span className="text-secondary text-sm">Sem líder definido</span>
  )}
- {comando(eq.id) && (
+ {minhas?.admin && (
  <button className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }} onClick={() => { setLiderEquipe(eq); setLiderBusca(''); }}>
  {lider ? 'Trocar líder' : 'Atribuir líder'}
  </button>
