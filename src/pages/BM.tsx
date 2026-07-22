@@ -160,11 +160,8 @@ export default function BMPage() {
         title="Business Managers"
         right={
           <div className="flex" style={{ gap: 8 }}>
-            <button className={'btn btn--sm ' + (ehCorretor ? 'btn--primary' : 'btn--secondary')} onClick={() => { setReconectarBm(null); setFbPages(null); setWizard({ etapa: 1 }); }}>
-              Conectar com Facebook
-            </button>
             {!ehCorretor && (
-              <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova BM</button>
+              <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova BM (manual)</button>
             )}
           </div>
         }
@@ -179,6 +176,12 @@ export default function BMPage() {
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          {/* Tile de adicionar (estilo Imobilead): quadro tracejado que abre o wizard */}
+          <button type="button" className="bm-add-tile" onClick={() => { setReconectarBm(null); setFbPages(null); setWizard({ etapa: 1 }); }}>
+            <span className="bm-add-tile__icone"><Icon name="plus" size={22} /></span>
+            <span className="bm-add-tile__titulo">Adicionar integração</span>
+            <span className="bm-add-tile__desc">Conecte seus anúncios do Facebook em 3 passos</span>
+          </button>
           {(data || []).map((bm) => (
             <div
               key={bm.id}
@@ -268,9 +271,7 @@ export default function BMPage() {
               </div>
             </div>
           ))}
-          {data?.length === 0 && (
-            <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Nenhuma BM cadastrada ainda</div>
-          )}
+
         </div>
       </div>
 
