@@ -345,7 +345,7 @@ João Silva,+55 47 99999-1111,joao@email.com,META_ADS,Verão 2026,NOVO,investido
 Maria Costa,(47) 98888-2222,maria@email.com,SITE,,NEGOCIANDO,,
 `}
           </pre>
-          <div className="text-xs text-secondary">Origens válidas: META_ADS, GOOGLE, SITE, INDICACAO, WHATSAPP, MANUAL, IMPORTACAO · Status: NOVO, NAO_RESPONDE, LISTA_VIP, EM_ATENDIMENTO, FLUXO, POS_FLUXO, VISITA, NEGOCIANDO, FECHADO, PERDIDO · Tags separadas por <code>;</code></div>
+          <div className="text-xs text-secondary">Origens válidas: META_ADS, GOOGLE, SITE, INDICACAO, WHATSAPP, MANUAL, IMPORTACAO · Status: NOVO, NAO_RESPONDE, LISTA_VIP, EM_ATENDIMENTO, FLUXO, PAROU_RESPONDER, POS_FLUXO, VISITA, NEGOCIANDO, FECHADO, PERDIDO · Tags separadas por <code>;</code></div>
         </div>
       </div>
     </>

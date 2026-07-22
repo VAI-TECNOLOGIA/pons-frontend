@@ -3,7 +3,7 @@ import { Api } from '../lib/api';
 import { NovoTemplateModal } from '../components/NovoTemplateModal';
 import './campanhas.css';
 import { useWhatsappNumeros } from '../lib/whatsappNumeros';
-const STATUS_LEAD = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
+const STATUS_LEAD = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'PAROU_RESPONDER', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
 const STATUS_LABEL: Record<string, string> = {
   RASCUNHO: 'Rascunho', AGENDADA: 'Agendada', ENVIANDO: 'Enviando', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada',
 };

@@ -13,7 +13,7 @@ import { LeadsFiltrosPanel, FILTROS_LEAD_VAZIO, filtrosLeadParams, type FiltrosL
 const STATUS_OPCOES = [
   { key: 'NOVO', label: 'Tentando Contato' }, { key: 'NAO_RESPONDE', label: 'Não responde' },
   { key: 'LISTA_VIP', label: 'Lista VIP' }, { key: 'EM_ATENDIMENTO', label: 'Em atendimento' },
-  { key: 'FLUXO', label: 'Fluxo' }, { key: 'POS_FLUXO', label: 'Pós Fluxo' },
+  { key: 'FLUXO', label: 'Fluxo' }, { key: 'PAROU_RESPONDER', label: 'Parou de responder' }, { key: 'POS_FLUXO', label: 'Pós Fluxo' },
   { key: 'VISITA', label: 'Vídeo/Visita' }, { key: 'NEGOCIANDO', label: 'Em Negociação' },
   { key: 'FECHADO', label: 'Venda' }, { key: 'PERDIDO', label: 'Perdido' },
 ];

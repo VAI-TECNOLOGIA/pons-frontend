@@ -11,6 +11,7 @@ export const FUNIL_DEFAULT: Fase[] = [
   { key: 'LISTA_VIP', label: 'Lista VIP', klass: 'kanban__col--accent' },
   { key: 'EM_ATENDIMENTO', label: 'Em atendimento', aliases: ['QUALIFICANDO'] },
   { key: 'FLUXO', label: 'Fluxo' },
+  { key: 'PAROU_RESPONDER', label: 'Parou de responder' },
   { key: 'POS_FLUXO', label: 'Atendimento Pós Fluxo' },
   { key: 'VISITA', label: 'Vídeo/Visita' },
   { key: 'NEGOCIANDO', label: 'Em Negociação', aliases: ['PROPOSTA', 'CONTATO'] },

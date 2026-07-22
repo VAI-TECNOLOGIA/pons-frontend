@@ -16,6 +16,7 @@ const STATUS_MAP: Record<string, [string, string]> = {
   EM_ATENDIMENTO: ['analysis', 'Em atendimento'],
   QUALIFICANDO: ['analysis', 'Em atendimento'],
   FLUXO: ['analysis', 'Fluxo'],
+  PAROU_RESPONDER: ['cancelled', 'Parou de responder'],
   POS_FLUXO: ['analysis', 'Pós Fluxo'],
   VISITA: ['launch', 'Vídeo/Visita'],
   NEGOCIANDO: ['launch', 'Em Negociação'],

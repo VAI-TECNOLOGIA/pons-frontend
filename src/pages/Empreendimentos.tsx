@@ -14,6 +14,7 @@ import './empreendimentos.css';
 
 type Construtora = { id: number; nome: string };
 type Foto = { id: number; url: string; ordem: number };
+type Doc = { id: number; nome: string; url: string; tamanho?: number | null };
 type Empreendimento = {
   id: number;
   nome: string;
@@ -27,6 +28,7 @@ type Empreendimento = {
   descricao?: string | null;
   imagemUrl?: string | null;
   fotos: Foto[];
+  documentos?: Doc[];
   construtora: { id: number; nome: string };
   vendasCount?: number;
   // Ficha completa (layout KÓRA no site)
@@ -58,6 +60,7 @@ export default function Empreendimentos() {
   const [showNew, setShowNew] = useState(false);
   const [showConstrutoras, setShowConstrutoras] = useState(false);
   const [gallery, setGallery] = useState<Empreendimento | null>(null);
+  const [docsEmp, setDocsEmp] = useState<Empreendimento | null>(null);
   const [unidadesEmp, setUnidadesEmp] = useState<Empreendimento | null>(null);
   // Condições de venda (política de rateio) — abre logo após cadastrar o empreendimento
   const [condicoesEmp, setCondicoesEmp] = useState<{ id: number; nome: string } | null>(null);
@@ -140,7 +143,7 @@ export default function Empreendimentos() {
                         gap: 4,
                       }}
                     >
-                      <Icon name="pencil" size={11} /> {e.fotos.length}/8 fotos
+                      <Icon name="pencil" size={11} /> {e.fotos.length} fotos
                     </div>
                   )}
                 </div>
@@ -181,6 +184,13 @@ export default function Empreendimentos() {
                   >
                     <Icon name="building" size={13} /> Unidades / disponibilidade
                   </button>
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    style={{ width: '100%', marginTop: 8 }}
+                    onClick={() => setDocsEmp(e)}
+                  >
+                    <Icon name="doc" size={13} /> Documentos{e.documentos?.length ? ` (${e.documentos.length})` : ''}
+                  </button>
                 </div>
               </div>
             );
@@ -207,6 +217,15 @@ export default function Empreendimentos() {
           empreendimento={condicoesEmp}
           onClose={() => setCondicoesEmp(null)}
           onSaved={() => { setCondicoesEmp(null); reload(); }}
+        />
+      )}
+
+      {docsEmp && (
+        <DocsEmpreendimentoModal
+          empreendimento={docsEmp}
+          canEdit={canEdit}
+          onClose={() => setDocsEmp(null)}
+          onChanged={reload}
         />
       )}
 
@@ -492,7 +511,9 @@ function NovoEmpreendimentoModal({
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingDocs, setPendingDocs] = useState<File[]>([]);
   const inputFileRef = useRef<HTMLInputElement>(null);
+  const inputDocRef = useRef<HTMLInputElement>(null);
 
   // Construtora: lista local (permite adicionar uma nova sem recarregar) +
   // seleção controlada (pra já selecionar a recém-criada) + cadastro inline.
@@ -565,6 +586,13 @@ function NovoEmpreendimentoModal({
           await Api.empreendimentoFotoUpload(created.id, pendingFiles);
         } catch {
           toast.info('Empreendimento criado, mas algumas fotos falharam ao enviar.');
+        }
+      }
+      if (pendingDocs.length) {
+        try {
+          await Api.empreendimentoDocUpload(created.id, pendingDocs);
+        } catch {
+          toast.info('Empreendimento criado, mas algum documento falhou ao enviar.');
         }
       }
       toast.success('Empreendimento cadastrado.');
@@ -838,6 +866,60 @@ function NovoEmpreendimentoModal({
           )}
           <div className="field__hint">A primeira foto vira a capa automaticamente. Você pode trocar depois.</div>
         </div>
+
+        <hr style={{ margin: '20px 0', borderColor: 'var(--border-light)' }} />
+
+        <div>
+          <label className="field__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Documentos (PDF)</span>
+            <span className="text-xs text-secondary">{pendingDocs.length} selecionado{pendingDocs.length === 1 ? '' : 's'}</span>
+          </label>
+          <input
+            id="emp-novo-doc"
+            ref={inputDocRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            multiple
+            style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []).filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+              setPendingDocs((cur) => [...cur, ...files]);
+              if (inputDocRef.current) inputDocRef.current.value = '';
+            }}
+          />
+          <label
+            htmlFor="emp-novo-doc"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+              if (files.length) setPendingDocs((cur) => [...cur, ...files]);
+            }}
+            className="btn btn--secondary btn--sm"
+            style={{ display: 'inline-flex', cursor: 'pointer' }}
+          >
+            <Icon name="paperclip" size={14} /> Adicionar PDFs (ou arraste aqui)
+          </label>
+          {pendingDocs.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
+              {pendingDocs.map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid var(--border-light)', borderRadius: 8, fontSize: 13 }}>
+                  <Icon name="doc" size={14} />
+                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPendingDocs((cur) => cur.filter((_, idx) => idx !== i))}
+                    className="btn btn--secondary btn--sm"
+                    title="Remover"
+                  >
+                    <Icon name="x" size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="field__hint">Materiais do empreendimento (tabelas, book, memorial…) — os corretores poderão ver e baixar.</div>
+        </div>
       </form>
     </Modal>
   );
@@ -1007,6 +1089,203 @@ function EditarDadosEmpreendimento({
 }
 
 // ── Modal: galeria + gerenciar fotos de um empreendimento existente ──
+function fmtBytes(n?: number | null) {
+  if (!n) return '';
+  if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// Área de documentos PDF do empreendimento: arrastar/soltar pra subir (quem
+// edita) e Ver/Baixar pra todo mundo — inclusive corretor.
+function DocumentosEmpreendimento({
+  empId,
+  docs,
+  canEdit,
+  onChanged,
+}: {
+  empId: number;
+  docs: Doc[];
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [busy, setBusy] = useState(false);
+  const [drag, setDrag] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const enviar = async (files: FileList | File[]) => {
+    const todos = Array.from(files);
+    const list = todos.filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+    if (!list.length) { toast.error('Envie arquivos PDF.'); return; }
+    if (list.length !== todos.length) toast.info('Arquivos que não são PDF foram ignorados.');
+    setBusy(true);
+    try {
+      const r = await Api.empreendimentoDocUpload(empId, list);
+      toast.success(`${r.documentos?.length || 0} documento(s) enviado(s).`);
+      onChanged();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const excluir = async (d: Doc) => {
+    const ok = await confirm({
+      title: 'Remover documento?',
+      message: `"${d.nome}" será apagado permanentemente.`,
+      confirmText: 'Remover',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await Api.empreendimentoDocDelete(empId, d.id);
+      toast.success('Documento removido.');
+      onChanged();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const baixar = async (d: Doc) => {
+    try {
+      await Api.empreendimentoDocDownload(empId, d.id, d.nome);
+    } catch {
+      toast.error('Falha no download.');
+    }
+  };
+
+  return (
+    <div>
+      {canEdit && (
+        <>
+          <input
+            ref={inputRef}
+            id={`emp-docs-file-${empId}`}
+            type="file"
+            accept="application/pdf,.pdf"
+            multiple
+            style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+            onChange={(e) => {
+              if (e.target.files?.length) enviar(e.target.files);
+              if (inputRef.current) inputRef.current.value = '';
+            }}
+          />
+          <label
+            htmlFor={`emp-docs-file-${empId}`}
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files?.length) enviar(e.dataTransfer.files); }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 6,
+              padding: '22px 16px',
+              border: `2px dashed ${drag ? 'var(--pons-blue)' : 'var(--border-light)'}`,
+              borderRadius: 10,
+              cursor: busy ? 'wait' : 'pointer',
+              color: 'var(--text-secondary)',
+              background: drag ? 'rgba(59,130,246,0.06)' : 'var(--bg-card-hover)',
+              marginBottom: 12,
+              textAlign: 'center',
+              fontSize: 12.5,
+              opacity: busy ? 0.6 : 1,
+              pointerEvents: busy ? 'none' : 'auto',
+            }}
+          >
+            <Icon name="paperclip" size={18} />
+            <span><b>Arraste os PDFs aqui</b> ou clique pra selecionar (até 25 MB cada)</span>
+          </label>
+        </>
+      )}
+      {docs.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 16, color: 'var(--text-secondary)', fontSize: 13 }}>
+          Nenhum documento ainda.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {docs.map((d) => (
+            <div
+              key={d.id}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: '1px solid var(--border-light)', borderRadius: 10, background: 'var(--bg-card)' }}
+            >
+              <span style={{ display: 'grid', placeItems: 'center', width: 34, height: 34, borderRadius: 8, background: 'rgba(220,38,38,0.1)', color: '#DC2626', flexShrink: 0 }}>
+                <Icon name="doc" size={16} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome}</div>
+                {d.tamanho ? <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>{fmtBytes(d.tamanho)}</div> : null}
+              </div>
+              <button className="btn btn--secondary btn--sm" onClick={() => window.open(d.url, '_blank', 'noopener')} title="Visualizar">
+                <Icon name="eye" size={13} /> Ver
+              </button>
+              <button className="btn btn--secondary btn--sm" onClick={() => baixar(d)} title="Baixar">
+                <Icon name="doc" size={13} /> Baixar
+              </button>
+              {canEdit && (
+                <button className="btn btn--danger btn--sm" onClick={() => excluir(d)} disabled={busy} title="Excluir">
+                  <Icon name="trash" size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Modal enxuto de documentos aberto pelo card — é por aqui que o CORRETOR
+// visualiza e baixa os PDFs do empreendimento.
+function DocsEmpreendimentoModal({
+  empreendimento,
+  canEdit,
+  onClose,
+  onChanged,
+}: {
+  empreendimento: Empreendimento;
+  canEdit: boolean;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [docs, setDocs] = useState<Doc[]>(empreendimento.documentos || []);
+
+  const refetch = async () => {
+    try {
+      const fresh: any = await Api.empreendimento(empreendimento.id);
+      setDocs(fresh.documentos || []);
+    } catch {}
+  };
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Documentos · ${empreendimento.nome}`}
+      subtitle="PDFs do empreendimento — visualize e baixe."
+      size="md"
+      footer={<button className="btn btn--primary" onClick={onClose}>Fechar</button>}
+    >
+      <DocumentosEmpreendimento
+        empId={empreendimento.id}
+        docs={docs}
+        canEdit={canEdit}
+        onChanged={() => { refetch(); onChanged(); }}
+      />
+    </Modal>
+  );
+}
+
 function GaleriaFotosModal({
   empreendimento,
   onClose,
@@ -1020,6 +1299,7 @@ function GaleriaFotosModal({
   const confirm = useConfirm();
   const [emp, setEmp] = useState<Empreendimento>(empreendimento);
   const [busy, setBusy] = useState(false);
+  const [aba, setAba] = useState<'fotos' | 'docs'>('fotos');
   const inputFileRef = useRef<HTMLInputElement>(null);
 
   const refetch = async () => {
@@ -1118,7 +1398,7 @@ function GaleriaFotosModal({
       open
       onClose={onClose}
       title={`Gerenciar · ${emp.nome}`}
-      subtitle={`${fotos.length}/8 fotos · status, preço e detalhes editáveis abaixo`}
+      subtitle={`${fotos.length} foto${fotos.length === 1 ? '' : 's'} · ${(emp.documentos || []).length} documento${(emp.documentos || []).length === 1 ? '' : 's'} · status, preço e detalhes editáveis abaixo`}
       size="lg"
       footer={
         <>
@@ -1131,10 +1411,40 @@ function GaleriaFotosModal({
     >
       <EditarDadosEmpreendimento emp={emp} onSaved={async (atualizado) => { setEmp({ ...emp, ...atualizado }); onChanged(); }} />
 
-      <h4 style={{ margin: '24px 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
-        Fotos
-      </h4>
+      <div style={{ display: 'flex', gap: 6, margin: '24px 0 12px', borderBottom: '1px solid var(--border-light)' }}>
+        {([['fotos', `Fotos (${fotos.length})`], ['docs', `Documentos (${(emp.documentos || []).length})`]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setAba(key)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              font: 'inherit',
+              fontSize: 14,
+              fontWeight: 700,
+              padding: '8px 12px',
+              cursor: 'pointer',
+              color: aba === key ? 'var(--pons-blue)' : 'var(--text-secondary)',
+              borderBottom: aba === key ? '2px solid var(--pons-blue)' : '2px solid transparent',
+              marginBottom: -1,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
+      {aba === 'docs' && (
+        <DocumentosEmpreendimento
+          empId={emp.id}
+          docs={emp.documentos || []}
+          canEdit
+          onChanged={() => { refetch(); onChanged(); }}
+        />
+      )}
+
+      {aba === 'fotos' && (
+      <>
       {/* input file invisível mas acessível por label htmlFor (funciona dentro de <dialog>) */}
       <input
         id="emp-galeria-file"
@@ -1274,6 +1584,8 @@ function GaleriaFotosModal({
             )}
           </div>
         </>
+      )}
+      </>
       )}
     </Modal>
   );

@@ -31,6 +31,7 @@ const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
   { codigo: 'LISTA_VIP', label: 'Lista VIP', desc: 'Lead prioritário / lista VIP' },
   { codigo: 'EM_ATENDIMENTO', label: 'Em atendimento', desc: 'Corretor atendendo e qualificando o lead' },
   { codigo: 'FLUXO', label: 'Fluxo', desc: 'Lead dentro do fluxo de atendimento' },
+  { codigo: 'PAROU_RESPONDER', label: 'Parou de responder', desc: 'Respondia no fluxo e parou de responder' },
   { codigo: 'POS_FLUXO', label: 'Atendimento Pós Fluxo', desc: 'Acompanhamento após o fluxo' },
   { codigo: 'VISITA', label: 'Vídeo/Visita', desc: 'Vídeo, visita ou reunião marcada com o lead' },
   { codigo: 'NEGOCIANDO', label: 'Em Negociação', desc: 'Conversa ativa de negociação' },

@@ -327,6 +327,37 @@ export const Api = {
     }
     return { ok: true, fotos: todas };
   },
+  empreendimentoDocUpload: async (id: number, files: File[]) => {
+    const form = new FormData();
+    for (const f of files) form.append('files', f);
+    const r = await fetch(`${BASE}/empreendimentos/${id}/documentos`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(j.error || j.message || 'upload_failed');
+    }
+    return r.json();
+  },
+  empreendimentoDocDelete: (id: number, docId: number) =>
+    request<any>(`/empreendimentos/${id}/documentos/${docId}`, { method: 'DELETE' }),
+  // Baixa via backend (Content-Disposition attachment) e dispara o save no browser
+  empreendimentoDocDownload: async (id: number, docId: number, nome: string) => {
+    const r = await fetch(`${BASE}/empreendimentos/${id}/documentos/${docId}/download`, {
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+    });
+    if (!r.ok) throw new Error('download_failed');
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome || 'documento.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  },
   empreendimentoFotoDelete: (id: number, fotoId: number) =>
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
   empreendimentoFotoCapa: (id: number, fotoId: number) =>

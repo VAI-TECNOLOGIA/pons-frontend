@@ -20,6 +20,7 @@ const STATUS_MAP: Record<string, [string, string]> = {
  EM_ATENDIMENTO: ['analysis', 'Em atendimento'],
  QUALIFICANDO: ['analysis', 'Em atendimento'],
  FLUXO: ['analysis', 'Fluxo'],
+ PAROU_RESPONDER: ['cancelled', 'Parou de responder'],
  POS_FLUXO: ['analysis', 'Pós Fluxo'],
  VISITA: ['launch', 'Vídeo/Visita'],
  NEGOCIANDO: ['signature', 'Em Negociação'],
@@ -27,7 +28,7 @@ const STATUS_MAP: Record<string, [string, string]> = {
  FECHADO: ['paid', 'Venda'],
  PERDIDO: ['cancelled', 'Perdido'],
 };
-const STATUSES = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
+const STATUSES = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'PAROU_RESPONDER', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
 
 const PAGE_SIZE = 100;
 
