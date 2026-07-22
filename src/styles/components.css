@@ -1451,7 +1451,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
+  flex-wrap: wrap; /* tela estreita: o seletor desce em vez de atropelar o nome */
   margin-top: var(--space-2);
+}
+.kanban-card__footer > .u-flex { min-width: 0; }
+.kanban-card__footer .text-xs {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Seletor de status dentro do card (fallback de toque + ação rápida no desktop). */
@@ -1463,6 +1471,9 @@
   background: var(--field-bg);
   color: var(--text-primary);
   cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .kanban-card__value {
