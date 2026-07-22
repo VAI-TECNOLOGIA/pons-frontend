@@ -90,7 +90,7 @@ const GROUPS: NavGroup[] = [
       // Aba "Tráfego Pago" removida do menu a pedido — rota /trafego e a página seguem existindo.
       // { to: '/trafego', label: 'Tráfego Pago', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/inteligencia-leads', label: 'Inteligência de Leads', icon: 'chart', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'DIRETOR_FINANCEIRO'] },
-      { to: '/bm', label: 'Business Managers', icon: 'facebook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GERENTE_EQUIPE', 'CORRETOR'] },
+      { to: '/bm', label: 'Business Managers', icon: 'facebook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GERENTE_EQUIPE'] },
       { to: '/remarketing', label: 'Remarketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/campanhas', label: 'Campanhas', icon: 'chat', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/templates', label: 'Templates WhatsApp', icon: 'whatsapp', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },

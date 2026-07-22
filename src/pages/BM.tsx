@@ -29,6 +29,8 @@ export default function BMPage() {
   const [reconectarBm, setReconectarBm] = useState<any>(null);
   // Wizard "Conectar seus anúncios" (estilo Imobilead): 1 Conta → 2 Página → 3 Online
   const [wizard, setWizard] = useState<null | { etapa: 1 | 2 | 3; pagina?: string }>(null);
+  // Busca no seletor "Vincular a corretor" (por nome, equipe ou telefone)
+  const [buscaCorretor, setBuscaCorretor] = useState('');
   const ehCorretor = Auth.user?.role === 'CORRETOR';
 
   const conectarFacebook = async () => {
@@ -310,10 +312,27 @@ export default function BMPage() {
             {Auth.user?.role !== 'CORRETOR' && (
             <div className="field">
               <label className="field__label">Vincular a corretor</label>
+              <input
+                className="field__input"
+                style={{ marginBottom: 6 }}
+                placeholder="Buscar por nome, equipe ou telefone…"
+                value={buscaCorretor}
+                onChange={(e) => setBuscaCorretor(e.target.value)}
+              />
               <select name="corretorId" className="field__select" defaultValue={editing?.corretor?.id || ''}>
                 <option value="">— Sem vínculo (BM da empresa, vai pra roleta) —</option>
-                {(corretores || []).map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                {(corretores || [])
+                  .filter((c) => {
+                    const q = buscaCorretor.trim().toLowerCase();
+                    if (!q) return true;
+                    const dig = q.replace(/\D/g, '');
+                    return (c.nome || '').toLowerCase().includes(q)
+                      || (c.equipe?.nome || '').toLowerCase().includes(q)
+                      || (dig.length >= 4 && String(c.phone || '').replace(/\D/g, '').includes(dig));
+                  })
+                  .map((c) => <option key={c.id} value={c.id}>{c.nome}{c.equipe?.nome ? ` · ${c.equipe.nome}` : ''}</option>)}
               </select>
+              <div className="field__hint">Digite pra filtrar a lista. Vinculada a um corretor, os leads da BM caem direto na carteira dele.</div>
             </div>
             )}
             <div className="field">
