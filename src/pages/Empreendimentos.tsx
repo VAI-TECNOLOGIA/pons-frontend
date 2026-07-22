@@ -14,7 +14,9 @@ import './empreendimentos.css';
 
 type Construtora = { id: number; nome: string };
 type Foto = { id: number; url: string; ordem: number };
-type Doc = { id: number; nome: string; url: string; tamanho?: number | null };
+type Doc = { id: number; nome: string; url: string; tamanho?: number | null; tipo?: string };
+const ehMaterialAceito = (f: File) =>
+  f.type === 'application/pdf' || f.type.startsWith('video/') || /\.(pdf|mp4|mov|webm|m4v|avi|mkv)$/i.test(f.name);
 type Empreendimento = {
   id: number;
   nome: string;
@@ -871,18 +873,18 @@ function NovoEmpreendimentoModal({
 
         <div>
           <label className="field__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Documentos (PDF)</span>
+            <span>Documentos e vídeos</span>
             <span className="text-xs text-secondary">{pendingDocs.length} selecionado{pendingDocs.length === 1 ? '' : 's'}</span>
           </label>
           <input
             id="emp-novo-doc"
             ref={inputDocRef}
             type="file"
-            accept="application/pdf,.pdf"
+            accept="application/pdf,.pdf,video/*,.mp4,.mov,.webm"
             multiple
             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
             onChange={(e) => {
-              const files = Array.from(e.target.files || []).filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+              const files = Array.from(e.target.files || []).filter(ehMaterialAceito);
               setPendingDocs((cur) => [...cur, ...files]);
               if (inputDocRef.current) inputDocRef.current.value = '';
             }}
@@ -892,13 +894,13 @@ function NovoEmpreendimentoModal({
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              const files = Array.from(e.dataTransfer.files || []).filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+              const files = Array.from(e.dataTransfer.files || []).filter(ehMaterialAceito);
               if (files.length) setPendingDocs((cur) => [...cur, ...files]);
             }}
             className="btn btn--secondary btn--sm"
             style={{ display: 'inline-flex', cursor: 'pointer' }}
           >
-            <Icon name="paperclip" size={14} /> Adicionar PDFs (ou arraste aqui)
+            <Icon name="paperclip" size={14} /> Adicionar PDFs ou vídeos (ou arraste aqui)
           </label>
           {pendingDocs.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
@@ -918,7 +920,7 @@ function NovoEmpreendimentoModal({
               ))}
             </div>
           )}
-          <div className="field__hint">Materiais do empreendimento (tabelas, book, memorial…) — os corretores poderão ver e baixar.</div>
+          <div className="field__hint">Materiais do empreendimento (tabelas, book, memorial, vídeo de apresentação…) — os corretores poderão ver e baixar.</div>
         </div>
       </form>
     </Modal>
@@ -1116,9 +1118,9 @@ function DocumentosEmpreendimento({
 
   const enviar = async (files: FileList | File[]) => {
     const todos = Array.from(files);
-    const list = todos.filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
-    if (!list.length) { toast.error('Envie arquivos PDF.'); return; }
-    if (list.length !== todos.length) toast.info('Arquivos que não são PDF foram ignorados.');
+    const list = todos.filter(ehMaterialAceito);
+    if (!list.length) { toast.error('Envie arquivos PDF ou vídeo.'); return; }
+    if (list.length !== todos.length) toast.info('Arquivos que não são PDF/vídeo foram ignorados.');
     setBusy(true);
     try {
       const r = await Api.empreendimentoDocUpload(empId, list);
@@ -1167,7 +1169,7 @@ function DocumentosEmpreendimento({
             ref={inputRef}
             id={`emp-docs-file-${empId}`}
             type="file"
-            accept="application/pdf,.pdf"
+            accept="application/pdf,.pdf,video/*,.mp4,.mov,.webm"
             multiple
             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
             onChange={(e) => {
@@ -1199,7 +1201,7 @@ function DocumentosEmpreendimento({
             }}
           >
             <Icon name="paperclip" size={18} />
-            <span><b>Arraste os PDFs aqui</b> ou clique pra selecionar (até 25 MB cada)</span>
+            <span><b>Arraste PDFs ou vídeos aqui</b> ou clique pra selecionar (até 150 MB cada)</span>
           </label>
         </>
       )}
@@ -1214,8 +1216,8 @@ function DocumentosEmpreendimento({
               key={d.id}
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: '1px solid var(--border-light)', borderRadius: 10, background: 'var(--bg-card)' }}
             >
-              <span style={{ display: 'grid', placeItems: 'center', width: 34, height: 34, borderRadius: 8, background: 'rgba(220,38,38,0.1)', color: '#DC2626', flexShrink: 0 }}>
-                <Icon name="doc" size={16} />
+              <span style={{ display: 'grid', placeItems: 'center', width: 34, height: 34, borderRadius: 8, background: d.tipo === 'VIDEO' ? 'rgba(14,124,155,0.12)' : 'rgba(220,38,38,0.1)', color: d.tipo === 'VIDEO' ? '#0E7C9B' : '#DC2626', flexShrink: 0 }}>
+                <Icon name={d.tipo === 'VIDEO' ? 'play' : 'doc'} size={16} />
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome}</div>
@@ -1272,7 +1274,7 @@ function DocsEmpreendimentoModal({
       open
       onClose={onClose}
       title={`Documentos · ${empreendimento.nome}`}
-      subtitle="PDFs do empreendimento — visualize e baixe."
+      subtitle="PDFs e vídeos do empreendimento — visualize e baixe."
       size="md"
       footer={<button className="btn btn--primary" onClick={onClose}>Fechar</button>}
     >
