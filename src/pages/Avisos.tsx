@@ -9,7 +9,9 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Auth } from '../lib/auth';
 
-const PODE_PUBLICAR = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO']);
+const PODE_PUBLICAR = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE']);
+// Gestor publica SÓ pras equipes dele (o backend restringe); admin publica geral
+const AVISO_GERAL = new Set(['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO']);
 
 import './avisos.css';
 
@@ -26,6 +28,7 @@ export default function Avisos() {
   const toast = useToast();
   const confirm = useConfirm();
   const podePublicar = PODE_PUBLICAR.has(Auth.user?.role || '');
+  const publicaGeral = AVISO_GERAL.has(Auth.user?.role || '');
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,8 +112,13 @@ export default function Avisos() {
                   <div className="flex-between" style={{ alignItems: 'center' }}>
                     <div className="text-xs text-secondary">
                       {a.autorNome || 'Grupo Pons'} · {timeAgo(a.createdAt)}
+                      {a.equipes?.length > 0 && (
+                        <span className="badge badge--analysis" style={{ fontSize: 9, marginLeft: 8 }}>
+                          Equipe: {a.equipes.join(', ')}
+                        </span>
+                      )}
                     </div>
-                    {podePublicar && (
+                    {(publicaGeral || a.minha) && (
                       <button
                         className="btn btn--ghost btn--sm"
                         onClick={() => excluir(a.id)}
@@ -132,7 +140,7 @@ export default function Avisos() {
         open={open}
         onClose={() => setOpen(false)}
         title="Novo aviso"
-        subtitle="Será publicado no mural visível pra toda a equipe"
+        subtitle={publicaGeral ? 'Será publicado no mural geral, visível pra todo o sistema' : 'Vai aparecer SÓ pras equipes que você gerencia (e com push pros membros)'}
         footer={
           <>
             <button type="button" className="btn btn--secondary" onClick={() => setOpen(false)}>
