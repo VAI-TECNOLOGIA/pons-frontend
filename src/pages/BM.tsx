@@ -4,6 +4,7 @@ import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { Auth } from '../lib/auth';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 
@@ -285,6 +286,12 @@ export default function BMPage() {
                 Ao salvar com <strong>Página + Token</strong>, o sistema <strong>assina a página no Facebook automaticamente</strong> e os leads passam a entrar sozinhos.
               </div>
             </div>
+            {Auth.user?.role === 'CORRETOR' ? (
+              <div className="field">
+                <label className="field__label">Vínculo</label>
+                <div className="field__hint">Esta BM fica vinculada a você — os leads dela caem direto na sua carteira, sem passar pela roleta.</div>
+              </div>
+            ) : (
             <div className="field">
               <label className="field__label">Vincular a corretor</label>
               <select name="corretorId" className="field__select" defaultValue={editing?.corretor?.id || ''}>
@@ -292,6 +299,7 @@ export default function BMPage() {
                 {(corretores || []).map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
+            )}
             <div className="field">
               <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="checkbox" name="iaHabilitadaPadrao" defaultChecked={editing?.iaHabilitadaPadrao} />
