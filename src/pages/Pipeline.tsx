@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Link } from 'react-router-dom';
+import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
@@ -124,6 +125,16 @@ export default function Pipeline() {
                             ))}
                           </select>
                         </div>
+                        <Link
+                          to={`/chat?lead=${l.id}`}
+                          className="btn btn--secondary btn--sm"
+                          style={{ width: '100%', marginTop: 8, justifyContent: 'center', display: 'inline-flex' }}
+                          draggable={false}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <Icon name="chat" size={12} /> Abrir conversa
+                        </Link>
                       </div>
                     ))
                   )}
@@ -161,6 +172,13 @@ export default function Pipeline() {
                       )}
                       <button className="btn btn--ghost btn--sm" onClick={() => reabrir(l.id)}>Reabrir</button>
                     </div>
+                    <Link
+                      to={`/chat?lead=${l.id}`}
+                      className="btn btn--secondary btn--sm"
+                      style={{ width: '100%', marginTop: 8, justifyContent: 'center', display: 'inline-flex' }}
+                    >
+                      <Icon name="chat" size={12} /> Abrir conversa
+                    </Link>
                   </div>
                 ))}
               </div>

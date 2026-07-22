@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
@@ -87,6 +88,14 @@ type ConversationDetail = {
 export default function Chat() {
   const [tab, setTab] = useState<Tab>('atendendo');
   const [activeId, setActiveId] = useState<number | null>(null);
+  // Deep-link: /chat?lead=123 abre direto a conversa daquele lead (botão
+  // "Abrir conversa" no funil e afins).
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const leadParam = Number(searchParams.get('lead'));
+    if (leadParam) setActiveId(leadParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [draft, setDraft] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
