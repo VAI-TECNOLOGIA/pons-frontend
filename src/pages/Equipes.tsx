@@ -30,6 +30,10 @@ export default function Equipes() {
  // só pode transferir corretor DESSAS equipes — a lista já nem mostra os demais.
  const { data: minhas } = useApi<{ admin: boolean; equipeIds: number[] }>(() => Api.equipesMinhas());
  const comando = (equipeId?: number) => !!minhas && (minhas.admin || (!!equipeId && minhas.equipeIds.includes(equipeId)));
+ // Não-admin com equipes atribuídas: os cards/resultados mostram SÓ as equipes
+ // que ele comanda (a lista completa segue disponível como destino de transferência).
+ const cardVisivel = (equipeId?: number) => !minhas || minhas.admin || !minhas.equipeIds.length || comando(equipeId);
+ const equipesVisiveis = (equipes || []).filter((eq: any) => cardVisivel(eq.id));
 
  // Busca por nome/telefone + filtro por equipe atual no seletor de corretor
  const normaliza = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -128,7 +132,7 @@ export default function Equipes() {
  if (error) return <Shell onNew={() => setOpen(true)}><ErrorBlock error={error} /></Shell>;
  if (!equipes) return null;
 
- const totais = equipes.reduce(
+ const totais = equipesVisiveis.reduce(
  (acc: any, e: any) => ({
  vendas: acc.vendas + (e.vendasMes ?? 0),
  receita: acc.receita + (e.volumeMes ?? 0),
@@ -301,7 +305,7 @@ export default function Equipes() {
 
  {view === 'escuderias' && (
  <div className="grid-3">
- {equipes.map((eq: any, idx: number) => {
+ {equipesVisiveis.map((eq: any, idx: number) => {
  const lider = typeof eq.lider === 'string' ? eq.lider : eq.lider?.nome || '';
  const liderInit = typeof eq.lider === 'string' || !eq.lider?.initials
  ? lider.split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase()
@@ -384,7 +388,7 @@ export default function Equipes() {
  </tr>
  </thead>
  <tbody>
- {equipes.map((e: any) => {
+ {equipesVisiveis.map((e: any) => {
  const totalCorr = e.totalCorretores ?? e.corretores ?? (e.membros?.length || 0);
  const volume = e.volumeMes ?? 0;
  const vendas = e.vendasMes ?? 0;

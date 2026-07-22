@@ -146,6 +146,9 @@ const GESTOR_BLOQUEADO = new Set([
 const ROLE_EXPANSAO: Partial<Record<Role, Role[]>> = {
   ASSESSORA_MARKETING: ['ASSESSORA_MARKETING', 'ASSESSORA', 'MARKETING'],
   GESTOR_TRAFEGO: ['GESTOR_TRAFEGO', 'MARKETING'],
+  // Gestor de Marketing (Vine): módulos de marketing completos; nas telas de
+  // Equipes/Corretores o backend restringe às equipes que ele comanda.
+  GESTOR_MARKETING: ['GESTOR_MARKETING', 'MARKETING'],
 };
 function papeisEfetivos(role: Role): Role[] {
   return ROLE_EXPANSAO[role] || [role];
