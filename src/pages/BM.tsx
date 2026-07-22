@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { Auth } from '../lib/auth';
+import './bm-wizard.css';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 
@@ -24,6 +25,11 @@ export default function BMPage() {
   // manual.
   const [fbPages, setFbPages] = useState<any[] | null>(null);
   const [fbBusy, setFbBusy] = useState(false);
+  // BM alvo de RECONEXÃO: a página escolhida atualiza esta BM em vez de criar outra
+  const [reconectarBm, setReconectarBm] = useState<any>(null);
+  // Wizard "Conectar seus anúncios" (estilo Imobilead): 1 Conta → 2 Página → 3 Online
+  const [wizard, setWizard] = useState<null | { etapa: 1 | 2 | 3; pagina?: string }>(null);
+  const ehCorretor = Auth.user?.role === 'CORRETOR';
 
   const conectarFacebook = async () => {
     let url = '';
@@ -32,7 +38,7 @@ export default function BMPage() {
       url = r?.url || '';
     } catch (err: any) {
       const m = String(err?.message || '');
-      if (/configurad|503/.test(m)) toast.error('O app Meta não está configurado no servidor (falta META_APP_ID/SECRET). Por enquanto use o Token em "Nova BM".');
+      if (/configurad|503/.test(m)) toast.error('O login do Facebook está indisponível no momento — avisa o suporte da Pons.');
       else toast.error('Erro ao iniciar o login do Facebook: ' + (m || 'falha'));
       return;
     }
@@ -57,6 +63,7 @@ export default function BMPage() {
           const pages = r?.pages || [];
           if (!pages.length) { toast.error('Esse login não administra nenhuma Página do Facebook.'); return; }
           setFbPages(pages);
+          setWizard((w) => ({ ...(w || {}), etapa: 2 }));
         } catch (err: any) {
           toast.error('Erro ao concluir o login: ' + (err?.message || 'falha'));
         }
@@ -67,7 +74,12 @@ export default function BMPage() {
 
   const conectarPagina = async (page: any) => {
     try {
-      const res: any = await Api.bmCreate({
+      const res: any = reconectarBm
+        ? await Api.bmUpdate(reconectarBm.id, {
+            paginaFbId: String(page.id),
+            accessToken: page.access_token,
+          })
+        : await Api.bmCreate({
         nome: page.name || ('Página ' + page.id),
         bmId: String(page.id),
         paginaFbId: String(page.id),
@@ -78,7 +90,8 @@ export default function BMPage() {
       if (cx?.ok) toast.success(`"${page.name}" conectada — os leads vão entrar automaticamente.`);
       else if (cx && !cx.ok) toast.error(`"${page.name}" salva, mas não conectou: ${cx.motivo}`);
       else toast.success(`"${page.name}" cadastrada.`);
-      setFbPages(null); reload();
+      setFbPages(null); setReconectarBm(null); reload();
+      setWizard({ etapa: 3, pagina: page.name || 'Página' });
     } catch (err: any) {
       toast.error('Erro: ' + (err?.message || 'falha'));
     }
@@ -147,10 +160,12 @@ export default function BMPage() {
         title="Business Managers"
         right={
           <div className="flex" style={{ gap: 8 }}>
-            <button className="btn btn--secondary btn--sm" onClick={conectarFacebook} disabled={fbBusy}>
-              {fbBusy ? 'Aguardando Facebook…' : 'Conectar com Facebook'}
+            <button className={'btn btn--sm ' + (ehCorretor ? 'btn--primary' : 'btn--secondary')} onClick={() => { setReconectarBm(null); setFbPages(null); setWizard({ etapa: 1 }); }}>
+              Conectar com Facebook
             </button>
-            <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova BM</button>
+            {!ehCorretor && (
+              <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova BM</button>
+            )}
           </div>
         }
       />
@@ -236,8 +251,13 @@ export default function BMPage() {
                 {bm.ativa ? (
                   <>
                     <button className="btn btn--ghost btn--sm" onClick={() => verDashboard(bm)}>Dashboard</button>
-                    <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(bm); setOpen(true); }}>Editar</button>
-                    <button className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto', color: 'var(--color-danger-fg)' }} onClick={() => excluir(bm)}>Desativar</button>
+                    {(ehCorretor && !(bm.paginaFbId && bm.temToken)) && (
+                      <button className="btn btn--secondary btn--sm" onClick={() => { setReconectarBm(bm); setFbPages(null); setWizard({ etapa: 1 }); }}>
+                        Conectar com Facebook
+                      </button>
+                    )}
+                    {!ehCorretor && <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(bm); setOpen(true); }}>Editar</button>}
+                    {!ehCorretor && <button className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto', color: 'var(--color-danger-fg)' }} onClick={() => excluir(bm)}>Desativar</button>}
                   </>
                 ) : (
                   <>
@@ -308,34 +328,73 @@ export default function BMPage() {
 
       {/* Seletor de Página do OAuth Facebook — aparece depois que o cliente autoriza */}
       <Modal
-        open={!!fbPages}
-        onClose={() => setFbPages(null)}
-        title="Escolha a Página pra conectar"
-        subtitle="Estas são as Páginas que esse login administra no Facebook. Conectar = os leads dessa Página entram sozinhos."
+        open={!!wizard}
+        onClose={() => { setWizard(null); setFbPages(null); setReconectarBm(null); }}
+        title={reconectarBm ? `Conectar ${reconectarBm.nome}` : 'Conectar seus anúncios do Facebook'}
+        subtitle="Em 3 passos os leads dos seus anúncios entram sozinhos no sistema"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {(fbPages || []).map((p: any) => (
-            <button
-              key={p.id}
-              type="button"
-              className="card"
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, textAlign: 'left', cursor: 'pointer', width: '100%' }}
-              onClick={() => conectarPagina(p)}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: 'var(--color-info-bg)', color: 'var(--pons-blue)', display: 'grid', placeItems: 'center', fontWeight: 700 }}>
-                {(p.name || '?').charAt(0).toUpperCase()}
+        {wizard && (
+          <div className="fbwiz">
+            {/* Passo 1 — Conta do Facebook */}
+            <div className={'fbwiz__passo' + (wizard.etapa === 1 ? ' fbwiz__passo--ativo' : ' fbwiz__passo--feito')}>
+              <span className="fbwiz__num">{wizard.etapa > 1 ? <Icon name="check" size={13} /> : '1'}</span>
+              <div className="fbwiz__conteudo">
+                <div className="fbwiz__titulo">Conta do Facebook</div>
+                <div className="fbwiz__desc">Entre com a conta que administra os seus anúncios</div>
+                {wizard.etapa === 1 && (
+                  <button className="fbwiz__botao-fb" onClick={conectarFacebook} disabled={fbBusy}>
+                    <Icon name="facebook" size={16} /> {fbBusy ? 'Aguardando o Facebook…' : 'Entrar com Facebook'}
+                  </button>
+                )}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name || 'Página'}</div>
-                <div className="text-xs text-secondary" style={{ fontFamily: 'monospace' }}>{p.id}{p.category ? ' · ' + p.category : ''}</div>
+            </div>
+
+            {/* Passo 2 — Página */}
+            <div className={'fbwiz__passo' + (wizard.etapa === 2 ? ' fbwiz__passo--ativo' : wizard.etapa > 2 ? ' fbwiz__passo--feito' : '')}>
+              <span className="fbwiz__num">{wizard.etapa > 2 ? <Icon name="check" size={13} /> : '2'}</span>
+              <div className="fbwiz__conteudo">
+                <div className="fbwiz__titulo">Escolha a Página</div>
+                <div className="fbwiz__desc">De qual página você quer receber os cadastros</div>
+                {wizard.etapa === 2 && (
+                  <div className="fbwiz__paginas">
+                    {(fbPages || []).map((p: any) => (
+                      <button key={p.id} type="button" className="fbwiz__pagina" onClick={() => conectarPagina(p)}>
+                        <span className="fbwiz__pagina-avatar">{(p.name || '?').charAt(0).toUpperCase()}</span>
+                        <span className="fbwiz__pagina-info">
+                          <span className="fbwiz__pagina-nome">{p.name || 'Página'}</span>
+                          <span className="fbwiz__pagina-id">{p.id}{p.category ? ' · ' + p.category : ''}</span>
+                        </span>
+                        <span className="btn btn--primary btn--sm" style={{ pointerEvents: 'none' }}>Conectar</span>
+                      </button>
+                    ))}
+                    {fbPages && fbPages.length === 0 && (
+                      <div className="fbwiz__desc">Nenhuma Página encontrada nesse login — confira se a conta administra a página dos anúncios.</div>
+                    )}
+                  </div>
+                )}
               </div>
-              <span className="btn btn--primary btn--sm" style={{ pointerEvents: 'none' }}>Conectar</span>
-            </button>
-          ))}
-          {fbPages && fbPages.length === 0 && (
-            <div className="text-secondary" style={{ padding: 12 }}>Nenhuma Página encontrada nesse login.</div>
-          )}
-        </div>
+            </div>
+
+            {/* Passo 3 — Online */}
+            <div className={'fbwiz__passo fbwiz__passo--ultimo' + (wizard.etapa === 3 ? ' fbwiz__passo--ativo' : '')}>
+              <span className="fbwiz__num">{wizard.etapa === 3 ? <Icon name="check" size={13} /> : '3'}</span>
+              <div className="fbwiz__conteudo">
+                <div className="fbwiz__titulo">{wizard.etapa === 3 ? 'Integração online!' : 'Integração online'}</div>
+                {wizard.etapa === 3 ? (
+                  <>
+                    <div className="fbwiz__sucesso">
+                      <strong>{wizard.pagina}</strong> conectada — os leads dos seus anúncios já entram sozinhos{ehCorretor ? ' na sua carteira, com aviso no celular' : ' no sistema'}.
+                    </div>
+                    <div className="fbwiz__desc">Dica: use a ferramenta de teste de anúncios do Facebook pra enviar um cadastro fictício e ver o lead aparecer em segundos.</div>
+                    <button className="btn btn--primary" style={{ marginTop: 12 }} onClick={() => { setWizard(null); setFbPages(null); setReconectarBm(null); }}>Concluir</button>
+                  </>
+                ) : (
+                  <div className="fbwiz__desc">Você já vai poder enviar um cadastro de teste do seu formulário</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <Modal
