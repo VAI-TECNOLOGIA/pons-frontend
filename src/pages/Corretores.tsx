@@ -106,7 +106,17 @@ export default function Corretores() {
  const filtered = corretores
  .filter((c: any) => !filtroEquipe || (c.equipe?.nome || c.equipe) === filtroEquipe)
  .filter((c: any) => !filtroStatus || (filtroStatus === 'ATIVO' ? (c.status === 'ATIVO' || c.ativo) : !(c.status === 'ATIVO' || c.ativo)))
- .filter((c: any) => !search || (c.nome || '').toLowerCase().includes(search.toLowerCase()) || (c.email || c.user?.email || '').toLowerCase().includes(search.toLowerCase()))
+ .filter((c: any) => {
+ if (!search.trim()) return true;
+ // Busca ampla: nome, CRECI, e-mail, telefone (só dígitos) e equipe
+ const q = search.trim().toLowerCase();
+ const dig = q.replace(/\D/g, '');
+ return (c.nome || '').toLowerCase().includes(q)
+ || (c.creci || '').toLowerCase().includes(q)
+ || (c.email || c.user?.email || '').toLowerCase().includes(q)
+ || (c.equipe?.nome || '').toLowerCase().includes(q)
+ || (dig.length >= 4 && String(c.phone || '').replace(/\D/g, '').includes(dig));
+ })
  .sort(sortFns[ordenar] || sortFns.leads_desc);
 
  return (
@@ -119,7 +129,7 @@ export default function Corretores() {
  <Icon name="target" className="topbar__search-icon icon" />
  <input
  type="text"
- placeholder="Buscar corretor…"
+ placeholder="Nome, CRECI, telefone, e-mail ou equipe…"
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  />
