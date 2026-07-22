@@ -417,7 +417,23 @@
     box-shadow: var(--shadow-xl);
   }
   .app-shell--menu-open .sidebar { transform: translateX(0); }
-  .app-shell--menu-open .sidebar__close { display: flex; align-items: center; justify-content: center; }
+  /* X do drawer: FIXO na viewport (não rola com o menu nem some em tela baixa),
+     colado na borda direita do drawer, acima do notch e com contraste próprio. */
+  .app-shell--menu-open .sidebar__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    left: calc(min(280px, 86vw) - 48px);
+    right: auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    z-index: calc(var(--z-modal) + 1);
+  }
   .app-shell--menu-open ~ .sidebar-backdrop,
   .app-shell--menu-open + .sidebar-backdrop { display: block; }
   /* fallback: o backdrop sempre que classe estiver presente */
