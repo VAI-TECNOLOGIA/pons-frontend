@@ -286,12 +286,7 @@ export default function BMPage() {
                 Ao salvar com <strong>Página + Token</strong>, o sistema <strong>assina a página no Facebook automaticamente</strong> e os leads passam a entrar sozinhos.
               </div>
             </div>
-            {Auth.user?.role === 'CORRETOR' ? (
-              <div className="field">
-                <label className="field__label">Vínculo</label>
-                <div className="field__hint">Esta BM fica vinculada a você — os leads dela caem direto na sua carteira, sem passar pela roleta.</div>
-              </div>
-            ) : (
+            {Auth.user?.role !== 'CORRETOR' && (
             <div className="field">
               <label className="field__label">Vincular a corretor</label>
               <select name="corretorId" className="field__select" defaultValue={editing?.corretor?.id || ''}>
