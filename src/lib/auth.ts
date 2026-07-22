@@ -110,7 +110,7 @@ export function formatRole(role: Role | string): string {
     ASSESSORA: 'Assessora',
     ASSESSORA_MARKETING: 'Assessoria & Marketing',
     GESTOR_TRAFEGO: 'Gestor de Tráfego',
-    GESTOR_MARKETING: 'Gestor de Marketing',
+    GESTOR_MARKETING: 'Diretor de Marketing e Gestor Comercial da 2ª Avenida',
     CORRETOR: 'Corretor',
     GERENTE_EQUIPE: 'Gerente de Equipe',
     SOCIO_UNIDADE: 'Sócio de Filial',
