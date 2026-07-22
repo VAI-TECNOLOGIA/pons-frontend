@@ -3,6 +3,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
@@ -15,6 +16,9 @@ const COLS: Record<string, { titulo: string; klass: string }> = {
 };
 
 export default function Tarefas() {
+  // Corretor não atribui tarefa a ninguém — o campo Responsável some pra ele
+  // (e o backend força a tarefa pro próprio corretor de qualquer forma).
+  const ehCorretor = Auth.user?.role === 'CORRETOR';
   const [open, setOpen] = useState(false);
   const [waOn, setWaOn] = useState(false); // "Enviar pelo WhatsApp" no criar tarefa
   const { data, loading, error, reload } = useApi<any[]>(() => Api.tarefas());
@@ -280,6 +284,7 @@ export default function Tarefas() {
                 <option value="URGENTE">Urgente</option>
               </select>
             </div>
+            {!ehCorretor && (
             <div className="field">
               <label className="field__label">Responsável</label>
               <select name="responsavelId" className="field__select" defaultValue="">
@@ -290,6 +295,7 @@ export default function Tarefas() {
                 ))}
               </select>
             </div>
+            )}
             <div className="field">
               <label className="field__label">Data da Solicitação</label>
               <input name="solicitadoEm" type="date" className="field__input" defaultValue={new Date().toISOString().slice(0, 10)} />
@@ -366,6 +372,7 @@ export default function Tarefas() {
                   <option value="URGENTE">Urgente</option>
                 </select>
               </div>
+              {!ehCorretor && (
               <div className="field">
                 <label className="field__label">Responsável</label>
                 <select name="responsavelId" className="field__select" defaultValue={editTarefa.responsavelId ?? ''}>
@@ -376,6 +383,7 @@ export default function Tarefas() {
                   ))}
                 </select>
               </div>
+              )}
               <div className="field">
                 <label className="field__label">Data da Solicitação</label>
                 <input name="solicitadoEm" type="date" className="field__input" defaultValue={editTarefa.solicitadoEm ? new Date(editTarefa.solicitadoEm).toISOString().slice(0, 10) : ''} />
