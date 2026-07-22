@@ -1090,7 +1090,7 @@ function MessageBubble({ m }: { m: Mensagem }) {
   if (m.autor === 'NOTA') {
     return (
       <div className="bubble bubble--NOTA">
-        <div className="bubble__nota-tag"><Icon name="pencil" size={10} /> Nota interna — o lead não recebe</div>
+        <div className="bubble__nota-tag"><Icon name="pencil" size={10} /></div>
         {m.texto}
         <div className="bubble__meta">{timeAgo(m.createdAt)}</div>
       </div>
