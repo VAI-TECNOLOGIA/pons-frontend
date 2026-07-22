@@ -377,7 +377,8 @@
 .sidebar__close {
   display: none;
   position: absolute;
-  top: 14px;
+  /* safe-area: em aparelho com notch/recorte o X não pode ficar sob a barra de status */
+  top: calc(14px + env(safe-area-inset-top, 0px));
   right: 14px;
   background: transparent;
   color: rgba(255, 255, 255, 0.7);
@@ -464,7 +465,9 @@
    deixa de mostrar a UI de celular esticada. Bloco aditivo colocado
    por último (cascade) — telefones (≤767) e desktop (≥1024) intactos.
    ============================================================ */
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1023px) and (min-height: 600px) {
+  /* min-height 600 = só tablet DE VERDADE; celular deitado (altura ~400) tem
+     largura de tablet mas precisa continuar no drawer com hambúrguer + X */
   .app-shell { grid-template-columns: var(--sidebar-width, 220px) 1fr; }
 
   /* Devolve a sidebar ao estado fixo do desktop (desfaz o drawer) */
