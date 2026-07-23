@@ -136,6 +136,7 @@ export default function Chat() {
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recStreamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tapRef = useRef<{ x: number; y: number; id: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -682,6 +683,24 @@ export default function Chat() {
                 className={'conv ' + (c.id === activeId ? 'conv--active' : '')}
                 key={c.id}
                 onClick={() => setActiveId(c.id)}
+                // iOS: o click sintético pós-toque às vezes se perde (hover
+                // emulado / re-render entre touchend e click) e exigia DOIS
+                // toques. Abre direto no touchend quando foi um tap de fato
+                // (sem arrasto) e suprime o click fantasma via preventDefault.
+                onTouchStart={(e) => {
+                  tapRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, id: c.id };
+                }}
+                onTouchEnd={(e) => {
+                  const t = tapRef.current;
+                  tapRef.current = null;
+                  if (!t || t.id !== c.id) return;
+                  const dx = Math.abs(e.changedTouches[0].clientX - t.x);
+                  const dy = Math.abs(e.changedTouches[0].clientY - t.y);
+                  if (dx < 12 && dy < 12) {
+                    e.preventDefault();
+                    setActiveId(c.id);
+                  }
+                }}
               >
                 <div className="avatar avatar--sm">{initials(c.nome)}</div>
                 <div className="conv__main">
@@ -835,7 +854,15 @@ export default function Chat() {
                   <button
                     className="imovel-chip"
                     key={e.id}
-                    onClick={() => ((e.fotos || []).length ? abrirImovel(e) : enviarImovel(e))}
+                    style={!janelaAberta || !conv?.reservado ? { opacity: 0.45 } : undefined}
+                    onClick={() => {
+                      // Mesma regra do composer: fora da janela de 24h (ou lead não
+                      // aceito) o Meta rejeita mídia/texto — bloqueia na origem em
+                      // vez de deixar o envio falhar depois.
+                      if (!conv?.reservado) { toast.error('Aceite o lead antes de enviar imóveis.'); return; }
+                      if (!janelaAberta) { toast.error('Janela de 24h fechada — envie um template pra reabrir antes de mandar fotos.'); return; }
+                      (e.fotos || []).length ? abrirImovel(e) : enviarImovel(e);
+                    }}
                     title={(e.fotos || []).length ? `Fotos e descrição de ${e.nome}` : `Inserir descrição de ${e.nome}`}
                   >
                     {e.nome}{(e.fotos || []).length ? ` (${e.fotos.length})` : ''}
