@@ -119,11 +119,7 @@ export default function Configuracoes() {
  {tab === 'equipes' && <PanelEquipes />}
  {tab === 'gestores' && <GestoresEquipes />}
  {tab === 'filiais' && <PanelFiliais />}
- {tab === 'corretores' && (
- <div className="card">
- <p className="text-secondary">Use a página principal <strong>/corretores</strong> para gerenciar (criar, editar, desativar).</p>
- </div>
- )}
+ {tab === 'corretores' && <PanelCorretoresConfig />}
  {tab === 'construtoras' && <PanelConstrutoras />}
  {tab === 'empreendimentos' && <PanelEmpreendimentos />}
  {tab === 'politicas' && <PanelPoliticas />}
@@ -1621,4 +1617,56 @@ function PanelScore() {
       </div>
     </div>
   );
+}
+
+// ── Configurações → Corretores: atalho + zona de risco (excluir inativos) ────
+function PanelCorretoresConfig() {
+ const toast = useToast();
+ const confirm = useConfirm();
+ const [busy, setBusy] = useState(false);
+ const [resultado, setResultado] = useState<any>(null);
+
+ const excluir = async () => {
+ const ok = await confirm({
+ title: 'Excluir corretores inativos?',
+ message: 'Apaga DO BANCO todos os corretores inativos. Os leads deles voltam pro bolsão. Corretor com venda registrada é preservado (histórico financeiro). Não tem volta.',
+ confirmText: 'Excluir inativos',
+ tone: 'danger',
+ });
+ if (!ok) return;
+ setBusy(true);
+ try {
+ const r = await Api.corretoresExcluirInativos();
+ setResultado(r);
+ toast.success(`${r.excluidos.length} excluído(s) · ${r.leadsDevolvidos} lead(s) devolvidos ao bolsão`);
+ } catch (e: any) {
+ toast.error('Erro: ' + (e?.message || 'falha'));
+ } finally {
+ setBusy(false);
+ }
+ };
+
+ return (
+ <div className="card">
+ <p className="text-secondary" style={{ marginBottom: 14 }}>
+ Use a página principal <strong>/corretores</strong> para criar, editar e desativar. A lista mostra só os <strong>ativos</strong> por padrão.
+ </p>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Zona de risco</div>
+ <p className="text-secondary text-sm" style={{ marginBottom: 10 }}>
+ Excluir do banco todos os corretores <strong>inativos</strong>. Os leads deles voltam pro bolsão e o acesso some de vez. Quem tem venda registrada é mantido pra não quebrar o financeiro.
+ </p>
+ <button className="btn btn--danger" onClick={excluir} disabled={busy}>
+ <Icon name="trash" size={14} /> {busy ? 'Excluindo…' : 'Excluir inativos'}
+ </button>
+ {resultado && (
+ <div className="text-sm" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+ <div><strong>{resultado.excluidos.length}</strong> excluído(s): {resultado.excluidos.map((e: any) => e.nome).join(', ') || '—'}</div>
+ {resultado.mantidos.length > 0 && (
+ <div className="text-secondary">Mantidos: {resultado.mantidos.map((m: any) => `${m.nome} (${m.motivo})`).join(', ')}</div>
+ )}
+ <div className="text-secondary">{resultado.leadsDevolvidos} lead(s) devolvidos ao bolsão.</div>
+ </div>
+ )}
+ </div>
+ );
 }

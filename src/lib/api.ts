@@ -255,6 +255,9 @@ export const Api = {
   corretorCreate: (data: any) => request<any>('/corretores', { method: 'POST', body: data }),
   corretorUpdate: (id: number, data: any) => request<any>(`/corretores/${id}`, { method: 'PATCH', body: data }),
   corretorDesativar: (id: number) => request<any>(`/corretores/${id}/desativar`, { method: 'POST' }),
+  // Exclui DO BANCO todos os corretores inativos (CEO). Quem tem venda fica.
+  corretoresExcluirInativos: () =>
+    request<{ excluidos: any[]; mantidos: any[]; leadsDevolvidos: number }>('/corretores/inativos', { method: 'DELETE' }),
   corretorReativar: (id: number) => request<any>(`/corretores/${id}/reativar`, { method: 'POST' }),
   corretorJornada: (id: number) => request<any>(`/corretores/${id}/jornada`),
   corretorScoreEventos: (id: number) => request<{ eventos: any[]; porTipo: Record<string, number> }>(`/corretores/${id}/score-eventos`),

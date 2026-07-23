@@ -11,7 +11,7 @@ import { useConfirm } from '../lib/confirm';
 export default function Corretores() {
  const [search, setSearch] = useState('');
  const [filtroEquipe, setFiltroEquipe] = useState<string | null>(null);
- const [filtroStatus, setFiltroStatus] = useState<string | null>(null);
+ const [filtroStatus, setFiltroStatus] = useState<string | null>('ATIVO'); // padrão: só ativos na lista
  const [open, setOpen] = useState(false);
  const [painelId, setPainelId] = useState<number | null>(null);
  const [leadsDe, setLeadsDe] = useState<any | null>(null);
@@ -144,15 +144,15 @@ export default function Corretores() {
  breadcrumb="Gestão · Corretores"
  title={
  filtroEquipe
- ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} ${filtroEquipe}`
- : (filtroStatus || search.trim())
+ ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} · ${filtroEquipe}`
+ : (search.trim() || (filtroStatus && filtroStatus !== 'ATIVO') || !filtroStatus)
  ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} no filtro`
- : `${corretores.length} corretores · ${eqs.length} equipes`
+ : `${ativos} corretores · ${eqs.length} equipes`
  }
  subtitle={
- (filtroEquipe || filtroStatus || search.trim())
+ (filtroEquipe || search.trim() || filtroStatus !== 'ATIVO')
  ? `${filtered.filter((c: any) => c.status === 'ATIVO' || c.ativo).length} ativos no recorte`
- : `${ativos} ativos · ${corretores.length - ativos} em probatório`
+ : `${corretores.length - ativos} inativo(s) fora da lista — use o filtro de status pra vê-los`
  }
  />
 
@@ -184,7 +184,7 @@ export default function Corretores() {
  onChange={(e) => setFiltroStatus(e.target.value || null)}
  title="Filtrar por status"
  >
- <option value="">Status: todos</option>
+ <option value="">Status: todos (inclui inativos)</option>
  <option value="ATIVO">Status: ativos</option>
  <option value="INATIVO">Status: inativos</option>
  </select>
