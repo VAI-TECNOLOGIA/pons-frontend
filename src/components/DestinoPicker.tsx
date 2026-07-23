@@ -152,7 +152,14 @@ export function DestinoPicker({
                 : listaCorretores.map((c: any) => linha(`c${c.id}`, c.nome || c.user?.name, `${c.equipe?.nome || 'Sem equipe'}${c.phone ? ` · ${c.phone}` : ''}`, () => { onChange({ tipo: 'CORRETOR', id: c.id, nome: c.nome || c.user?.name }); setOpen(false); })))}
               {aba === 'EQUIPE' && (listaEquipes.length === 0
                 ? <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhuma equipe encontrada.</div>
-                : listaEquipes.map((e: any) => linha(`e${e.id}`, e.nome, `${e.totalCorretores ?? e.membros?.length ?? 0} corretor(es) — divide igualmente entre os ativos`, () => { onChange({ tipo: 'EQUIPE', id: e.id, nome: e.nome }); setOpen(false); })))}
+                : listaEquipes.map((e: any) => {
+                    const total = e.totalCorretores ?? e.membros?.length ?? 0;
+                    const ativos = Array.isArray(e.membros) ? e.membros.filter((m: any) => m.status === 'ATIVO').length : null;
+                    const desc = ativos != null && ativos !== total
+                      ? `${ativos} ativo(s) de ${total} — só os ativos recebem (${total - ativos} inativo(s) ficam de fora)`
+                      : `${total} corretor(es) — divide igualmente entre os ativos`;
+                    return linha(`e${e.id}`, e.nome, desc, () => { onChange({ tipo: 'EQUIPE', id: e.id, nome: e.nome }); setOpen(false); });
+                  }))}
               {aba === 'FILA' && (listaFilas.length === 0
                 ? <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhuma fila disponível.</div>
                 : listaFilas.map((f: any) => linha(`f${f.id}`, f.nome, `${f.ativa === false ? 'inativa · ' : ''}rodízio entre os corretores da fila`, () => { onChange({ tipo: 'FILA', id: f.id, nome: f.nome }); setOpen(false); })))}
