@@ -427,6 +427,41 @@ export default function Chat() {
     setDraft(linhas.join('\n'));
   };
 
+  // ── Fotos do imóvel direto na conversa (caminho rápido) ───────────────────
+  const [imovelSel, setImovelSel] = useState<any>(null);
+  const [fotosSel, setFotosSel] = useState<Set<number>>(new Set());
+  const [enviandoFotos, setEnviandoFotos] = useState(false);
+
+  const abrirImovel = (emp: any) => {
+    setImovelSel(emp);
+    setFotosSel(new Set((emp.fotos || []).map((f: any) => f.id)));
+  };
+
+  const enviarFotosImovel = async () => {
+    if (!activeId || !imovelSel || enviandoFotos) return;
+    const fotos = (imovelSel.fotos || []).filter((f: any) => fotosSel.has(f.id));
+    if (!fotos.length) { toast.error('Selecione ao menos uma foto.'); return; }
+    setEnviandoFotos(true);
+    try {
+      for (let i = 0; i < fotos.length; i++) {
+        await Api.conversationSend(
+          activeId,
+          i === 0 ? `🏢 ${imovelSel.nome}` : '',
+          'CORRETOR',
+          { mediaUrl: fotos[i].url, mediaType: 'image' },
+        );
+      }
+      toast.success(`${fotos.length} foto(s) enviada(s).`);
+      setImovelSel(null);
+      reloadConv();
+      reloadInbox();
+    } catch (err: any) {
+      toast.error('Erro ao enviar fotos: ' + (err?.message || 'falha'));
+    } finally {
+      setEnviandoFotos(false);
+    }
+  };
+
   // Respostas rápidas — insere o texto no compositor (corretor revisa e envia).
   const inserirRapida = (txt: string) => {
     setDraft((d) => (d.trim() ? d.trim() + '\n' : '') + txt);
@@ -766,8 +801,13 @@ export default function Chat() {
                   Enviar imóvel:
                 </span>
                 {(empreendimentos || []).map((e: any) => (
-                  <button className="imovel-chip" key={e.id} onClick={() => enviarImovel(e)}>
-                    {e.nome}
+                  <button
+                    className="imovel-chip"
+                    key={e.id}
+                    onClick={() => ((e.fotos || []).length ? abrirImovel(e) : enviarImovel(e))}
+                    title={(e.fotos || []).length ? `Fotos e descrição de ${e.nome}` : `Inserir descrição de ${e.nome}`}
+                  >
+                    {e.nome}{(e.fotos || []).length ? ` (${e.fotos.length})` : ''}
                   </button>
                 ))}
               </div>
@@ -932,6 +972,65 @@ export default function Chat() {
                     )}
                   </div>
                 </>
+              )}
+              {imovelSel && (
+                <Modal
+                  open
+                  onClose={() => !enviandoFotos && setImovelSel(null)}
+                  title={`Fotos · ${imovelSel.nome}`}
+                  subtitle="Clique pra marcar/desmarcar. As fotos vão direto pro WhatsApp do lead."
+                  size="md"
+                  footer={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, width: '100%' }}>
+                      <button
+                        className="btn btn--secondary"
+                        onClick={() => { enviarImovel(imovelSel); setImovelSel(null); }}
+                        disabled={enviandoFotos}
+                        title="Insere a descrição do imóvel no campo de mensagem"
+                      >
+                        Inserir descrição
+                      </button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn--ghost" onClick={() => setImovelSel(null)} disabled={enviandoFotos}>Cancelar</button>
+                        <button className="btn btn--primary" onClick={enviarFotosImovel} disabled={enviandoFotos || fotosSel.size === 0}>
+                          {enviandoFotos ? 'Enviando…' : `Enviar ${fotosSel.size} foto${fotosSel.size === 1 ? '' : 's'}`}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8 }}>
+                    {(imovelSel.fotos || []).map((f: any) => {
+                      const on = fotosSel.has(f.id);
+                      return (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setFotosSel((cur) => { const n = new Set(cur); n.has(f.id) ? n.delete(f.id) : n.add(f.id); return n; })}
+                          style={{
+                            position: 'relative',
+                            padding: 0,
+                            border: on ? '2px solid var(--pons-blue)' : '2px solid transparent',
+                            borderRadius: 10,
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            aspectRatio: '4/3',
+                            background: 'var(--bg-card-hover)',
+                            opacity: on ? 1 : 0.55,
+                          }}
+                          title={on ? 'Desmarcar' : 'Marcar'}
+                        >
+                          <img src={f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          {on && (
+                            <span style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'var(--pons-blue)', color: '#fff', display: 'grid', placeItems: 'center' }}>
+                              <Icon name="check" size={12} />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Modal>
               )}
               {templatePickerOpen && conv && (
                 <TemplatePickerModal
