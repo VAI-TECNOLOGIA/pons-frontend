@@ -84,6 +84,7 @@ export default function Leads() {
  const { data: equipesFiltro } = useApi<any[]>(() => Api.equipes());
  const { data: filas } = useApi<any[]>(() => Api.roletas().catch(() => [] as any));
  const { data: bases } = useApi<any[]>(() => Api.basesLead().catch(() => [] as any));
+ const { data: bolsoesNomeados } = useApi<any[]>(() => Api.bolsoes().catch(() => [] as any));
  const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[]; formularios?: string[] }>(() => Api.leadFiltrosOpcoes());
  const toast = useToast();
  const confirm = useConfirm();
@@ -265,7 +266,7 @@ export default function Leads() {
  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
  )}
  <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
- <DestinoPicker corretores={corretores} equipes={equipesFiltro} filas={filas} bases={bases} value={alvoTransf} onChange={setAlvoTransf} />
+ <DestinoPicker corretores={corretores} equipes={equipesFiltro} filas={filas} bases={bases} bolsoes={bolsoesNomeados} value={alvoTransf} onChange={setAlvoTransf} />
  <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
  {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
  </button>

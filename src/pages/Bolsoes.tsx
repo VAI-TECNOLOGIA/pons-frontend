@@ -7,6 +7,8 @@ import { FichaLeadModal } from '../components/FichaLeadModal';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useWhatsappNumeros } from '../lib/whatsappNumeros';
+import { Icon } from '../components/Icon';
+import { useConfirm } from '../lib/confirm';
 
 const ORIGENS = ['META_ADS', 'GOOGLE', 'SITE', 'INDICACAO', 'WHATSAPP', 'IMPORTACAO_MANUAL', 'IMPORTACAO'];
 const STATUS = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'PAROU_RESPONDER', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO'];
@@ -111,6 +113,8 @@ export default function Bolsoes() {
       } />
       <div className="main__content page-enter">
         <PageHeader breadcrumb="Comercial · Bolsão" title={`${total.toLocaleString('pt-BR')} leads disponíveis`} subtitle="Leads sem corretor — filtre, selecione e direcione pra corretor ou equipe" />
+
+        <BolsoesConfigurados />
 
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
@@ -236,5 +240,238 @@ export default function Bolsoes() {
 
       {campoLead && <FichaLeadModal leadId={campoLead.id} onClose={() => setCampoLead(null)} />}
     </>
+  );
+}
+
+
+// ── Bolsões configurados (demanda 23/07): nome, status, janela de horário,
+// limite de capturas/dia e acesso (todos ou restrito). Modelo PULL: os leads
+// destes bolsões ficam em disputa — o primeiro corretor que capturar leva.
+function BolsoesConfigurados() {
+  const { data: bolsoes, reload } = useApi<any[]>(() => Api.bolsoes());
+  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [abaModal, setAbaModal] = useState<'config' | 'corretores'>('config');
+  // ── Aba 1: configuração ──
+  const [nome, setNome] = useState('');
+  const [ativo, setAtivo] = useState(true);
+  const [horaInicio, setHoraInicio] = useState('');
+  const [horaFim, setHoraFim] = useState('');
+  const [limiteOn, setLimiteOn] = useState(false);
+  const [limite, setLimite] = useState(2);
+  const [dicaLimite, setDicaLimite] = useState(false);
+  // ── Aba 2: corretores ──
+  const [acesso, setAcesso] = useState<'TODOS' | 'RESTRITO'>('TODOS');
+  const [selCor, setSelCor] = useState<Set<number>>(new Set());
+  const [buscaCor, setBuscaCor] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  const abrir = (b?: any) => {
+    setEditing(b || null);
+    setAbaModal('config');
+    setNome(b?.nome || '');
+    setAtivo(b ? b.ativo !== false : true);
+    setHoraInicio(b?.horaInicio || '');
+    setHoraFim(b?.horaFim || '');
+    setLimiteOn(!!b?.limiteCapturasDia);
+    setLimite(b?.limiteCapturasDia || 2);
+    setAcesso(b?.acesso === 'RESTRITO' ? 'RESTRITO' : 'TODOS');
+    setSelCor(new Set(b?.corretorIds || []));
+    setBuscaCor('');
+    setDicaLimite(false);
+    setOpen(true);
+  };
+
+  const salvar = async () => {
+    if (!nome.trim()) { toast.error('Dê um nome pro bolsão.'); return; }
+    if ((horaInicio && !horaFim) || (!horaInicio && horaFim)) { toast.error('Preencha o horário inicial E o final (ou deixe os dois vazios).'); return; }
+    if (acesso === 'RESTRITO' && selCor.size === 0) { toast.error('Acesso restrito: selecione ao menos um corretor.'); return; }
+    setSalvando(true);
+    try {
+      const body = {
+        nome: nome.trim(),
+        ativo,
+        horaInicio: horaInicio || null,
+        horaFim: horaFim || null,
+        limiteCapturasDia: limiteOn ? Number(limite) : null,
+        acesso,
+        corretorIds: acesso === 'RESTRITO' ? [...selCor] : [],
+      };
+      if (editing) await Api.bolsaoUpdate(editing.id, body);
+      else await Api.bolsaoCreate(body);
+      toast.success(editing ? 'Bolsão atualizado.' : 'Bolsão criado.');
+      setOpen(false);
+      reload();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const excluir = async (b: any) => {
+    const ok = await confirm({ title: `Excluir o bolsão "${b.nome}"?`, message: 'Os leads dele NÃO são apagados — voltam pro bolsão geral.', confirmText: 'Excluir', tone: 'danger' });
+    if (!ok) return;
+    try { await Api.bolsaoDelete(b.id); toast.success('Bolsão excluído.'); reload(); }
+    catch (err: any) { toast.error('Erro: ' + (err?.message || 'falha')); }
+  };
+
+  const norm = (x: string) => (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const listaCor = (corretores || [])
+    .filter((c: any) => c.ativo !== false)
+    .filter((c: any) => !buscaCor.trim() || norm(c.nome || '').includes(norm(buscaCor)) || norm(c.equipe?.nome || '').includes(norm(buscaCor)));
+
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div className="flex-between" style={{ flexWrap: 'wrap', gap: 8, marginBottom: (bolsoes || []).length ? 12 : 0 }}>
+        <div>
+          <div className="uppercase-tag">Bolsões configurados</div>
+          <div className="text-xs text-secondary" style={{ marginTop: 2 }}>Leads nestes bolsões ficam em disputa: o primeiro corretor que capturar leva.</div>
+        </div>
+        <button className="btn btn--primary btn--sm" onClick={() => abrir()}>+ Criar bolsão</button>
+      </div>
+      {(bolsoes || []).length > 0 && (
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
+          {(bolsoes || []).map((b: any) => (
+            <div key={b.id} style={{ border: '1px solid var(--border-light)', borderRadius: 10, padding: '12px 14px' }}>
+              <div className="flex-between" style={{ gap: 8 }}>
+                <span style={{ fontWeight: 800 }}>{b.nome}</span>
+                <span className={'badge ' + (b.ativo ? 'badge--signed' : 'badge--cancelled')} style={{ fontSize: 10 }}>{b.ativo ? 'ATIVO' : 'INATIVO'}</span>
+              </div>
+              <div className="text-xs text-secondary" style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span>{b.leadsDisponiveis ?? 0} lead(s) disponíveis</span>
+                <span>{b.horaInicio ? `Funciona das ${b.horaInicio} às ${b.horaFim}` : 'Sem janela de horário'}</span>
+                <span>{b.limiteCapturasDia ? `Limite: ${b.limiteCapturasDia} captura(s)/dia por corretor` : 'Capturas ilimitadas'}</span>
+                <span>{b.acesso === 'RESTRITO' ? `Restrito a ${(b.corretorIds || []).length} corretor(es)` : 'Aberto a todos os corretores'}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                <button className="btn btn--secondary btn--sm" onClick={() => abrir(b)}><Icon name="pencil" size={12} /> Editar</button>
+                <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => excluir(b)}><Icon name="trash" size={12} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal
+        open={open}
+        onClose={() => !salvando && setOpen(false)}
+        title={editing ? `Editar bolsão · ${editing.nome}` : 'Criar bolsão'}
+        subtitle="Configure o funcionamento e quem pode capturar os leads"
+        size="md"
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button className="btn btn--ghost" onClick={() => setOpen(false)} disabled={salvando}>Cancelar</button>
+            <button className="btn btn--primary" onClick={salvar} disabled={salvando}>{salvando ? 'Salvando…' : editing ? 'Salvar' : 'Criar bolsão'}</button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border-light)', marginBottom: 14 }}>
+          {([['config', 'Configuração do bolsão'], ['corretores', 'Corretores']] as const).map(([k, l]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setAbaModal(k)}
+              style={{ border: 'none', background: 'transparent', font: 'inherit', fontSize: 14, fontWeight: 700, padding: '8px 12px', cursor: 'pointer', color: abaModal === k ? 'var(--pons-blue)' : 'var(--text-secondary)', borderBottom: abaModal === k ? '2px solid var(--pons-blue)' : '2px solid transparent', marginBottom: -1 }}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {abaModal === 'config' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="field">
+              <label className="field__label">Nome</label>
+              <input className="field__input" value={nome} onChange={(e) => setNome(e.target.value)} placeholder='Ex.: "Bolsão Geral", "Bolsão Balneário"' />
+            </div>
+            <div className="field">
+              <label className="field__label">Status</label>
+              <select className="field__select" value={ativo ? '1' : '0'} onChange={(e) => setAtivo(e.target.value === '1')}>
+                <option value="1">Ativo</option>
+                <option value="0">Inativo</option>
+              </select>
+            </div>
+            <div className="field">
+              <label className="field__label">Horário de funcionamento</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input type="time" className="field__input" style={{ width: 'auto' }} value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
+                <span className="text-xs text-secondary">até</span>
+                <input type="time" className="field__input" style={{ width: 'auto' }} value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
+              </div>
+              <div className="field__hint">Fora da janela ninguém captura. Deixe vazio pra funcionar 24h.</div>
+            </div>
+            <div className="field">
+              <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" checked={limiteOn} onChange={(e) => setLimiteOn(e.target.checked)} />
+                Limite de capturas diariamente
+                <button
+                  type="button"
+                  onClick={() => setDicaLimite((v) => !v)}
+                  title="O que é isso?"
+                  style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid var(--border-light)', background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'inline-grid', placeItems: 'center', padding: 0 }}
+                >
+                  ?
+                </button>
+              </label>
+              {dicaLimite && (
+                <div className="field__hint" style={{ background: 'var(--bg-card-hover)', borderRadius: 8, padding: '8px 10px' }}>
+                  Limita quantos leads cada corretor pode capturar deste bolsão por dia. Ex.: limite 2 → cada corretor pega no máximo 2 leads/dia; no dia seguinte o contador zera.
+                </div>
+              )}
+              {limiteOn && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <input type="number" min={1} max={999} className="field__input" style={{ width: 100 }} value={limite} onChange={(e) => setLimite(Number(e.target.value) || 1)} />
+                  <span className="text-xs text-secondary">captura(s) por corretor por dia</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {abaModal === 'corretores' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="field">
+              <label className="field__label">Acesso</label>
+              <select className="field__select" value={acesso} onChange={(e) => setAcesso(e.target.value as any)}>
+                <option value="TODOS">Atribuído para todos</option>
+                <option value="RESTRITO">Acesso restrito</option>
+              </select>
+              <div className="field__hint">{acesso === 'TODOS' ? 'Qualquer corretor ativo pode capturar leads deste bolsão.' : 'Só os corretores selecionados abaixo podem capturar.'}</div>
+            </div>
+            {acesso === 'RESTRITO' && (
+              <div>
+                <input
+                  className="field__input"
+                  style={{ height: 40, marginBottom: 8 }}
+                  placeholder="Buscar corretor por nome ou equipe…"
+                  value={buscaCor}
+                  onChange={(e) => setBuscaCor(e.target.value)}
+                />
+                <div className="text-xs text-secondary" style={{ marginBottom: 6 }}>{selCor.size} selecionado(s)</div>
+                <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 10, padding: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {listaCor.length === 0 ? (
+                    <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhum corretor encontrado.</div>
+                  ) : listaCor.map((c: any) => (
+                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={selCor.has(c.id)}
+                        onChange={() => setSelCor((cur) => { const n = new Set(cur); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })}
+                      />
+                      <span style={{ fontWeight: 600 }}>{c.nome}</span>
+                      <span className="text-xs text-secondary">{c.equipe?.nome || 'Sem equipe'}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+    </div>
   );
 }

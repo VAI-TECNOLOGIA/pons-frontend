@@ -10,7 +10,7 @@ export type DestinoTransf =
   | { tipo: 'EQUIPE'; id: number; nome: string }
   | { tipo: 'FILA'; id: number; nome: string }
   | { tipo: 'BASE'; id: number; nome: string }
-  | { tipo: 'BOLSAO'; nome: string };
+  | { tipo: 'BOLSAO'; id?: number; nome: string };
 
 const TIPO_LABEL: Record<string, string> = { CORRETOR: 'Corretor', EQUIPE: 'Equipe', FILA: 'Fila', BASE: 'Base', BOLSAO: 'Bolsão' };
 
@@ -19,6 +19,7 @@ export function DestinoPicker({
   equipes,
   filas,
   bases,
+  bolsoes,
   value,
   onChange,
 }: {
@@ -26,11 +27,12 @@ export function DestinoPicker({
   equipes?: any[] | null;
   filas?: any[] | null;
   bases?: any[] | null;
+  bolsoes?: any[] | null;
   value: DestinoTransf | null;
   onChange: (d: DestinoTransf | null) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [aba, setAba] = useState<'CORRETOR' | 'EQUIPE' | 'FILA' | 'BASE'>('CORRETOR');
+  const [aba, setAba] = useState<'CORRETOR' | 'EQUIPE' | 'FILA' | 'BASE' | 'BOLSAO'>('CORRETOR');
   const [busca, setBusca] = useState('');
   const btnRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number; acima: boolean } | null>(null);
@@ -57,6 +59,7 @@ export function DestinoPicker({
   const listaEquipes = (equipes || []).filter((e: any) => !q || norm(e.nome || '').includes(q)).slice(0, 30);
   const listaFilas = (filas || []).filter((f: any) => !q || norm(f.nome || '').includes(q)).slice(0, 30);
   const listaBases = (bases || []).filter((b: any) => !q || norm(b.nome || '').includes(q)).slice(0, 30);
+  const listaBolsoes = (bolsoes || []).filter((b: any) => b.ativo !== false).filter((b: any) => !q || norm(b.nome || '').includes(q)).slice(0, 30);
 
   if (value) {
     return (
@@ -123,7 +126,7 @@ export function DestinoPicker({
             }}
           >
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10, flexShrink: 0 }}>
-              {(['CORRETOR', 'EQUIPE', 'FILA', 'BASE'] as const).map((t) => (
+              {(['CORRETOR', 'EQUIPE', 'FILA', 'BASE', 'BOLSAO'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -134,21 +137,12 @@ export function DestinoPicker({
                   {TIPO_LABEL[t]}
                 </button>
               ))}
-              <button
-                type="button"
-                className="btn btn--sm btn--secondary"
-                style={{ flex: '1 1 84px', minWidth: 84, justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 6, paddingTop: 8, paddingBottom: 8 }}
-                title="Devolver os leads pro bolsão (sem dono)"
-                onClick={() => { onChange({ tipo: 'BOLSAO', nome: 'Devolver ao bolsão' }); setOpen(false); }}
-              >
-                <Icon name="database" size={12} /> Bolsão
-              </button>
             </div>
             <input
               autoFocus
               className="field__input"
               style={{ height: 44, minHeight: 44, flexShrink: 0, fontSize: 14, padding: '0 14px', marginBottom: 10 }}
-              placeholder={aba === 'CORRETOR' ? 'Buscar corretor por nome ou equipe…' : aba === 'EQUIPE' ? 'Buscar equipe…' : aba === 'FILA' ? 'Buscar fila…' : 'Buscar base…'}
+              placeholder={aba === 'CORRETOR' ? 'Buscar corretor por nome ou equipe…' : aba === 'EQUIPE' ? 'Buscar equipe…' : aba === 'FILA' ? 'Buscar fila…' : aba === 'BASE' ? 'Buscar base…' : 'Buscar bolsão…'}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -165,6 +159,12 @@ export function DestinoPicker({
               {aba === 'BASE' && (listaBases.length === 0
                 ? <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhuma base criada — crie em Bases de Leads.</div>
                 : listaBases.map((b: any) => linha(`b${b.id}`, b.nome, `${b.totalLeads ?? 0} lead(s) · só categoriza, não muda o corretor`, () => { onChange({ tipo: 'BASE', id: b.id, nome: b.nome }); setOpen(false); })))}
+              {aba === 'BOLSAO' && (
+                <>
+                  {linha('bg', 'Bolsão geral', 'devolve os leads sem dono (disputa geral)', () => { onChange({ tipo: 'BOLSAO', nome: 'Bolsão geral' }); setOpen(false); })}
+                  {listaBolsoes.map((b: any) => linha(`bo${b.id}`, b.nome, `${b.leadsDisponiveis ?? 0} disponível(is) · ${b.acesso === 'RESTRITO' ? 'acesso restrito' : 'todos capturam'}${b.horaInicio ? ` · ${b.horaInicio}–${b.horaFim}` : ''}`, () => { onChange({ tipo: 'BOLSAO', id: b.id, nome: b.nome }); setOpen(false); }))}
+                </>
+              )}
             </div>
           </div>
         </>,

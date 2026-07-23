@@ -72,6 +72,8 @@ function cronToHuman(expr: string): string {
   return `${[...p.days].sort((a, b) => a - b).map((d) => DOW[d]).join(', ')} às ${hora}`;
 }
 
+const casaBusca = (txt: string, q: string) => !q.trim() || (txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+
 export default function Distribuicao() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -80,6 +82,10 @@ export default function Distribuicao() {
   const [escopo, setEscopo] = useState<'sistema' | 'equipes'>('sistema');
   const [equipesSel, setEquipesSel] = useState<number[]>([]);
   const [cronExpr, setCronExpr] = useState('0 9 * * 1');
+  // Buscadores dos selects da regra (listas grandes: produto/campanha/formulário)
+  const [buscaProduto, setBuscaProduto] = useState('');
+  const [buscaCampanhaRegra, setBuscaCampanhaRegra] = useState('');
+  const [buscaFormRegra, setBuscaFormRegra] = useState('');
   const [showAdv, setShowAdv] = useState(false);
   const { data, loading, error, reload } = useApi<any[]>(() => Api.distribuicaoList());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
@@ -101,6 +107,7 @@ export default function Distribuicao() {
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   const { data: filas } = useApi<any[]>(() => Api.roletas().catch(() => [] as any));
   const { data: basesLead } = useApi<any[]>(() => Api.basesLead().catch(() => [] as any));
+  const { data: bolsoesNomeados } = useApi<any[]>(() => Api.bolsoes().catch(() => [] as any));
   // Seleção em massa + transferência manual (pedido do cliente)
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [alvoTransf, setAlvoTransf] = useState<DestinoTransf | null>(null);
@@ -323,7 +330,7 @@ export default function Distribuicao() {
                   <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
                   <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
-                  <DestinoPicker corretores={corretores} equipes={equipes} filas={filas} bases={basesLead} value={alvoTransf} onChange={setAlvoTransf} />
+                  <DestinoPicker corretores={corretores} equipes={equipes} filas={filas} bases={basesLead} bolsoes={bolsoesNomeados} value={alvoTransf} onChange={setAlvoTransf} />
                   <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
                     {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
                   </button>
@@ -560,24 +567,27 @@ export default function Distribuicao() {
             </div>
             <div className="field">
               <label className="field__label">Campanha (opcional)</label>
+              <input className="field__input" style={{ height: 32, fontSize: 12.5, marginBottom: 6 }} placeholder="Buscar campanha…" value={buscaCampanhaRegra} onChange={(e) => setBuscaCampanhaRegra(e.target.value)} />
               <select name="campanhaLead" className="field__select" defaultValue={editing?.campanhaLead || ''}>
                 <option value="">Qualquer</option>
-                {(opcoesFiltro?.campanhas || []).map((c) => <option key={c}>{c}</option>)}
+                {(opcoesFiltro?.campanhas || []).filter((c) => casaBusca(c, buscaCampanhaRegra)).map((c) => <option key={c}>{c}</option>)}
               </select>
               <div className="field__hint">Só distribui leads DESTA campanha — evita misturar bases.</div>
             </div>
             <div className="field">
               <label className="field__label">Formulário (opcional)</label>
+              <input className="field__input" style={{ height: 32, fontSize: 12.5, marginBottom: 6 }} placeholder="Buscar formulário…" value={buscaFormRegra} onChange={(e) => setBuscaFormRegra(e.target.value)} />
               <select name="formularioLead" className="field__select" defaultValue={editing?.formularioLead || ''}>
                 <option value="">Qualquer</option>
-                {(opcoesFiltro?.formularios || []).map((f) => <option key={f}>{f}</option>)}
+                {(opcoesFiltro?.formularios || []).filter((f) => casaBusca(f, buscaFormRegra)).map((f) => <option key={f}>{f}</option>)}
               </select>
             </div>
             <div className="field">
               <label className="field__label">Produto (opcional)</label>
+              <input className="field__input" style={{ height: 32, fontSize: 12.5, marginBottom: 6 }} placeholder="Buscar produto…" value={buscaProduto} onChange={(e) => setBuscaProduto(e.target.value)} />
               <select name="empreendimentoInteresseId" className="field__select" defaultValue={editing?.empreendimentoInteresseId || ''}>
                 <option value="">Qualquer</option>
-                {(empreendimentosFiltro || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
+                {(empreendimentosFiltro || []).filter((e2: any) => casaBusca(e2.nome, buscaProduto)).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
               </select>
             </div>
             <div className="field">

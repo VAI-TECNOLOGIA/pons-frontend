@@ -482,6 +482,9 @@ export const Api = {
   // Transferência manual em massa de leads pra um corretor
   roletaTransferirMassa: (leadIds: number[], corretorId: number) =>
     request<{ ok: boolean; transferidos: number; corretor: string }>('/roletas/transferir-massa', { method: 'POST', body: { leadIds, corretorId } }),
+  // Bolsões nomeados configuráveis
+  bolsoes: () => request<any[]>('/bolsoes'),
+  bolsaoCapturar: (id: number, leadId: number) => request<any>(`/bolsoes/${id}/capturar`, { method: 'POST', body: { leadId } }),
   // Bases de Leads (categorias do marketing)
   basesLead: () => request<any[]>('/bases-lead'),
   baseLeadCreate: (body: any) => request<any>('/bases-lead', { method: 'POST', body }),
@@ -496,7 +499,8 @@ export const Api = {
         ...(destino.tipo === 'CORRETOR' && { corretorId: destino.id }),
         ...(destino.tipo === 'EQUIPE' && { equipeId: destino.id }),
         ...(destino.tipo === 'FILA' && { roletaId: destino.id }),
-        ...(destino.tipo === 'BOLSAO' && { bolsao: true }),
+        ...(destino.tipo === 'BOLSAO' && !destino.id && { bolsao: true }),
+        ...(destino.tipo === 'BOLSAO' && destino.id && { bolsaoDestinoId: destino.id }),
         ...(destino.tipo === 'BASE' && { baseId: destino.id }),
       },
     }),
