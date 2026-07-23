@@ -9,7 +9,7 @@ import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useSSE } from '../lib/useSSE';
 import { humanizeErrorReasonFull } from '../lib/meta-errors';
-import { isNativeApp } from '../lib/platform';
+import { isNativeApp, currentPlatform } from '../lib/platform';
 
 import './chat.css';
 
@@ -116,6 +116,21 @@ export default function Chat() {
   const [recording, setRecording] = useState(false); // gravando áudio
   const [recSecs, setRecSecs] = useState(0);
   const [recSending, setRecSending] = useState(false);
+  // Gravação de áudio: liberada na web; no app nativo SÓ a partir dos builds que
+  // declaram a permissão de microfone (iOS build 11+ / Android versionCode 7+) —
+  // nos anteriores o iOS mata o app ao chamar getUserMedia.
+  const [micDisponivel, setMicDisponivel] = useState(() => !isNativeApp());
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    import('@capacitor/app')
+      .then(({ App }) => App.getInfo())
+      .then((info) => {
+        const build = parseInt(info.build, 10) || 0;
+        const minimo = currentPlatform() === 'ios' ? 11 : 7;
+        if (build >= minimo) setMicDisponivel(true);
+      })
+      .catch(() => {});
+  }, []);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const recChunksRef = useRef<Blob[]>([]);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -968,11 +983,11 @@ export default function Chat() {
                           }}
                           disabled={sending}
                         />
-                        {/* Nos apps nativos atuais falta a permissão de microfone
+                        {/* Nos apps nativos publicados falta a permissão de microfone
                             (NSMicrophoneUsageDescription / RECORD_AUDIO) — no iOS o
-                            getUserMedia MATA o app. Só reexibir quando os builds com
-                            a permissão estiverem publicados (iOS build 11+). */}
-                        {!isNativeApp() && (
+                            getUserMedia MATA o app. micDisponivel reexibe quando o
+                            build nativo instalado já declara a permissão. */}
+                        {micDisponivel && (
                         <button
                           className="btn btn--secondary btn--sm composer__mic"
                           title="Gravar áudio"

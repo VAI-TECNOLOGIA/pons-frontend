@@ -61,5 +61,7 @@
 	<string>O app acessa sua galeria para anexar imagens a imóveis, leads e perfis.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>O app usa o Face ID para autenticação segura.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>O app usa o microfone para gravar mensagens de áudio no atendimento aos leads.</string>
 </dict>
 </plist>
