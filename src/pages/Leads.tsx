@@ -186,7 +186,7 @@ export default function Leads() {
  <KpiSimple color="blue" label="Novos hoje" value={stats?.novosHoje ?? 0} />
  <KpiSimple color="green" label="Em negociação" value={stats?.qualificados ?? 0} />
  <KpiSimple color="amber" label="Sem follow-up" value={stats?.semFollowup ?? 0} />
- <KpiSimple color="navy" label="Total no funil" value={stats?.total ?? leads.length} />
+ <KpiSimple color="navy" label={temFiltro ? 'Total no filtro' : 'Total no funil'} value={temFiltro ? total : (stats?.total ?? leads.length)} />
  </div>
 
  <div className="filter-bar">

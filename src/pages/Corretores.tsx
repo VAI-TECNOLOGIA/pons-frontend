@@ -143,7 +143,11 @@ export default function Corretores() {
  <PageHeader
  breadcrumb="Gestão · Corretores"
  title={`${corretores.length} corretores · ${eqs.length} equipes`}
- subtitle={`${ativos} ativos · ${corretores.length - ativos} em probatório`}
+ subtitle={
+ (filtroEquipe || filtroStatus || search.trim())
+ ? `${filtered.length} no filtro · ${filtered.filter((c: any) => c.status === 'ATIVO' || c.ativo).length} ativos`
+ : `${ativos} ativos · ${corretores.length - ativos} em probatório`
+ }
  />
 
  <div className="filter-bar">
