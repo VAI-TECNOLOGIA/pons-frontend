@@ -16,14 +16,11 @@ type Tab = 'pendente' | 'atendendo';
 
 // Respostas rápidas padrão do atendimento (corretor insere e revisa antes de enviar).
 const RESPOSTAS_RAPIDAS = [
-  'Olá! Aqui é da Grupo Pons Imobiliário. Como posso te ajudar?',
-  'Você procura imóvel para morar ou para investir?',
-  'Qual região te interessa — Itapema, Porto Belo ou Balneário Camboriú?',
-  'Posso te enviar a *tabela de valores* e as *plantas*. Pode ser?',
-  'Consigo agendar uma visita. Qual o melhor dia e horário pra você?',
-  'Esse imóvel tem ótima procura. Quer que eu reserve um horário pra te apresentar?',
-  'Perfeito! Vou separar as melhores opções e já te retorno. 👍',
-  'Obrigado pelo contato! Qualquer dúvida, estou à disposição. 🙌',
+  'Estamos entrando em contato referente ao seu interesse no lançamento imobiliário em Porto Belo que anunciamos no Instagram.',
+  'Somos o Grupo Pons Imobiliário, uma das maiores imobiliárias do litoral de Santa Catarina, especializados em imóveis na planta com alta valorização.',
+  'Este empreendimento que você gostou é o Conecta Tower, da construtora Maxes, referência e pioneira na construção de flats em Santa Catarina, com várias obras entregues e com alto padrão de acabamento.',
+  'No Conecta Tower temos Studios e apartamentos com 2 suítes, com uma área de lazer bem completa, com 2.200m², com piscina adulto e infantil aquecida, quadra poliesportiva, área gourmet, espaço kids, espaço pet e muito mais.',
+  'Vou te mandar um material prévio para você ir dando uma olhada, mas deixa eu te perguntar: você está procurando algo para investimento ou para futura moradia? Isso vai me ajudar a ser mais assertiva no fluxo de pagamento que vou te enviar.',
 ];
 
 const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
