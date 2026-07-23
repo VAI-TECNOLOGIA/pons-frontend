@@ -205,7 +205,7 @@ export default function Corretores() {
  </div>
 
  <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
- <table className="table" style={{ minWidth: 900 }}>
+ <table className="table">
  <thead>
  <tr>
  <th>Corretor</th>
