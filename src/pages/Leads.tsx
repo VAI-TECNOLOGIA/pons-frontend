@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
@@ -40,7 +41,10 @@ export default function Leads() {
  const [mostrarFiltros, setMostrarFiltros] = useState(false);
  const [filtroOrigem, setFiltroOrigem] = useState<string[]>([]);
  const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | id do corretor
+ // ?base=ID na URL (vindo da tela Bases de Leads) já abre filtrado
+ const [searchParams] = useSearchParams();
  const [filtroEquipe, setFiltroEquipe] = useState<string[]>([]); // ids das equipes
+ const [filtroBase, setFiltroBase] = useState<string[]>(() => (searchParams.get('base') ? [String(searchParams.get('base'))] : []));
  const [filtroCampanha, setFiltroCampanha] = useState<string[]>([]);
  const [filtroFormulario, setFiltroFormulario] = useState<string[]>([]);
  const [filtroEmp, setFiltroEmp] = useState<string[]>([]); // empreendimentos de interesse (Produto)
@@ -67,6 +71,7 @@ export default function Leads() {
  if (filtroCorretor === 'sem') params.semCorretor = 'true';
  else if (filtroCorretor) params.corretorId = filtroCorretor;
  if (filtroEquipe.length) params.equipeId = filtroEquipe.join(',');
+ if (filtroBase.length) params.baseId = filtroBase.join(',');
  if (dataInicial) params.dataInicial = dataInicial;
  if (dataFinal) params.dataFinal = dataFinal;
  if (buscaDeb) params.q = buscaDeb;
@@ -78,6 +83,7 @@ export default function Leads() {
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
  const { data: equipesFiltro } = useApi<any[]>(() => Api.equipes());
  const { data: filas } = useApi<any[]>(() => Api.roletas().catch(() => [] as any));
+ const { data: bases } = useApi<any[]>(() => Api.basesLead().catch(() => [] as any));
  const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[]; formularios?: string[] }>(() => Api.leadFiltrosOpcoes());
  const toast = useToast();
  const confirm = useConfirm();
@@ -134,10 +140,10 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || dataInicial || dataFinal || buscaDeb || filterStatus.length);
+ const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length);
  const limparFiltros = () => {
  setFilterStatus([]); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
- setFiltroEmp([]); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
+ setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
  };
  // troca de filtro sempre volta pra página 1
  const aoFiltrar = (setter: (v: any) => void) => (v: any) => { setter(v); setPage(1); };
@@ -216,7 +222,7 @@ export default function Leads() {
 
  {mostrarFiltros && (
  <LeadsFiltrosPanel
- v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus, campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe }}
+ v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus, campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe, baseId: filtroBase }}
  onAplicar={(f) => {
  setDataInicial(f.dataInicial);
  setDataFinal(f.dataFinal);
@@ -227,6 +233,7 @@ export default function Leads() {
  setFiltroEmp(f.empreendimentoId);
  setFiltroCorretor(f.corretorId);
  setFiltroEquipe(f.equipeId);
+ setFiltroBase(f.baseId);
  setPage(1);
  }}
  statuses={STATUSES.map((k) => ({ key: k, label: STATUS_MAP[k]?.[1] || k }))}
@@ -234,6 +241,7 @@ export default function Leads() {
  corretores={corretores}
  empreendimentos={empreendimentos}
  equipes={equipesFiltro}
+ bases={bases}
  />
  )}
 
@@ -257,7 +265,7 @@ export default function Leads() {
  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
  )}
  <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
- <DestinoPicker corretores={corretores} equipes={equipesFiltro} filas={filas} value={alvoTransf} onChange={setAlvoTransf} />
+ <DestinoPicker corretores={corretores} equipes={equipesFiltro} filas={filas} bases={bases} value={alvoTransf} onChange={setAlvoTransf} />
  <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
  {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
  </button>

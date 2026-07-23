@@ -100,6 +100,7 @@ export default function Distribuicao() {
   const { data: empreendimentosFiltro } = useApi<any[]>(() => Api.empreendimentos());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   const { data: filas } = useApi<any[]>(() => Api.roletas().catch(() => [] as any));
+  const { data: basesLead } = useApi<any[]>(() => Api.basesLead().catch(() => [] as any));
   // Seleção em massa + transferência manual (pedido do cliente)
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [alvoTransf, setAlvoTransf] = useState<DestinoTransf | null>(null);
@@ -286,6 +287,7 @@ export default function Distribuicao() {
                 corretores={corretores}
                 empreendimentos={empreendimentosFiltro}
                 equipes={equipes}
+                bases={basesLead}
               />
               {temFiltroExtra && (
                 <div className="field__hint" style={{ marginTop: -8, marginBottom: 8 }}>
@@ -321,7 +323,7 @@ export default function Distribuicao() {
                   <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
                   <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
-                  <DestinoPicker corretores={corretores} equipes={equipes} filas={filas} value={alvoTransf} onChange={setAlvoTransf} />
+                  <DestinoPicker corretores={corretores} equipes={equipes} filas={filas} bases={basesLead} value={alvoTransf} onChange={setAlvoTransf} />
                   <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
                     {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
                   </button>

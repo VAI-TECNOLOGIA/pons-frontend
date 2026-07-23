@@ -95,6 +95,7 @@ const GROUPS: NavGroup[] = [
       { to: '/campanhas', label: 'Campanhas', icon: 'chat', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/templates', label: 'Templates WhatsApp', icon: 'whatsapp', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
       { to: '/distribuicao', label: 'Distribuição', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+      { to: '/bases-leads', label: 'Bases de Leads', icon: 'layers', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/importar', label: 'Importar Leads', icon: 'plus', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/campos-custom', label: 'Campos Personalizados', icon: 'layers', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
     ],

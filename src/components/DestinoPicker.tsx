@@ -9,25 +9,28 @@ export type DestinoTransf =
   | { tipo: 'CORRETOR'; id: number; nome: string }
   | { tipo: 'EQUIPE'; id: number; nome: string }
   | { tipo: 'FILA'; id: number; nome: string }
+  | { tipo: 'BASE'; id: number; nome: string }
   | { tipo: 'BOLSAO'; nome: string };
 
-const TIPO_LABEL: Record<string, string> = { CORRETOR: 'Corretor', EQUIPE: 'Equipe', FILA: 'Fila', BOLSAO: 'Bolsão' };
+const TIPO_LABEL: Record<string, string> = { CORRETOR: 'Corretor', EQUIPE: 'Equipe', FILA: 'Fila', BASE: 'Base', BOLSAO: 'Bolsão' };
 
 export function DestinoPicker({
   corretores,
   equipes,
   filas,
+  bases,
   value,
   onChange,
 }: {
   corretores?: any[] | null;
   equipes?: any[] | null;
   filas?: any[] | null;
+  bases?: any[] | null;
   value: DestinoTransf | null;
   onChange: (d: DestinoTransf | null) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [aba, setAba] = useState<'CORRETOR' | 'EQUIPE' | 'FILA'>('CORRETOR');
+  const [aba, setAba] = useState<'CORRETOR' | 'EQUIPE' | 'FILA' | 'BASE'>('CORRETOR');
   const [busca, setBusca] = useState('');
   const btnRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number; acima: boolean } | null>(null);
@@ -52,6 +55,7 @@ export function DestinoPicker({
     .slice(0, 30);
   const listaEquipes = (equipes || []).filter((e: any) => !q || norm(e.nome || '').includes(q)).slice(0, 30);
   const listaFilas = (filas || []).filter((f: any) => !q || norm(f.nome || '').includes(q)).slice(0, 30);
+  const listaBases = (bases || []).filter((b: any) => !q || norm(b.nome || '').includes(q)).slice(0, 30);
 
   if (value) {
     return (
@@ -118,7 +122,7 @@ export function DestinoPicker({
             }}
           >
             <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
-              {(['CORRETOR', 'EQUIPE', 'FILA'] as const).map((t) => (
+              {(['CORRETOR', 'EQUIPE', 'FILA', 'BASE'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -143,7 +147,7 @@ export function DestinoPicker({
               autoFocus
               className="field__input"
               style={{ height: 32, fontSize: 13, marginBottom: 6 }}
-              placeholder={aba === 'CORRETOR' ? 'Buscar corretor por nome ou equipe…' : aba === 'EQUIPE' ? 'Buscar equipe…' : 'Buscar fila…'}
+              placeholder={aba === 'CORRETOR' ? 'Buscar corretor por nome ou equipe…' : aba === 'EQUIPE' ? 'Buscar equipe…' : aba === 'FILA' ? 'Buscar fila…' : 'Buscar base…'}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -157,6 +161,9 @@ export function DestinoPicker({
               {aba === 'FILA' && (listaFilas.length === 0
                 ? <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhuma fila disponível.</div>
                 : listaFilas.map((f: any) => linha(`f${f.id}`, f.nome, `${f.ativa === false ? 'inativa · ' : ''}rodízio entre os corretores da fila`, () => { onChange({ tipo: 'FILA', id: f.id, nome: f.nome }); setOpen(false); })))}
+              {aba === 'BASE' && (listaBases.length === 0
+                ? <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhuma base criada — crie em Bases de Leads.</div>
+                : listaBases.map((b: any) => linha(`b${b.id}`, b.nome, `${b.totalLeads ?? 0} lead(s) · só categoriza, não muda o corretor`, () => { onChange({ tipo: 'BASE', id: b.id, nome: b.nome }); setOpen(false); })))}
             </div>
           </div>
         </>,

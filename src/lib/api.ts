@@ -482,6 +482,11 @@ export const Api = {
   // Transferência manual em massa de leads pra um corretor
   roletaTransferirMassa: (leadIds: number[], corretorId: number) =>
     request<{ ok: boolean; transferidos: number; corretor: string }>('/roletas/transferir-massa', { method: 'POST', body: { leadIds, corretorId } }),
+  // Bases de Leads (categorias do marketing)
+  basesLead: () => request<any[]>('/bases-lead'),
+  baseLeadCreate: (body: any) => request<any>('/bases-lead', { method: 'POST', body }),
+  baseLeadUpdate: (id: number, body: any) => request<any>(`/bases-lead/${id}`, { method: 'PATCH', body }),
+  baseLeadDelete: (id: number) => request<any>(`/bases-lead/${id}`, { method: 'DELETE' }),
   // Transferência em massa pra qualquer destino: corretor, equipe, fila ou bolsão
   leadsTransferirDestino: (leadIds: number[], destino: { tipo: string; id?: number }) =>
     request<{ ok: boolean; transferidos: number; corretor: string }>('/roletas/transferir-massa', {
@@ -492,6 +497,7 @@ export const Api = {
         ...(destino.tipo === 'EQUIPE' && { equipeId: destino.id }),
         ...(destino.tipo === 'FILA' && { roletaId: destino.id }),
         ...(destino.tipo === 'BOLSAO' && { bolsao: true }),
+        ...(destino.tipo === 'BASE' && { baseId: destino.id }),
       },
     }),
   // Arquivar leads em massa (somem das telas/distribuição, preservados no banco)

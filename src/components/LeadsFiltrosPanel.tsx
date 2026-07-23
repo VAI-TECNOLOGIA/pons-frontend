@@ -18,10 +18,11 @@ export interface FiltrosLead {
  empreendimentoId: string[];
  corretorId: string; // '' = todos · 'sem' = bolsão · id
  equipeId: string[]; // ids das equipes (leads dos corretores delas)
+ baseId: string[]; // ids das Bases de Leads
 }
 
 export const FILTROS_LEAD_VAZIO: FiltrosLead = {
- dataInicial: '', dataFinal: '', origem: [], status: [], campanha: [], formulario: [], empreendimentoId: [], corretorId: '', equipeId: [],
+ dataInicial: '', dataFinal: '', origem: [], status: [], campanha: [], formulario: [], empreendimentoId: [], corretorId: '', equipeId: [], baseId: [],
 };
 
 // Converte os filtros nos params do GET /leads (multi-valores viram CSV).
@@ -35,6 +36,7 @@ export function filtrosLeadParams(f: FiltrosLead): Record<string, string> {
  if (f.corretorId === 'sem') p.semCorretor = 'true';
  else if (f.corretorId) p.corretorId = f.corretorId;
  if (f.equipeId.length) p.equipeId = f.equipeId.join(',');
+ if (f.baseId.length) p.baseId = f.baseId.join(',');
  if (f.dataInicial) p.dataInicial = f.dataInicial;
  if (f.dataFinal) p.dataFinal = f.dataFinal;
  return p;
@@ -48,9 +50,10 @@ interface Props {
  corretores?: any[] | null;
  empreendimentos?: any[] | null;
  equipes?: any[] | null;
+ bases?: any[] | null;
 }
 
-export function LeadsFiltrosPanel({ v, onAplicar, statuses, opcoes, corretores, empreendimentos, equipes }: Props) {
+export function LeadsFiltrosPanel({ v, onAplicar, statuses, opcoes, corretores, empreendimentos, equipes, bases }: Props) {
  const [draft, setDraft] = useState<FiltrosLead>(v);
  // Re-sincroniza o rascunho quando os filtros aplicados mudam por fora (ex.: "limpar filtros" da página)
  const vKey = JSON.stringify(v);
@@ -89,6 +92,14 @@ export function LeadsFiltrosPanel({ v, onAplicar, statuses, opcoes, corretores, 
  />
  <MultiFiltro label="Campanha" opcoes={asOpts(opcoes?.campanhas)} values={draft.campanha} onChange={(vals) => set({ campanha: vals })} />
  <MultiFiltro label="Formulário" opcoes={asOpts(opcoes?.formularios)} values={draft.formulario} onChange={(vals) => set({ formulario: vals })} />
+ {(bases || []).length > 0 && (
+ <MultiFiltro
+ label="Base"
+ opcoes={(bases || []).map((b: any) => ({ value: String(b.id), label: b.nome }))}
+ values={draft.baseId}
+ onChange={(vals) => set({ baseId: vals })}
+ />
+ )}
  </div>
  </div>
  <div className="leads-filtros__grupo">
