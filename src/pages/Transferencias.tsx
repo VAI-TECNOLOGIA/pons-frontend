@@ -13,6 +13,7 @@ import { CorretorPicker } from '../components/CorretorPicker';
 // leads do lote.
 const MOTIVO_LABEL: Record<string, string> = {
   SLA_AUTOMATICO: 'SLA automático',
+  SLA_AUTOMATICO_HISTORICO_LIMPO: 'SLA automático',
   MANUAL_GESTOR: 'Manual (gestor)',
   MANUAL_CORRETOR: 'Manual (corretor)',
   FALLBACK_ROLETA: 'Fallback roleta',
@@ -138,8 +139,8 @@ export default function Transferencias() {
                         <div className="flex gap-2" style={{ alignItems: 'center' }}>
                           <div className="avatar avatar--sm">{initials(g.enviadoPorNome || 'S')}</div>
                           <div>
-                            <div className="font-semibold" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{g.enviadoPorNome}</div>
-                            <div className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>{MOTIVO_LABEL[g.motivo] || g.motivo}</div>
+                            <div className="font-semibold" style={{ fontSize: 13 }}>{g.enviadoPorNome}</div>
+                            <div className="text-xs text-secondary" style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{MOTIVO_LABEL[g.motivo] || g.motivo.replace(/_/g, ' ').toLowerCase()}</div>
                           </div>
                         </div>
                       </td>
@@ -159,7 +160,7 @@ export default function Transferencias() {
                         </span>
                         <span className="text-secondary" style={{ fontSize: 12 }}> / {g.qtd}</span>
                       </td>
-                      <td className="text-xs text-secondary" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={g.observacao || undefined}>
+                      <td className="text-xs text-secondary" style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={g.observacao || undefined}>
                         {g.observacao || '—'}
                       </td>
                       <td className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>{fmt(g.createdAt)}</td>
