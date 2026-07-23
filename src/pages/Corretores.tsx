@@ -7,10 +7,11 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { MultiFiltro } from '../components/MultiFiltro';
 
 export default function Corretores() {
  const [search, setSearch] = useState('');
- const [filtroEquipe, setFiltroEquipe] = useState<string | null>(null);
+ const [filtroEquipe, setFiltroEquipe] = useState<string[]>([]); // nomes das equipes (multi)
  const [filtroStatus, setFiltroStatus] = useState<string | null>('ATIVO'); // padrão: só ativos na lista
  const [open, setOpen] = useState(false);
  const [painelId, setPainelId] = useState<number | null>(null);
@@ -104,7 +105,7 @@ export default function Corretores() {
  entrada_asc: (a, b) => ts(a.dataAdmissao) - ts(b.dataAdmissao),
  };
  const filtered = corretores
- .filter((c: any) => !filtroEquipe || (c.equipe?.nome || c.equipe) === filtroEquipe)
+ .filter((c: any) => !filtroEquipe.length || filtroEquipe.includes(c.equipe?.nome || c.equipe))
  .filter((c: any) => !filtroStatus || (filtroStatus === 'ATIVO' ? (c.status === 'ATIVO' || c.ativo) : !(c.status === 'ATIVO' || c.ativo)))
  .filter((c: any) => {
  if (!search.trim()) return true;
@@ -143,14 +144,14 @@ export default function Corretores() {
  <PageHeader
  breadcrumb="Gestão · Corretores"
  title={
- filtroEquipe
- ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} · ${filtroEquipe}`
+ filtroEquipe.length
+ ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} · ${filtroEquipe.length === 1 ? filtroEquipe[0] : `${filtroEquipe.length} equipes`}`
  : (search.trim() || (filtroStatus && filtroStatus !== 'ATIVO') || !filtroStatus)
  ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} no filtro`
  : `${ativos} corretores · ${eqs.length} equipes`
  }
  subtitle={
- (filtroEquipe || search.trim() || filtroStatus !== 'ATIVO')
+ (filtroEquipe.length || search.trim() || filtroStatus !== 'ATIVO')
  ? `${filtered.filter((c: any) => c.status === 'ATIVO' || c.ativo).length} ativos no recorte`
  : `${corretores.length - ativos} inativo(s) fora da lista — use o filtro de status pra vê-los`
  }
@@ -166,17 +167,12 @@ export default function Corretores() {
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  />
- <select
- className="field__select filtro-sel"
- style={{ height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
- value={filtroEquipe || ''}
- onChange={(e) => setFiltroEquipe(e.target.value || null)}
- >
- <option value="">Todas as equipes ({eqs.length})</option>
- {eqs.map((e: any) => (
- <option key={e.id} value={e.nome}>{e.nome}</option>
- ))}
- </select>
+ <MultiFiltro
+ label={`Equipes (${eqs.length})`}
+ opcoes={eqs.map((e: any) => ({ value: e.nome, label: e.nome }))}
+ values={filtroEquipe}
+ onChange={setFiltroEquipe}
+ />
  <select
  className="field__select filtro-sel"
  style={{ height: 32, fontSize: 13, paddingTop: 0, paddingBottom: 0, fontWeight: 600 }}
@@ -205,7 +201,7 @@ export default function Corretores() {
  </div>
 
  <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
- <table className="table">
+ <table className="table tabela-corretores">
  <thead>
  <tr>
  <th>Corretor</th>

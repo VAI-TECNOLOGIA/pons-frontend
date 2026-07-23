@@ -12,7 +12,7 @@ export interface FiltrosLead {
  dataInicial: string;
  dataFinal: string;
  origem: string[];
- status: string;
+ status: string[];
  campanha: string[];
  formulario: string[]; // nomes do Lead Form (aparece como "Interesse" na ficha)
  empreendimentoId: string[];
@@ -21,13 +21,13 @@ export interface FiltrosLead {
 }
 
 export const FILTROS_LEAD_VAZIO: FiltrosLead = {
- dataInicial: '', dataFinal: '', origem: [], status: '', campanha: [], formulario: [], empreendimentoId: [], corretorId: '', equipeId: [],
+ dataInicial: '', dataFinal: '', origem: [], status: [], campanha: [], formulario: [], empreendimentoId: [], corretorId: '', equipeId: [],
 };
 
 // Converte os filtros nos params do GET /leads (multi-valores viram CSV).
 export function filtrosLeadParams(f: FiltrosLead): Record<string, string> {
  const p: Record<string, string> = {};
- if (f.status) p.status = f.status;
+ if (f.status.length) p.status = f.status.join(',');
  if (f.origem.length) p.origem = f.origem.join(',');
  if (f.campanha.length) p.campanha = f.campanha.join(',');
  if (f.formulario.length) p.formulario = f.formulario.join(',');
@@ -75,10 +75,7 @@ export function LeadsFiltrosPanel({ v, onAplicar, statuses, opcoes, corretores, 
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="target" size={13} /> Jornada do lead</div>
  <div className="leads-filtros__linha">
  <MultiFiltro label="Origem" opcoes={asOpts(opcoes?.origens)} values={draft.origem} onChange={(vals) => set({ origem: vals })} />
- <select className="field__select" value={draft.status} onChange={(e) => set({ status: e.target.value })}>
- <option value="">Status</option>
- {statuses.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
- </select>
+ <MultiFiltro label="Status" opcoes={statuses.map((s) => ({ value: s.key, label: s.label }))} values={draft.status} onChange={(vals) => set({ status: vals })} />
  </div>
  </div>
  <div className="leads-filtros__grupo leads-filtros__grupo--full">

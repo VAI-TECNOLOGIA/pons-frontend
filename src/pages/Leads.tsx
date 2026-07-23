@@ -34,7 +34,7 @@ const STATUSES = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO'
 const PAGE_SIZE = 100;
 
 export default function Leads() {
- const [filterStatus, setFilterStatus] = useState<string | null>(null);
+ const [filterStatus, setFilterStatus] = useState<string[]>([]); // chips e painel: multi-status
  // Painel de filtros (server-side — a busca roda no banco, não na página carregada)
  const [mostrarFiltros, setMostrarFiltros] = useState(false);
  const [filtroOrigem, setFiltroOrigem] = useState<string[]>([]);
@@ -58,7 +58,7 @@ export default function Leads() {
  }, [busca]);
 
  const params: any = { page, limit: PAGE_SIZE };
- if (filterStatus) params.status = filterStatus;
+ if (filterStatus.length) params.status = filterStatus.join(',');
  if (filtroOrigem.length) params.origem = filtroOrigem.join(',');
  if (filtroCampanha.length) params.campanha = filtroCampanha.join(',');
  if (filtroFormulario.length) params.formulario = filtroFormulario.join(',');
@@ -132,9 +132,9 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || dataInicial || dataFinal || buscaDeb || filterStatus);
+ const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || dataInicial || dataFinal || buscaDeb || filterStatus.length);
  const limparFiltros = () => {
- setFilterStatus(null); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
+ setFilterStatus([]); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
  setFiltroEmp([]); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
  };
  // troca de filtro sempre volta pra página 1
@@ -191,16 +191,17 @@ export default function Leads() {
 
  <div className="filter-bar">
  <span
- className={'filter-chip ' + (!filterStatus ? 'filter-chip--active' : '')}
- onClick={() => { setFilterStatus(null); setPage(1); }}
+ className={'filter-chip ' + (!filterStatus.length ? 'filter-chip--active' : '')}
+ onClick={() => { setFilterStatus([]); setPage(1); }}
  >
  Todos
  </span>
  {STATUSES.map((s) => (
  <span
  key={s}
- className={'filter-chip ' + (filterStatus === s ? 'filter-chip--active' : '')}
- onClick={() => { setFilterStatus(s); setPage(1); }}
+ className={'filter-chip ' + (filterStatus.includes(s) ? 'filter-chip--active' : '')}
+ onClick={() => { setFilterStatus((cur) => cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]); setPage(1); }}
+ title="Clique pra marcar/desmarcar (pode combinar vários)"
  >
  {STATUS_MAP[s]?.[1] || s}
  </span>
@@ -213,12 +214,12 @@ export default function Leads() {
 
  {mostrarFiltros && (
  <LeadsFiltrosPanel
- v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus || '', campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe }}
+ v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus, campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe }}
  onAplicar={(f) => {
  setDataInicial(f.dataInicial);
  setDataFinal(f.dataFinal);
  setFiltroOrigem(f.origem);
- setFilterStatus(f.status || null);
+ setFilterStatus(f.status);
  setFiltroCampanha(f.campanha);
  setFiltroFormulario(f.formulario);
  setFiltroEmp(f.empreendimentoId);
