@@ -142,10 +142,16 @@ export default function Corretores() {
  <div className="main__content">
  <PageHeader
  breadcrumb="Gestão · Corretores"
- title={`${corretores.length} corretores · ${eqs.length} equipes`}
+ title={
+ filtroEquipe
+ ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} ${filtroEquipe}`
+ : (filtroStatus || search.trim())
+ ? `${filtered.length} corretor${filtered.length === 1 ? '' : 'es'} no filtro`
+ : `${corretores.length} corretores · ${eqs.length} equipes`
+ }
  subtitle={
  (filtroEquipe || filtroStatus || search.trim())
- ? `${filtered.length} no filtro · ${filtered.filter((c: any) => c.status === 'ATIVO' || c.ativo).length} ativos`
+ ? `${filtered.filter((c: any) => c.status === 'ATIVO' || c.ativo).length} ativos no recorte`
  : `${ativos} ativos · ${corretores.length - ativos} em probatório`
  }
  />
