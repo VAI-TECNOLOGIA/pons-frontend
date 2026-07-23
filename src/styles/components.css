@@ -2613,3 +2613,10 @@ dialog.modal[open] {
   border: 1px solid rgba(14, 159, 110, 0.35);
   white-space: nowrap;
 }
+
+
+/* Tabela compacta (histórico de transferências): paddings menores pra caber
+   sem rolagem em telas de notebook. */
+.tabela-compacta th,
+.tabela-compacta td { padding: 10px 10px; }
+.tabela-compacta { font-size: 13px; }

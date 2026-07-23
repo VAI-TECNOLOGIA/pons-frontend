@@ -65,7 +65,7 @@ export default function Transferencias() {
   );
   const temFiltro = !!(motivo.length || buscaDeb || desde || ate || paraCorretor);
 
-  const fmt = (d: string) => new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const fmt = (d: string) => new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 
   return (
     <>
@@ -116,7 +116,7 @@ export default function Transferencias() {
 
         {data && (
           <div className="card fade-in" style={{ padding: 0, overflowX: 'auto' }}>
-            <table className="table row-hover">
+            <table className="table row-hover tabela-compacta">
               <thead>
                 <tr>
                   <th>Quem enviou</th>
@@ -167,8 +167,12 @@ export default function Transferencias() {
                         <span className="pill-ok"><Icon name="check" size={11} /> Concluído</span>
                       </td>
                       <td>
-                        <button className="btn btn--secondary btn--sm" onClick={() => setAberto(aberto === g.id ? null : g.id)}>
-                          <Icon name="eye" size={12} /> {aberto === g.id ? 'Fechar' : 'Detalhes'}
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          onClick={() => setAberto(aberto === g.id ? null : g.id)}
+                          title={aberto === g.id ? 'Fechar detalhes' : 'Ver os leads desta operação'}
+                        >
+                          <Icon name="eye" size={13} />
                         </button>
                       </td>
                     </tr>
