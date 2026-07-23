@@ -115,50 +115,62 @@ export default function Transferencias() {
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
 
         {data && (
-          <div className="card fade-in" style={{ padding: 0 }}>
+          <div className="card fade-in" style={{ padding: 0, overflowX: 'auto' }}>
             <table className="table row-hover">
               <thead>
                 <tr>
+                  <th>Tipo</th>
+                  <th>Status</th>
+                  <th>Criado em</th>
                   <th>Quem enviou</th>
                   <th>Quem recebeu</th>
-                  <th className="numeric">Leads</th>
-                  <th>Observação</th>
-                  <th>Data/hora</th>
+                  <th>Progresso</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {data.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Sem transferências no filtro selecionado</td></tr>
+                  <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Sem transferências no filtro selecionado</td></tr>
                 ) : data.map((g) => (
                   <>
                     <tr key={g.id}>
                       <td>
-                        <div className="flex gap-2" style={{ alignItems: 'center' }}>
-                          <div className="avatar avatar--sm">{initials(g.enviadoPorNome || 'S')}</div>
-                          <div>
-                            <div className="font-semibold" style={{ fontSize: 13 }}>{g.enviadoPorNome}</div>
-                            <div className="text-xs text-secondary">{MOTIVO_LABEL[g.motivo] || g.motivo}</div>
-                          </div>
+                        <div className="flex gap-2" style={{ alignItems: 'center', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {g.paraCorretorNome === 'Bolsão' ? (
+                            <Icon name="database" size={14} />
+                          ) : (
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3l4 4-4 4" /><path d="M21 7H7" /><path d="M7 21l-4-4 4-4" /><path d="M3 17h14" /></svg>
+                          )}
+                          {g.paraCorretorNome === 'Bolsão' ? 'Devolução ao Bolsão' : 'Transferência para Corretor'}
                         </div>
+                        <div className="text-xs text-secondary" style={{ marginTop: 2 }}>{MOTIVO_LABEL[g.motivo] || g.motivo}{g.observacao ? ` · ${g.observacao.slice(0, 60)}` : ''}</div>
                       </td>
-                      <td className="font-semibold" style={{ fontSize: 13 }}>{g.paraCorretorNome}</td>
-                      <td className="numeric">
-                        <span className="badge badge--info" style={{ fontWeight: 700 }}>{g.qtd}</span>
-                      </td>
-                      <td className="text-xs text-secondary" style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={g.observacao || undefined}>
-                        {g.observacao || '—'}
+                      <td>
+                        <span className="pill-ok"><Icon name="check" size={11} /> Concluído</span>
                       </td>
                       <td className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>{fmt(g.createdAt)}</td>
                       <td>
-                        <button className="btn btn--ghost btn--sm" onClick={() => setAberto(aberto === g.id ? null : g.id)}>
+                        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+                          <div className="avatar avatar--sm">{initials(g.enviadoPorNome || 'S')}</div>
+                          <span className="font-semibold" style={{ fontSize: 13 }}>{g.enviadoPorNome}</span>
+                        </div>
+                      </td>
+                      <td className="font-semibold" style={{ fontSize: 13 }}>{g.paraCorretorNome}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <span style={{ color: 'var(--color-success, #0E9F6E)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Icon name="check" size={12} /> {g.qtd}
+                        </span>
+                        <span className="text-secondary" style={{ fontSize: 12 }}> / {g.qtd}</span>
+                      </td>
+                      <td>
+                        <button className="btn btn--secondary btn--sm" onClick={() => setAberto(aberto === g.id ? null : g.id)}>
                           <Icon name="eye" size={12} /> {aberto === g.id ? 'Fechar' : 'Detalhes'}
                         </button>
                       </td>
                     </tr>
                     {aberto === g.id && (
                       <tr key={`${g.id}-det`}>
-                        <td colSpan={6} style={{ background: 'var(--bg-elevated)', padding: '10px 16px' }}>
+                        <td colSpan={7} style={{ background: 'var(--bg-elevated)', padding: '10px 16px' }}>
                           <div className="flex" style={{ gap: 6, flexWrap: 'wrap' }}>
                             {g.leads.map((l) => (
                               <button
