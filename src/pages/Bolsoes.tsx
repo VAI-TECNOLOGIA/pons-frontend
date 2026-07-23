@@ -360,71 +360,120 @@ function BolsoesConfigurados() {
         open={open}
         onClose={() => !salvando && setOpen(false)}
         title={editing ? `Editar bolsão · ${editing.nome}` : 'Criar bolsão'}
-        subtitle="Configure o funcionamento e quem pode capturar os leads"
+        subtitle="Leads deste bolsão ficam em disputa: o primeiro corretor que capturar leva"
         size="md"
         footer={
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button className="btn btn--ghost" onClick={() => setOpen(false)} disabled={salvando}>Cancelar</button>
-            <button className="btn btn--primary" onClick={salvar} disabled={salvando}>{salvando ? 'Salvando…' : editing ? 'Salvar' : 'Criar bolsão'}</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 8 }}>
+            <span className="text-xs text-secondary">
+              {abaModal === 'config' ? '1 de 2 · Configuração' : `2 de 2 · Corretores${acesso === 'RESTRITO' ? ` — ${selCor.size} selecionado(s)` : ''}`}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn--ghost" onClick={() => setOpen(false)} disabled={salvando}>Cancelar</button>
+              {abaModal === 'config' ? (
+                <button className="btn btn--primary" onClick={() => setAbaModal('corretores')}>
+                  Corretores <Icon name="arrow_right" size={13} />
+                </button>
+              ) : (
+                <button className="btn btn--primary" onClick={salvar} disabled={salvando}>
+                  <Icon name="check" size={14} /> {salvando ? 'Salvando…' : editing ? 'Salvar bolsão' : 'Criar bolsão'}
+                </button>
+              )}
+            </div>
           </div>
         }
       >
-        <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border-light)', marginBottom: 14 }}>
-          {([['config', 'Configuração do bolsão'], ['corretores', 'Corretores']] as const).map(([k, l]) => (
+        {/* Abas em pílula */}
+        <div style={{ display: 'flex', gap: 6, background: 'var(--bg-card-hover)', borderRadius: 12, padding: 4, marginBottom: 18 }}>
+          {([['config', 'settings', 'Configuração do bolsão'], ['corretores', 'users', 'Corretores']] as const).map(([k, ic, l]) => (
             <button
               key={k}
               type="button"
               onClick={() => setAbaModal(k)}
-              style={{ border: 'none', background: 'transparent', font: 'inherit', fontSize: 14, fontWeight: 700, padding: '8px 12px', cursor: 'pointer', color: abaModal === k ? 'var(--pons-blue)' : 'var(--text-secondary)', borderBottom: abaModal === k ? '2px solid var(--pons-blue)' : '2px solid transparent', marginBottom: -1 }}
+              style={{
+                flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                border: 'none', borderRadius: 9, padding: '10px 12px', cursor: 'pointer', font: 'inherit',
+                fontSize: 13.5, fontWeight: 700,
+                background: abaModal === k ? 'var(--pons-blue)' : 'transparent',
+                color: abaModal === k ? '#fff' : 'var(--text-secondary)',
+                transition: 'background 120ms ease, color 120ms ease',
+              }}
             >
-              {l}
+              <Icon name={ic} size={14} /> {l}
             </button>
           ))}
         </div>
 
         {abaModal === 'config' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="field">
-              <label className="field__label">Nome</label>
-              <input className="field__input" value={nome} onChange={(e) => setNome(e.target.value)} placeholder='Ex.: "Bolsão Geral", "Bolsão Balneário"' />
-            </div>
-            <div className="field">
-              <label className="field__label">Status</label>
-              <select className="field__select" value={ativo ? '1' : '0'} onChange={(e) => setAtivo(e.target.value === '1')}>
-                <option value="1">Ativo</option>
-                <option value="0">Inativo</option>
-              </select>
-            </div>
-            <div className="field">
-              <label className="field__label">Horário de funcionamento</label>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input type="time" className="field__input" style={{ width: 'auto' }} value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
-                <span className="text-xs text-secondary">até</span>
-                <input type="time" className="field__input" style={{ width: 'auto' }} value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'end' }}>
+              <div className="field">
+                <label className="field__label">Nome do bolsão</label>
+                <input className="field__input" style={{ height: 44, fontSize: 15, fontWeight: 600 }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder='Ex.: "Bolsão Geral", "Bolsão Balneário"' autoFocus />
               </div>
-              <div className="field__hint">Fora da janela ninguém captura. Deixe vazio pra funcionar 24h.</div>
+              <div className="field">
+                <label className="field__label">Status</label>
+                <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card-hover)', borderRadius: 10, padding: 3 }}>
+                  {([[true, 'Ativo'], [false, 'Inativo']] as const).map(([v, l]) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setAtivo(v)}
+                      style={{
+                        border: 'none', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700,
+                        background: ativo === v ? (v ? '#0E9F6E' : 'var(--color-danger, #e5484d)') : 'transparent',
+                        color: ativo === v ? '#fff' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="field">
-              <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="checkbox" checked={limiteOn} onChange={(e) => setLimiteOn(e.target.checked)} />
-                Limite de capturas diariamente
-                <button
-                  type="button"
-                  onClick={() => setDicaLimite((v) => !v)}
-                  title="O que é isso?"
-                  style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid var(--border-light)', background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'inline-grid', placeItems: 'center', padding: 0 }}
-                >
-                  ?
-                </button>
-              </label>
+
+            <div style={{ border: '1px solid var(--border-light)', borderRadius: 12, padding: '14px 16px' }}>
+              <div className="uppercase-tag" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                <Icon name="clock" size={13} /> Janela de funcionamento
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input type="time" className="field__input" style={{ width: 130, height: 42, fontSize: 15 }} value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
+                <span className="text-secondary" style={{ fontWeight: 700 }}>até</span>
+                <input type="time" className="field__input" style={{ width: 130, height: 42, fontSize: 15 }} value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
+                {(horaInicio || horaFim) && (
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setHoraInicio(''); setHoraFim(''); }}>Limpar</button>
+                )}
+              </div>
+              <div className="field__hint" style={{ marginTop: 8 }}>Fora deste horário ninguém captura leads do bolsão. Vazio = funciona 24h.</div>
+            </div>
+
+            <div style={{ border: '1px solid var(--border-light)', borderRadius: 12, padding: '14px 16px' }}>
+              <div className="flex-between" style={{ gap: 10 }}>
+                <div className="uppercase-tag" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name="target" size={13} /> Limite de capturas diariamente
+                  <button
+                    type="button"
+                    onClick={() => setDicaLimite((v) => !v)}
+                    title="O que é isso?"
+                    style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid var(--border-light)', background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'inline-grid', placeItems: 'center', padding: 0, textTransform: 'none' }}
+                  >
+                    ?
+                  </button>
+                </div>
+                <label className="switch">
+                  <input type="checkbox" checked={limiteOn} onChange={(e) => setLimiteOn(e.target.checked)} />
+                  <span className="switch__track" />
+                </label>
+              </div>
               {dicaLimite && (
-                <div className="field__hint" style={{ background: 'var(--bg-card-hover)', borderRadius: 8, padding: '8px 10px' }}>
-                  Limita quantos leads cada corretor pode capturar deste bolsão por dia. Ex.: limite 2 → cada corretor pega no máximo 2 leads/dia; no dia seguinte o contador zera.
+                <div className="field__hint" style={{ background: 'var(--bg-card-hover)', borderRadius: 8, padding: '10px 12px', marginTop: 10, lineHeight: 1.55 }}>
+                  Limita quantos leads <strong>cada corretor</strong> pode capturar deste bolsão <strong>por dia</strong>. Ex.: limite 2 → cada corretor pega no máximo 2 leads/dia; no dia seguinte o contador zera. Bom pra distribuir oportunidade de forma justa.
                 </div>
               )}
               {limiteOn && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                  <input type="number" min={1} max={999} className="field__input" style={{ width: 100 }} value={limite} onChange={(e) => setLimite(Number(e.target.value) || 1)} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                  <button type="button" className="btn btn--secondary btn--sm" onClick={() => setLimite((v) => Math.max(1, v - 1))} style={{ width: 36 }}>−</button>
+                  <span style={{ fontSize: 22, fontWeight: 800, minWidth: 36, textAlign: 'center' }}>{limite}</span>
+                  <button type="button" className="btn btn--secondary btn--sm" onClick={() => setLimite((v) => Math.min(999, v + 1))} style={{ width: 36 }}>+</button>
                   <span className="text-xs text-secondary">captura(s) por corretor por dia</span>
                 </div>
               )}
@@ -433,39 +482,63 @@ function BolsoesConfigurados() {
         )}
 
         {abaModal === 'corretores' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="field">
-              <label className="field__label">Acesso</label>
-              <select className="field__select" value={acesso} onChange={(e) => setAcesso(e.target.value as any)}>
-                <option value="TODOS">Atribuído para todos</option>
-                <option value="RESTRITO">Acesso restrito</option>
-              </select>
-              <div className="field__hint">{acesso === 'TODOS' ? 'Qualquer corretor ativo pode capturar leads deste bolsão.' : 'Só os corretores selecionados abaixo podem capturar.'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button type="button" className={'opcao-card' + (acesso === 'TODOS' ? ' opcao-card--on' : '')} onClick={() => setAcesso('TODOS')}>
+                <span className="opcao-card__titulo"><Icon name="users" size={15} /> Atribuído para todos {acesso === 'TODOS' && <Icon name="check" size={14} />}</span>
+                <span className="opcao-card__desc">Qualquer corretor ativo do sistema pode capturar leads deste bolsão.</span>
+              </button>
+              <button type="button" className={'opcao-card' + (acesso === 'RESTRITO' ? ' opcao-card--on' : '')} onClick={() => setAcesso('RESTRITO')}>
+                <span className="opcao-card__titulo"><Icon name="lock" size={15} /> Acesso restrito {acesso === 'RESTRITO' && <Icon name="check" size={14} />}</span>
+                <span className="opcao-card__desc">Só os corretores que você selecionar abaixo podem capturar.</span>
+              </button>
             </div>
+
             {acesso === 'RESTRITO' && (
-              <div>
-                <input
-                  className="field__input"
-                  style={{ height: 40, marginBottom: 8 }}
-                  placeholder="Buscar corretor por nome ou equipe…"
-                  value={buscaCor}
-                  onChange={(e) => setBuscaCor(e.target.value)}
-                />
-                <div className="text-xs text-secondary" style={{ marginBottom: 6 }}>{selCor.size} selecionado(s)</div>
-                <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 10, padding: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: 12, padding: 12 }}>
+                <div className="flex-between" style={{ gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                  <input
+                    className="field__input"
+                    style={{ height: 42, fontSize: 14, flex: '1 1 220px' }}
+                    placeholder="Buscar corretor por nome ou equipe…"
+                    value={buscaCor}
+                    onChange={(e) => setBuscaCor(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="badge badge--info" style={{ fontWeight: 800 }}>{selCor.size} selecionado(s)</span>
+                    {selCor.size > 0 && (
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelCor(new Set())}>Limpar</button>
+                    )}
+                  </div>
+                </div>
+                <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {listaCor.length === 0 ? (
-                    <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhum corretor encontrado.</div>
-                  ) : listaCor.map((c: any) => (
-                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={selCor.has(c.id)}
-                        onChange={() => setSelCor((cur) => { const n = new Set(cur); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })}
-                      />
-                      <span style={{ fontWeight: 600 }}>{c.nome}</span>
-                      <span className="text-xs text-secondary">{c.equipe?.nome || 'Sem equipe'}</span>
-                    </label>
-                  ))}
+                    <div className="text-xs text-secondary" style={{ padding: '14px 12px', textAlign: 'center' }}>Nenhum corretor encontrado.</div>
+                  ) : listaCor.map((c: any) => {
+                    const on = selCor.has(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setSelCor((cur) => { const n = new Set(cur); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px',
+                          border: on ? '1px solid var(--pons-blue)' : '1px solid transparent',
+                          borderRadius: 10, cursor: 'pointer', font: 'inherit', color: 'inherit', textAlign: 'left',
+                          background: on ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+                        }}
+                      >
+                        <div className="avatar avatar--sm">{c.initials || (c.nome || '?').slice(0, 2).toUpperCase()}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
+                          <div className="text-xs text-secondary">{c.equipe?.nome || 'Sem equipe'}</div>
+                        </div>
+                        <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', border: on ? 'none' : '2px solid var(--border-light)', background: on ? 'var(--pons-blue)' : 'transparent', color: '#fff' }}>
+                          {on && <Icon name="check" size={12} />}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
