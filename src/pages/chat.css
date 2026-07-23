@@ -56,6 +56,8 @@
   color: var(--text-secondary);
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .inbox__tab--active {
   color: var(--pons-blue);
@@ -70,8 +72,14 @@
   border-bottom: 1px solid var(--border-light);
   cursor: pointer;
   color: var(--text-primary);
+  touch-action: manipulation; /* toque único no iOS — sem espera de double-tap */
+  -webkit-tap-highlight-color: transparent;
 }
-.conv:hover { background: var(--bg-card-hover); }
+/* Hover SÓ em dispositivo com mouse: no iOS, :hover em item tocável faz o
+   primeiro toque virar "hover" e exige um segundo toque pra clicar. */
+@media (hover: hover) {
+  .conv:hover { background: var(--bg-card-hover); }
+}
 .conv--active {
   background: var(--bg-card-hover);
   border-left: 3px solid var(--pons-blue);
@@ -144,7 +152,9 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
-.imovel-chip:hover { background: var(--chat-chip-hover); }
+@media (hover: hover) {
+  .imovel-chip:hover { background: var(--chat-chip-hover); }
+}
 
 .thread__messages {
   flex: 1 1 auto;
@@ -214,7 +224,9 @@
   border: 1px solid #7C3AED;
   color: #fff;
 }
-.composer__nota-send:hover { filter: brightness(1.08); }
+@media (hover: hover) {
+  .composer__nota-send:hover { filter: brightness(1.08); }
+}
 .composer__input--nota {
   border-color: #7C3AED !important;
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18) !important;
@@ -328,7 +340,9 @@
   cursor: pointer;
   margin-right: 8px;
 }
-.thread__back:hover { background: var(--bg-card-hover); }
+@media (hover: hover) {
+  .thread__back:hover { background: var(--bg-card-hover); }
+}
 
 /* Topbar do chat NÃO pode ser sticky — atrapalha o cálculo de altura. */
 .inbox + .topbar, .topbar:has(+ .inbox) { /* no-op anchor pra ordem */ }
@@ -541,7 +555,9 @@
   border-bottom: 1px solid var(--border-light);
   transition: background var(--transition-base);
 }
-.tpl-item:hover { background: var(--bg-card-hover); }
+@media (hover: hover) {
+  .tpl-item:hover { background: var(--bg-card-hover); }
+}
 .tpl-item--active {
   background: rgba(34, 197, 94, 0.10);
   border-left: 3px solid #22C55E;
@@ -689,7 +705,9 @@
   display: block; width: 100%; text-align: left; background: transparent; border: 0;
   padding: 9px 10px; border-radius: 8px; font-size: 13px; line-height: 1.45; color: var(--text-primary); cursor: pointer;
 }
-.quick-item:hover { background: var(--bg-app-soft, rgba(14, 124, 155, .10)); }
+@media (hover: hover) {
+  .quick-item:hover { background: var(--bg-app-soft, rgba(14, 124, 155, .10)); }
+}
 
 /* ── Microfone + barra de gravação ───────────────────────────────────────── */
 .composer__mic { color: var(--pons-blue, #0E7C9B); }

@@ -457,8 +457,9 @@ export default function Chat() {
 
   const abrirImovel = (emp: any) => {
     setImovelSel(emp);
-    setFotosSel(new Set((emp.fotos || []).map((f: any) => f.id)));
-    setImovelMsg(`🏢 *${emp.nome}*`);
+    // Nada pré-selecionado: o corretor marca só as fotos que quer mandar.
+    setFotosSel(new Set());
+    setImovelMsg(`*${emp.nome}*`);
   };
 
   const enviarFotosImovel = async () => {
@@ -1033,7 +1034,20 @@ export default function Chat() {
                     </div>
                   }
                 >
-                  <div className="uppercase-tag" style={{ marginBottom: 8 }}>1 · Fotos ({fotosSel.size} de {(imovelSel.fotos || []).length} selecionadas)</div>
+                  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span>1 · Fotos ({fotosSel.size} de {(imovelSel.fotos || []).length} selecionadas)</span>
+                    <button
+                      type="button"
+                      className="btn btn--secondary btn--sm"
+                      disabled={enviandoFotos}
+                      onClick={() => setFotosSel((cur) =>
+                        cur.size === (imovelSel.fotos || []).length
+                          ? new Set()
+                          : new Set((imovelSel.fotos || []).map((f: any) => f.id)))}
+                    >
+                      {fotosSel.size === (imovelSel.fotos || []).length ? 'Limpar seleção' : 'Selecionar todas'}
+                    </button>
+                  </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
                     {(imovelSel.fotos || []).map((f: any) => {
                       const on = fotosSel.has(f.id);
