@@ -81,7 +81,7 @@ export function LeadsFiltrosPanel({ v, onAplicar, statuses, opcoes, corretores, 
  </select>
  </div>
  </div>
- <div className="leads-filtros__grupo">
+ <div className="leads-filtros__grupo leads-filtros__grupo--full">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="layers" size={13} /> Segmentação (marque vários)</div>
  <div className="leads-filtros__linha">
  <MultiFiltro

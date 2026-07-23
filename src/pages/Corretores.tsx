@@ -204,8 +204,8 @@ export default function Corretores() {
  </select>
  </div>
 
- <div className="card" style={{ padding: 0 }}>
- <table className="table">
+ <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+ <table className="table" style={{ minWidth: 900 }}>
  <thead>
  <tr>
  <th>Corretor</th>

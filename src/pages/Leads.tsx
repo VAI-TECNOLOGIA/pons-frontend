@@ -261,7 +261,7 @@ export default function Leads() {
  </div>
  )}
 
- <div className="card fade-in" style={{ padding: 0 }}>
+ <div className="card fade-in" style={{ padding: 0, overflowX: 'auto' }}>
  <table className="table row-hover">
  <thead>
  <tr>

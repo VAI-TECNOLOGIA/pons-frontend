@@ -258,6 +258,11 @@
   .leads-filtros { grid-template-columns: minmax(0, 1fr); gap: 14px; }
 }
 .leads-filtros__grupo { min-width: 0; }
+/* Grupo que ocupa a linha inteira (Segmentação: Produto+Campanha+Formulário lado a lado) */
+.leads-filtros__grupo--full { grid-column: 1 / -1; }
+/* Campos de chips (MultiFiltro/CorretorPicker) flexionam sem vazar */
+.leads-filtros__linha > div.field__input,
+.leads-filtros__linha > span { max-width: 100%; }
 .leads-filtros__linha {
   display: flex;
   flex-wrap: wrap;
