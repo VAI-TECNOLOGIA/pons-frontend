@@ -18,6 +18,7 @@ type MetaErrKind =
   | 'template_format'
   | 'app_unavailable'
   | 'phone_unregistered'
+  | 'experimento_meta'
   | 'unknown';
 
 const META_ERRORS: Record<number, { kind: MetaErrKind; msg: string }> = {
