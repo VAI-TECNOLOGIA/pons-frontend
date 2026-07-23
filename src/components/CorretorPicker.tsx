@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 
 // Seletor de corretor com BUSCA (nome, equipe ou telefone) — substitui os
 // <select> gigantes das ações de transferir lead. Mostra lista clicável
 // filtrada; selecionado vira um chip com X pra trocar.
+// O dropdown é renderizado via PORTAL no body (position fixed) pra nunca ser
+// cortado por overflow/z-index de card, modal ou barra onde o campo estiver.
 export function CorretorPicker({
   corretores,
   value,
@@ -17,6 +20,19 @@ export function CorretorPicker({
 }) {
   const [busca, setBusca] = useState('');
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; acima: boolean } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const abrir = () => {
+    const r = inputRef.current?.getBoundingClientRect();
+    if (r) {
+      // Abre pra cima quando não há espaço embaixo (barra de filtros no fim da tela)
+      const abaixo = window.innerHeight - r.bottom;
+      const acima = abaixo < 280 && r.top > abaixo;
+      setPos({ top: acima ? r.top - 4 : r.bottom + 4, left: r.left, width: Math.max(r.width, 280), acima });
+    }
+    setOpen(true);
+  };
 
   const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const dig = busca.replace(/\D/g, '');
@@ -71,23 +87,24 @@ export function CorretorPicker({
   return (
     <span style={{ position: 'relative', display: 'inline-block', minWidth: 220, flex: '0 1 260px' }}>
       <input
+        ref={inputRef}
         className="field__input"
         style={{ height: 34, fontSize: 13, width: '100%' }}
         placeholder={placeholder}
         value={busca}
-        onChange={(e) => { setBusca(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
+        onChange={(e) => { setBusca(e.target.value); abrir(); }}
+        onFocus={abrir}
       />
-      {open && (
+      {open && pos && createPortal(
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 60 }} onClick={() => setOpen(false)} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
             style={{
-              position: 'absolute',
-              top: 'calc(100% + 4px)',
-              left: 0,
-              right: 0,
-              zIndex: 61,
+              position: 'fixed',
+              ...(pos.acima ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),
+              left: Math.min(pos.left, window.innerWidth - pos.width - 8),
+              width: pos.width,
+              zIndex: 9999,
               maxHeight: 260,
               overflowY: 'auto',
               background: 'var(--bg-card)',
@@ -128,7 +145,8 @@ export function CorretorPicker({
               ))
             )}
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </span>
   );
