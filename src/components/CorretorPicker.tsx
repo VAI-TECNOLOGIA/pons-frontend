@@ -12,11 +12,13 @@ export function CorretorPicker({
   value,
   onChange,
   placeholder = 'Buscar corretor por nome, equipe ou telefone…',
+  bolsao = false,
 }: {
   corretores: any[] | null | undefined;
-  value: number | '';
-  onChange: (id: number | '') => void;
+  value: number | 'sem' | '';
+  onChange: (id: number | 'sem' | '') => void;
   placeholder?: string;
+  bolsao?: boolean; // inclui a opção "Sem corretor (bolsão)" (valor 'sem')
 }) {
   const [busca, setBusca] = useState('');
   const [open, setOpen] = useState(false);
@@ -49,7 +51,24 @@ export function CorretorPicker({
     })
     .slice(0, 30);
 
-  const selecionado = ativos.find((c: any) => c.id === value);
+  const selecionado = value === 'sem' ? null : ativos.find((c: any) => c.id === value);
+
+  if (value === 'sem') {
+    return (
+      <span
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+          border: '1px solid var(--pons-blue)', borderRadius: 8, background: 'var(--bg-card)',
+          fontSize: 13, fontWeight: 600,
+        }}
+      >
+        Sem corretor (bolsão)
+        <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '2px 6px' }} onClick={() => { onChange(''); setBusca(''); }} title="Trocar">
+          <Icon name="x" size={12} />
+        </button>
+      </span>
+    );
+  }
 
   if (selecionado) {
     return (
@@ -114,6 +133,17 @@ export function CorretorPicker({
               padding: 4,
             }}
           >
+            {bolsao && (
+              <button
+                type="button"
+                onClick={() => { onChange('sem'); setOpen(false); }}
+                style={{ display: 'block', width: '100%', padding: '8px 10px', border: 'none', borderRadius: 8, background: 'transparent', font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'pointer', fontWeight: 600 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card-hover)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                Sem corretor (bolsão)
+              </button>
+            )}
             {lista.length === 0 ? (
               <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>Nenhum corretor encontrado.</div>
             ) : (

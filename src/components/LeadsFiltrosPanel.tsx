@@ -1,35 +1,39 @@
 import { Icon } from './Icon';
+import { MultiFiltro } from './MultiFiltro';
+import { CorretorPicker } from './CorretorPicker';
 
 // Painel de filtros de leads (estilo Imobilead): Período · Jornada · Segmentação
 // · Equipe. Usado na tela de Leads e na Distribuição (bolsão) — mesmo visual,
 // mesmos parâmetros server-side do GET /leads.
+// Campanha, Formulário, Origem, Produto e Equipe são MULTI-seleção (2026-07-23):
+// dá pra marcar vários de uma vez; o backend recebe lista separada por vírgula.
 export interface FiltrosLead {
  dataInicial: string;
  dataFinal: string;
- origem: string;
+ origem: string[];
  status: string;
- campanha: string;
- formulario: string; // nome do Lead Form (aparece como "Interesse" na ficha)
- empreendimentoId: string;
+ campanha: string[];
+ formulario: string[]; // nomes do Lead Form (aparece como "Interesse" na ficha)
+ empreendimentoId: string[];
  corretorId: string; // '' = todos · 'sem' = bolsão · id
- equipeId: string; // '' = todas · id da equipe (leads dos corretores dela)
+ equipeId: string[]; // ids das equipes (leads dos corretores delas)
 }
 
 export const FILTROS_LEAD_VAZIO: FiltrosLead = {
- dataInicial: '', dataFinal: '', origem: '', status: '', campanha: '', formulario: '', empreendimentoId: '', corretorId: '', equipeId: '',
+ dataInicial: '', dataFinal: '', origem: [], status: '', campanha: [], formulario: [], empreendimentoId: [], corretorId: '', equipeId: [],
 };
 
 // Converte os filtros nos params do GET /leads (mesma convenção da tela Leads).
 export function filtrosLeadParams(f: FiltrosLead): Record<string, string> {
  const p: Record<string, string> = {};
  if (f.status) p.status = f.status;
- if (f.origem) p.origem = f.origem;
- if (f.campanha) p.campanha = f.campanha;
- if (f.formulario) p.formulario = f.formulario;
- if (f.empreendimentoId) p.empreendimentoId = f.empreendimentoId;
+ if (f.origem.length) p.origem = f.origem.join(',');
+ if (f.campanha.length) p.campanha = f.campanha.join(',');
+ if (f.formulario.length) p.formulario = f.formulario.join(',');
+ if (f.empreendimentoId.length) p.empreendimentoId = f.empreendimentoId.join(',');
  if (f.corretorId === 'sem') p.semCorretor = 'true';
  else if (f.corretorId) p.corretorId = f.corretorId;
- if (f.equipeId) p.equipeId = f.equipeId;
+ if (f.equipeId.length) p.equipeId = f.equipeId.join(',');
  if (f.dataInicial) p.dataInicial = f.dataInicial;
  if (f.dataFinal) p.dataFinal = f.dataFinal;
  return p;
@@ -46,6 +50,7 @@ interface Props {
 }
 
 export function LeadsFiltrosPanel({ v, onChange, statuses, opcoes, corretores, empreendimentos, equipes }: Props) {
+ const asOpts = (arr?: string[] | null) => (arr || []).map((x) => ({ value: x, label: x }));
  return (
  <div className="card fade-in" style={{ padding: '16px 18px', marginBottom: 14 }}>
  <div className="leads-filtros">
@@ -61,10 +66,7 @@ export function LeadsFiltrosPanel({ v, onChange, statuses, opcoes, corretores, e
  <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="target" size={13} /> Jornada do lead</div>
  <div className="leads-filtros__linha">
- <select className="field__select" value={v.origem} onChange={(e) => onChange({ origem: e.target.value })}>
- <option value="">Origem</option>
- {(opcoes?.origens || []).map((o) => <option key={o} value={o}>{o}</option>)}
- </select>
+ <MultiFiltro label="Origem" opcoes={asOpts(opcoes?.origens)} values={v.origem} onChange={(vals) => onChange({ origem: vals })} />
  <select className="field__select" value={v.status} onChange={(e) => onChange({ status: e.target.value })}>
  <option value="">Status</option>
  {statuses.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
@@ -72,36 +74,36 @@ export function LeadsFiltrosPanel({ v, onChange, statuses, opcoes, corretores, e
  </div>
  </div>
  <div className="leads-filtros__grupo">
- <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="layers" size={13} /> Segmentação</div>
+ <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="layers" size={13} /> Segmentação (marque vários)</div>
  <div className="leads-filtros__linha">
- <select className="field__select" value={v.empreendimentoId} onChange={(e) => onChange({ empreendimentoId: e.target.value })}>
- <option value="">Produto</option>
- {(empreendimentos || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
- </select>
- <select className="field__select" value={v.campanha} onChange={(e) => onChange({ campanha: e.target.value })}>
- <option value="">Campanha</option>
- {(opcoes?.campanhas || []).map((c) => <option key={c} value={c}>{c}</option>)}
- </select>
- <select className="field__select" value={v.formulario} onChange={(e) => onChange({ formulario: e.target.value })}>
- <option value="">Formulário</option>
- {(opcoes?.formularios || []).map((f) => <option key={f} value={f}>{f}</option>)}
- </select>
+ <MultiFiltro
+ label="Produto"
+ opcoes={(empreendimentos || []).map((e2: any) => ({ value: String(e2.id), label: e2.nome }))}
+ values={v.empreendimentoId}
+ onChange={(vals) => onChange({ empreendimentoId: vals })}
+ />
+ <MultiFiltro label="Campanha" opcoes={asOpts(opcoes?.campanhas)} values={v.campanha} onChange={(vals) => onChange({ campanha: vals })} />
+ <MultiFiltro label="Formulário" opcoes={asOpts(opcoes?.formularios)} values={v.formulario} onChange={(vals) => onChange({ formulario: vals })} />
  </div>
  </div>
  <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="users" size={13} /> Equipe</div>
  <div className="leads-filtros__linha">
  {(equipes || []).length > 0 && (
- <select className="field__select" value={v.equipeId} onChange={(e) => onChange({ equipeId: e.target.value })}>
- <option value="">Equipe (todas)</option>
- {(equipes || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
- </select>
+ <MultiFiltro
+ label="Equipe"
+ opcoes={(equipes || []).map((e2: any) => ({ value: String(e2.id), label: e2.nome }))}
+ values={v.equipeId}
+ onChange={(vals) => onChange({ equipeId: vals })}
+ />
  )}
- <select className="field__select" value={v.corretorId} onChange={(e) => onChange({ corretorId: e.target.value })}>
- <option value="">Corretor</option>
- <option value="sem">Sem corretor (bolsão)</option>
- {(corretores || []).map((c: any) => <option key={c.id} value={c.id}>{c.nome || c.user?.name}</option>)}
- </select>
+ <CorretorPicker
+ corretores={corretores}
+ bolsao
+ placeholder="Corretor (busque por nome)…"
+ value={v.corretorId === '' ? '' : v.corretorId === 'sem' ? 'sem' : Number(v.corretorId)}
+ onChange={(id) => onChange({ corretorId: id === '' ? '' : String(id) })}
+ />
  </div>
  </div>
  </div>

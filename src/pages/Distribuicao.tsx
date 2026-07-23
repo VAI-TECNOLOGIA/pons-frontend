@@ -319,7 +319,7 @@ export default function Distribuicao() {
                   <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
                   <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
-                  <CorretorPicker corretores={corretores} value={alvoTransf} onChange={setAlvoTransf} />
+                  <CorretorPicker corretores={corretores} value={alvoTransf} onChange={(id) => setAlvoTransf(id === 'sem' ? '' : id)} />
                   <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
                     {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
                   </button>

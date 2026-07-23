@@ -37,12 +37,12 @@ export default function Leads() {
  const [filterStatus, setFilterStatus] = useState<string | null>(null);
  // Painel de filtros (server-side — a busca roda no banco, não na página carregada)
  const [mostrarFiltros, setMostrarFiltros] = useState(false);
- const [filtroOrigem, setFiltroOrigem] = useState('');
+ const [filtroOrigem, setFiltroOrigem] = useState<string[]>([]);
  const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | id do corretor
- const [filtroEquipe, setFiltroEquipe] = useState(''); // '' | id da equipe
- const [filtroCampanha, setFiltroCampanha] = useState('');
- const [filtroFormulario, setFiltroFormulario] = useState('');
- const [filtroEmp, setFiltroEmp] = useState(''); // empreendimento de interesse (Produto)
+ const [filtroEquipe, setFiltroEquipe] = useState<string[]>([]); // ids das equipes
+ const [filtroCampanha, setFiltroCampanha] = useState<string[]>([]);
+ const [filtroFormulario, setFiltroFormulario] = useState<string[]>([]);
+ const [filtroEmp, setFiltroEmp] = useState<string[]>([]); // empreendimentos de interesse (Produto)
  const [dataInicial, setDataInicial] = useState('');
  const [dataFinal, setDataFinal] = useState('');
  const [busca, setBusca] = useState('');
@@ -59,13 +59,13 @@ export default function Leads() {
 
  const params: any = { page, limit: PAGE_SIZE };
  if (filterStatus) params.status = filterStatus;
- if (filtroOrigem) params.origem = filtroOrigem;
- if (filtroCampanha) params.campanha = filtroCampanha;
- if (filtroFormulario) params.formulario = filtroFormulario;
- if (filtroEmp) params.empreendimentoId = filtroEmp;
+ if (filtroOrigem.length) params.origem = filtroOrigem.join(',');
+ if (filtroCampanha.length) params.campanha = filtroCampanha.join(',');
+ if (filtroFormulario.length) params.formulario = filtroFormulario.join(',');
+ if (filtroEmp.length) params.empreendimentoId = filtroEmp.join(',');
  if (filtroCorretor === 'sem') params.semCorretor = 'true';
  else if (filtroCorretor) params.corretorId = filtroCorretor;
- if (filtroEquipe) params.equipeId = filtroEquipe;
+ if (filtroEquipe.length) params.equipeId = filtroEquipe.join(',');
  if (dataInicial) params.dataInicial = dataInicial;
  if (dataFinal) params.dataFinal = dataFinal;
  if (buscaDeb) params.q = buscaDeb;
@@ -132,10 +132,10 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem || filtroCorretor || filtroEquipe || filtroCampanha || filtroFormulario || filtroEmp || dataInicial || dataFinal || buscaDeb || filterStatus);
+ const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || dataInicial || dataFinal || buscaDeb || filterStatus);
  const limparFiltros = () => {
- setFilterStatus(null); setFiltroOrigem(''); setFiltroCorretor(''); setFiltroEquipe(''); setFiltroCampanha(''); setFiltroFormulario('');
- setFiltroEmp(''); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
+ setFilterStatus(null); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
+ setFiltroEmp([]); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
  };
  // troca de filtro sempre volta pra página 1
  const aoFiltrar = (setter: (v: any) => void) => (v: any) => { setter(v); setPage(1); };
@@ -254,7 +254,7 @@ export default function Leads() {
  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
  )}
  <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
- <CorretorPicker corretores={corretores} value={alvoTransf} onChange={setAlvoTransf} />
+ <CorretorPicker corretores={corretores} value={alvoTransf} onChange={(id) => setAlvoTransf(id === 'sem' ? '' : id)} />
  <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
  {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
  </button>
