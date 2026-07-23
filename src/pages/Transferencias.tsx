@@ -119,12 +119,12 @@ export default function Transferencias() {
             <table className="table row-hover">
               <thead>
                 <tr>
-                  <th>Tipo</th>
-                  <th>Status</th>
-                  <th>Criado em</th>
                   <th>Quem enviou</th>
                   <th>Quem recebeu</th>
-                  <th>Progresso</th>
+                  <th>Leads</th>
+                  <th>Observação</th>
+                  <th>Data/hora</th>
+                  <th>Status</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -135,32 +135,36 @@ export default function Transferencias() {
                   <>
                     <tr key={g.id}>
                       <td>
-                        <div className="flex gap-2" style={{ alignItems: 'center', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          {g.paraCorretorNome === 'Bolsão' ? (
-                            <Icon name="database" size={14} />
-                          ) : (
-                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3l4 4-4 4" /><path d="M21 7H7" /><path d="M7 21l-4-4 4-4" /><path d="M3 17h14" /></svg>
-                          )}
-                          {g.paraCorretorNome === 'Bolsão' ? 'Devolução ao Bolsão' : 'Transferência para Corretor'}
-                        </div>
-                        <div className="text-xs text-secondary" style={{ marginTop: 2 }}>{MOTIVO_LABEL[g.motivo] || g.motivo}{g.observacao ? ` · ${g.observacao.slice(0, 60)}` : ''}</div>
-                      </td>
-                      <td>
-                        <span className="pill-ok"><Icon name="check" size={11} /> Concluído</span>
-                      </td>
-                      <td className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>{fmt(g.createdAt)}</td>
-                      <td>
                         <div className="flex gap-2" style={{ alignItems: 'center' }}>
                           <div className="avatar avatar--sm">{initials(g.enviadoPorNome || 'S')}</div>
-                          <span className="font-semibold" style={{ fontSize: 13 }}>{g.enviadoPorNome}</span>
+                          <div>
+                            <div className="font-semibold" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{g.enviadoPorNome}</div>
+                            <div className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>{MOTIVO_LABEL[g.motivo] || g.motivo}</div>
+                          </div>
                         </div>
                       </td>
-                      <td className="font-semibold" style={{ fontSize: 13 }}>{g.paraCorretorNome}</td>
+                      <td>
+                        <div className="flex gap-2" style={{ alignItems: 'center', fontSize: 13, fontWeight: 600 }}>
+                          {g.paraCorretorNome === 'Bolsão' ? (
+                            <Icon name="database" size={13} />
+                          ) : (
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3l4 4-4 4" /><path d="M21 7H7" /><path d="M7 21l-4-4 4-4" /><path d="M3 17h14" /></svg>
+                          )}
+                          {g.paraCorretorNome}
+                        </div>
+                      </td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <span style={{ color: 'var(--color-success, #0E9F6E)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <Icon name="check" size={12} /> {g.qtd}
                         </span>
                         <span className="text-secondary" style={{ fontSize: 12 }}> / {g.qtd}</span>
+                      </td>
+                      <td className="text-xs text-secondary" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={g.observacao || undefined}>
+                        {g.observacao || '—'}
+                      </td>
+                      <td className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>{fmt(g.createdAt)}</td>
+                      <td>
+                        <span className="pill-ok"><Icon name="check" size={11} /> Concluído</span>
                       </td>
                       <td>
                         <button className="btn btn--secondary btn--sm" onClick={() => setAberto(aberto === g.id ? null : g.id)}>
