@@ -4,6 +4,7 @@ import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { LeadsFiltrosPanel } from '../components/LeadsFiltrosPanel';
 import { CorretorPicker } from '../components/CorretorPicker';
+import { DestinoPicker, type DestinoTransf } from '../components/DestinoPicker';
 import { LeadCamposCustom } from '../components/LeadCamposCustom';
 import { timeAgo, initials } from '../lib/format';
 import { Api } from '../lib/api';
@@ -76,6 +77,7 @@ export default function Leads() {
  const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
  const { data: equipesFiltro } = useApi<any[]>(() => Api.equipes());
+ const { data: filas } = useApi<any[]>(() => Api.roletas().catch(() => [] as any));
  const { data: opcoes } = useApi<{ origens: string[]; campanhas: string[]; formularios?: string[] }>(() => Api.leadFiltrosOpcoes());
  const toast = useToast();
  const confirm = useConfirm();
@@ -87,7 +89,7 @@ export default function Leads() {
  const podeTransferir = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GERENTE_EQUIPE'].includes(role);
  const podeArquivar = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'].includes(role);
  const [sel, setSel] = useState<Set<number>>(new Set());
- const [alvoTransf, setAlvoTransf] = useState<number | ''>('');
+ const [alvoTransf, setAlvoTransf] = useState<DestinoTransf | null>(null);
  const [transferindo, setTransferindo] = useState(false);
  const [arquivando, setArquivando] = useState(false);
  const toggleSel = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -98,9 +100,9 @@ export default function Leads() {
  if (!sel.size || !alvoTransf) return;
  setTransferindo(true);
  try {
- const r = await Api.roletaTransferirMassa([...sel], Number(alvoTransf));
+ const r = await Api.leadsTransferirDestino([...sel], alvoTransf);
  toast.success(`${r.transferidos} lead(s) transferido(s) para ${r.corretor}.`);
- setSel(new Set()); setAlvoTransf('');
+ setSel(new Set()); setAlvoTransf(null);
  reload();
  } catch (err: any) {
  toast.error('Erro: ' + (err.message || 'falha'));
@@ -255,7 +257,7 @@ export default function Leads() {
  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
  )}
  <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
- <CorretorPicker corretores={corretores} value={alvoTransf} onChange={(id) => setAlvoTransf(id === 'sem' ? '' : id)} />
+ <DestinoPicker corretores={corretores} equipes={equipesFiltro} filas={filas} value={alvoTransf} onChange={setAlvoTransf} />
  <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
  {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
  </button>

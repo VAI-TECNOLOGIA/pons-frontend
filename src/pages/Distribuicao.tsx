@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { CorretorPicker } from '../components/CorretorPicker';
+import { DestinoPicker, type DestinoTransf } from '../components/DestinoPicker';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -98,9 +99,10 @@ export default function Distribuicao() {
   const { data: opcoesFiltro } = useApi<{ origens: string[]; campanhas: string[]; formularios?: string[] }>(() => Api.leadFiltrosOpcoes());
   const { data: empreendimentosFiltro } = useApi<any[]>(() => Api.empreendimentos());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  const { data: filas } = useApi<any[]>(() => Api.roletas().catch(() => [] as any));
   // Seleção em massa + transferência manual (pedido do cliente)
   const [sel, setSel] = useState<Set<number>>(new Set());
-  const [alvoTransf, setAlvoTransf] = useState<number | ''>('');
+  const [alvoTransf, setAlvoTransf] = useState<DestinoTransf | null>(null);
   const [transferindo, setTransferindo] = useState(false);
   const [buscaBolsao, setBuscaBolsao] = useState(''); // busca por nome/telefone no bolsão (antes de transferir)
   const toggleSel = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -109,9 +111,9 @@ export default function Distribuicao() {
     if (!sel.size || !alvoTransf) return;
     setTransferindo(true);
     try {
-      const r = await Api.roletaTransferirMassa([...sel], Number(alvoTransf));
+      const r = await Api.leadsTransferirDestino([...sel], alvoTransf);
       toast.success(`${r.transferidos} lead(s) transferido(s) para ${r.corretor}.`);
-      setSel(new Set()); setAlvoTransf('');
+      setSel(new Set()); setAlvoTransf(null);
       reloadBolsao();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
@@ -319,7 +321,7 @@ export default function Distribuicao() {
                   <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
                   <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
-                  <CorretorPicker corretores={corretores} value={alvoTransf} onChange={(id) => setAlvoTransf(id === 'sem' ? '' : id)} />
+                  <DestinoPicker corretores={corretores} equipes={equipes} filas={filas} value={alvoTransf} onChange={setAlvoTransf} />
                   <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
                     {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
                   </button>
