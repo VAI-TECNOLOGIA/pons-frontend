@@ -10,11 +10,23 @@
   display: grid;
   grid-template-columns: 340px 1fr;
   grid-template-rows: 1fr;                       /* trava: 1 linha tomando 100% */
-  height: calc(100dvh - var(--header-height));
+  height: calc(100dvh - var(--header-height));   /* fallback */
   min-height: 0;
   background: var(--bg-app);
   overflow: hidden;          /* containment estrito — nada escapa */
 }
+/* O cálculo fixo (100dvh - header) corta o rodapé quando a topbar rende uns px
+   mais alta (zoom/fonte do SO — visto no macOS). Com o pai em flex, o inbox
+   passa a ocupar o ESPAÇO REAL que sobra abaixo da topbar, medido pelo browser. */
+.main:has(> .inbox) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.main:has(> .inbox) > .topbar { flex-shrink: 0; }
+.main:has(> .inbox) > .inbox { flex: 1 1 auto; height: auto; }
 .inbox > * {
   min-height: 0;             /* sem isso filhos com overflow expandem o row implícito */
   min-width: 0;
