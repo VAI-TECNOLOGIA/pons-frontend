@@ -153,7 +153,7 @@ export default function Leads() {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
  try {
- await Api.leadCreate({
+ const r = await Api.leadCreate({
  nome: String(fd.get('nome') || ''),
  email: fd.get('email') ? String(fd.get('email')) : undefined,
  telefone: fd.get('telefone') ? String(fd.get('telefone')) : undefined,
@@ -164,7 +164,11 @@ export default function Leads() {
  ? Number(fd.get('empreendimentoInteresseId'))
  : undefined,
  });
+ if (r?.jaExistia) {
+ toast.info(`Este telefone já está cadastrado no lead "${r.nome}" — nenhum lead novo foi criado.`, 8000);
+ } else {
  toast.success('Lead criado com sucesso');
+ }
  setOpen(false);
  reload();
  reloadStats();
