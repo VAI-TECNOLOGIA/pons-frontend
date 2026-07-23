@@ -40,8 +40,8 @@ export function DestinoPicker({
     if (r) {
       const abaixo = window.innerHeight - r.bottom;
       const acima = abaixo < 360 && r.top > abaixo;
-      // Painel confortável: até 440px, sem nunca passar da janela (mobile usa quase a largura toda)
-      setPos({ top: acima ? r.top - 4 : r.bottom + 4, left: r.left, width: Math.min(Math.max(r.width, 440), window.innerWidth - 16), acima });
+      // Painel confortável: até 480px, sempre com 12px de respiro das bordas da janela
+      setPos({ top: acima ? r.top - 6 : r.bottom + 6, left: r.left, width: Math.min(Math.max(r.width, 480), window.innerWidth - 24), acima });
     }
     setBusca('');
     setOpen(true);
@@ -81,7 +81,7 @@ export function DestinoPicker({
       key={key}
       type="button"
       onClick={onClick}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', padding: '8px 10px', border: 'none', borderRadius: 8, background: 'transparent', font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, width: '100%', padding: '10px 12px', border: 'none', borderRadius: 10, background: 'transparent', font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'pointer' }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card-hover)'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
     >
@@ -109,26 +109,26 @@ export function DestinoPicker({
             style={{
               position: 'fixed',
               ...(pos.acima ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),
-              left: Math.min(pos.left, window.innerWidth - pos.width - 8),
+              left: Math.max(12, Math.min(pos.left, window.innerWidth - pos.width - 12)),
               width: pos.width,
               zIndex: 9999,
-              maxHeight: 420,
+              maxHeight: 440,
               display: 'flex',
               flexDirection: 'column',
               background: 'var(--bg-card)',
               border: '1px solid var(--border-light)',
-              borderRadius: 10,
-              boxShadow: 'var(--shadow-lg)',
-              padding: 10,
+              borderRadius: 14,
+              boxShadow: 'var(--shadow-xl, var(--shadow-lg))',
+              padding: 14,
             }}
           >
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
               {(['CORRETOR', 'EQUIPE', 'FILA', 'BASE'] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   className={'btn btn--sm ' + (aba === t ? 'btn--primary' : 'btn--secondary')}
-                  style={{ flex: '1 1 76px', minWidth: 76, justifyContent: 'center' }}
+                  style={{ flex: '1 1 84px', minWidth: 84, justifyContent: 'center', paddingTop: 8, paddingBottom: 8 }}
                   onClick={() => { setAba(t); setBusca(''); }}
                 >
                   {TIPO_LABEL[t]}
@@ -137,7 +137,7 @@ export function DestinoPicker({
               <button
                 type="button"
                 className="btn btn--sm btn--secondary"
-                style={{ flex: '1 1 76px', minWidth: 76, justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                style={{ flex: '1 1 84px', minWidth: 84, justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 6, paddingTop: 8, paddingBottom: 8 }}
                 title="Devolver os leads pro bolsão (sem dono)"
                 onClick={() => { onChange({ tipo: 'BOLSAO', nome: 'Devolver ao bolsão' }); setOpen(false); }}
               >
@@ -147,7 +147,7 @@ export function DestinoPicker({
             <input
               autoFocus
               className="field__input"
-              style={{ height: 36, fontSize: 13, marginBottom: 8 }}
+              style={{ height: 44, fontSize: 14, padding: '0 14px', marginBottom: 10 }}
               placeholder={aba === 'CORRETOR' ? 'Buscar corretor por nome ou equipe…' : aba === 'EQUIPE' ? 'Buscar equipe…' : aba === 'FILA' ? 'Buscar fila…' : 'Buscar base…'}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
