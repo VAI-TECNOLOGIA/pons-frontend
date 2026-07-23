@@ -7,14 +7,17 @@ import { initials } from '../lib/format';
 import { FichaLeadModal } from '../components/FichaLeadModal';
 import { CorretorPicker } from '../components/CorretorPicker';
 
-// Sprint 1 M15 — Histórico de transferências de leads (auditoria)
-const MOTIVO_BADGES: Record<string, [string, string]> = {
-  SLA_AUTOMATICO:        ['badge--warning',   'SLA automático'],
-  MANUAL_GESTOR:         ['badge--info',      'Manual (gestor)'],
-  MANUAL_CORRETOR:       ['badge--info',      'Manual (corretor)'],
-  FALLBACK_ROLETA:       ['badge--cancelled', 'Fallback roleta'],
-  DISTRIBUICAO_AGENDADA: ['badge--launch',    'Agendada'],
-  DIRECIONAMENTO_GESTOR: ['badge--signed',    'Direcionado'],
+// Histórico de transferências de leads — visão SIMPLIFICADA por operação
+// (estilo Imobilead, pedido do Vine 23/07): quem enviou, quem recebeu,
+// quantos leads, observação (opcional) e data/hora. "Detalhes" expande os
+// leads do lote.
+const MOTIVO_LABEL: Record<string, string> = {
+  SLA_AUTOMATICO: 'SLA automático',
+  MANUAL_GESTOR: 'Manual (gestor)',
+  MANUAL_CORRETOR: 'Manual (corretor)',
+  FALLBACK_ROLETA: 'Fallback roleta',
+  DISTRIBUICAO_AGENDADA: 'Distribuição agendada',
+  DIRECIONAMENTO_GESTOR: 'Direcionado',
 };
 
 const FILTROS: [string, string][] = [
@@ -27,9 +30,21 @@ const FILTROS: [string, string][] = [
   ['FALLBACK_ROLETA', 'Fallback'],
 ];
 
+type Grupo = {
+  id: number;
+  enviadoPorNome: string;
+  paraCorretorNome: string;
+  motivo: string;
+  observacao: string | null;
+  qtd: number;
+  createdAt: string;
+  leads: { leadId: number; leadNome: string | null }[];
+};
+
 export default function Transferencias() {
   const [motivo, setMotivo] = useState<string[]>([]); // multi: combina motivos
   const [verLeadId, setVerLeadId] = useState<number | null>(null);
+  const [aberto, setAberto] = useState<number | null>(null); // grupo expandido
   // Filtros extras: busca por lead/corretor, período e corretor de destino
   const [busca, setBusca] = useState('');
   const [buscaDeb, setBuscaDeb] = useState('');
@@ -38,17 +53,19 @@ export default function Transferencias() {
   const [paraCorretor, setParaCorretor] = useState<number | ''>('');
   useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 400); return () => clearTimeout(t); }, [busca]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
-  const params: any = {};
+  const params: any = { agrupado: 1, limit: 500 };
   if (motivo.length) params.motivo = motivo.join(',');
   if (buscaDeb) params.q = buscaDeb;
   if (desde) params.desde = desde;
   if (ate) params.ate = ate;
   if (paraCorretor) params.paraCorretorId = paraCorretor;
-  const { data, loading, error } = useApi<any[]>(
+  const { data, loading, error } = useApi<Grupo[]>(
     () => Api.transferenciasList(params),
     [motivo.join(','), buscaDeb, desde, ate, paraCorretor],
   );
   const temFiltro = !!(motivo.length || buscaDeb || desde || ate || paraCorretor);
+
+  const fmt = (d: string) => new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
     <>
@@ -57,7 +74,7 @@ export default function Transferencias() {
         <PageHeader
           breadcrumb="Administração · Auditoria"
           title="Histórico de Transferências"
-          subtitle="Quem passou cada lead pra quem, quando e por quê"
+          subtitle="Quem enviou, quem recebeu, quantos leads e quando"
         />
 
         <div className="card" style={{ marginBottom: 16 }}>
@@ -91,7 +108,7 @@ export default function Transferencias() {
                 Limpar filtros
               </button>
             )}
-            {data && <span className="text-xs text-secondary" style={{ marginLeft: 'auto' }}>{data.length} registro{data.length === 1 ? '' : 's'}</span>}
+            {data && <span className="text-xs text-secondary" style={{ marginLeft: 'auto' }}>{data.length} operaç{data.length === 1 ? 'ão' : 'ões'}</span>}
           </div>
         </div>
 
@@ -102,49 +119,66 @@ export default function Transferencias() {
             <table className="table row-hover">
               <thead>
                 <tr>
-                  <th>Lead</th>
-                  <th>Movimento</th>
-                  <th>Motivo</th>
+                  <th>Quem enviou</th>
+                  <th>Quem recebeu</th>
+                  <th className="numeric">Leads</th>
                   <th>Observação</th>
-                  <th>Por</th>
-                  <th>Quando</th>
+                  <th>Data/hora</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {data.length === 0 ? (
                   <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Sem transferências no filtro selecionado</td></tr>
-                ) : data.map((t: any) => {
-                  const [bk, lbl] = MOTIVO_BADGES[t.motivo] || ['badge--neutral', t.motivo];
-                  return (
-                    <tr key={t.id}>
+                ) : data.map((g) => (
+                  <>
+                    <tr key={g.id}>
                       <td>
-                        <button
-                          type="button"
-                          onClick={() => setVerLeadId(t.leadId)}
-                          className="flex gap-2"
-                          style={{ alignItems: 'center', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', textAlign: 'left' }}
-                        >
-                          <div className="avatar avatar--sm">{initials(t.leadNome || 'L')}</div>
+                        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+                          <div className="avatar avatar--sm">{initials(g.enviadoPorNome || 'S')}</div>
                           <div>
-                            <div className="font-semibold" style={{ fontSize: 13 }}>{t.leadNome || 'Lead'}</div>
-                            <div className="text-xs text-secondary">#{t.leadId}</div>
+                            <div className="font-semibold" style={{ fontSize: 13 }}>{g.enviadoPorNome}</div>
+                            <div className="text-xs text-secondary">{MOTIVO_LABEL[g.motivo] || g.motivo}</div>
                           </div>
-                        </button>
-                      </td>
-                      <td>
-                        <div className="flex gap-2" style={{ alignItems: 'center', fontSize: 13 }}>
-                          <span className="text-secondary">{t.deCorretorNome || 'Sistema'}</span>
-                          <Icon name="arrow_right" size={14} />
-                          <span className="font-semibold">{t.paraCorretorNome || 'Bolsão'}</span>
                         </div>
                       </td>
-                      <td><span className={`badge ${bk}`}>{lbl}</span></td>
-                      <td className="text-xs text-secondary">{t.observacao || '—'}</td>
-                      <td className="text-xs">{t.executadoPorNome || '—'}</td>
-                      <td className="text-xs text-secondary">{new Date(t.createdAt).toLocaleString('pt-BR')}</td>
+                      <td className="font-semibold" style={{ fontSize: 13 }}>{g.paraCorretorNome}</td>
+                      <td className="numeric">
+                        <span className="badge badge--info" style={{ fontWeight: 700 }}>{g.qtd}</span>
+                      </td>
+                      <td className="text-xs text-secondary" style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={g.observacao || undefined}>
+                        {g.observacao || '—'}
+                      </td>
+                      <td className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>{fmt(g.createdAt)}</td>
+                      <td>
+                        <button className="btn btn--ghost btn--sm" onClick={() => setAberto(aberto === g.id ? null : g.id)}>
+                          <Icon name="eye" size={12} /> {aberto === g.id ? 'Fechar' : 'Detalhes'}
+                        </button>
+                      </td>
                     </tr>
-                  );
-                })}
+                    {aberto === g.id && (
+                      <tr key={`${g.id}-det`}>
+                        <td colSpan={6} style={{ background: 'var(--bg-elevated)', padding: '10px 16px' }}>
+                          <div className="flex" style={{ gap: 6, flexWrap: 'wrap' }}>
+                            {g.leads.map((l) => (
+                              <button
+                                key={l.leadId}
+                                className="btn btn--secondary btn--sm"
+                                onClick={() => setVerLeadId(l.leadId)}
+                                title={`Abrir ficha do lead #${l.leadId}`}
+                              >
+                                {l.leadNome || `Lead #${l.leadId}`}
+                              </button>
+                            ))}
+                            {g.qtd > g.leads.length && (
+                              <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>+ {g.qtd - g.leads.length} lead(s)</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))}
               </tbody>
             </table>
           </div>
