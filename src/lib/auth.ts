@@ -78,7 +78,10 @@ export const Auth = {
 // fantasma ao reabrir o app). Também faz backfill: sessão já logada que nunca
 // gravou no Preferences passa a gravar agora (fica resiliente na 1ª reabertura).
 // No navegador é no-op (capStorage* retorna null / não faz nada).
-let _hydrating: Promise<void> | null = (async () => {
+// NÃO usar `let x = (async () => { ... finally { x = null } })()`: com usuário
+// já logado o corpo roda 100% síncrono (nenhum await) e o finally executa
+// antes de `x` existir → TDZ ReferenceError + unhandledrejection em todo boot.
+async function hydrate(): Promise<void> {
   try {
     for (const key of [TOKEN_KEY, USER_KEY]) {
       const ls = localStorage.getItem(key);
@@ -89,14 +92,15 @@ let _hydrating: Promise<void> | null = (async () => {
         capStorageSet(key, ls);
       }
     }
-  } finally {
-    _hydrating = null;
+  } catch {
+    // hidratação é best-effort — nunca pode travar/rejeitar o boot
   }
-})();
+}
+const _hydrating: Promise<void> = hydrate();
 
 // Todos os fluxos de boot devem aguardar isto antes de ler Auth.token.
 export function awaitAuthHydration(): Promise<void> {
-  return _hydrating ?? Promise.resolve();
+  return _hydrating;
 }
 
 export function formatRole(role: Role | string): string {
