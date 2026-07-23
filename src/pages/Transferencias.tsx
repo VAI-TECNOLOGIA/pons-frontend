@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { initials } from '../lib/format';
 import { FichaLeadModal } from '../components/FichaLeadModal';
+import { CorretorPicker } from '../components/CorretorPicker';
 
 // Sprint 1 M15 — Histórico de transferências de leads (auditoria)
 const MOTIVO_BADGES: Record<string, [string, string]> = {
@@ -29,10 +30,25 @@ const FILTROS: [string, string][] = [
 export default function Transferencias() {
   const [motivo, setMotivo] = useState<string>('');
   const [verLeadId, setVerLeadId] = useState<number | null>(null);
+  // Filtros extras: busca por lead/corretor, período e corretor de destino
+  const [busca, setBusca] = useState('');
+  const [buscaDeb, setBuscaDeb] = useState('');
+  const [desde, setDesde] = useState('');
+  const [ate, setAte] = useState('');
+  const [paraCorretor, setParaCorretor] = useState<number | ''>('');
+  useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 400); return () => clearTimeout(t); }, [busca]);
+  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  const params: any = {};
+  if (motivo) params.motivo = motivo;
+  if (buscaDeb) params.q = buscaDeb;
+  if (desde) params.desde = desde;
+  if (ate) params.ate = ate;
+  if (paraCorretor) params.paraCorretorId = paraCorretor;
   const { data, loading, error } = useApi<any[]>(
-    () => Api.transferenciasList(motivo ? { motivo } : {}),
-    [motivo],
+    () => Api.transferenciasList(params),
+    [motivo, buscaDeb, desde, ate, paraCorretor],
   );
+  const temFiltro = !!(motivo || buscaDeb || desde || ate || paraCorretor);
 
   return (
     <>
@@ -50,6 +66,25 @@ export default function Transferencias() {
             {FILTROS.map(([v, l]) => (
               <button key={v} className={`btn btn--sm ${motivo === v ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo(v)}>{l}</button>
             ))}
+          </div>
+          <div className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+            <input
+              className="field__input"
+              style={{ height: 34, fontSize: 13, flex: '1 1 220px', minWidth: 180 }}
+              placeholder="Buscar por lead ou corretor…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+            <input type="date" className="field__input" style={{ height: 34, fontSize: 13, width: 'auto' }} value={desde} onChange={(e) => setDesde(e.target.value)} title="De" />
+            <span className="text-xs text-secondary">–</span>
+            <input type="date" className="field__input" style={{ height: 34, fontSize: 13, width: 'auto' }} value={ate} onChange={(e) => setAte(e.target.value)} title="Até" />
+            <CorretorPicker corretores={corretores} value={paraCorretor} onChange={setParaCorretor} placeholder="Recebido por (corretor)…" />
+            {temFiltro && (
+              <button className="btn btn--ghost btn--sm" onClick={() => { setMotivo(''); setBusca(''); setBuscaDeb(''); setDesde(''); setAte(''); setParaCorretor(''); }}>
+                Limpar filtros
+              </button>
+            )}
+            {data && <span className="text-xs text-secondary" style={{ marginLeft: 'auto' }}>{data.length} registro{data.length === 1 ? '' : 's'}</span>}
           </div>
         </div>
 
