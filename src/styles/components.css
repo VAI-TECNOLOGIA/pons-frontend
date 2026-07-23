@@ -2586,3 +2586,14 @@ dialog.modal[open] {
 .main__content > *:nth-child(5) { animation-delay: 200ms; }
 .main__content > *:nth-child(n+6) { animation-delay: 240ms; }
 
+
+
+/* Tabela de corretores: a coluna de Ações fica FIXA à direita — o Desativar/
+   Reativar nunca some, mesmo quando a tabela precisa de rolagem horizontal. */
+.tabela-corretores th:last-child,
+.tabela-corretores td:last-child {
+  position: sticky;
+  right: 0;
+  background: var(--bg-card);
+  box-shadow: -8px 0 8px -8px rgba(0, 0, 0, 0.25);
+}

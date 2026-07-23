@@ -28,7 +28,7 @@ const FILTROS: [string, string][] = [
 ];
 
 export default function Transferencias() {
-  const [motivo, setMotivo] = useState<string>('');
+  const [motivo, setMotivo] = useState<string[]>([]); // multi: combina motivos
   const [verLeadId, setVerLeadId] = useState<number | null>(null);
   // Filtros extras: busca por lead/corretor, período e corretor de destino
   const [busca, setBusca] = useState('');
@@ -39,16 +39,16 @@ export default function Transferencias() {
   useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 400); return () => clearTimeout(t); }, [busca]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   const params: any = {};
-  if (motivo) params.motivo = motivo;
+  if (motivo.length) params.motivo = motivo.join(',');
   if (buscaDeb) params.q = buscaDeb;
   if (desde) params.desde = desde;
   if (ate) params.ate = ate;
   if (paraCorretor) params.paraCorretorId = paraCorretor;
   const { data, loading, error } = useApi<any[]>(
     () => Api.transferenciasList(params),
-    [motivo, buscaDeb, desde, ate, paraCorretor],
+    [motivo.join(','), buscaDeb, desde, ate, paraCorretor],
   );
-  const temFiltro = !!(motivo || buscaDeb || desde || ate || paraCorretor);
+  const temFiltro = !!(motivo.length || buscaDeb || desde || ate || paraCorretor);
 
   return (
     <>
@@ -64,7 +64,14 @@ export default function Transferencias() {
           <div className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="text-sm text-secondary">Motivo</span>
             {FILTROS.map(([v, l]) => (
-              <button key={v} className={`btn btn--sm ${motivo === v ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setMotivo(v)}>{l}</button>
+              <button
+                key={v}
+                className={`btn btn--sm ${v === '' ? (!motivo.length ? 'btn--primary' : 'btn--ghost') : motivo.includes(v) ? 'btn--primary' : 'btn--ghost'}`}
+                onClick={() => setMotivo(v === '' ? [] : (motivo.includes(v) ? motivo.filter((x) => x !== v) : [...motivo, v]))}
+                title="Clique pra marcar/desmarcar (pode combinar vários)"
+              >
+                {l}
+              </button>
             ))}
           </div>
           <div className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
@@ -80,7 +87,7 @@ export default function Transferencias() {
             <input type="date" className="field__input" style={{ height: 34, fontSize: 13, width: 'auto' }} value={ate} onChange={(e) => setAte(e.target.value)} title="Até" />
             <CorretorPicker corretores={corretores} value={paraCorretor} onChange={(id) => setParaCorretor(id === 'sem' ? '' : id)} placeholder="Recebido por (corretor)…" />
             {temFiltro && (
-              <button className="btn btn--ghost btn--sm" onClick={() => { setMotivo(''); setBusca(''); setBuscaDeb(''); setDesde(''); setAte(''); setParaCorretor(''); }}>
+              <button className="btn btn--ghost btn--sm" onClick={() => { setMotivo([]); setBusca(''); setBuscaDeb(''); setDesde(''); setAte(''); setParaCorretor(''); }}>
                 Limpar filtros
               </button>
             )}
