@@ -3,6 +3,8 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { initials } from '../lib/format';
 import { FichaLeadModal } from '../components/FichaLeadModal';
 import { CorretorPicker } from '../components/CorretorPicker';
@@ -19,6 +21,8 @@ const MOTIVO_LABEL: Record<string, string> = {
   FALLBACK_ROLETA: 'Fallback roleta',
   DISTRIBUICAO_AGENDADA: 'Distribuição agendada',
   DIRECIONAMENTO_GESTOR: 'Direcionado',
+  CAPTURA_BOLSAO: 'Captura do bolsão',
+  REVERSAO: 'Reversão',
 };
 
 const FILTROS: [string, string][] = [
@@ -60,11 +64,34 @@ export default function Transferencias() {
   if (desde) params.desde = desde;
   if (ate) params.ate = ate;
   if (paraCorretor) params.paraCorretorId = paraCorretor;
-  const { data, loading, error } = useApi<Grupo[]>(
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [revertendo, setRevertendo] = useState<number | null>(null);
+  const { data, loading, error, reload } = useApi<Grupo[]>(
     () => Api.transferenciasList(params),
     [motivo.join(','), buscaDeb, desde, ate, paraCorretor],
   );
   const temFiltro = !!(motivo.length || buscaDeb || desde || ate || paraCorretor);
+
+  const reverter = async (g: Grupo) => {
+    const ok = await confirm({
+      title: `Reverter esta transferência?`,
+      message: `${g.qtd} lead(s) voltam pra onde estavam antes de "${g.enviadoPorNome}" enviar pra ${g.paraCorretorNome}. Leads que já foram movidos de novo depois disso são preservados.`,
+      confirmText: 'Reverter',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setRevertendo(g.id);
+    try {
+      const r = await Api.transferenciaReverterGrupo(g.id);
+      toast.success(`${r.revertidos} lead(s) revertido(s)${r.pulados ? ` · ${r.pulados} preservado(s) (já tinham sido movidos de novo)` : ''}.`);
+      reload();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setRevertendo(null);
+    }
+  };
 
   const fmt = (d: string) => new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 
@@ -168,13 +195,25 @@ export default function Transferencias() {
                         <span className="pill-ok"><Icon name="check" size={11} /> Concluído</span>
                       </td>
                       <td>
-                        <button
-                          className="btn btn--secondary btn--sm"
-                          onClick={() => setAberto(aberto === g.id ? null : g.id)}
-                          title={aberto === g.id ? 'Fechar detalhes' : 'Ver os leads desta operação'}
-                        >
-                          <Icon name="eye" size={13} />
-                        </button>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            className="btn btn--secondary btn--sm"
+                            onClick={() => setAberto(aberto === g.id ? null : g.id)}
+                            title={aberto === g.id ? 'Fechar detalhes' : 'Ver os leads desta operação'}
+                          >
+                            <Icon name="eye" size={13} />
+                          </button>
+                          {g.motivo !== 'REVERSAO' && (
+                            <button
+                              className="btn btn--secondary btn--sm"
+                              onClick={() => reverter(g)}
+                              disabled={revertendo === g.id}
+                              title="Reverter: os leads voltam pra onde estavam"
+                            >
+                              <Icon name="refresh" size={13} /> {revertendo === g.id ? '…' : 'Reverter'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                     {aberto === g.id && (

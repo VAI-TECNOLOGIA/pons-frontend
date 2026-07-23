@@ -815,6 +815,8 @@ export const Api = {
   // ─── Sprint 1 (Imobilead parity) ──────────────────────────────────
   // M15: Transferências
   transferenciasList: (params: any = {}) => request<any[]>(`/transferencias${qs(params)}`),
+  transferenciaReverterGrupo: (transferenciaId: number) =>
+    request<{ ok: boolean; revertidos: number; pulados: number }>('/transferencias/reverter-grupo', { method: 'POST', body: { transferenciaId } }),
   transferenciasLead: (leadId: number) => request<any[]>(`/transferencias/lead/${leadId}`),
   transferir: (data: { leadId: number; paraCorretorId?: number | null; motivo?: string; observacao?: string | null }) =>
     request<any>('/transferencias', { method: 'POST', body: data }),

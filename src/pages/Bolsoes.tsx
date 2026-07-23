@@ -446,29 +446,37 @@ function BolsoesConfigurados() {
               <div className="field__hint" style={{ marginTop: 8 }}>Fora deste horário ninguém captura leads do bolsão. Vazio = funciona 24h.</div>
             </div>
 
-            <div style={{ border: '1px solid var(--border-light)', borderRadius: 12, padding: '14px 16px' }}>
+            <div style={{ border: '1px solid var(--border-light)', borderRadius: 12, padding: '14px 16px', position: 'relative' }}>
               <div className="flex-between" style={{ gap: 10 }}>
-                <div className="uppercase-tag" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div className="uppercase-tag" style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
                   <Icon name="target" size={13} /> Limite de capturas diariamente
                   <button
                     type="button"
                     onClick={() => setDicaLimite((v) => !v)}
+                    onBlur={() => setTimeout(() => setDicaLimite(false), 150)}
                     title="O que é isso?"
-                    style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid var(--border-light)', background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'inline-grid', placeItems: 'center', padding: 0, textTransform: 'none' }}
+                    style={{ width: 18, height: 18, borderRadius: '50%', border: dicaLimite ? '1px solid var(--pons-blue)' : '1px solid var(--border-light)', background: dicaLimite ? 'var(--pons-blue)' : 'var(--bg-card-hover)', color: dicaLimite ? '#fff' : 'var(--text-secondary)', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'inline-grid', placeItems: 'center', padding: 0, textTransform: 'none' }}
                   >
                     ?
                   </button>
+                  {dicaLimite && (
+                    <div
+                      style={{
+                        position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 30, width: 300,
+                        background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10,
+                        boxShadow: 'var(--shadow-lg)', padding: '10px 12px', fontSize: 12.5, lineHeight: 1.55,
+                        color: 'var(--text-secondary)', textTransform: 'none', letterSpacing: 'normal', fontWeight: 400,
+                      }}
+                    >
+                      Limita quantos leads <strong>cada corretor</strong> pode capturar deste bolsão <strong>por dia</strong>. Ex.: limite 2 → cada corretor pega no máximo 2 leads/dia; no dia seguinte o contador zera. Bom pra distribuir oportunidade de forma justa.
+                    </div>
+                  )}
                 </div>
                 <label className="switch">
                   <input type="checkbox" checked={limiteOn} onChange={(e) => setLimiteOn(e.target.checked)} />
                   <span className="switch__track" />
                 </label>
               </div>
-              {dicaLimite && (
-                <div className="field__hint" style={{ background: 'var(--bg-card-hover)', borderRadius: 8, padding: '10px 12px', marginTop: 10, lineHeight: 1.55 }}>
-                  Limita quantos leads <strong>cada corretor</strong> pode capturar deste bolsão <strong>por dia</strong>. Ex.: limite 2 → cada corretor pega no máximo 2 leads/dia; no dia seguinte o contador zera. Bom pra distribuir oportunidade de forma justa.
-                </div>
-              )}
               {limiteOn && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
                   <button type="button" className="btn btn--secondary btn--sm" onClick={() => setLimite((v) => Math.max(1, v - 1))} style={{ width: 36 }}>−</button>
