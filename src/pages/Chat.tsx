@@ -408,8 +408,8 @@ export default function Chat() {
 
   // Monta uma mensagem de imóvel BEM formatada (WhatsApp-style) e joga no
   // compositor pro corretor revisar/enviar. Campos opcionais são ignorados.
-  const enviarImovel = async (emp: any) => {
-    if (!activeId || !emp) return;
+  // Texto pronto do imóvel (nome, localização, detalhes e descrição)
+  const descricaoImovel = (emp: any) => {
     const loc = [emp.bairro, emp.cidade].filter(Boolean).join(' · ');
     const det = [
       emp.dormitorios ? `🛏️ ${emp.dormitorios} dorm.` : '',
@@ -417,46 +417,58 @@ export default function Chat() {
       emp.vagas ? `🚗 ${emp.vagas} vaga(s)` : '',
       emp.area ? `📐 ${emp.area} m²` : '',
     ].filter(Boolean).join('   ');
-    const linhas = [
+    return [
       `🏢 *${emp.nome}*`,
       loc,
       det,
       emp.descricao ? `\n${String(emp.descricao).replace(/\s+/g, ' ').trim().slice(0, 240)}` : '',
       `\nPosso te enviar a *tabela de valores* e as *plantas*. Quer que eu agende uma visita? 📅`,
-    ].filter(Boolean);
-    setDraft(linhas.join('\n'));
+    ].filter(Boolean).join('\n');
   };
 
-  // ── Fotos do imóvel direto na conversa (caminho rápido) ───────────────────
+  const enviarImovel = async (emp: any) => {
+    if (!activeId || !emp) return;
+    setDraft(descricaoImovel(emp));
+  };
+
+  // ── Compositor de imóvel: fotos selecionáveis + mensagem editável ─────────
   const [imovelSel, setImovelSel] = useState<any>(null);
   const [fotosSel, setFotosSel] = useState<Set<number>>(new Set());
+  const [imovelMsg, setImovelMsg] = useState('');
   const [enviandoFotos, setEnviandoFotos] = useState(false);
 
   const abrirImovel = (emp: any) => {
     setImovelSel(emp);
     setFotosSel(new Set((emp.fotos || []).map((f: any) => f.id)));
+    setImovelMsg(`🏢 *${emp.nome}*`);
   };
 
   const enviarFotosImovel = async () => {
     if (!activeId || !imovelSel || enviandoFotos) return;
     const fotos = (imovelSel.fotos || []).filter((f: any) => fotosSel.has(f.id));
-    if (!fotos.length) { toast.error('Selecione ao menos uma foto.'); return; }
+    const texto = imovelMsg.trim();
+    if (!fotos.length && !texto) { toast.error('Selecione fotos ou escreva uma mensagem.'); return; }
     setEnviandoFotos(true);
     try {
-      for (let i = 0; i < fotos.length; i++) {
-        await Api.conversationSend(
-          activeId,
-          i === 0 ? `🏢 ${imovelSel.nome}` : '',
-          'CORRETOR',
-          { mediaUrl: fotos[i].url, mediaType: 'image' },
-        );
+      if (fotos.length) {
+        // A mensagem vai como legenda da PRIMEIRA foto; as demais seguem sem texto.
+        for (let i = 0; i < fotos.length; i++) {
+          await Api.conversationSend(
+            activeId,
+            i === 0 ? texto : '',
+            'CORRETOR',
+            { mediaUrl: fotos[i].url, mediaType: 'image' },
+          );
+        }
+      } else {
+        await Api.conversationSend(activeId, texto, 'CORRETOR');
       }
-      toast.success(`${fotos.length} foto(s) enviada(s).`);
+      toast.success(fotos.length ? `${fotos.length} foto(s) enviada(s).` : 'Mensagem enviada.');
       setImovelSel(null);
       reloadConv();
       reloadInbox();
     } catch (err: any) {
-      toast.error('Erro ao enviar fotos: ' + (err?.message || 'falha'));
+      toast.error('Erro ao enviar: ' + (err?.message || 'falha'));
     } finally {
       setEnviandoFotos(false);
     }
@@ -977,29 +989,28 @@ export default function Chat() {
                 <Modal
                   open
                   onClose={() => !enviandoFotos && setImovelSel(null)}
-                  title={`Fotos · ${imovelSel.nome}`}
-                  subtitle="Clique pra marcar/desmarcar. As fotos vão direto pro WhatsApp do lead."
+                  title={`Enviar imóvel · ${imovelSel.nome}`}
+                  subtitle="Monte a mensagem: escolha as fotos e edite o texto. Nada é enviado até você clicar em Enviar."
                   size="md"
                   footer={
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                      <button className="btn btn--ghost" onClick={() => setImovelSel(null)} disabled={enviandoFotos}>Cancelar</button>
                       <button
-                        className="btn btn--secondary"
-                        onClick={() => { enviarImovel(imovelSel); setImovelSel(null); }}
-                        disabled={enviandoFotos}
-                        title="Insere a descrição do imóvel no campo de mensagem"
+                        className="btn btn--primary"
+                        onClick={enviarFotosImovel}
+                        disabled={enviandoFotos || (fotosSel.size === 0 && !imovelMsg.trim())}
                       >
-                        Inserir descrição
+                        {enviandoFotos
+                          ? 'Enviando…'
+                          : fotosSel.size > 0
+                            ? `Enviar ${fotosSel.size} foto${fotosSel.size === 1 ? '' : 's'} + mensagem`
+                            : 'Enviar mensagem'}
                       </button>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button className="btn btn--ghost" onClick={() => setImovelSel(null)} disabled={enviandoFotos}>Cancelar</button>
-                        <button className="btn btn--primary" onClick={enviarFotosImovel} disabled={enviandoFotos || fotosSel.size === 0}>
-                          {enviandoFotos ? 'Enviando…' : `Enviar ${fotosSel.size} foto${fotosSel.size === 1 ? '' : 's'}`}
-                        </button>
-                      </div>
                     </div>
                   }
                 >
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8 }}>
+                  <div className="uppercase-tag" style={{ marginBottom: 8 }}>1 · Fotos ({fotosSel.size} de {(imovelSel.fotos || []).length} selecionadas)</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
                     {(imovelSel.fotos || []).map((f: any) => {
                       const on = fotosSel.has(f.id);
                       return (
@@ -1016,7 +1027,7 @@ export default function Chat() {
                             cursor: 'pointer',
                             aspectRatio: '4/3',
                             background: 'var(--bg-card-hover)',
-                            opacity: on ? 1 : 0.55,
+                            opacity: on ? 1 : 0.5,
                           }}
                           title={on ? 'Desmarcar' : 'Marcar'}
                         >
@@ -1030,6 +1041,28 @@ export default function Chat() {
                       );
                     })}
                   </div>
+
+                  <div className="uppercase-tag" style={{ margin: '16px 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span>2 · Mensagem {fotosSel.size > 0 ? '(vai como legenda da primeira foto)' : ''}</span>
+                    <button
+                      type="button"
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => setImovelMsg(descricaoImovel(imovelSel))}
+                      disabled={enviandoFotos}
+                      title="Preenche com nome, localização, detalhes e descrição do imóvel"
+                    >
+                      <Icon name="sparkles" size={12} /> Usar descrição completa
+                    </button>
+                  </div>
+                  <textarea
+                    className="field__textarea"
+                    rows={5}
+                    style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit' }}
+                    placeholder="Escreva a mensagem que acompanha as fotos…"
+                    value={imovelMsg}
+                    onChange={(e) => setImovelMsg(e.target.value)}
+                    disabled={enviandoFotos}
+                  />
                 </Modal>
               )}
               {templatePickerOpen && conv && (
