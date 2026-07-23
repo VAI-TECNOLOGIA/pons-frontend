@@ -30,7 +30,7 @@ const META_ERRORS: Record<number, { kind: MetaErrKind; msg: string }> = {
   131050: { kind: 'quality', msg: 'Bloqueio temporário do Meta por qualidade. Avise o admin.' },
   131051: { kind: 'unsupported_message', msg: 'Tipo de mensagem não suportado.' },
   131052: { kind: 'media_download', msg: 'Falha ao baixar mídia do cliente.' },
-  131053: { kind: 'media_upload', msg: 'Falha ao subir mídia pro Meta.' },
+  131053: { kind: 'media_upload', msg: 'O WhatsApp recusou a mídia — normalmente por tamanho ou formato. Vídeos e áudios: máximo 16 MB (imagens grandes são comprimidas automaticamente).' },
   132000: { kind: 'template_param', msg: 'Template com parâmetros inválidos ou faltando.' },
   132001: { kind: 'template_missing', msg: 'Template não existe ou foi reprovado. Verifique no WhatsApp Manager.' },
   132005: { kind: 'template_lang', msg: 'Idioma do template incompatível.' },

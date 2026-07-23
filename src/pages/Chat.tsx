@@ -252,11 +252,30 @@ export default function Chat() {
     const file = e.target.files?.[0];
     e.target.value = ''; // permite reescolher o mesmo arquivo
     if (!file) return;
-    // WhatsApp aceita imagem, vídeo, áudio e documento. Limite conservador de 16MB
-    // (teto do vídeo/áudio no WhatsApp Cloud; imagem é bem menor).
-    if (file.size > 16 * 1024 * 1024) {
-      toast.error('Arquivo acima de 16MB.');
+    // Limites REAIS do WhatsApp Cloud por tipo — validar aqui, com mensagem clara,
+    // evita o chamado clássico "mandei a foto/vídeo e não foi" (falhava lá no Meta
+    // com erro genérico). Imagem grande PASSA: o backend comprime antes de enviar.
+    const MB = 1024 * 1024;
+    const tamanho = (file.size / MB).toFixed(1).replace('.', ',');
+    const tipo = tipoMedia(file.type);
+    if (tipo === 'video' && file.size > 16 * MB) {
+      toast.error(`O WhatsApp limita vídeos a 16 MB — este tem ${tamanho} MB. Grave um trecho mais curto ou comprima o vídeo antes de enviar.`, 10000);
       return;
+    }
+    if (tipo === 'audio' && file.size > 16 * MB) {
+      toast.error(`O WhatsApp limita áudios a 16 MB — este tem ${tamanho} MB.`, 8000);
+      return;
+    }
+    if (tipo === 'image' && file.size > 30 * MB) {
+      toast.error(`Imagem muito grande (${tamanho} MB — máximo 30 MB).`, 8000);
+      return;
+    }
+    if (tipo === 'document' && file.size > 30 * MB) {
+      toast.error(`Documento muito grande (${tamanho} MB — máximo 30 MB).`, 8000);
+      return;
+    }
+    if (tipo === 'image' && file.size > 4.5 * MB) {
+      toast.info(`Imagem de ${tamanho} MB — vai ser comprimida automaticamente antes do envio.`, 6000);
     }
     setUploadingAnexo(true);
     try {
