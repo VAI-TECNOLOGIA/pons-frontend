@@ -9,6 +9,7 @@ import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useSSE } from '../lib/useSSE';
 import { humanizeErrorReasonFull } from '../lib/meta-errors';
+import { isNativeApp } from '../lib/platform';
 
 import './chat.css';
 
@@ -967,6 +968,11 @@ export default function Chat() {
                           }}
                           disabled={sending}
                         />
+                        {/* Nos apps nativos atuais falta a permissão de microfone
+                            (NSMicrophoneUsageDescription / RECORD_AUDIO) — no iOS o
+                            getUserMedia MATA o app. Só reexibir quando os builds com
+                            a permissão estiverem publicados (iOS build 11+). */}
+                        {!isNativeApp() && (
                         <button
                           className="btn btn--secondary btn--sm composer__mic"
                           title="Gravar áudio"
@@ -975,6 +981,7 @@ export default function Chat() {
                         >
                           <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" /></svg>
                         </button>
+                        )}
                         <button
                           className={'btn ' + (notaMode ? 'composer__nota-send' : 'btn--primary')}
                           onClick={enviar}
