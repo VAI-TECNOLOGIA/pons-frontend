@@ -237,12 +237,20 @@
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 /* Itens de ação alinham com a altura base da textarea (40px) pra barra não
-   ficar torta; nunca encolhem e o texto não quebra. */
-.composer > .btn {
+   ficar torta; nunca encolhem e o texto não quebra. `.composer .btn` (e não
+   `>`) pra alcançar também o "Rápidas", que vive dentro do .quick-wrap. */
+.composer .btn {
   flex-shrink: 0;
   height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px; /* respiro entre ícone e rótulo */
 }
+.composer > .quick-wrap { flex-shrink: 0; }
 .composer textarea {
   flex: 1;
   min-width: 0;
