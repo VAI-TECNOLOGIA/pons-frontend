@@ -122,7 +122,7 @@ export function DestinoPicker({
               padding: 14,
             }}
           >
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10, flexShrink: 0 }}>
               {(['CORRETOR', 'EQUIPE', 'FILA', 'BASE'] as const).map((t) => (
                 <button
                   key={t}
@@ -147,7 +147,7 @@ export function DestinoPicker({
             <input
               autoFocus
               className="field__input"
-              style={{ height: 44, fontSize: 14, padding: '0 14px', marginBottom: 10 }}
+              style={{ height: 44, minHeight: 44, flexShrink: 0, fontSize: 14, padding: '0 14px', marginBottom: 10 }}
               placeholder={aba === 'CORRETOR' ? 'Buscar corretor por nome ou equipe…' : aba === 'EQUIPE' ? 'Buscar equipe…' : aba === 'FILA' ? 'Buscar fila…' : 'Buscar base…'}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
