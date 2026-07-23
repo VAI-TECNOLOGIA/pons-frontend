@@ -394,7 +394,9 @@
   cursor: pointer;
   z-index: 2;
 }
-.sidebar__close:hover { background: rgba(255, 255, 255, 0.1); }
+@media (hover: hover) {
+  .sidebar__close:hover { background: rgba(255, 255, 255, 0.1); }
+}
 
 /* ----------- Breakpoints ----------- */
 

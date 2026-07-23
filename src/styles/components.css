@@ -101,12 +101,26 @@
   white-space: nowrap;
   position: relative;
 }
-.sidebar__item:hover {
-  background: var(--sb-hover);
-  color: var(--sb-text-strong);
+@media (hover: hover) {
+  .sidebar__item:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-strong);
+  }
+  .sidebar__item:hover .icon {
+    color: var(--sb-accent);
+  }
 }
-.sidebar__item:hover .icon {
-  color: var(--sb-accent);
+/* Toque único no iOS: sem heurística de double-tap nos itens do menu */
+.sidebar__item,
+.sidebar__group-trigger,
+.sidebar__footer-btn,
+.sidebar__profile,
+.sidebar__fav,
+.sidebar__collapse-toggle,
+.sidebar__app-badge,
+.sidebar__close {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .sidebar__item--active {
   background: var(--sb-active-bg);
@@ -188,13 +202,15 @@
   text-transform: none;
   letter-spacing: 0;
 }
-.sidebar__group-trigger:hover {
-  background: var(--sb-hover);
-  color: var(--sb-text-strong);
-}
-.sidebar__group-trigger:hover .icon:not(.sidebar__group-chevron) {
-  color: var(--sb-accent);
-  opacity: 1;
+@media (hover: hover) {
+  .sidebar__group-trigger:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-strong);
+  }
+  .sidebar__group-trigger:hover .icon:not(.sidebar__group-chevron) {
+    color: var(--sb-accent);
+    opacity: 1;
+  }
 }
 .sidebar__group-trigger.is-open .icon:not(.sidebar__group-chevron) {
   color: var(--sb-accent);
@@ -256,8 +272,10 @@
   cursor: default;
   transition: background 0.16s ease;
 }
-.sidebar__app-badge:hover {
-  background: var(--sb-active-bg);
+@media (hover: hover) {
+  .sidebar__app-badge:hover {
+    background: var(--sb-active-bg);
+  }
 }
 .sidebar__app-badge img {
   width: 16px;
@@ -299,9 +317,11 @@
   transition: background 0.16s ease, color 0.16s ease;
   flex-shrink: 0;
 }
-.sidebar__footer-btn:hover {
-  background: var(--sb-hover);
-  color: var(--sb-text-strong);
+@media (hover: hover) {
+  .sidebar__footer-btn:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-strong);
+  }
 }
 .sidebar__footer-btn .icon {
   width: 16px;
@@ -321,9 +341,11 @@
   border: 1px solid var(--sb-border);
   transition: background 0.16s ease, border-color 0.16s ease;
 }
-.sidebar__profile:hover {
-  background: var(--sb-accent-soft);
-  border-color: var(--sb-accent);
+@media (hover: hover) {
+  .sidebar__profile:hover {
+    background: var(--sb-accent-soft);
+    border-color: var(--sb-accent);
+  }
 }
 .sidebar__profile-avatar {
   position: relative;
@@ -415,12 +437,16 @@
   opacity: 0;
   transition: opacity 0.16s ease, color 0.16s ease, background 0.16s ease;
 }
-.sidebar__item-wrap:hover .sidebar__fav,
 .sidebar__fav.on {
   opacity: 1;
 }
-.sidebar__fav:hover {
-  background: var(--sb-hover);
+@media (hover: hover) {
+  .sidebar__item-wrap:hover .sidebar__fav { opacity: 1; }
+  .sidebar__fav:hover { background: var(--sb-hover); }
+}
+/* Touch: sem hover pra revelar a estrela — fica sempre visivel */
+@media (hover: none) {
+  .sidebar__fav { opacity: 1; }
 }
 .sidebar__fav .icon {
   width: 15px;
@@ -448,9 +474,11 @@
   font-weight: 600;
   transition: background 0.16s ease, color 0.16s ease;
 }
-.sidebar__collapse-toggle:hover {
-  background: var(--sb-hover);
-  color: var(--sb-text-strong);
+@media (hover: hover) {
+  .sidebar__collapse-toggle:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-strong);
+  }
 }
 .sidebar__collapse-chevron {
   width: 16px;
