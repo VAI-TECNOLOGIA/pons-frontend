@@ -214,16 +214,16 @@ export default function Leads() {
  {mostrarFiltros && (
  <LeadsFiltrosPanel
  v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus || '', campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe }}
- onChange={(p) => {
- if (p.dataInicial !== undefined) setDataInicial(p.dataInicial);
- if (p.dataFinal !== undefined) setDataFinal(p.dataFinal);
- if (p.origem !== undefined) setFiltroOrigem(p.origem);
- if (p.status !== undefined) setFilterStatus(p.status || null);
- if (p.campanha !== undefined) setFiltroCampanha(p.campanha);
- if (p.formulario !== undefined) setFiltroFormulario(p.formulario);
- if (p.empreendimentoId !== undefined) setFiltroEmp(p.empreendimentoId);
- if (p.corretorId !== undefined) setFiltroCorretor(p.corretorId);
- if (p.equipeId !== undefined) setFiltroEquipe(p.equipeId);
+ onAplicar={(f) => {
+ setDataInicial(f.dataInicial);
+ setDataFinal(f.dataFinal);
+ setFiltroOrigem(f.origem);
+ setFilterStatus(f.status || null);
+ setFiltroCampanha(f.campanha);
+ setFiltroFormulario(f.formulario);
+ setFiltroEmp(f.empreendimentoId);
+ setFiltroCorretor(f.corretorId);
+ setFiltroEquipe(f.equipeId);
  setPage(1);
  }}
  statuses={STATUSES.map((k) => ({ key: k, label: STATUS_MAP[k]?.[1] || k }))}

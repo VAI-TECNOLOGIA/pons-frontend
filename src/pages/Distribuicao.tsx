@@ -278,7 +278,7 @@ export default function Distribuicao() {
             <div style={{ marginTop: 12 }}>
               <LeadsFiltrosPanel
                 v={filtros}
-                onChange={(p) => setFiltros((f) => ({ ...f, ...p }))}
+                onAplicar={(f) => setFiltros(f)}
                 statuses={STATUS_OPCOES}
                 opcoes={opcoesFiltro}
                 corretores={corretores}
