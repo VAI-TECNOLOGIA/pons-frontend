@@ -2056,7 +2056,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  // Rateio da planilha por parcela — colunas que têm valor em pelo menos uma linha
  const rateios = parcelas.map((p) => { try { return p.rateioPlanilha ? JSON.parse(p.rateioPlanilha) : null; } catch { return null; } });
  const temPlanilha = rateios.some(Boolean);
- const colunas = Object.keys(RATEIO_LABELS).filter((c) => rateios.some((r) => r && r[c] !== undefined && r[c] !== null && r[c] !== ''));
+ const colunas = Object.keys(RATEIO_LABELS).filter((c) => c === 'sitComissoes' || rateios.some((r) => r && r[c] !== undefined && r[c] !== null && r[c] !== ''));
  return (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
  <div className="flex-between" style={{ alignItems: 'baseline', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
@@ -2116,6 +2116,25 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <td style={{ whiteSpace: 'nowrap' }}>{p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'}</td>
  <td className="numeric money">{(p.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
  {colunas.map((c) => {
+ if (c === 'sitComissoes') {
+ const [bk, blbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
+ const planilhaTxt = r[c] && String(r[c]);
+ return (
+ <td key={c} style={{ whiteSpace: 'nowrap' }} title={planilhaTxt ? `Planilha: ${planilhaTxt}` : undefined}>
+ <span className={`badge badge--${bk}`} style={{ fontSize: 10 }}>{blbl}</span>
+ {podeConfirmar && p.status !== 'PAGO' && (
+ <button className="btn btn--secondary btn--sm" style={{ padding: '2px 8px', marginLeft: 6, fontSize: 11 }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
+ {busy === p.id ? '…' : 'Marcar pago'}
+ </button>
+ )}
+ {podeConfirmar && p.status === 'PAGO' && (
+ <button className="btn btn--ghost btn--sm" style={{ padding: '2px 6px', marginLeft: 6, fontSize: 11 }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer pagamento">
+ Desfazer
+ </button>
+ )}
+ </td>
+ );
+ }
  const val = r[c];
  const texto = val === undefined || val === null || val === '' ? '—'
  : typeof val === 'number' ? val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : String(val);
