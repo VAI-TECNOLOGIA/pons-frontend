@@ -184,6 +184,7 @@ export const Api = {
 
   // "Criar conta" do login → CORRETOR já aprovado, loga direto (conta marcada como teste).
   esqueciSenha: (email: string) => request<any>('/auth/esqueci-senha', { method: 'POST', body: { email }, auth: false }),
+  contaPorTelefone: (telefone: string) => request<any>('/auth/conta-por-telefone', { method: 'POST', body: { telefone }, auth: false }),
   esqueciSenhaWhats: (telefone: string) => request<any>('/auth/esqueci-senha-whats', { method: 'POST', body: { telefone }, auth: false }),
   redefinirSenhaCodigo: (telefone: string, codigo: string, password: string) =>
     request<any>('/auth/redefinir-senha-codigo', { method: 'POST', body: { telefone, codigo, password }, auth: false }),

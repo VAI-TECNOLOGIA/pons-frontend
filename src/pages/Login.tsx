@@ -174,10 +174,29 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
   const [erro, setErro] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const pedirCodigo = async (e: React.FormEvent) => {
+  const [conta, setConta] = useState<{ nome: string; email?: string | null } | null>(null);
+
+  const buscarConta = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
     if (telefone.replace(/\D/g, '').length < 10) { setErro('Informe o WhatsApp com DDD.'); return; }
+    setBusy(true);
+    try {
+      const r = await Api.contaPorTelefone(telefone);
+      if (!r?.encontrada) {
+        setErro('Esse WhatsApp não está vinculado a nenhuma conta. Confira o número ou fale com o seu gestor pra atualizar o cadastro.');
+        return;
+      }
+      setConta({ nome: r.nome, email: r.email });
+    } catch {
+      setErro('Não consegui verificar agora — tenta de novo em instantes.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pedirCodigo = async () => {
+    setErro('');
     setBusy(true);
     try {
       await Api.esqueciSenhaWhats(telefone);
@@ -212,17 +231,32 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
         <button type="button" className="login-modal__close" aria-label="Fechar" onClick={onClose}>×</button>
         <div className="login-card__eyebrow">Recuperar acesso</div>
         <h2 className="login-card__title">Esqueci a senha</h2>
-        {passo === 1 && (
-          <form onSubmit={pedirCodigo}>
+        {passo === 1 && !conta && (
+          <form onSubmit={buscarConta}>
             <p className="login-card__sub">Informe o WhatsApp cadastrado na sua conta — enviamos um código de 6 dígitos.</p>
             {erro && <div className="login-card__error">{erro}</div>}
             <label className="login-field">
               <span className="login-field__label">WhatsApp (com DDD)</span>
               <input className="login-field__input" type="tel" inputMode="tel" required autoFocus placeholder="(47) 99999-9999" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
             </label>
-            <button type="submit" className="login-btn" disabled={busy}>{busy ? 'Enviando…' : 'Enviar código'}</button>
+            <button type="submit" className="login-btn" disabled={busy}>{busy ? 'Verificando…' : 'Continuar'}</button>
             <button type="button" className="login-request-link" onClick={onClose}>Cancelar</button>
           </form>
+        )}
+        {passo === 1 && conta && (
+          <>
+            <p className="login-card__sub">
+              Encontramos esta conta vinculada ao número:<br />
+              <strong style={{ fontSize: 16 }}>{conta.nome}</strong>
+              {conta.email && <><br /><span style={{ opacity: 0.8 }}>{conta.email}</span></>}
+            </p>
+            {erro && <div className="login-card__error">{erro}</div>}
+            <button type="button" className="login-btn" disabled={busy} onClick={pedirCodigo}>{busy ? 'Enviando…' : 'É minha — enviar código'}</button>
+            <button type="button" className="login-request-link" onClick={() => { setConta(null); setTelefone(''); }}>Não é minha conta</button>
+            <p className="login-card__sub" style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
+              Se essa conta não é sua, o número pode estar cadastrado pra outra pessoa — fale com o seu gestor pra corrigir o cadastro.
+            </p>
+          </>
         )}
         {passo === 2 && (
           <form onSubmit={trocarSenha}>
