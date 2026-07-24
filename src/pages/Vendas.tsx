@@ -675,7 +675,7 @@ export default function Vendas() {
  <PageHeader
  breadcrumb="Comercial · Vendas"
  title={`${vendas.length} vendas`}
- subtitle="Clique numa venda para ver comissão, rateio e plano de recebimento"
+ subtitle={`VGV total ${formatCurrencyShort(vendas.reduce((s: number, v: any) => s + (v.valorVenda ?? v.valor ?? 0), 0))} · Comissão ${formatCurrencyShort(vendas.reduce((s: number, v: any) => s + ((v.valorVenda ?? v.valor ?? 0) * (v.percentualComissao ?? 5)) / 100, 0))} · Clique numa venda para ver rateio e recebimento`}
  />
 
  <ParcelasAtrasadas onSelect={setSelected} />
@@ -699,14 +699,17 @@ export default function Vendas() {
  <VendaKanban onSelect={setSelected} podeMover={podeEditarStatus} />
  ) : (
  <div className="card" style={{ padding: 0 }}>
- <table className="table">
+ <table className="table tabela-compacta">
  <thead>
  <tr>
  <th>Código</th>
+ <th>Data</th>
  <th>Cliente</th>
  <th>Empreendimento</th>
  <th>Corretor</th>
- <th className="numeric">Valor</th>
+ <th className="numeric">VGV</th>
+ <th className="numeric">Comissão</th>
+ <th>Origem</th>
  <th>Status</th>
  </tr>
  </thead>
@@ -715,15 +718,23 @@ export default function Vendas() {
  const [k, lbl] = STATUS_MAP[v.status] || ['neutral', v.status];
  const cliente = v.clienteNome || v.cliente || '—';
  const empNome = typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '';
+ const construtora = typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome || '';
  const corrNome = typeof v.corretor === 'string' ? v.corretor : v.corretor?.nome || v.corretorTitular?.user?.name || '—';
  const corrInit = v.corretor?.initials || initials(corrNome);
  const valor = v.valorVenda ?? v.valor ?? 0;
+ const pct = v.percentualComissao;
+ const dataVnd = v.createdAt ? new Date(v.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
  return (
  <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(v.id)}>
- <td className="font-semibold">#{v.codigo || String(v.id).padStart(5, '0')}</td>
+ <td className="font-semibold" style={{ whiteSpace: 'nowrap' }}>
+ #{v.codigo || String(v.id).padStart(5, '0')}
+ {v.salaGpi && <span className="badge badge--neutral" style={{ marginLeft: 6, fontSize: 10 }}>Sala {v.salaGpi}</span>}
+ </td>
+ <td style={{ whiteSpace: 'nowrap' }}>{dataVnd}</td>
  <td>{cliente}</td>
  <td>
- {empNome} · {v.unidade}
+ <div>{empNome} · {v.unidade}</div>
+ {construtora && <div className="text-xs text-secondary">{construtora}</div>}
  </td>
  <td>
  <div className="flex gap-2" style={{ alignItems: 'center' }}>
@@ -732,6 +743,15 @@ export default function Vendas() {
  </div>
  </td>
  <td className="numeric money">{formatCurrencyShort(valor)}</td>
+ <td className="numeric">
+ {pct ? (
+ <>
+ <div className="money">{formatCurrencyShort((valor * pct) / 100)}</div>
+ <div className="text-xs text-secondary">{pct.toLocaleString('pt-BR')}%</div>
+ </>
+ ) : '—'}
+ </td>
+ <td>{v.origemLead || '—'}</td>
  <td>
  <span className={`badge badge--${k}`}>{lbl}</span>
  </td>
