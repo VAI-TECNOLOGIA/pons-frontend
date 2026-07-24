@@ -880,7 +880,7 @@ export default function Vendas() {
 
  <FormularioGpi f={sel.formulario} />
 
- <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} rateioCompleto={podeEditarRateio || role === 'CEO' || role === 'DIRETOR_COMERCIAL'} />
+ <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
  </Modal>
