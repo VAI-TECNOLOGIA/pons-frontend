@@ -2683,3 +2683,14 @@ dialog.modal[open] {
 html.statusbar-overlay body { padding-top: env(safe-area-inset-top); }
 html.statusbar-overlay .sidebar { padding-top: env(safe-area-inset-top); }
 html.statusbar-overlay .main:has(> .inbox) { height: calc(100dvh - env(safe-area-inset-top)); }
+/* Faixa PRETA fixa atrás do relógio: o scroll passa por baixo dela (nativo),
+   nada "sobe" pra área da status bar. Relógio branco sobre preto nos 2 temas. */
+html.statusbar-overlay body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: env(safe-area-inset-top);
+  background: #000;
+  z-index: 2147483000;
+  pointer-events: none;
+}
