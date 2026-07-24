@@ -99,6 +99,13 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
               Criado em: {dataExtensa(lead.createdAt)}
               {lead.ultimaInteracao && <><br />Última interação: {dataExtensa(lead.ultimaInteracao)}</>}
             </div>
+            {/* Conversa por DENTRO do sistema (aba Atendimento) — pedido 24/07 */}
+            <button
+              onClick={() => { onClose(); window.location.href = `/chat?lead=${leadId}`; }}
+              style={{ marginTop: 12, background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.35)', borderRadius: 10, padding: '9px 16px', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}
+            >
+              <Icon name="chat" size={15} /> Abrir conversa no Atendimento
+            </button>
             <div style={{ display: 'grid', gap: 6, marginTop: 12 }}>
               {lead.telefone && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
