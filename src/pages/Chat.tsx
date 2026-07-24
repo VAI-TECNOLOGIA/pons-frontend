@@ -1041,7 +1041,7 @@ export default function Chat() {
                         </button>
                         <textarea
                           className={notaMode ? 'composer__input--nota' : undefined}
-                          placeholder={notaMode ? 'Nota interna — o lead NÃO recebe…' : anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
+                          placeholder={sending ? 'Enviando…' : notaMode ? 'Nota interna — o lead NÃO recebe…' : anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
                           onKeyDown={(e) => {
@@ -1072,7 +1072,7 @@ export default function Chat() {
                           title={notaMode ? 'Salvar nota interna' : 'Enviar mensagem'}
                           disabled={sending || uploadingAnexo || (notaMode ? !draft.trim() : (!draft.trim() && !anexo))}
                         >
-                          <Icon name="send" size={16} className={sending ? 'girando' : undefined} />
+                          <Icon name="send" size={16} />
                           <span className="composer__rotulo">{sending ? 'Enviando…' : notaMode ? 'Salvar nota' : 'Enviar'}</span>
                         </button>
                       </>
