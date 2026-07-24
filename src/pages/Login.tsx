@@ -175,6 +175,7 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
 
   const [conta, setConta] = useState<{ nome: string; email?: string | null } | null>(null);
+  const [naoEhMinha, setNaoEhMinha] = useState(false);
 
   const buscarConta = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,7 +244,7 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
             <button type="button" className="login-request-link" onClick={onClose}>Cancelar</button>
           </form>
         )}
-        {passo === 1 && conta && (
+        {passo === 1 && conta && !naoEhMinha && (
           <>
             <p className="login-card__sub">
               Encontramos esta conta vinculada ao número:<br />
@@ -252,10 +253,23 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
             </p>
             {erro && <div className="login-card__error">{erro}</div>}
             <button type="button" className="login-btn" disabled={busy} onClick={pedirCodigo}>{busy ? 'Enviando…' : 'É minha — enviar código'}</button>
-            <button type="button" className="login-request-link" onClick={() => { setConta(null); setTelefone(''); }}>Não é minha conta</button>
-            <p className="login-card__sub" style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
-              Se essa conta não é sua, o número pode estar cadastrado pra outra pessoa — fale com o seu gestor pra corrigir o cadastro.
+            <button type="button" className="login-request-link" onClick={() => setNaoEhMinha(true)}>Não é minha conta</button>
+          </>
+        )}
+        {passo === 1 && conta && naoEhMinha && (
+          <>
+            <p className="login-card__sub">
+              Esse número está vinculado a outra conta (<strong>{conta.nome}</strong>). Isso costuma acontecer quando:
             </p>
+            <ul className="login-card__sub" style={{ textAlign: 'left', margin: '0 0 12px', paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }}>
+              <li>o número foi cadastrado com erro no seu perfil ou no de um colega;</li>
+              <li>você trocou de número e o cadastro ficou desatualizado.</li>
+            </ul>
+            <p className="login-card__sub" style={{ fontSize: 13 }}>
+              <strong>Como resolver:</strong> fale com o seu gestor ou com o administrativo do Grupo Pons pra corrigirem o telefone do cadastro — depois é só voltar aqui e pedir o código de novo.
+            </p>
+            <button type="button" className="login-btn" onClick={() => { setNaoEhMinha(false); setConta(null); setTelefone(''); }}>Tentar com outro número</button>
+            <button type="button" className="login-request-link" onClick={onClose}>Voltar pro login</button>
           </>
         )}
         {passo === 2 && (
