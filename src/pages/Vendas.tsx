@@ -709,7 +709,6 @@ export default function Vendas() {
  <th>Corretor</th>
  <th className="numeric">VGV</th>
  <th className="numeric">Comissão</th>
- <th>Origem</th>
  <th>Status</th>
  </tr>
  </thead>
@@ -751,11 +750,13 @@ export default function Vendas() {
  </>
  ) : '—'}
  </td>
- <td style={{ maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.origemLead || undefined}>
- {v.origemLead ? String(v.origemLead).replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase()) : '—'}
- </td>
  <td>
- <span className={`badge badge--${k}`}>{lbl}</span>
+ <div><span className={`badge badge--${k}`}>{lbl}</span></div>
+ {v.origemLead && (
+ <div className="text-xs text-secondary" style={{ marginTop: 3, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.origemLead}>
+ {String(v.origemLead).replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase())}
+ </div>
+ )}
  </td>
  </tr>
  );
