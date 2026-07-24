@@ -34,7 +34,7 @@
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 18px 0 6px;
 }
-.trn-top__logo { height: 30px; width: auto; }
+.trn-top__logo { height: 52px; width: auto; filter: drop-shadow(0 2px 10px rgba(82, 247, 254, 0.18)); }
 .trn-top__cta {
   display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-display); font-size: 11px; font-weight: 700;
@@ -261,7 +261,7 @@
 }
 @media (max-width: 560px) {
   .trn-top { padding-left: 15px; padding-right: 15px; }
-  .trn-top__logo { height: 24px; }
+  .trn-top__logo { height: 44px; }
   .trn-stat { flex: 1; min-width: 0; padding: 10px 12px; }
   .trn-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
   .trn-card__title { font-size: 13px; }
