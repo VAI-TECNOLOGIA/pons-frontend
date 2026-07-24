@@ -695,13 +695,19 @@
 /* ── Mobile (≤768px) — modal stack vertical, sem split ─── */
 @media (max-width: 768px) {
   .tpl-modal__backdrop { padding: 8px; }
-  .tpl-modal { max-height: 100dvh; }
-  .tpl-modal__body { grid-template-columns: 1fr; }
+  .tpl-modal { max-height: 100dvh; height: 100dvh; }
+  /* Linhas EXPLÍCITAS: lista compacta em cima, preview com o resto e rolagem
+     própria — sem isso o balão da pré-visualização crescia sem limite e
+     atropelava a lista/escondia os parâmetros e o botão de enviar. */
+  .tpl-modal__body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
   .tpl-modal__list {
-    max-height: 200px;
+    max-height: 26vh;
     border-right: none;
     border-bottom: 1px solid var(--border-light);
   }
+  .tpl-modal__preview { overflow-y: auto; min-height: 0; padding: 14px; }
+  .tpl-preview__chat { min-height: 120px; justify-content: flex-start; flex-shrink: 0; }
+  .tpl-preview__bubble { max-width: 100%; font-size: 13px; }
 }
 
 @keyframes tplFadeIn {
