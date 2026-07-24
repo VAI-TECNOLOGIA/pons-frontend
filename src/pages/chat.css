@@ -451,9 +451,11 @@
     border-radius: 50%;
     align-self: center; /* alinhado ao centro da barra de mensagem */
   }
-  /* Barra de gravação: cabe inteira (ícones no lugar dos rótulos) */
-  .rec-bar { flex-wrap: nowrap; min-width: 0; }
-  .rec-bar .rec-hint { display: none; }
+  /* Barra de gravação: "Gravando áudio…" na 1ª linha; botões completos
+     quebram pra linha de baixo encostados à direita — nada vaza da tela. */
+  .rec-bar { flex-wrap: wrap; gap: 8px 10px; min-width: 0; }
+  .rec-bar .rec-hint { flex: 1; }
+  .rec-bar .btn--ghost { margin-left: auto; }
   .composer__rotulo { display: none; }
   .composer .btn {
     height: 40px;

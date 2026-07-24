@@ -971,10 +971,10 @@ export default function Chat() {
                         </span>
                         <span className="rec-hint">Gravando áudio…</span>
                         <button className="btn btn--ghost btn--sm" onClick={cancelarGravacao} disabled={recSending} title="Descartar">
-                          <Icon name="trash" size={14} /> <span className="composer__rotulo">Descartar</span>
+                          <Icon name="trash" size={14} /> Descartar
                         </button>
                         <button className="btn btn--primary btn--sm" onClick={enviarGravacao} disabled={recSending} title="Enviar áudio">
-                          {recSending ? '…' : (<><Icon name="send" size={14} /> <span className="composer__rotulo">Enviar áudio</span></>)}
+                          {recSending ? 'Enviando…' : (<><Icon name="send" size={14} /> Enviar áudio</>)}
                         </button>
                       </div>
                     ) : (
