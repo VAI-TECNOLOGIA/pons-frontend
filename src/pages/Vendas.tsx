@@ -856,6 +856,27 @@ export default function Vendas() {
  </div>
  )}
 
+ {/* Resumo consolidado — tudo que veio da planilha/protocolo visível de cara */}
+ <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 10 }}>Resumo da venda</div>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '10px 16px' }}>
+ <div><div className="text-xs text-secondary">Data da venda</div><strong>{sel.createdAt ? new Date(sel.createdAt).toLocaleDateString('pt-BR') : '—'}</strong></div>
+ <div><div className="text-xs text-secondary">VGV</div><strong>{formatCurrencyShort(sel.valorVenda ?? sel.valor ?? 0)}</strong></div>
+ <div><div className="text-xs text-secondary">Comissão</div><strong>{sel.percentualComissao ? `${formatCurrencyShort(((sel.valorVenda ?? 0) * sel.percentualComissao) / 100)} (${sel.percentualComissao.toLocaleString('pt-BR')}%)` : '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Construtora</div><strong>{typeof sel.construtora === 'string' ? sel.construtora : sel.construtora?.nome || '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Unidade</div><strong>{sel.unidade || '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Sala GPI</div><strong>{sel.salaGpi || '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Origem do lead</div><strong>{sel.origemLead || '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Corretor</div><strong>{sel.corretor?.nome || sel.corretorTitular?.user?.name || '—'}</strong></div>
+ </div>
+ {sel.observacoesRateio && (
+ <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
+ <div className="text-xs text-secondary" style={{ marginBottom: 4 }}>Observações / auditoria</div>
+ <div style={{ fontSize: 12.5, whiteSpace: 'pre-wrap' }}>{sel.observacoesRateio}</div>
+ </div>
+ )}
+ </div>
+
  <FormularioGpi f={sel.formulario} />
 
  <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} />
@@ -2023,7 +2044,7 @@ export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; pod
  return (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
  <div className="flex-between" style={{ alignItems: 'baseline', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
- <div className="uppercase-tag">Plano de recebimento (entrada)</div>
+ <div className="uppercase-tag">Parcelas / plano de recebimento</div>
  <div className="text-xs text-secondary">
  {pagas.length}/{parcelas.length} pagas · {formatCurrencyShort(totalPago)} de {formatCurrencyShort(totalEntrada)}
  </div>
