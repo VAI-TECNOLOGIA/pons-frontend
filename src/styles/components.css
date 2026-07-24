@@ -2681,7 +2681,7 @@ dialog.modal[open] {
 
 /* ── Status bar em overlay (app nativo, sem build): compensa o notch/relógio ── */
 html.statusbar-overlay body { padding-top: env(safe-area-inset-top); }
-html.statusbar-overlay .sidebar { padding-top: env(safe-area-inset-top); }
+html.statusbar-overlay .sidebar { padding-top: calc(env(safe-area-inset-top) + 14px); }
 html.statusbar-overlay .main:has(> .inbox) { height: calc(100dvh - env(safe-area-inset-top)); }
 /* Faixa PRETA fixa atrás do relógio: o scroll passa por baixo dela (nativo),
    nada "sobe" pra área da status bar. Relógio branco sobre preto nos 2 temas. */

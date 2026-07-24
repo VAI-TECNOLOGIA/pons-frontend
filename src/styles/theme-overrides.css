@@ -431,14 +431,17 @@
     align-items: center;
     justify-content: center;
     position: fixed;
-    top: calc(12px + env(safe-area-inset-top, 0px));
-    left: calc(min(280px, 86vw) - 48px);
+    top: calc(20px + env(safe-area-inset-top, 0px));
+    left: calc(min(280px, 86vw) - 46px);
     right: auto;
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
-    color: #fff;
+    /* discreto e no tema (o círculo cinza pesado destoava do drawer claro) */
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     z-index: calc(var(--z-modal) + 1);
   }
   .app-shell--menu-open ~ .sidebar-backdrop,
