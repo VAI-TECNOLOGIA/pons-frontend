@@ -880,7 +880,7 @@ export default function Vendas() {
 
  <FormularioGpi f={sel.formulario} />
 
- <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} />
+ <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} rateioCompleto={podeEditarRateio || role === 'CEO' || role === 'DIRETOR_COMERCIAL'} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
  </Modal>
@@ -2018,16 +2018,20 @@ const RATEIO_LABELS: Record<string, string> = {
  nf: 'NF', custoVenda: 'Custo Venda', sitComissoes: 'Sit. Comissões', ctrAssinado: 'CTR Assinado',
 };
 
-export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; podeConfirmar?: boolean }) {
+export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vendaId: number; podeConfirmar?: boolean; rateioCompleto?: boolean }) {
  const toast = useToast();
  const [parcelas, setParcelas] = useState<any[]>([]);
  const [busy, setBusy] = useState<number | null>(null);
- const [aberta, setAberta] = useState<number | null>(null); // parcela com rateio expandido
+ const [rateioMotor, setRateioMotor] = useState<any>(null); // vendas do sistema (sem planilha): rateio calculado
 
  const load = async () => {
  try {
  const v = await Api.venda(vendaId);
- setParcelas(v?.pagamentos || []);
+ const pags = v?.pagamentos || [];
+ setParcelas(pags);
+ if (rateioCompleto && !pags.some((p: any) => p.rateioPlanilha)) {
+ try { setRateioMotor(await Api.rateioVenda(vendaId)); } catch { /* sem rateio calculável */ }
+ }
  } catch { /* ignore */ }
  };
  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [vendaId]);
@@ -2045,10 +2049,14 @@ export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; pod
  }
  };
 
- if (parcelas.length === 0) return null;
+ if (parcelas.length === 0 && !rateioMotor) return null;
  const pagas = parcelas.filter((p) => p.status === 'PAGO');
  const totalEntrada = parcelas.reduce((s, p) => s + (p.valor || 0), 0);
  const totalPago = pagas.reduce((s, p) => s + (p.valor || 0), 0);
+ // Rateio da planilha por parcela — colunas que têm valor em pelo menos uma linha
+ const rateios = parcelas.map((p) => { try { return p.rateioPlanilha ? JSON.parse(p.rateioPlanilha) : null; } catch { return null; } });
+ const temPlanilha = rateios.some(Boolean);
+ const colunas = Object.keys(RATEIO_LABELS).filter((c) => rateios.some((r) => r && r[c] !== undefined && r[c] !== null && r[c] !== ''));
  return (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
  <div className="flex-between" style={{ alignItems: 'baseline', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
@@ -2061,53 +2069,94 @@ export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; pod
  {parcelas.map((p) => {
  const [k, lbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
  const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
- let rateio: Record<string, any> | null = null;
- try { rateio = p.rateioPlanilha ? JSON.parse(p.rateioPlanilha) : null; } catch { /* json inválido */ }
- const expandida = aberta === p.id;
  return (
- <div key={p.id} style={{ background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
- <div
- className="flex-between"
- style={{ alignItems: 'center', gap: 8, padding: '5px 10px', cursor: rateio ? 'pointer' : 'default' }}
- onClick={() => rateio && setAberta(expandida ? null : p.id)}
- title={rateio ? (expandida ? 'Fechar rateio' : 'Abrir rateio da parcela') : undefined}
- >
+ <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
  <div style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
  <strong>{p.numero}/{p.total}</strong> · {formatCurrencyShort(p.valor)} · {venc}
- {rateio && <Icon name="chevron-down" size={11} style={{ marginLeft: 6, verticalAlign: 'middle', opacity: 0.6, transform: expandida ? 'rotate(180deg)' : 'none' }} />}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
  {(!podeConfirmar || p.status === 'PAGO') && <span className={`badge badge--${k}`} style={{ fontSize: 10 }}>{lbl}</span>}
  {podeConfirmar && p.status !== 'PAGO' && (
- <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={(e) => { e.stopPropagation(); mudarStatus(p.id, 'PAGO'); }}>
+ <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
  {busy === p.id ? '…' : 'Confirmar'}
  </button>
  )}
  {podeConfirmar && p.status === 'PAGO' && (
- <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={(e) => { e.stopPropagation(); mudarStatus(p.id, 'ABERTO'); }} title="Desfazer">
+ <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer">
  Desfazer
  </button>
  )}
  </div>
  </div>
- {expandida && rateio && (
- <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--border-light)', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
- {Object.entries(RATEIO_LABELS).map(([chave, rotulo]) => {
- const val = rateio![chave];
- if (val === undefined || val === null || val === '') return null;
- const texto = typeof val === 'number' ? formatCurrencyShort(val) : String(val);
- return (
- <span key={chave} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)' }}>
- <span className="text-secondary">{rotulo}:</span> <strong>{texto}</strong>
- </span>
  );
  })}
+ </div>
+
+ {/* ── Rateio da comissão — SEMPRE aberto, igual à planilha ─────────── */}
+ {temPlanilha && colunas.length > 0 && (
+ <div style={{ marginTop: 14 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão (por parcela)</div>
+ <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border-light)' }}>
+ <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 640 }}>
+ <thead>
+ <tr>
+ <th>Parc.</th>
+ <th>Venc.</th>
+ <th className="numeric">Recebido</th>
+ {colunas.map((c) => <th key={c} className={c === 'sitComissoes' || c === 'ctrAssinado' ? '' : 'numeric'}>{RATEIO_LABELS[c]}</th>)}
+ </tr>
+ </thead>
+ <tbody>
+ {parcelas.map((p, i) => {
+ const r = rateios[i];
+ if (!r) return null;
+ return (
+ <tr key={p.id}>
+ <td><strong>{p.numero}/{p.total}</strong></td>
+ <td style={{ whiteSpace: 'nowrap' }}>{p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'}</td>
+ <td className="numeric money">{formatCurrencyShort(p.valor)}</td>
+ {colunas.map((c) => {
+ const val = r[c];
+ const texto = val === undefined || val === null || val === '' ? '—'
+ : typeof val === 'number' ? formatCurrencyShort(val) : String(val);
+ return <td key={c} className={typeof val === 'number' ? 'numeric' : ''} style={{ whiteSpace: 'nowrap' }}>{texto}</td>;
+ })}
+ </tr>
+ );
+ })}
+ </tbody>
+ </table>
+ </div>
+ </div>
+ )}
+
+ {/* Vendas criadas pelo sistema: rateio calculado pelo motor Pons */}
+ {!temPlanilha && rateioMotor && (
+ <div style={{ marginTop: 14 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão (calculado)</div>
+ <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border-light)' }}>
+ <table className="table tabela-compacta" style={{ fontSize: 12 }}>
+ <thead>
+ <tr><th>Beneficiário</th><th className="numeric">Valor</th><th className="numeric">% sobre a comissão</th></tr>
+ </thead>
+ <tbody>
+ {((rateioMotor.beneficiarios || rateioMotor.parcelas?.[0]?.beneficiarios) || []).map((b: any) => (
+ <tr key={b.papel}>
+ <td>{b.nome}</td>
+ <td className="numeric money">{formatCurrencyShort(b.valor)}</td>
+ <td className="numeric">{b.percentualSobreBruto != null ? `${b.percentualSobreBruto.toLocaleString('pt-BR')}%` : '—'}</td>
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
+ {rateioMotor.parcelas && (
+ <div className="text-xs text-secondary" style={{ marginTop: 6 }}>
+ Comissão parcelada em {rateioMotor.parcelas.length}x — valores acima referentes à 1ª parcela; taxa de marketing só na primeira.
  </div>
  )}
  </div>
- );
- })}
- </div>
+ )}
  </div>
  );
 }
