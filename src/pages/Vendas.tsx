@@ -2114,11 +2114,11 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <tr key={p.id}>
  <td><strong>{p.numero}/{p.total}</strong></td>
  <td style={{ whiteSpace: 'nowrap' }}>{p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'}</td>
- <td className="numeric money">{formatCurrencyShort(p.valor)}</td>
+ <td className="numeric money">{(p.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
  {colunas.map((c) => {
  const val = r[c];
  const texto = val === undefined || val === null || val === '' ? '—'
- : typeof val === 'number' ? formatCurrencyShort(val) : String(val);
+ : typeof val === 'number' ? val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : String(val);
  return <td key={c} className={typeof val === 'number' ? 'numeric' : ''} style={{ whiteSpace: 'nowrap' }}>{texto}</td>;
  })}
  </tr>
@@ -2143,7 +2143,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  {((rateioMotor.beneficiarios || rateioMotor.parcelas?.[0]?.beneficiarios) || []).map((b: any) => (
  <tr key={b.papel}>
  <td>{b.nome}</td>
- <td className="numeric money">{formatCurrencyShort(b.valor)}</td>
+ <td className="numeric money">{(b.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
  <td className="numeric">{b.percentualSobreBruto != null ? `${b.percentualSobreBruto.toLocaleString('pt-BR')}%` : '—'}</td>
  </tr>
  ))}
