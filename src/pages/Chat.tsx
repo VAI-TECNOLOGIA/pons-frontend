@@ -119,7 +119,8 @@ export default function Chat() {
   // Gravação de áudio: liberada na web; no app nativo SÓ a partir dos builds que
   // declaram a permissão de microfone (iOS build 11+ / Android versionCode 7+) —
   // nos anteriores o iOS mata o app ao chamar getUserMedia.
-  const [imoveisOpen, setImoveisOpen] = useState(false); // chips de imóvel recolhidos por padrão (muitos empreendimentos poluem)
+  const [imoveisOpen, setImoveisOpen] = useState(false);
+ const [enviandoBolha, setEnviandoBolha] = useState<{ texto: string; nota: boolean; anexoNome?: string } | null>(null); // bolha otimista "enviando…" // chips de imóvel recolhidos por padrão (muitos empreendimentos poluem)
  const [micDisponivel, setMicDisponivel] = useState(() => !isNativeApp());
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -260,11 +261,11 @@ export default function Chat() {
     const tamanho = (file.size / MB).toFixed(1).replace('.', ',');
     const tipo = tipoMedia(file.type);
     if (tipo === 'video' && file.size > 16 * MB) {
-      toast.error(`O WhatsApp limita vídeos a 16 MB — este tem ${tamanho} MB. Grave um trecho mais curto ou comprima o vídeo antes de enviar.`, 10000);
+      toast.error(`Vídeo acima do limite do WhatsApp: ${tamanho} MB (máx. 16 MB).`);
       return;
     }
     if (tipo === 'audio' && file.size > 16 * MB) {
-      toast.error(`O WhatsApp limita áudios a 16 MB — este tem ${tamanho} MB.`, 8000);
+      toast.error(`Áudio acima do limite do WhatsApp: ${tamanho} MB (máx. 16 MB).`);
       return;
     }
     if (tipo === 'image' && file.size > 30 * MB) {
@@ -276,7 +277,7 @@ export default function Chat() {
       return;
     }
     if (tipo === 'image' && file.size > 4.5 * MB) {
-      toast.info(`Imagem de ${tamanho} MB — vai ser comprimida automaticamente antes do envio.`, 6000);
+      toast.info(`Imagem grande (${tamanho} MB) — compressão automática no envio.`);
     }
     setUploadingAnexo(true);
     try {
@@ -298,6 +299,7 @@ export default function Chat() {
       if (!texto) return;
       setDraft('');
       setSending(true);
+      setEnviandoBolha({ texto, nota: true });
       try {
         await Api.conversationNota(activeId, texto);
         reloadConv();
@@ -306,6 +308,7 @@ export default function Chat() {
         toast.error('Erro ao salvar nota: ' + (err?.message || 'falha'));
       } finally {
         setSending(false);
+        setEnviandoBolha(null);
       }
       return;
     }
@@ -315,6 +318,7 @@ export default function Chat() {
     setDraft('');
     setAnexo(null);
     setSending(true);
+    setEnviandoBolha({ texto: texto || '', nota: false, anexoNome: anexo?.fileName });
     try {
       const r = await Api.conversationSend(activeId, texto, 'CORRETOR', media);
       if (r.delivery === 'simulado') {
@@ -332,6 +336,7 @@ export default function Chat() {
       toast.error('Erro ao enviar: ' + (err?.message || 'falha'));
     } finally {
       setSending(false);
+      setEnviandoBolha(null);
     }
   };
 
@@ -901,6 +906,15 @@ export default function Chat() {
                 {mensagens.map((m) => (
                   <MessageBubble key={m.id} m={m} />
                 ))}
+                {enviandoBolha && (
+                  <div className={'bubble ' + (enviandoBolha.nota ? 'bubble--NOTA' : 'bubble--CORRETOR')} style={{ opacity: 0.7 }}>
+                    {enviandoBolha.anexoNome && <div style={{ fontSize: 12, fontWeight: 700 }}>{enviandoBolha.anexoNome}</div>}
+                    {enviandoBolha.texto}
+                    <div className="bubble__meta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Icon name="clock" size={10} /> {enviandoBolha.nota ? 'salvando…' : 'enviando…'}
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
               {!conv?.reservado ? (
@@ -1058,8 +1072,8 @@ export default function Chat() {
                           title={notaMode ? 'Salvar nota interna' : 'Enviar mensagem'}
                           disabled={sending || uploadingAnexo || (notaMode ? !draft.trim() : (!draft.trim() && !anexo))}
                         >
-                          <Icon name="send" size={16} />
-                          <span className="composer__rotulo">{sending ? 'Salvando…' : notaMode ? 'Salvar nota' : 'Enviar'}</span>
+                          <Icon name="send" size={16} className={sending ? 'girando' : undefined} />
+                          <span className="composer__rotulo">{sending ? 'Enviando…' : notaMode ? 'Salvar nota' : 'Enviar'}</span>
                         </button>
                       </>
                     )}

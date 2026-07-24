@@ -744,3 +744,7 @@
 @keyframes recPulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 .rec-time { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--text-primary); min-width: 46px; }
 .rec-hint { color: var(--text-secondary); font-size: 13px; flex: 1; }
+
+/* Aviãozinho girando enquanto a mensagem sai */
+.girando { animation: girar 0.9s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
