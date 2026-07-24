@@ -727,8 +727,8 @@ export default function Vendas() {
  return (
  <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(v.id)}>
  <td className="font-semibold" style={{ whiteSpace: 'nowrap' }}>
- #{v.codigo || String(v.id).padStart(5, '0')}
- {v.salaGpi && <span className="badge badge--neutral" style={{ marginLeft: 6, fontSize: 10 }}>Sala {v.salaGpi}</span>}
+ <div>#{v.codigo || String(v.id).padStart(5, '0')}</div>
+ {v.salaGpi && <span className="badge badge--neutral" style={{ fontSize: 10 }}>{/^sala/i.test(String(v.salaGpi).trim()) ? v.salaGpi : `Sala ${v.salaGpi}`}</span>}
  </td>
  <td style={{ whiteSpace: 'nowrap' }}>{dataVnd}</td>
  <td>{cliente}</td>
@@ -751,7 +751,9 @@ export default function Vendas() {
  </>
  ) : '—'}
  </td>
- <td>{v.origemLead || '—'}</td>
+ <td style={{ maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.origemLead || undefined}>
+ {v.origemLead ? String(v.origemLead).replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase()) : '—'}
+ </td>
  <td>
  <span className={`badge badge--${k}`}>{lbl}</span>
  </td>
