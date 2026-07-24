@@ -119,7 +119,8 @@ export default function Chat() {
   // Gravação de áudio: liberada na web; no app nativo SÓ a partir dos builds que
   // declaram a permissão de microfone (iOS build 11+ / Android versionCode 7+) —
   // nos anteriores o iOS mata o app ao chamar getUserMedia.
-  const [micDisponivel, setMicDisponivel] = useState(() => !isNativeApp());
+  const [imoveisOpen, setImoveisOpen] = useState(false); // chips de imóvel recolhidos por padrão (muitos empreendimentos poluem)
+ const [micDisponivel, setMicDisponivel] = useState(() => !isNativeApp());
   useEffect(() => {
     if (!isNativeApp()) return;
     import('@capacitor/app')
@@ -866,10 +867,17 @@ export default function Chat() {
                 )}
               </div>
               <div className="thread__tools">
-                <span className="text-xs text-secondary" style={{ fontWeight: 700 }}>
-                  Enviar imóvel:
-                </span>
-                {(empreendimentos || []).map((e: any) => (
+                <button
+                  type="button"
+                  className="imovel-chip"
+                  style={{ fontWeight: 700 }}
+                  onClick={() => setImoveisOpen((v) => !v)}
+                  title={imoveisOpen ? 'Recolher imóveis' : 'Mostrar imóveis pra enviar'}
+                >
+                  Enviar imóvel ({(empreendimentos || []).length})
+                  <Icon name="chevron-down" size={11} style={{ marginLeft: 5, verticalAlign: 'middle', transform: imoveisOpen ? 'rotate(180deg)' : 'none' }} />
+                </button>
+                {imoveisOpen && (empreendimentos || []).map((e: any) => (
                   <button
                     className="imovel-chip"
                     key={e.id}
