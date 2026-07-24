@@ -296,7 +296,10 @@ export default function Dashboard() {
  </div>
  )}
 
- {/* Top Corretores + Empreendimentos */}
+ {/* Top Corretores + Empreendimentos — conteúdo executivo (empresa toda).
+ O corretor não recebe esses dados no payload pessoal, então ficavam
+ como cards VAZIOS; ele já tem "Minha posição" e "Minhas Comissões". */}
+ {!isCorretor && (
  <div className="grid-2-1 mb-6">
  <div className="card chart-card">
  <div className="card__header">
@@ -351,14 +354,24 @@ export default function Dashboard() {
  </div>
  </div>
  </div>
+ )}
 
- {/* Atividade Recente */}
+ {/* Atividade Recente — exec vê a atividade geral; corretor vê as vendas dele. */}
  <div className="card chart-card">
  <div className="card__header">
  <h3 className="card__title">Atividade Recente</h3>
  </div>
  <div className="list">
- {(data.atividade || []).map((v: any, i: number) => {
+ {(data.atividade
+ ?? (data.minhasVendas || []).map((v: any) => ({
+ id: v.id,
+ titulo: `${v.cliente} · ${v.empreendimento}${v.unidade ? ` ${v.unidade}` : ''}`,
+ corretor: null,
+ status: v.status,
+ valor: v.valor,
+ updatedAt: v.createdAt,
+ }))
+ ).map((v: any, i: number) => {
  const [klass, label] = STATUS_MAP[v.status] || ['neutral', v.status];
  return (
  <div className="list__item" key={i}>
@@ -368,13 +381,16 @@ export default function Dashboard() {
  <div className="list__main">
  <div className="list__title">{v.titulo}</div>
  <div className="list__meta">
- {v.corretor} · {timeAgo(v.updatedAt)} · {formatCurrencyShort(v.valor)}
+ {v.corretor ? `${v.corretor} · ` : ''}{timeAgo(v.updatedAt)} · {formatCurrencyShort(v.valor)}
  </div>
  </div>
  <span className={`badge badge--${klass}`}>{label}</span>
  </div>
  );
  })}
+ {!data.atividade && (data.minhasVendas || []).length === 0 && (
+ <div className="text-xs text-secondary" style={{ padding: 12 }}>Nenhuma venda registrada ainda.</div>
+ )}
  </div>
  </div>
  </div>
