@@ -163,22 +163,44 @@ export default function Login() {
   );
 }
 
-// Modal "Esqueci a senha": pede o e-mail e dispara o link de redefinição.
-// Resposta sempre genérica (não confirma se o e-mail existe).
+// Modal "Esqueci a senha" — via WHATSAPP: envia código de 6 dígitos pro
+// número cadastrado e troca a senha aqui mesmo. Resposta sempre genérica.
 function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
-  const [email, setEmail] = useState('');
+  const [passo, setPasso] = useState<1 | 2 | 3>(1);
+  const [telefone, setTelefone] = useState('');
+  const [codigo, setCodigo] = useState('');
+  const [senha, setSenha] = useState('');
+  const [confirma, setConfirma] = useState('');
+  const [erro, setErro] = useState('');
   const [busy, setBusy] = useState(false);
-  const [enviado, setEnviado] = useState(false);
 
-  const enviar = async (e: React.FormEvent) => {
+  const pedirCodigo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    setErro('');
+    if (telefone.replace(/\D/g, '').length < 10) { setErro('Informe o WhatsApp com DDD.'); return; }
     setBusy(true);
     try {
-      await Api.esqueciSenha(email.trim());
-      setEnviado(true);
+      await Api.esqueciSenhaWhats(telefone);
+      setPasso(2);
     } catch {
-      setEnviado(true); // resposta é genérica de qualquer forma
+      setPasso(2); // resposta é genérica de qualquer forma
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const trocarSenha = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+    if (!/^\d{6}$/.test(codigo.trim())) { setErro('O código tem 6 números.'); return; }
+    if (senha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return; }
+    if (senha !== confirma) { setErro('As senhas não conferem.'); return; }
+    setBusy(true);
+    try {
+      await Api.redefinirSenhaCodigo(telefone, codigo.trim(), senha);
+      setPasso(3);
+    } catch (err: any) {
+      setErro(err?.message || 'Código inválido ou expirado — peça um novo.');
     } finally {
       setBusy(false);
     }
@@ -190,32 +212,43 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
         <button type="button" className="login-modal__close" aria-label="Fechar" onClick={onClose}>×</button>
         <div className="login-card__eyebrow">Recuperar acesso</div>
         <h2 className="login-card__title">Esqueci a senha</h2>
-        {enviado ? (
-          <>
-            <p className="login-card__sub">
-              Se o e-mail <strong>{email.trim()}</strong> estiver cadastrado, você vai receber um link de
-              redefinição válido por 30 minutos. Confira também a caixa de spam.
-            </p>
-            <button type="button" className="login-btn" onClick={onClose}>Voltar pro login</button>
-          </>
-        ) : (
-          <form onSubmit={enviar}>
-            <p className="login-card__sub">Informe o e-mail da sua conta — enviaremos o link pra criar uma senha nova.</p>
+        {passo === 1 && (
+          <form onSubmit={pedirCodigo}>
+            <p className="login-card__sub">Informe o WhatsApp cadastrado na sua conta — enviamos um código de 6 dígitos.</p>
+            {erro && <div className="login-card__error">{erro}</div>}
             <label className="login-field">
-              <span className="login-field__label">E-mail</span>
-              <input
-                className="login-field__input"
-                type="email"
-                required
-                autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="voce@grupopons.com.br"
-              />
+              <span className="login-field__label">WhatsApp (com DDD)</span>
+              <input className="login-field__input" type="tel" inputMode="tel" required autoFocus placeholder="(47) 99999-9999" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
             </label>
-            <button type="submit" className="login-btn" disabled={busy}>{busy ? 'Enviando…' : 'Enviar link'}</button>
+            <button type="submit" className="login-btn" disabled={busy}>{busy ? 'Enviando…' : 'Enviar código'}</button>
             <button type="button" className="login-request-link" onClick={onClose}>Cancelar</button>
           </form>
+        )}
+        {passo === 2 && (
+          <form onSubmit={trocarSenha}>
+            <p className="login-card__sub">Se o número estiver cadastrado, o código chega no WhatsApp em instantes (vale 10 minutos).</p>
+            {erro && <div className="login-card__error">{erro}</div>}
+            <label className="login-field">
+              <span className="login-field__label">Código (6 dígitos)</span>
+              <input className="login-field__input" inputMode="numeric" maxLength={6} required autoFocus placeholder="000000" value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))} />
+            </label>
+            <label className="login-field">
+              <span className="login-field__label">Nova senha</span>
+              <input className="login-field__input" type="password" autoComplete="new-password" required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} />
+            </label>
+            <label className="login-field">
+              <span className="login-field__label">Confirmar nova senha</span>
+              <input className="login-field__input" type="password" autoComplete="new-password" required minLength={6} value={confirma} onChange={(e) => setConfirma(e.target.value)} />
+            </label>
+            <button type="submit" className="login-btn" disabled={busy}>{busy ? 'Salvando…' : 'Trocar senha'}</button>
+            <button type="button" className="login-request-link" onClick={() => setPasso(1)}>Não recebi o código</button>
+          </form>
+        )}
+        {passo === 3 && (
+          <>
+            <p className="login-card__sub">Senha redefinida com sucesso. Já dá pra entrar com a nova.</p>
+            <button type="button" className="login-btn" onClick={onClose}>Fazer login</button>
+          </>
         )}
       </div>
     </div>
