@@ -10,6 +10,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Watchdog anti-tela-branca: se o app não montar em 8s (index defasado em
+      // cache de WebView apontando pra bundle antigo), recarrega UMA vez com
+      // cache-bust. Sessão nova (reabrir o app) ganha nova tentativa.
+      setTimeout(function () {
+        var root = document.getElementById('root');
+        if (root && root.childElementCount === 0 && !sessionStorage.getItem('bootRetry')) {
+          sessionStorage.setItem('bootRetry', '1');
+          location.replace(location.pathname + '?r=' + Date.now());
+        }
+      }, 8000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
