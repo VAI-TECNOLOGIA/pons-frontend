@@ -13,7 +13,7 @@ import type { CnpjInfo } from '../lib/consultaCnpj';
 import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
 export const STATUS_MAP: Record<string, [string, string]> = {
- PRE_ANALISE: ['analysis', 'Contrato em análise'],
+ PRE_ANALISE: ['analysis', 'Contrato em confecção'],
  ANALISE_JURIDICA: ['analysis', 'Análise jurídica'],
  AGUARDANDO_CONSTRUTORA: ['analysis', 'Aguardando construtora'],
  CONTRATO_EM_CONFECCAO: ['analysis', 'Contrato em confecção'],
@@ -349,6 +349,28 @@ export default function Vendas() {
  setParcelasEntrada(arr);
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [entradaTotal, arrasValor, entradaParcelas, entradaData, parcelasTocadas]);
+ // Editou uma parcela da entrada → as SEGUINTES se recorrigem sozinhas pra
+ // soma fechar com (entrada − arras). Pedido do financeiro (24/07).
+ const editarParcelaValor = (i: number, vMask: string) => {
+ setParcelasEntrada((cur) => {
+ const arr = cur.map((x, j) => (j === i ? { ...x, valor: vMask } : { ...x }));
+ const alvo = Math.round(parseMoedaBR(entradaTotal) - parseMoedaBR(arrasValor));
+ const nRest = arr.length - (i + 1);
+ if (nRest > 0 && alvo > 0) {
+ const somaAte = arr.slice(0, i + 1).reduce((a, p) => a + parseMoedaBR(p.valor), 0);
+ const resto = alvo - somaAte;
+ const base = Math.floor(resto / nRest);
+ for (let j = i + 1; j < arr.length; j++) arr[j] = { ...arr[j], valor: formatMoedaBR(Math.max(0, base)) };
+ const somaTotal = arr.reduce((a, p) => a + parseMoedaBR(p.valor), 0);
+ const diff = alvo - somaTotal;
+ const last = arr.length - 1;
+ if (diff !== 0) arr[last] = { ...arr[last], valor: formatMoedaBR(Math.max(0, parseMoedaBR(arr[last].valor) + diff)) };
+ }
+ return arr;
+ });
+ setParcelasTocadas(true);
+ };
+
  // Conta bancária do protocolo: resolvida pela unidade do corretor titular.
  const [corretorTitularId, setCorretorTitularId] = useState('');
  const [contaBanco, setContaBanco] = useState<any>(null);
@@ -370,13 +392,16 @@ export default function Vendas() {
  // NF: alíquota global (config) + valor desta venda (pode personalizar) + controlado.
  const [nfAliquotaGlobal, setNfAliquotaGlobal] = useState(16.83);
  const [nfAliquota, setNfAliquota] = useState('16.83');
- const [temNf, setTemNf] = useState(false);
+ // NF padrão MARCADO (financeiro 24/07): a exceção é não ter nota
+ const [temNf, setTemNf] = useState(true);
  const [salvandoNfGlobal, setSalvandoNfGlobal] = useState(false);
  useEffect(() => { Api.nfAliquota().then((r) => { setNfAliquotaGlobal(r.pct); setNfAliquota(String(r.pct)); }).catch(() => {}); }, []);
  const { data: politicas } = useApi<any[]>(() => Api.rateioPoliticas());
  const politicaEmp = empSel ? (politicas || []).find((p: any) => p.empreendimento?.id === empSel.id) : null;
  const politicaDefault = (politicas || []).find((p: any) => p.isDefault) || null;
  const politicaVigente = politicaEmp || politicaDefault;
+ // Entrada mínima oficial: financeiro do empreendimento (entradaMinPct) vence a política
+ const entradaMinimaOficial = (empSel as any)?.entradaMinPct ?? politicaVigente?.entradaMinimaPct ?? null;
  // A comissão cadastrada no financeiro do empreendimento manda; senão a política; senão 5%.
  const pctPonsHerdado = empSel?.comissaoPct ?? politicaVigente?.percentualComissao ?? 5;
 
@@ -385,8 +410,8 @@ export default function Vendas() {
  useEffect(() => {
  const vv = parseMoedaBR(valorVenda);
  if (!vv || !politicaVigente) return;
- if (!entradaTotal && politicaVigente.entradaMinimaPct) {
- setEntradaTotal(formatMoedaBR(Math.round(vv * (politicaVigente.entradaMinimaPct / 100))));
+ if (!entradaTotal && entradaMinimaOficial) {
+ setEntradaTotal(formatMoedaBR(Math.round(vv * (entradaMinimaOficial / 100))));
  }
  if (!chavesValor && politicaVigente.chavesPct) {
  setChavesValor(formatMoedaBR(Math.round(vv * (politicaVigente.chavesPct / 100))));
@@ -407,7 +432,7 @@ export default function Vendas() {
  setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
- setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(false); setNfAliquota(String(nfAliquotaGlobal));
+ setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
@@ -588,7 +613,7 @@ export default function Vendas() {
  // Comissão: herdada da política do empreendimento; especial sobrescreve
  percentualComissao: podeEditarRateio && comEspecial ? num(fd.get('percentualComissao')) : pctPonsHerdado,
  splitCorretor: 55, splitGerente: 15, splitCasa: 30, // legacy (ignorado pela regra Pons)
- temNotaFiscal: podeEditarRateio && comEspecial ? temNf : false,
+ temNotaFiscal: podeEditarRateio && comEspecial ? temNf : true,
  // Alíquota NF desta venda (personalizada ou o padrão global) — só de quem edita rateio.
  ...(podeEditarRateio && comEspecial && temNf && Number(nfAliquota) > 0 ? { percentualNotaFiscal: Number(nfAliquota) } : {}),
  origemComissao: origemComissaoFinal,
@@ -954,16 +979,13 @@ export default function Vendas() {
  </div>
  )}
 
- {/* Vincular lead: puxa nome/contato e a ORIGEM oficial do banco */}
- <div className="card" style={{ padding: '12px 14px', marginBottom: 14, background: 'var(--bg-elevated)' }}>
- <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
- <Icon name="users" size={13} /> Vincular lead (recomendado)
- </div>
- {leadSel ? (
- <div className="flex" style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+ {/* Lead vinculado (via busca automática pelo nome) — quadro de busca manual
+ removido a pedido do financeiro (24/07): digitou o nome, o sistema sugere. */}
+ {leadSel && (
+ <div className="card" style={{ padding: '10px 14px', marginBottom: 14, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
  <div className="avatar avatar--sm">{initials(leadSel.nome)}</div>
  <div style={{ flex: 1, minWidth: 180 }}>
- <div className="font-semibold" style={{ fontSize: 13 }}>{leadSel.nome}</div>
+ <div className="font-semibold" style={{ fontSize: 13 }}>{leadSel.nome} <span className="text-xs text-secondary">(lead do banco)</span></div>
  <div className="text-xs text-secondary">
  Origem: <strong>{origemDoLead(leadSel.origem)?.rotulo}</strong>
  {leadSel.campanha ? ` · ${leadSel.campanha}` : ''}
@@ -971,35 +993,7 @@ export default function Vendas() {
  </div>
  <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setLeadSel(null); setContestarOpen(false); setContestacao(''); }}>Desvincular</button>
  </div>
- ) : (
- <>
- <input
- className="field__input"
- placeholder="Buscar lead por nome ou telefone…"
- value={leadBusca}
- onChange={(e) => setLeadBusca(e.target.value)}
- style={{ marginBottom: 8 }}
- />
- {leadBusca.trim().length >= 2 && (
- <div style={{ maxHeight: 168, overflowY: 'auto', display: 'grid', gap: 4 }}>
- {(leadsDisponiveis || [])
- .filter((l: any) => {
- const q = leadBusca.trim().toLowerCase();
- return (l.nome || '').toLowerCase().includes(q) || String(l.telefone || '').includes(q);
- })
- .slice(0, 8)
- .map((l: any) => (
- <button key={l.id} type="button" className="btn btn--secondary btn--sm" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => vincularLead(l)}>
- <strong>{l.nome}</strong>
- <span className="text-xs text-secondary" style={{ marginLeft: 8 }}>{origemDoLead(l.origem)?.rotulo}</span>
- </button>
- ))}
- </div>
  )}
- <div className="field__hint">A origem do lead (tráfego pago, campanha, base) entra sozinha no cálculo da comissão.</div>
- </>
- )}
- </div>
 
  <div className="flex gap-2" style={{ marginBottom: 14 }}>
  <button type="button" className={'btn btn--sm ' + (tipoComprador === 'PF' ? 'btn--primary' : 'btn--secondary')} onClick={() => setTipoComprador('PF')}>Pessoa Física</button>
@@ -1406,13 +1400,13 @@ export default function Vendas() {
  <div className="field">
  <label className="field__label">Entrada total</label>
  <input name="entradaTotal" className="field__input" inputMode="numeric" placeholder="R$ 156.000,00" value={entradaTotal} onChange={(e) => setEntradaTotal(maskMoedaBR(e.target.value))} />
- {politicaVigente?.entradaMinimaPct != null && (() => {
+ {entradaMinimaOficial != null && (() => {
  const vv = parseMoedaBR(valorVenda), et = parseMoedaBR(entradaTotal);
- if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {politicaVigente.entradaMinimaPct}% de entrada.</div>;
+ if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {entradaMinimaOficial}% de entrada.</div>;
  const pct = (et / vv) * 100;
- return pct < politicaVigente.entradaMinimaPct
- ? <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(1)}% — abaixo do mínimo de {politicaVigente.entradaMinimaPct}%. A venda NÃO pode ser registrada assim.</div>
- : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(1)}% — dentro da política ({politicaVigente.entradaMinimaPct}% mín.).</div>;
+ return pct < entradaMinimaOficial
+ ? <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(1)}% — abaixo do mínimo de {entradaMinimaOficial}%. A venda NÃO pode ser registrada assim.</div>
+ : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(1)}% — dentro da política ({entradaMinimaOficial}% mín.).</div>;
  })()}
  </div>
  <div className="field">
@@ -1439,7 +1433,7 @@ export default function Vendas() {
  {parcelasEntrada.map((p, i) => (
  <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
  <span style={{ width: 30, fontSize: 12, color: 'var(--text-secondary)' }}>{i + 1}ª</span>
- <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" value={p.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setParcelasEntrada((cur) => cur.map((x, j) => j === i ? { ...x, valor: v } : x)); setParcelasTocadas(true); }} />
+ <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" value={p.valor} onChange={(e) => editarParcelaValor(i, maskMoedaBR(e.target.value))} />
  <input type="date" className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e.target.value; setParcelasEntrada((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasTocadas(true); }} />
  </div>
  ))}
@@ -1609,7 +1603,7 @@ export default function Vendas() {
 
  {/* ── CONFIRMAÇÃO: conferir tudo antes de enviar pro contrato ── */}
  <div data-step={stepConfirma} style={{ display: step === stepConfirma ? 'block' : 'none' }} className="fade-in">
- <div className="text-xs text-secondary" style={{ marginBottom: 12 }}>Confira os dados — ao confirmar, a venda entra como <strong>"Contrato em análise"</strong>.</div>
+ <div className="text-xs text-secondary" style={{ marginBottom: 12 }}>Confira os dados — ao confirmar, a venda entra como <strong>"Contrato em confecção"</strong>.</div>
 
  <div style={{ display: 'grid', gap: 12 }}>
  <div className="card" style={{ padding: '12px 16px' }}>
