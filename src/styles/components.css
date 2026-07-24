@@ -2678,3 +2678,8 @@ dialog.modal[open] {
 .opcao-card--on { border-color: var(--pons-blue); background: rgba(59, 130, 246, 0.07); }
 .opcao-card__titulo { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; }
 .opcao-card__desc { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
+
+/* ── Status bar em overlay (app nativo, sem build): compensa o notch/relógio ── */
+html.statusbar-overlay body { padding-top: env(safe-area-inset-top); }
+html.statusbar-overlay .sidebar { padding-top: env(safe-area-inset-top); }
+html.statusbar-overlay .main:has(> .inbox) { height: calc(100dvh - env(safe-area-inset-top)); }

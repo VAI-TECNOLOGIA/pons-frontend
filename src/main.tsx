@@ -40,4 +40,16 @@ function mount() {
   );
 }
 
+// APP NATIVO: remove a faixa azul da status bar SEM precisar de build novo —
+// o WebView passa a desenhar por baixo dela (overlay) e o fundo do próprio
+// sistema aparece; o CSS compensa com env(safe-area-inset-top).
+import('./lib/platform').then(({ isNativeApp }) => {
+  if (!isNativeApp()) return;
+  import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+    StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+    StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+    document.documentElement.classList.add('statusbar-overlay');
+  }).catch(() => {});
+}).catch(() => {});
+
 awaitAuthHydration().finally(mount);
