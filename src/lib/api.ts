@@ -183,6 +183,8 @@ export const Api = {
     request<{ ok: boolean; message: string }>('/solicitar-acesso', { method: 'POST', body: data, auth: false }),
 
   // "Criar conta" do login → CORRETOR já aprovado, loga direto (conta marcada como teste).
+  esqueciSenha: (email: string) => request<any>('/auth/esqueci-senha', { method: 'POST', body: { email }, auth: false }),
+  redefinirSenha: (token: string, password: string) => request<any>('/auth/redefinir-senha', { method: 'POST', body: { token, password }, auth: false }),
   registrar: (data: { name: string; email: string; password: string; phone?: string }) =>
     request<{ token: string; user: import('./auth').User }>('/auth/registrar', { method: 'POST', body: data, auth: false }),
 

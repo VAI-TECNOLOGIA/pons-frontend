@@ -7,6 +7,7 @@ import { Auth } from './lib/auth';
 
 // Login fica eager — é o primeiro hit do usuário, evitamos qualquer flicker.
 import Login from './pages/Login';
+import RedefinirSenha from './pages/RedefinirSenha';
 
 // Wrapper de lazy() com retry + force-reload em erro de chunk.
 // Quando o frontend é redeployado, os hashes dos chunks mudam. Browsers com
@@ -125,6 +126,7 @@ export default function App() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         {/* Academia Pons — só existe no app (não no site web) */}
         {isNativeApp() && <Route path="/treinamentos" element={<Treinamentos />} />}
         <Route path="/painel-tv" element={<PainelTV />} />

@@ -27,6 +27,7 @@ export default function Login() {
   // "Criar conta" — disponível no navegador E no app nativo (uso principal:
   // testadores entrando pelo celular). Cria corretor aprovado e loga direto.
   const [showRequest, setShowRequest] = useState(false);
+  const [showEsqueci, setShowEsqueci] = useState(false);
 
   // Slideshow de fundo: crossfade suave a cada 5s (estilo Apple).
   useEffect(() => {
@@ -134,6 +135,14 @@ export default function Login() {
           <button
             type="button"
             className="login-request-link"
+            onClick={() => setShowEsqueci(true)}
+          >
+            Esqueci a senha
+          </button>
+
+          <button
+            type="button"
+            className="login-request-link"
             onClick={() => setShowRequest(true)}
           >
             Não tem conta? Criar conta
@@ -149,6 +158,66 @@ export default function Login() {
       <footer className="login-foot">Grupo Pons Imobiliário ®</footer>
 
       {showRequest && <CriarContaModal onClose={() => setShowRequest(false)} />}
+      {showEsqueci && <EsqueciSenhaModal onClose={() => setShowEsqueci(false)} />}
+    </div>
+  );
+}
+
+// Modal "Esqueci a senha": pede o e-mail e dispara o link de redefinição.
+// Resposta sempre genérica (não confirma se o e-mail existe).
+function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  const enviar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setBusy(true);
+    try {
+      await Api.esqueciSenha(email.trim());
+      setEnviado(true);
+    } catch {
+      setEnviado(true); // resposta é genérica de qualquer forma
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="login-modal" role="dialog" aria-modal="true" aria-label="Esqueci a senha" onClick={onClose}>
+      <div className="login-modal__card" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="login-modal__close" aria-label="Fechar" onClick={onClose}>×</button>
+        <div className="login-card__eyebrow">Recuperar acesso</div>
+        <h2 className="login-card__title">Esqueci a senha</h2>
+        {enviado ? (
+          <>
+            <p className="login-card__sub">
+              Se o e-mail <strong>{email.trim()}</strong> estiver cadastrado, você vai receber um link de
+              redefinição válido por 30 minutos. Confira também a caixa de spam.
+            </p>
+            <button type="button" className="login-btn" onClick={onClose}>Voltar pro login</button>
+          </>
+        ) : (
+          <form onSubmit={enviar}>
+            <p className="login-card__sub">Informe o e-mail da sua conta — enviaremos o link pra criar uma senha nova.</p>
+            <label className="login-field">
+              <span className="login-field__label">E-mail</span>
+              <input
+                className="login-field__input"
+                type="email"
+                required
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@grupopons.com.br"
+              />
+            </label>
+            <button type="submit" className="login-btn" disabled={busy}>{busy ? 'Enviando…' : 'Enviar link'}</button>
+            <button type="button" className="login-request-link" onClick={onClose}>Cancelar</button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
