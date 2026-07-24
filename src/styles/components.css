@@ -2685,6 +2685,10 @@ html.statusbar-overlay .sidebar { padding-top: env(safe-area-inset-top); }
 html.statusbar-overlay .main:has(> .inbox) { height: calc(100dvh - env(safe-area-inset-top)); }
 /* Faixa PRETA fixa atrás do relógio: o scroll passa por baixo dela (nativo),
    nada "sobe" pra área da status bar. Relógio branco sobre preto nos 2 temas. */
+/* Zera a sobra de rolagem do body (shell 100vh + padding do inset criava um
+   mini-scroll que fazia o hamburguer fixo "dançar" no elástico do iOS). */
+html.statusbar-overlay .app-shell { height: calc(100vh - env(safe-area-inset-top)); }
+html.statusbar-overlay .mobile-menu-btn { top: calc(12px + env(safe-area-inset-top)); }
 html.statusbar-overlay body::before {
   content: '';
   position: fixed;
