@@ -434,15 +434,28 @@
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     flex-wrap: wrap;
   }
-  /* Empilha: textarea em cima (largura total) e os botões numa linha embaixo,
-     com o Enviar empurrado pra direita. Evita a textarea espremida no celular. */
+  /* Estilo WhatsApp: textarea + aviãozinho na MESMA linha; ações em ícones
+     numa linha compacta embaixo. */
   .composer textarea {
     font-size: 16px; /* evita zoom no iOS */
-    min-height: 40px;
+    min-height: 44px;
     order: -1;
-    flex-basis: 100%;
+    flex: 1 1 calc(100% - 56px);
   }
-  .composer > .btn--primary { margin-left: auto; }
+  .composer .composer__enviar {
+    order: -1;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .composer__rotulo { display: none; }
+  .composer .btn {
+    height: 40px;
+    min-width: 44px;
+    justify-content: center;
+  }
   .conv { padding: 12px 14px; }
   .conv__name { font-size: 13px; }
   .conv__last { font-size: 11px; }

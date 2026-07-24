@@ -995,7 +995,7 @@ export default function Chat() {
                             disabled={sending}
                           >
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13l0-8Z" /></svg>
-                            Rápidas
+                            <span className="composer__rotulo">Rápidas</span>
                           </button>
                           {quickOpen && (
                             <>
@@ -1015,7 +1015,7 @@ export default function Chat() {
                           onClick={() => setTemplatePickerOpen(true)}
                           disabled={sending}
                         >
-                          <Icon name="doc" size={14} /> Template
+                          <Icon name="doc" size={14} /> <span className="composer__rotulo">Template</span>
                         </button>
                         <button
                           className={'btn btn--sm' + (notaMode ? ' composer__nota-btn--on' : ' btn--secondary')}
@@ -1023,7 +1023,7 @@ export default function Chat() {
                           onClick={() => setNotaMode((v) => !v)}
                           disabled={sending}
                         >
-                          <Icon name="pencil" size={14} /> Nota
+                          <Icon name="pencil" size={14} /> <span className="composer__rotulo">Nota</span>
                         </button>
                         <textarea
                           className={notaMode ? 'composer__input--nota' : undefined}
@@ -1053,11 +1053,13 @@ export default function Chat() {
                         </button>
                         )}
                         <button
-                          className={'btn ' + (notaMode ? 'composer__nota-send' : 'btn--primary')}
+                          className={'btn composer__enviar ' + (notaMode ? 'composer__nota-send' : 'btn--primary')}
                           onClick={enviar}
+                          title={notaMode ? 'Salvar nota interna' : 'Enviar mensagem'}
                           disabled={sending || uploadingAnexo || (notaMode ? !draft.trim() : (!draft.trim() && !anexo))}
                         >
-                          {sending ? 'Salvando…' : notaMode ? 'Salvar nota' : 'Enviar'}
+                          <Icon name="send" size={16} />
+                          <span className="composer__rotulo">{sending ? 'Salvando…' : notaMode ? 'Salvar nota' : 'Enviar'}</span>
                         </button>
                       </>
                     )}
