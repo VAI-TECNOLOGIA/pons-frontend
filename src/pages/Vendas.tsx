@@ -868,6 +868,7 @@ export default function Vendas() {
  <div><div className="text-xs text-secondary">Sala GPI</div><strong>{sel.salaGpi || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Origem do lead</div><strong>{sel.origemLead || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Corretor</div><strong>{sel.corretor?.nome || sel.corretorTitular?.user?.name || '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Contrato assinado</div><strong>{sel.assinadoEm ? `Sim · ${new Date(sel.assinadoEm).toLocaleDateString('pt-BR')}` : 'Não'}</strong></div>
  </div>
  {sel.observacoesRateio && (
  <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
@@ -2011,10 +2012,17 @@ const PARCELA_BADGE: Record<string, [string, string]> = {
  ATRASADO: ['cancelled', 'Atrasado'],
 };
 
+const RATEIO_LABELS: Record<string, string> = {
+ corretor: 'Corretor', gestor: 'Gestor', trafego: 'Tráfego', gtTrafego: 'Gt de Tráfego',
+ midias: 'Mídias', direcaoAdm: 'Direção Adm', direcaoCom: 'Direção Com.', setorMkt: 'Setor MKT',
+ nf: 'NF', custoVenda: 'Custo Venda', sitComissoes: 'Sit. Comissões', ctrAssinado: 'CTR Assinado',
+};
+
 export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; podeConfirmar?: boolean }) {
  const toast = useToast();
  const [parcelas, setParcelas] = useState<any[]>([]);
  const [busy, setBusy] = useState<number | null>(null);
+ const [aberta, setAberta] = useState<number | null>(null); // parcela com rateio expandido
 
  const load = async () => {
  try {
@@ -2053,24 +2061,49 @@ export function VendaParcelas({ vendaId, podeConfirmar }: { vendaId: number; pod
  {parcelas.map((p) => {
  const [k, lbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
  const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
+ let rateio: Record<string, any> | null = null;
+ try { rateio = p.rateioPlanilha ? JSON.parse(p.rateioPlanilha) : null; } catch { /* json inválido */ }
+ const expandida = aberta === p.id;
  return (
- <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
+ <div key={p.id} style={{ background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
+ <div
+ className="flex-between"
+ style={{ alignItems: 'center', gap: 8, padding: '5px 10px', cursor: rateio ? 'pointer' : 'default' }}
+ onClick={() => rateio && setAberta(expandida ? null : p.id)}
+ title={rateio ? (expandida ? 'Fechar rateio' : 'Abrir rateio da parcela') : undefined}
+ >
  <div style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
  <strong>{p.numero}/{p.total}</strong> · {formatCurrencyShort(p.valor)} · {venc}
+ {rateio && <Icon name="chevron-down" size={11} style={{ marginLeft: 6, verticalAlign: 'middle', opacity: 0.6, transform: expandida ? 'rotate(180deg)' : 'none' }} />}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
  {(!podeConfirmar || p.status === 'PAGO') && <span className={`badge badge--${k}`} style={{ fontSize: 10 }}>{lbl}</span>}
  {podeConfirmar && p.status !== 'PAGO' && (
- <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
+ <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={(e) => { e.stopPropagation(); mudarStatus(p.id, 'PAGO'); }}>
  {busy === p.id ? '…' : 'Confirmar'}
  </button>
  )}
  {podeConfirmar && p.status === 'PAGO' && (
- <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer">
+ <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={(e) => { e.stopPropagation(); mudarStatus(p.id, 'ABERTO'); }} title="Desfazer">
  Desfazer
  </button>
  )}
  </div>
+ </div>
+ {expandida && rateio && (
+ <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--border-light)', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+ {Object.entries(RATEIO_LABELS).map(([chave, rotulo]) => {
+ const val = rateio![chave];
+ if (val === undefined || val === null || val === '') return null;
+ const texto = typeof val === 'number' ? formatCurrencyShort(val) : String(val);
+ return (
+ <span key={chave} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)' }}>
+ <span className="text-secondary">{rotulo}:</span> <strong>{texto}</strong>
+ </span>
+ );
+ })}
+ </div>
+ )}
  </div>
  );
  })}
