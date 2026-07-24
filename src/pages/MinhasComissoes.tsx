@@ -32,7 +32,7 @@ function Card({ label, valor, cor, hint }: { label: string; valor: number; cor: 
   return (
     <div className="card" style={{ padding: '16px 18px', borderLeft: `4px solid ${cor}` }}>
       <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, marginTop: 4, color: cor }}>{brl(valor)}</div>
+      <div style={{ fontSize: 'clamp(18px, 5.2vw, 24px)', fontWeight: 800, marginTop: 4, color: cor, whiteSpace: 'nowrap' }}>{brl(valor)}</div>
       {hint && <div className="text-xs text-secondary" style={{ marginTop: 2 }}>{hint}</div>}
     </div>
   );
