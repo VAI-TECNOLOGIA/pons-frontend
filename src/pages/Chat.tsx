@@ -896,7 +896,7 @@ export default function Chat() {
                   </button>
                 ))}
               </div>
-              <BannerRedistribuicao info={(conv as any)._redistribution} />
+              <BannerRedistribuicao info={(conv as any)._redistribution} leadId={conv.id} />
               <div className="thread__messages" ref={messagesContainerRef}>
                 {mensagens.map((m) => (
                   <MessageBubble key={m.id} m={m} />
@@ -971,10 +971,10 @@ export default function Chat() {
                         </span>
                         <span className="rec-hint">Gravando áudio…</span>
                         <button className="btn btn--ghost btn--sm" onClick={cancelarGravacao} disabled={recSending} title="Descartar">
-                          <Icon name="trash" size={14} /> Descartar
+                          <Icon name="trash" size={14} /> <span className="composer__rotulo">Descartar</span>
                         </button>
                         <button className="btn btn--primary btn--sm" onClick={enviarGravacao} disabled={recSending} title="Enviar áudio">
-                          {recSending ? 'Enviando…' : (<><Icon name="send" size={14} /> Enviar áudio</>)}
+                          {recSending ? '…' : (<><Icon name="send" size={14} /> <span className="composer__rotulo">Enviar áudio</span></>)}
                         </button>
                       </div>
                     ) : (
@@ -1477,8 +1477,15 @@ function Janela24h({ conv }: { conv: any }) {
 // Banner amarelo mostrando que esta conversa foi recebida via redistribuição.
 // Aparece SÓ quando histórico veio junto (lead já tinha respondido) — caso
 // contrário o histórico foi descartado e não há por que sinalizar.
-function BannerRedistribuicao({ info }: { info: any }) {
-  if (!info) return null;
+function BannerRedistribuicao({ info, leadId }: { info: any; leadId?: number }) {
+  // Aparece por 5s ao abrir a conversa e some sozinho (pedido 24/07 — poluía a tela).
+  const [visivel, setVisivel] = useState(true);
+  useEffect(() => {
+    setVisivel(true);
+    const t = setTimeout(() => setVisivel(false), 5000);
+    return () => clearTimeout(t);
+  }, [leadId]);
+  if (!info || !visivel) return null;
   const data = info.redistributedAt ? new Date(info.redistributedAt).toLocaleDateString('pt-BR') : '—';
   const previo = info.previousCorretorName || 'corretor anterior';
   return (
