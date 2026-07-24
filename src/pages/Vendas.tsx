@@ -2092,86 +2092,84 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  })}
  </div>
 
- {/* ── Rateio da comissão — SEMPRE aberto, igual à planilha ─────────── */}
- {temPlanilha && colunas.length > 0 && (
+ {/* Comissão do corretor por parcela — mesmo formato das parcelas de pagamento */}
+ {temPlanilha && (
  <div style={{ marginTop: 14 }}>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão (por parcela)</div>
- <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border-light)' }}>
- <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 640 }}>
- <thead>
- <tr>
- <th>Parc.</th>
- <th>Venc.</th>
- <th className="numeric">Recebido</th>
- {colunas.map((c) => <th key={c} className={c === 'sitComissoes' || c === 'ctrAssinado' ? '' : 'numeric'}>{RATEIO_LABELS[c]}</th>)}
- </tr>
- </thead>
- <tbody>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Comissão do corretor (por parcela)</div>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
  {parcelas.map((p, i) => {
  const r = rateios[i];
- if (!r) return null;
- return (
- <tr key={p.id}>
- <td><strong>{p.numero}/{p.total}</strong></td>
- <td style={{ whiteSpace: 'nowrap' }}>{p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'}</td>
- <td className="numeric money">{(p.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
- {colunas.map((c) => {
- if (c === 'sitComissoes') {
+ const valorCorretor = r && typeof r.corretor === 'number' ? r.corretor : null;
+ if (valorCorretor === null) return null;
  const [bk, blbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
- const planilhaTxt = r[c] && String(r[c]);
+ const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
  return (
- <td key={c} style={{ whiteSpace: 'nowrap' }} title={planilhaTxt ? `Planilha: ${planilhaTxt}` : undefined}>
- <span className={`badge badge--${bk}`} style={{ fontSize: 10 }}>{blbl}</span>
+ <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
+ <div style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+ <strong>{p.numero}/{p.total}</strong> · {valorCorretor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · {venc}
+ </div>
+ <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
+ {(!podeConfirmar || p.status === 'PAGO') && <span className={`badge badge--${bk}`} style={{ fontSize: 10 }}>{blbl}</span>}
  {podeConfirmar && p.status !== 'PAGO' && (
- <button className="btn btn--secondary btn--sm" style={{ padding: '2px 8px', marginLeft: 6, fontSize: 11 }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
- {busy === p.id ? '…' : 'Marcar pago'}
+ <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
+ {busy === p.id ? '…' : 'Confirmar'}
  </button>
  )}
  {podeConfirmar && p.status === 'PAGO' && (
- <button className="btn btn--ghost btn--sm" style={{ padding: '2px 6px', marginLeft: 6, fontSize: 11 }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer pagamento">
+ <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer">
  Desfazer
  </button>
  )}
- </td>
- );
- }
- const val = r[c];
- const texto = val === undefined || val === null || val === '' ? '—'
- : typeof val === 'number' ? val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : String(val);
- return <td key={c} className={typeof val === 'number' ? 'numeric' : ''} style={{ whiteSpace: 'nowrap' }}>{texto}</td>;
- })}
- </tr>
+ </div>
+ </div>
  );
  })}
- </tbody>
- </table>
  </div>
  </div>
  )}
 
+ {/* Rateio da venda — totais somados das parcelas, no formato do resumo */}
+ {temPlanilha && (() => {
+ const somas: Record<string, number> = {};
+ rateios.forEach((r) => {
+ if (!r) return;
+ Object.keys(RATEIO_LABELS).forEach((c) => {
+ if (typeof r[c] === 'number') somas[c] = (somas[c] || 0) + r[c];
+ });
+ });
+ const campos = Object.keys(RATEIO_LABELS).filter((c) => c !== 'sitComissoes' && c !== 'ctrAssinado' && somas[c] !== undefined && somas[c] > 0);
+ if (campos.length === 0) return null;
+ return (
+ <div style={{ marginTop: 14 }}>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão (total da venda)</div>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px 16px' }}>
+ {campos.map((c) => (
+ <div key={c}>
+ <div className="text-xs text-secondary">{RATEIO_LABELS[c]}</div>
+ <strong>{somas[c].toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+ </div>
+ ))}
+ </div>
+ </div>
+ );
+ })()}
+
  {/* Vendas criadas pelo sistema: rateio calculado pelo motor Pons */}
  {!temPlanilha && rateioMotor && (
  <div style={{ marginTop: 14 }}>
- <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão (calculado)</div>
- <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border-light)' }}>
- <table className="table tabela-compacta" style={{ fontSize: 12 }}>
- <thead>
- <tr><th>Beneficiário</th><th className="numeric">Valor</th><th className="numeric">% sobre a comissão</th></tr>
- </thead>
- <tbody>
+ <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão</div>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '10px 16px' }}>
  {((rateioMotor.beneficiarios || rateioMotor.parcelas?.[0]?.beneficiarios) || []).map((b: any) => (
- <tr key={b.papel}>
- <td>{b.nome}</td>
- <td className="numeric money">{(b.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
- <td className="numeric">{b.percentualSobreBruto != null ? `${b.percentualSobreBruto.toLocaleString('pt-BR')}%` : '—'}</td>
- </tr>
+ <div key={b.papel}>
+ <div className="text-xs text-secondary">{b.nome}</div>
+ <strong>{(b.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+ {b.percentualSobreBruto != null && <span className="text-xs text-secondary"> · {b.percentualSobreBruto.toLocaleString('pt-BR')}%</span>}
+ </div>
  ))}
- </tbody>
- </table>
  </div>
  {rateioMotor.parcelas && (
  <div className="text-xs text-secondary" style={{ marginTop: 6 }}>
- Comissão parcelada em {rateioMotor.parcelas.length}x — valores acima referentes à 1ª parcela; taxa de marketing só na primeira.
+ Comissão parcelada em {rateioMotor.parcelas.length}x — valores da 1ª parcela; taxa de marketing só na primeira.
  </div>
  )}
  </div>
