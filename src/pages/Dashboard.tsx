@@ -42,6 +42,8 @@ export default function Dashboard() {
 
  const chartRef = useRef<HTMLCanvasElement>(null);
  const chartInstance = useRef<Chart | null>(null);
+ const vendasChartRef = useRef<HTMLCanvasElement>(null);
+ const vendasChartInst = useRef<Chart | null>(null);
 
  useEffect(() => {
  if (!isExec || !chartRef.current || !serie?.meses) return;
@@ -101,6 +103,51 @@ export default function Dashboard() {
  chartInstance.current?.destroy();
  };
  }, [isExec, serie, data]);
+
+ // Gráfico do corretor: VGV das próprias vendas nos últimos 6 meses.
+ useEffect(() => {
+ if (!isCorretor || !vendasChartRef.current) return;
+ if (vendasChartInst.current) vendasChartInst.current.destroy();
+ const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+ const now = new Date();
+ const buckets: { label: string; vgv: number; vendas: number }[] = [];
+ const idx = new Map<string, number>();
+ for (let i = 5; i >= 0; i--) {
+ const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+ const key = `${d.getFullYear()}-${d.getMonth()}`;
+ idx.set(key, buckets.length);
+ buckets.push({ label: `${MES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`, vgv: 0, vendas: 0 });
+ }
+ for (const v of (data?.minhasVendas || [])) {
+ if (v.status === 'CANCELADO') continue;
+ const d = new Date(v.createdAt);
+ const key = `${d.getFullYear()}-${d.getMonth()}`;
+ const i = idx.get(key);
+ if (i === undefined) continue;
+ buckets[i].vgv += v.valor || 0;
+ buckets[i].vendas += 1;
+ }
+ Chart.defaults.font.family = 'Inter, sans-serif';
+ vendasChartInst.current = new Chart(vendasChartRef.current, {
+ type: 'bar',
+ data: {
+ labels: buckets.map((b) => b.label),
+ datasets: [{ label: 'VGV vendido', data: buckets.map((b) => b.vgv), backgroundColor: '#0E7C9B', borderRadius: 6, maxBarThickness: 48 }],
+ },
+ options: {
+ maintainAspectRatio: false,
+ plugins: {
+ legend: { display: false },
+ tooltip: { callbacks: { label: (x: any) => `${formatCurrency(x.raw)} · ${buckets[x.dataIndex].vendas} venda(s)` } },
+ },
+ scales: {
+ y: { beginAtZero: true, ticks: { callback: (v: any) => 'R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(0) + 'M' : (v / 1e3).toFixed(0) + 'K') } },
+ x: { grid: { display: false } },
+ },
+ },
+ });
+ return () => { vendasChartInst.current?.destroy(); };
+ }, [isCorretor, data]);
 
  if (loading) return <DashboardShell user={user}><PageSkeleton /></DashboardShell>;
  if (error) return <DashboardShell user={user}><ErrorBlock error={error} label="Erro ao carregar dashboard" /></DashboardShell>;
@@ -279,6 +326,23 @@ export default function Dashboard() {
 
  <OnboardingProgress />
  <DashboardKpisExtra />
+
+ {/* Minhas vendas (corretor) — VGV dos últimos 6 meses */}
+ {isCorretor && (
+ <div className="mb-6">
+ <div className="card chart-card">
+ <div className="card__header">
+ <h3 className="card__title">Minhas vendas · 6 meses</h3>
+ <Link to="/minhas-comissoes" style={{ fontSize: 12, fontWeight: 600, color: 'var(--pons-blue)', textDecoration: 'none' }}>
+ Ver comissões →
+ </Link>
+ </div>
+ <div style={{ position: 'relative', height: 260 }}>
+ <canvas ref={vendasChartRef} />
+ </div>
+ </div>
+ </div>
+ )}
 
  {/* Evolução */}
  {isExec && (
