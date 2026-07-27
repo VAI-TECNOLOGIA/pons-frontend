@@ -90,18 +90,22 @@ function FinCard({ label, valor, cor, hint }: { label: string; valor: number; co
 
 export default function AnaliseVendas() {
   const [periodo, setPeriodo] = useState('6m');
+  const [customDe, setCustomDe] = useState('');
+  const [customAte, setCustomAte] = useState('');
   const [empreendimentoId, setEmp] = useState('');
   const [construtora, setConstr] = useState('');
   const [equipeId, setEquipe] = useState('');
   const [status, setStatus] = useState('');
   const [aplicado, setAplicado] = useState(0);
 
-  const filtros = { ...preset(periodo), empreendimentoId, construtora, equipeId, status };
+  const janela = periodo === 'custom'
+    ? { de: customDe ? new Date(customDe + 'T00:00:00').toISOString() : '', ate: customAte ? new Date(customAte + 'T23:59:59').toISOString() : '' }
+    : preset(periodo);
+  const filtros = { ...janela, empreendimentoId, construtora, equipeId, status };
   const { data, loading, error } = useApi<any>(() => Api.vendasAnalytics(filtros), [aplicado]);
 
   const chVgvRef = useRef<HTMLCanvasElement>(null);
   const chStatusRef = useRef<HTMLCanvasElement>(null);
-  const chCorretorRef = useRef<HTMLCanvasElement>(null);
   const insts = useRef<Chart[]>([]);
 
   useEffect(() => {
@@ -133,14 +137,6 @@ export default function AnaliseVendas() {
         options: { maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, usePointStyle: true, font: { size: 11 } } }, tooltip: { callbacks: { label: (x: any) => `${x.label}: ${brl(x.raw)}` } } } },
       }));
     }
-    if (chCorretorRef.current && data.topCorretores?.length) {
-      const top = data.topCorretores.slice(0, 8);
-      insts.current.push(new Chart(chCorretorRef.current, {
-        type: 'bar',
-        data: { labels: top.map((c: any) => (c.label || '').split(' ')[0]), datasets: [{ label: 'VGV', data: top.map((c: any) => c.vgv), backgroundColor: '#263654', borderRadius: 6, maxBarThickness: 34 }] },
-        options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (x: any) => brl(x.raw) } } }, scales: { x: { beginAtZero: true, ticks: { callback: (v: any) => 'R$ ' + (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1e3).toFixed(0) + 'K') }, grid: { display: false } }, y: { grid: { display: false } } } },
-      }));
-    }
     return () => { insts.current.forEach((c) => c.destroy()); insts.current = []; };
   }, [data]);
 
@@ -153,8 +149,21 @@ export default function AnaliseVendas() {
           <option value="tri">Último trimestre</option>
           <option value="6m">Últimos 6 meses</option>
           <option value="ano">Este ano</option>
+          <option value="custom">Data personalizada</option>
         </select>
       </div>
+      {periodo === 'custom' && (
+        <>
+          <div className="field" style={{ margin: 0, minWidth: 130 }}>
+            <label className="field__label">De</label>
+            <input type="date" className="field__input" value={customDe} max={customAte || undefined} onChange={(e) => setCustomDe(e.target.value)} />
+          </div>
+          <div className="field" style={{ margin: 0, minWidth: 130 }}>
+            <label className="field__label">Até</label>
+            <input type="date" className="field__input" value={customAte} min={customDe || undefined} onChange={(e) => setCustomAte(e.target.value)} />
+          </div>
+        </>
+      )}
       <div className="field" style={{ margin: 0, minWidth: 160 }}>
         <label className="field__label">Empreendimento</label>
         <select className="field__select" value={empreendimentoId} onChange={(e) => setEmp(e.target.value)}>
@@ -223,10 +232,7 @@ export default function AnaliseVendas() {
 
       {/* Gráfico principal: VGV por mês x período anterior */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <div className="flex-between" style={{ marginBottom: 8 }}>
-          <h3 className="card__title" style={{ margin: 0 }}>Evolução de VGV</h3>
-          <span className="text-xs text-secondary">barras = período · linha = período anterior</span>
-        </div>
+        <h3 className="card__title" style={{ margin: '0 0 8px' }}>Evolução de VGV</h3>
         <div style={{ position: 'relative', height: 300 }}><canvas ref={chVgvRef} /></div>
       </div>
 
@@ -255,11 +261,32 @@ export default function AnaliseVendas() {
         </div>
       </div>
 
-      {/* Top corretores (barras) + Top construtoras */}
+      {/* Top corretores (ranking) + Top construtoras */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
         <div className="card" style={{ padding: 16 }}>
           <h3 className="card__title" style={{ marginTop: 0 }}>Top corretores</h3>
-          <div style={{ position: 'relative', height: 260 }}><canvas ref={chCorretorRef} /></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {(data.topCorretores || []).slice(0, 8).map((c: any, i: number) => {
+              const maxVgv = data.topCorretores[0]?.vgv || 1;
+              const pct = Math.round((c.vgv / maxVgv) * 100);
+              const medalha = ['#F2B544', '#B8C2CC', '#CD7F52'][i];
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', borderRadius: 10, background: i < 3 ? 'var(--bg-card-hover)' : 'transparent' }}>
+                  <div style={{ width: 22, textAlign: 'center', fontWeight: 800, fontSize: 13, color: medalha || 'var(--text-secondary)' }}>{i + 1}º</div>
+                  <div className="avatar avatar--sm" style={{ background: medalha ? medalha + '22' : 'var(--blue-100, #e0f2fe)', color: medalha || 'var(--pons-blue)', fontWeight: 700, flexShrink: 0 }}>{c.initials || (c.label || '').slice(0, 2).toUpperCase()}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="flex-between" style={{ gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.label}</span>
+                      <strong style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{brl(c.vgv)}</strong>
+                    </div>
+                    <div className="text-xs text-secondary" style={{ marginBottom: 3 }}>{c.equipe || '—'} · {c.vendas} venda{c.vendas > 1 ? 's' : ''}</div>
+                    <div className="progress"><div className="progress__fill" style={{ width: `${pct}%`, background: medalha || 'var(--pons-blue)' }} /></div>
+                  </div>
+                </div>
+              );
+            })}
+            {(data.topCorretores || []).length === 0 && <div className="text-xs text-secondary" style={{ padding: 12 }}>Sem vendas no período.</div>}
+          </div>
         </div>
         <div className="card" style={{ padding: 16 }}>
           <h3 className="card__title" style={{ marginTop: 0 }}>Por construtora</h3>
