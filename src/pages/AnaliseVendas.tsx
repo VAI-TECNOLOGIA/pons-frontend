@@ -237,7 +237,7 @@ export default function AnaliseVendas() {
       </div>
 
       {/* Quebras: status (rosca) + top empreendimentos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16, alignItems: 'start' }}>
         <div className="card" style={{ padding: 16 }}>
           <h3 className="card__title" style={{ marginTop: 0 }}>VGV por status</h3>
           <div style={{ position: 'relative', height: 240 }}><canvas ref={chStatusRef} /></div>
@@ -262,7 +262,7 @@ export default function AnaliseVendas() {
       </div>
 
       {/* Top corretores (ranking) + Top construtoras */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16, alignItems: 'start' }}>
         <div className="card" style={{ padding: 16 }}>
           <h3 className="card__title" style={{ marginTop: 0 }}>Top corretores</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
