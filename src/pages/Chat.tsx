@@ -826,7 +826,10 @@ export default function Chat() {
                     duplicar o botão. */}
                 {acoesOpen && (
                   <div className="thread__acoes">
-                    {!(conv as any).telefoneLiberado && conv.reservado && (
+                    {/* Liberar contato BLOQUEADO por enquanto: aparece sempre
+                        (desabilitado) enquanto o telefone não foi liberado. Ao
+                        reativar, voltar a exigir `conv.reservado` e o onClick. */}
+                    {!(conv as any).telefoneLiberado && (
                       <button className="btn btn--ghost btn--sm" disabled title="Temporariamente indisponível">
                         <Icon name="phone" size={12} /> Liberar contato
                       </button>
