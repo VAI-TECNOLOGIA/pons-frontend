@@ -3,7 +3,9 @@
 // período anterior sobreposto), quebras (status/empreendimento/construtora/
 // corretor), financeiro (recebido/a receber/atrasado/repasse) e filtros.
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -78,15 +80,26 @@ function Kpi({ label, valor, delta, spark, cor }: { label: string; valor: string
   );
 }
 
-function FinCard({ label, valor, cor, hint }: { label: string; valor: number; cor: string; hint?: string }) {
+function FinCard({ label, valor, cor, hint, onClick }: { label: string; valor: number; cor: string; hint?: string; onClick?: () => void }) {
   return (
-    <div className="card" style={{ padding: '14px 16px', borderLeft: `4px solid ${cor}` }}>
-      <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{label}</div>
+    <div className="card" style={{ padding: '14px 16px', borderLeft: `4px solid ${cor}`, cursor: onClick ? 'pointer' : undefined }} onClick={onClick}>
+      <div className="flex-between" style={{ alignItems: 'flex-start' }}>
+        <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{label}</div>
+        {onClick && <Icon name="chevron-right" size={15} className="text-secondary" />}
+      </div>
       <div style={{ fontSize: 'clamp(18px, 4vw, 22px)', fontWeight: 800, color: cor, whiteSpace: 'nowrap' }}>{brlFull(valor)}</div>
       {hint && <div className="text-xs text-secondary">{hint}</div>}
     </div>
   );
 }
+
+// Metadados de cada card financeiro: o que ele significa (mostrado no drilldown).
+const FIN_META: Record<string, { label: string; cor: string; def: string }> = {
+  recebido: { label: 'Recebido', cor: 'var(--color-success, #16A34A)', def: 'Parcelas com status PAGO no período — comissão que já entrou no caixa.' },
+  aReceber: { label: 'A receber', cor: 'var(--pons-blue, #0E7C9B)', def: 'Parcelas futuras ainda não vencidas — previsão de entrada.' },
+  atrasado: { label: 'Atrasado', cor: '#DC2626', def: 'Parcelas já vencidas e ainda não pagas — precisam de cobrança.' },
+  comissaoCorretor: { label: 'Repasse corretores', cor: '#8493B4', def: 'Parte da comissão destinada aos corretores (rateio da planilha da venda).' },
+};
 
 export default function AnaliseVendas() {
   const [periodo, setPeriodo] = useState('6m');
@@ -97,6 +110,8 @@ export default function AnaliseVendas() {
   const [equipeId, setEquipe] = useState('');
   const [status, setStatus] = useState('');
   const [aplicado, setAplicado] = useState(0);
+  const [finSel, setFinSel] = useState<string | null>(null); // card financeiro aberto no drilldown
+  const nav = useNavigate();
 
   const janela = periodo === 'custom'
     ? { de: customDe ? new Date(customDe + 'T00:00:00').toISOString() : '', ate: customAte ? new Date(customAte + 'T23:59:59').toISOString() : '' }
@@ -224,11 +239,64 @@ export default function AnaliseVendas() {
       {/* Financeiro */}
       <div className="uppercase-tag" style={{ margin: '6px 0 8px' }}>Financeiro do período</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 16 }}>
-        <FinCard label="Recebido" valor={data.financeiro.recebido} cor="var(--color-success, #16A34A)" hint="Comissão paga" />
-        <FinCard label="A receber" valor={data.financeiro.aReceber} cor="var(--pons-blue, #0E7C9B)" hint="Parcelas futuras" />
-        <FinCard label="Atrasado" valor={data.financeiro.atrasado} cor="#DC2626" hint="Vencido não pago" />
-        <FinCard label="Repasse corretores" valor={data.financeiro.comissaoCorretor} cor="#8493B4" hint="Comissão dos corretores" />
+        <FinCard label="Recebido" valor={data.financeiro.recebido} cor={FIN_META.recebido.cor} hint="Comissão paga · toque para detalhar" onClick={() => setFinSel('recebido')} />
+        <FinCard label="A receber" valor={data.financeiro.aReceber} cor={FIN_META.aReceber.cor} hint="Parcelas futuras · toque para detalhar" onClick={() => setFinSel('aReceber')} />
+        <FinCard label="Atrasado" valor={data.financeiro.atrasado} cor={FIN_META.atrasado.cor} hint="Vencido não pago · toque para detalhar" onClick={() => setFinSel('atrasado')} />
+        <FinCard label="Repasse corretores" valor={data.financeiro.comissaoCorretor} cor={FIN_META.comissaoCorretor.cor} hint="Comissão dos corretores · toque para detalhar" onClick={() => setFinSel('comissaoCorretor')} />
       </div>
+
+      {/* Drilldown do card financeiro: o que compõe o número + botão pra Vendas */}
+      {finSel && (() => {
+        const meta = FIN_META[finSel];
+        const total = data.financeiro[finSel] || 0;
+        const qtd = data.financeiro[finSel + 'Qtd'] || 0;
+        const itens: any[] = data.financeiro.itens?.[finSel] || [];
+        return (
+          <Modal
+            open={!!finSel}
+            onClose={() => setFinSel(null)}
+            title={meta.label}
+            subtitle={meta.def}
+            size="lg"
+            footer={
+              <>
+                <button className="btn btn--secondary" onClick={() => setFinSel(null)}>Fechar</button>
+                <button className="btn btn--primary" onClick={() => nav('/vendas')}>
+                  <Icon name="chevron-right" size={14} /> Abrir na aba Vendas
+                </button>
+              </>
+            }
+          >
+            <div className="flex-between" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Total no período</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: meta.cor }}>{brlFull(total)}</div>
+              </div>
+              <div className="text-sm text-secondary">{qtd} parcela{qtd === 1 ? '' : 's'}{qtd > itens.length ? ` · mostrando as ${itens.length} maiores` : ''}</div>
+            </div>
+            {itens.length === 0 ? (
+              <div className="text-sm text-secondary" style={{ padding: 12 }}>Nenhuma parcela nesta categoria no período.</div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="table tabela-compacta" style={{ minWidth: 560 }}>
+                  <thead><tr><th>Venda</th><th>Cliente</th><th>Empreendimento</th><th>Vencimento</th><th className="numeric">Valor</th></tr></thead>
+                  <tbody>
+                    {itens.map((it, i) => (
+                      <tr key={i} style={{ cursor: 'pointer' }} onClick={() => nav(`/vendas?venda=${it.vendaId}`)} title="Abrir esta venda">
+                        <td className="font-semibold" style={{ whiteSpace: 'nowrap' }}>#{it.codigo}</td>
+                        <td>{it.cliente}</td>
+                        <td>{it.empreendimento}{it.unidade ? ` · ${it.unidade}` : ''}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{dataBr(it.vencimento)}</td>
+                        <td className="numeric money">{brl(it.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Modal>
+        );
+      })()}
 
       {/* Gráfico principal: VGV por mês x período anterior */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>

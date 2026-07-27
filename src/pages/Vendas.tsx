@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Auth } from '../lib/auth';
@@ -107,6 +108,17 @@ function docsNecessarios(tipo: 'PF' | 'PJ', estadoCivil: string): string[] {
 
 export default function Vendas() {
  const [selected, setSelected] = useState<number | null>(null);
+ // Deep-link vindo da Análise de Vendas (?venda=<id>): abre a venda direto.
+ const [searchParams, setSearchParams] = useSearchParams();
+ useEffect(() => {
+   const vid = searchParams.get('venda');
+   if (vid) {
+     setSelected(Number(vid));
+     searchParams.delete('venda');
+     setSearchParams(searchParams, { replace: true });
+   }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, []);
  const [openNew, setOpenNew] = useState(false);
  const [tipoComprador, setTipoComprador] = useState<'PF' | 'PJ'>('PF');
  const [step, setStep] = useState(0);
