@@ -134,9 +134,9 @@ export default function MinhasComissoes() {
       data: {
         labels: serie.map((m) => m.label),
         datasets: [
-          { label: 'Recebido', data: serie.map((m) => m.recebido), backgroundColor: '#16A34A', borderRadius: 5, stack: 's' },
-          { label: 'A receber', data: serie.map((m) => m.aReceber), backgroundColor: '#0E7C9B', borderRadius: 5, stack: 's' },
-          { label: 'Atrasado', data: serie.map((m) => m.atrasado), backgroundColor: '#DC2626', borderRadius: 5, stack: 's' },
+          { label: 'Recebido', data: serie.map((m) => m.recebido), backgroundColor: '#16A34A', borderRadius: 5, stack: 's', maxBarThickness: 64 },
+          { label: 'A receber', data: serie.map((m) => m.aReceber), backgroundColor: '#0E7C9B', borderRadius: 5, stack: 's', maxBarThickness: 64 },
+          { label: 'Atrasado', data: serie.map((m) => m.atrasado), backgroundColor: '#DC2626', borderRadius: 5, stack: 's', maxBarThickness: 64 },
         ],
       },
       options: {
