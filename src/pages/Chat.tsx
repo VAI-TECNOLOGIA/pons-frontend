@@ -821,14 +821,11 @@ export default function Chat() {
                   </button>
                 </div>
 
-                {/* Ações (recolhível) — some do fluxo até o usuário abrir */}
+                {/* Ações (recolhível) — some do fluxo até o usuário abrir.
+                    "Aceitar" fica só no rodapé (ComposerPendenteIA) pra não
+                    duplicar o botão. */}
                 {acoesOpen && (
                   <div className="thread__acoes">
-                    {!conv.reservado && (
-                      <button className="btn btn--primary btn--sm" onClick={aceitarLead}>
-                        <Icon name="check" size={12} /> Aceitar
-                      </button>
-                    )}
                     {!(conv as any).telefoneLiberado && conv.reservado && (
                       <button className="btn btn--ghost btn--sm" disabled title="Temporariamente indisponível">
                         <Icon name="phone" size={12} /> Liberar contato
