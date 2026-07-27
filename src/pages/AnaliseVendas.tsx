@@ -101,6 +101,20 @@ const FIN_META: Record<string, { label: string; cor: string; def: string }> = {
   comissaoCorretor: { label: 'Repasse corretores', cor: '#8493B4', def: 'Parte da comissão destinada aos corretores (rateio da planilha da venda).' },
 };
 
+// Cabeçalho de card com atalho "ver todas (N)" que abre o modal da lista cheia.
+function CardHead({ title, total, onVerTodas }: { title: string; total: number; onVerTodas: () => void }) {
+  return (
+    <div className="flex-between" style={{ marginTop: 0, marginBottom: 10, gap: 8 }}>
+      <h3 className="card__title" style={{ margin: 0 }}>{title}</h3>
+      {total > 0 && (
+        <button onClick={onVerTodas} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pons-blue, #0E7C9B)', fontSize: 12, fontWeight: 700, padding: 2, whiteSpace: 'nowrap' }}>
+          Ver todas ({total}) <Icon name="chevron-right" size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AnaliseVendas() {
   const [periodo, setPeriodo] = useState('6m');
   const [customDe, setCustomDe] = useState('');
@@ -111,6 +125,7 @@ export default function AnaliseVendas() {
   const [status, setStatus] = useState('');
   const [aplicado, setAplicado] = useState(0);
   const [finSel, setFinSel] = useState<string | null>(null); // card financeiro aberto no drilldown
+  const [listaSel, setListaSel] = useState<'empreendimentos' | 'corretores' | 'construtoras' | null>(null); // modal "ver todas"
   const nav = useNavigate();
 
   const janela = periodo === 'custom'
@@ -298,6 +313,57 @@ export default function AnaliseVendas() {
         );
       })()}
 
+      {/* "Ver todas": lista completa de empreendimentos / corretores / construtoras */}
+      {listaSel && (() => {
+        const cfg = {
+          empreendimentos: { titulo: 'Empreendimentos', col: 'Empreendimento' },
+          corretores: { titulo: 'Corretores', col: 'Corretor' },
+          construtoras: { titulo: 'Construtoras', col: 'Construtora' },
+        }[listaSel];
+        const linhas: any[] = data.todos?.[listaSel] || [];
+        const totVgv = linhas.reduce((s, x) => s + (x.vgv || 0), 0) || 1;
+        return (
+          <Modal
+            open={!!listaSel}
+            onClose={() => setListaSel(null)}
+            title={`Todos os ${cfg.titulo.toLowerCase()}`}
+            subtitle={`${linhas.length} no período · ordenados por VGV`}
+            size="lg"
+            footer={<button className="btn btn--secondary" onClick={() => setListaSel(null)}>Fechar</button>}
+          >
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table tabela-compacta" style={{ minWidth: 560 }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 32 }}>#</th>
+                    <th>{cfg.col}</th>
+                    {listaSel === 'corretores' && <th>Equipe</th>}
+                    <th className="numeric">Vendas</th>
+                    <th className="numeric">VGV</th>
+                    <th className="numeric">% VGV</th>
+                    <th className="numeric">Comissão</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {linhas.map((x, i) => (
+                    <tr key={i}>
+                      <td className="text-secondary">{i + 1}º</td>
+                      <td style={{ fontWeight: 600 }}>{x.label}</td>
+                      {listaSel === 'corretores' && <td className="text-secondary">{x.equipe || '—'}</td>}
+                      <td className="numeric">{x.vendas}</td>
+                      <td className="numeric money">{brl(x.vgv)}</td>
+                      <td className="numeric">{Math.round((x.vgv / totVgv) * 100)}%</td>
+                      <td className="numeric">{brl(x.comissao)}</td>
+                    </tr>
+                  ))}
+                  {linhas.length === 0 && <tr><td colSpan={7} className="text-secondary" style={{ padding: 12 }}>Sem dados no período.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </Modal>
+        );
+      })()}
+
       {/* Gráfico principal: VGV por mês x período anterior */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>
         <h3 className="card__title" style={{ margin: '0 0 8px' }}>Evolução de VGV</h3>
@@ -314,7 +380,7 @@ export default function AnaliseVendas() {
           <div style={{ position: 'relative', height: 340, margin: 'auto 0' }}><canvas ref={chStatusRef} /></div>
         </div>
         <div className="card" style={{ padding: 16 }}>
-          <h3 className="card__title" style={{ marginTop: 0 }}>Top empreendimentos</h3>
+          <CardHead title="Top empreendimentos" total={(data.todos?.empreendimentos || []).length} onVerTodas={() => setListaSel('empreendimentos')} />
           <div className="list">
             {(data.topEmpreendimentos || []).map((e: any, i: number) => {
               const pct = Math.round((e.vgv / totalVgvQuebra) * 100);
@@ -335,7 +401,7 @@ export default function AnaliseVendas() {
       {/* Top corretores (ranking) + Top construtoras */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16, alignItems: 'start' }}>
         <div className="card" style={{ padding: 16 }}>
-          <h3 className="card__title" style={{ marginTop: 0 }}>Top corretores</h3>
+          <CardHead title="Top corretores" total={(data.todos?.corretores || []).length} onVerTodas={() => setListaSel('corretores')} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(data.topCorretores || []).slice(0, 8).map((c: any, i: number) => {
               const maxVgv = data.topCorretores[0]?.vgv || 1;
@@ -360,7 +426,7 @@ export default function AnaliseVendas() {
           </div>
         </div>
         <div className="card" style={{ padding: 16 }}>
-          <h3 className="card__title" style={{ marginTop: 0 }}>Por construtora</h3>
+          <CardHead title="Por construtora" total={(data.todos?.construtoras || []).length} onVerTodas={() => setListaSel('construtoras')} />
           <div style={{ overflowX: 'auto' }}>
             <table className="table tabela-compacta">
               <thead><tr><th>Construtora</th><th className="numeric">Vendas</th><th className="numeric">VGV</th><th className="numeric">Comissão</th></tr></thead>
