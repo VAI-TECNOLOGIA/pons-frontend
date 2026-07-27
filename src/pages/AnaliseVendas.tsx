@@ -238,11 +238,12 @@ export default function AnaliseVendas() {
 
       {/* Quebras: status (rosca) + top empreendimentos. Sem align-items:start
           aqui: o card do gráfico estica junto com a lista ao lado, e a rosca
-          cresce (flex:1) pra preencher — nada de espaço vazio embaixo. */}
+          fica centrada na altura do card vizinho (margin auto), sem espaço
+          vazio embaixo e sem ficar gigante. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
         <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column' }}>
           <h3 className="card__title" style={{ marginTop: 0 }}>VGV por status</h3>
-          <div style={{ position: 'relative', flex: 1, minHeight: 240 }}><canvas ref={chStatusRef} /></div>
+          <div style={{ position: 'relative', height: 280, margin: 'auto 0' }}><canvas ref={chStatusRef} /></div>
         </div>
         <div className="card" style={{ padding: 16 }}>
           <h3 className="card__title" style={{ marginTop: 0 }}>Top empreendimentos</h3>
