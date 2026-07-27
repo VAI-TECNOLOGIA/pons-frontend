@@ -43,6 +43,7 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/pipeline', label: 'Funil', icon: 'pipeline', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/vendas', label: 'Vendas', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', SOCIO] },
   { to: '/minhas-comissoes', label: 'Minhas Comissões', icon: 'wallet', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
+  { to: '/analise-vendas', label: 'Análise de Vendas', icon: 'chart', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'] },
   { to: '/empreendimentos', label: 'Empreendimentos', icon: 'building' },
   { to: '/construtoras', label: 'Construtoras', icon: 'building', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', SOCIO] },
   { to: '/ranking', label: 'Ranking', icon: 'trophy' },

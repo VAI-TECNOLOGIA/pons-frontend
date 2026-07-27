@@ -426,6 +426,7 @@ export const Api = {
   // Vendas
   vendas: () => request<any[]>('/vendas'),
   minhasComissoes: () => request<any>('/vendas/minhas-comissoes'),
+  vendasAnalytics: (params?: Record<string, any>) => request<any>('/vendas/analytics' + qs(params)),
   vendaKanban: () => request<{ colunas: any[] }>('/vendas/kanban'),
   venda: (id: number) => request<any>(`/vendas/${id}`),
   vendaCreate: (data: any) => request<any>('/vendas', { method: 'POST', body: data }),
