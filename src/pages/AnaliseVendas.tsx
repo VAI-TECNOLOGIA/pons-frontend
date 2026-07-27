@@ -206,7 +206,7 @@ export default function AnaliseVendas() {
 
       {/* KPIs comparativos com sparkline */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
-        <Kpi label="VGV no período" valor={brl(r.vgv.atual)} delta={r.vgv.variacao} spark={sVgv} cor="var(--pons-blue, #0E7C9B)" />
+        <Kpi label="VGV no período" valor={brl(r.vgv.atual)} delta={r.vgv.variacao} spark={sVgv} cor="#0E7C9B" />
         <Kpi label="Vendas" valor={String(r.vendas.atual)} delta={r.vendas.variacao} spark={sVendas} cor="#88C559" />
         <Kpi label="Comissão bruta" valor={brl(r.comissao.atual)} delta={r.comissao.variacao} spark={sCom} cor="#C084FC" />
         <Kpi label="Ticket médio" valor={brl(r.ticketMedio.atual)} delta={r.ticketMedio.variacao} cor="#F2B544" />
