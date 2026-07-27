@@ -9,6 +9,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { DashboardKpisExtra } from '../components/DashboardKpisExtra';
 import { DashboardDecisao } from '../components/DashboardDecisao';
 import { OnboardingProgress } from '../components/OnboardingProgress';
+import { InsightsList } from '../components/InsightsList';
 import { PageSkeleton } from '../components/Skeleton';
 import { PageWrap } from '../components/PageWrap';
 import { Chart, registerables } from 'chart.js';
@@ -393,6 +394,9 @@ export default function Dashboard() {
  )}
  </div>
  </div>
+
+ {/* Insights da IA — análise diária do histórico (por usuário) */}
+ <InsightsList />
  </div>
  </>
  );
