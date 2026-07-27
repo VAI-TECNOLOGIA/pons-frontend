@@ -232,7 +232,7 @@ export default function MinhasComissoes() {
 
   return (
     <Shell>
-      {todas.length === 0 ? (
+      {todas.length === 0 && vendas.length === 0 ? (
         <div className="card" style={{ padding: 32, textAlign: 'center' }}>
           <Icon name="wallet" size={32} />
           <div style={{ marginTop: 12, fontWeight: 600 }}>Nenhuma comissão registrada ainda.</div>
