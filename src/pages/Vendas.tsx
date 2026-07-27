@@ -139,6 +139,9 @@ export default function Vendas() {
  // usa o rateio herdado da política — sem editar e sem ver a % do gestor.
  const podeEditarRateio = role === 'CEO' || role === 'DIRETOR_FINANCEIRO' || role === 'FINANCEIRO' || role === 'ADMINISTRATIVO';
  const podeEditarStatus = role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
+ // Mudança de STATUS da venda (kanban/dropdown) é exclusiva do Administrativo de
+ // Vendas (Glaucia) — pedido do cliente 27/07. Financeiro/CEO seguem só lendo.
+ const podeMudarStatus = role === 'ADMINISTRATIVO';
 
  // ── Lead vinculado: origem vem do banco (corretor não escolhe; pode contestar) ──
  const { data: leadsDisponiveis } = useApi<any[]>(() => Api.leads());
@@ -762,7 +765,7 @@ export default function Vendas() {
      lista/kanban — evita re-render de ~140 linhas a cada tecla digitada no form,
      que causava a lentidão relatada. Volta a aparecer ao fechar o modal. */}
  {!openNew && (view === 'kanban' ? (
- <VendaKanban onSelect={setSelected} podeMover={podeEditarStatus} />
+ <VendaKanban onSelect={setSelected} podeMover={podeMudarStatus} />
  ) : (
  <div className="card" style={{ padding: 0 }}>
  <table className="table tabela-compacta">
@@ -852,7 +855,7 @@ export default function Vendas() {
  <div style={{ padding: '12px 16px', background: 'var(--bg-card-hover)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
  <span className={`badge badge--${(STATUS_MAP[sel.status] || ['neutral'])[0]}`}>{(STATUS_MAP[sel.status] || [, sel.status])[1]}</span>
  <div className="uppercase-tag">Status da venda</div>
- {podeEditarStatus ? (
+ {podeMudarStatus ? (
  <select
  className="field__select"
  value={sel.status}
@@ -864,7 +867,7 @@ export default function Vendas() {
  ))}
  </select>
  ) : (
- <div className="text-xs text-secondary">Somente Financeiro/CEO altera o status.</div>
+ <div className="text-xs text-secondary">Somente o Administrativo de Vendas altera o status (pelo Kanban).</div>
  )}
  </div>
 
