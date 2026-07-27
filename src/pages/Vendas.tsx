@@ -38,10 +38,14 @@ const ESTADO_CIVIL = [
  'Viúvo(a)',
 ];
 
-// Estados civis que exigem dados do cônjuge/companheiro(a) no protocolo.
-// Separação TOTAL de bens: o cônjuge não anui na compra — não preenche.
-// Comunhão total de bens: dados do cônjuge são OPCIONAIS (regra do financeiro 21/07)
+// Estados civis que EXIGEM (obrigatório) dados do cônjuge/companheiro(a).
 const EXIGE_CONJUGE = new Set(['Casado(a)', 'União estável']);
+// Casados em comunhão/separação total: MOSTRA os campos do cônjuge, porém
+// OPCIONAIS (pedido do financeiro Marcelo 27/07 — antes nem apareciam).
+const MOSTRA_CONJUGE = new Set([
+  'Casado(a)', 'União estável',
+  'Casado(a) — comunhão total de bens', 'Casado(a) — separação total de bens',
+]);
 
 // Origem gravada no lead → rótulo humano + classificação de comissão.
 // Tráfego pago/portais = LEAD (desconto campanha); campanha WhatsApp/base = BASE; resto = orgânica.
@@ -158,7 +162,17 @@ export default function Vendas() {
  const [telIntl, setTelIntl] = useState(false);
  // Sala GPI pré-preenchida com a da última venda do corretor (editável).
  const [salaGpi, setSalaGpi] = useState('');
- const temConjuge = EXIGE_CONJUGE.has(estadoCivil);
+ // Guarda o último valor de sala preenchido AUTOMATICAMENTE. Serve pra saber se
+ // pode sobrescrever ao trocar o corretor (só sobrescreve o auto, nunca o que o
+ // usuário digitou à mão).
+ const salaAutoRef = useRef('');
+ // Documentos anexados JÁ na criação (pedido do financeiro 27/07): o corretor
+ // seleciona os arquivos aqui e eles sobem pra venda logo após criar. Corretor
+ // não salva a venda sem anexar pelo menos um documento.
+ const [docsAnexar, setDocsAnexar] = useState<File[]>([]);
+ const anexoRef = useRef<HTMLInputElement>(null);
+ const temConjuge = EXIGE_CONJUGE.has(estadoCivil); // obrigatório
+ const mostraConjuge = MOSTRA_CONJUGE.has(estadoCivil); // exibe os campos (obrigatório OU opcional)
  const [emancipado, setEmancipado] = useState(false);
  const nascimentoRef = useRef<HTMLInputElement>(null);
 
@@ -448,7 +462,7 @@ export default function Vendas() {
  setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
- setTelIntl(false); setSalaGpi('');
+ setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
  }, [openNew]);
 
  // Sala GPI sugerida: a da última venda do corretor (dele mesmo quando é
@@ -458,7 +472,15 @@ export default function Vendas() {
  const cid = isCorretor ? undefined : (corretorTitularId ? Number(corretorTitularId) : undefined);
  if (!isCorretor && !cid) return;
  Api.vendaSalaSugerida(cid)
- .then((r) => { if (r.salaGpi) setSalaGpi((s) => s || r.salaGpi!); })
+ .then((r) => {
+ if (!r.salaGpi) return;
+ // Sobrescreve quando o campo está vazio OU ainda tem o valor auto anterior
+ // (troca de corretor). Se o usuário digitou algo diferente, respeita.
+ setSalaGpi((s) => {
+ if (!s || s === salaAutoRef.current) { salaAutoRef.current = r.salaGpi!; return r.salaGpi!; }
+ return s;
+ });
+ })
  .catch(() => {});
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [openNew, corretorTitularId]);
@@ -672,6 +694,10 @@ export default function Vendas() {
  anuaisQtd: fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined,
  chavesValor: optNum('chavesValor'),
  });
+ // Anexa os documentos selecionados na criação à venda recém-criada.
+ if (r?.id && docsAnexar.length) {
+ try { await Api.vendaDocumentoUpload(r.id, docsAnexar); } catch { toast.error('Venda criada, mas falhou ao anexar os documentos — anexe na venda.'); }
+ }
  toast.success(r?.aguardandoAprovacao
  ? 'Venda registrada — parcelamento 4x+ enviado pro Paulo aprovar.'
  : 'Venda registrada');
@@ -732,7 +758,10 @@ export default function Vendas() {
  </button>
  </div>
 
- {view === 'kanban' ? (
+ {/* Enquanto o modal de Nova Venda está aberto (cobre a tela), não renderiza a
+     lista/kanban — evita re-render de ~140 linhas a cada tecla digitada no form,
+     que causava a lentidão relatada. Volta a aparecer ao fechar o modal. */}
+ {!openNew && (view === 'kanban' ? (
  <VendaKanban onSelect={setSelected} podeMover={podeEditarStatus} />
  ) : (
  <div className="card" style={{ padding: 0 }}>
@@ -801,7 +830,7 @@ export default function Vendas() {
  </tbody>
  </table>
  </div>
- )}
+ ))}
 
  {sel && (
  <Modal
@@ -1094,15 +1123,15 @@ export default function Vendas() {
  <input type="hidden" name="clienteEndereco" value={enderecoPFStr} />
  </div>
 
- {/* Cônjuge: só quando o estado civil exige (casado/união estável) */}
- {temConjuge && (
+ {/* Cônjuge: obrigatório em casado/união estável; opcional em comunhão/separação total */}
+ {mostraConjuge && (
  <div style={{ borderLeft: '3px solid var(--blue-500)', paddingLeft: 14, marginTop: 6 }} className="fade-in">
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>
- {estadoCivil === 'União estável' ? 'Companheiro(a)' : 'Cônjuge'} — obrigatório para {estadoCivil.toLowerCase()}
+ {estadoCivil === 'União estável' ? 'Companheiro(a)' : 'Cônjuge'} — {temConjuge ? `obrigatório para ${estadoCivil.toLowerCase()}` : 'opcional (preencha se tiver os dados)'}
  </div>
  <div className="form-grid" style={{ marginBottom: 4 }}>
  <div className="field field--span-2">
- <label className="field__label">Nome completo <span className="field__required">*</span></label>
+ <label className="field__label">Nome completo {temConjuge && <span className="field__required">*</span>}</label>
  <input name="conjugeNome" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
@@ -1229,7 +1258,7 @@ export default function Vendas() {
  <label className="field__label">Empreendimento <span className="field__required">*</span></label>
  <select name="empreendimentoId" className="field__select" required value={empSelId} onChange={(e) => setEmpSelId(e.target.value)}>
  <option value="">— Selecionar —</option>
- {(emps || []).map((e: any) => (
+ {[...(emps || [])].sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome), 'pt-BR')).map((e: any) => (
  <option key={e.id} value={e.id}>{e.nome}</option>
  ))}
  </select>
@@ -1624,7 +1653,7 @@ export default function Vendas() {
  <div><span className="text-secondary">Nome:</span> <strong>{cliente.nome || '—'}</strong></div>
  <div><span className="text-secondary">{tipoComprador === 'PJ' ? 'CNPJ' : 'CPF'}:</span> <strong>{String(resumo?.[tipoComprador === 'PJ' ? 'clienteCnpj' : 'clienteCpf'] || '—')}</strong></div>
  {tipoComprador === 'PF' && <div><span className="text-secondary">Estado civil:</span> <strong>{estadoCivil || '—'}</strong></div>}
- {temConjuge && <div><span className="text-secondary">Cônjuge:</span> <strong>{String(resumo?.conjugeNome || '—')}</strong></div>}
+ {(temConjuge || resumo?.conjugeNome) && <div><span className="text-secondary">Cônjuge:</span> <strong>{String(resumo?.conjugeNome || '—')}</strong></div>}
  <div><span className="text-secondary">Telefone:</span> <strong>{cliente.telefone || '—'}</strong></div>
  <div><span className="text-secondary">E-mail:</span> <strong>{cliente.email || '—'}</strong></div>
  </div>
@@ -1665,11 +1694,41 @@ export default function Vendas() {
 
  <div className="card" style={{ padding: '12px 16px', background: 'var(--bg-elevated)' }}>
  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
- <Icon name="doc" size={13} /> Documentos a anexar depois de criar
+ <Icon name="doc" size={13} /> Documentos exigidos{isCorretor ? ' — anexe para concluir' : ''}
  </div>
- <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
+ <ul style={{ margin: '0 0 10px', paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
  {docsNecessarios(tipoComprador, estadoCivil).map((d) => <li key={d}>{d}</li>)}
  </ul>
+ {/* Botão ANEXAR logo abaixo da lista (pedido do financeiro). Corretor só
+     salva depois de anexar; gestão pode anexar aqui ou depois na venda. */}
+ <label className="btn btn--secondary btn--sm" style={{ cursor: 'pointer' }}>
+ <Icon name="plus" size={13} /> Anexar documentos
+ <input
+ ref={anexoRef}
+ type="file"
+ multiple
+ accept="image/*,application/pdf"
+ style={{ display: 'none' }}
+ onChange={(e) => {
+ if (e.target.files?.length) setDocsAnexar((prev) => [...prev, ...Array.from(e.target.files!)]);
+ if (anexoRef.current) anexoRef.current.value = '';
+ }}
+ />
+ </label>
+ {docsAnexar.length > 0 ? (
+ <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+ {docsAnexar.map((f, i) => (
+ <div key={i} className="flex-between" style={{ alignItems: 'center', fontSize: 12, background: 'var(--bg-card)', borderRadius: 8, padding: '5px 8px' }}>
+ <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><Icon name="doc" size={12} /> {f.name}</span>
+ <button type="button" onClick={() => setDocsAnexar((prev) => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', lineHeight: 0 }}><Icon name="x" size={13} /></button>
+ </div>
+ ))}
+ </div>
+ ) : (
+ <div className="text-xs text-secondary" style={{ marginTop: 6 }}>
+ {isCorretor ? 'Anexe os documentos acima para poder salvar a venda.' : 'Você pode anexar agora ou depois, na venda criada.'}
+ </div>
+ )}
  </div>
  </div>
  </div>
@@ -1687,8 +1746,8 @@ export default function Vendas() {
  Avançar <Icon name="arrow_right" size={13} />
  </button>
  ) : (
- <button type="submit" className="btn btn--primary" disabled={!podeSalvar}>
- <Icon name="check" size={14} /> {podeSalvar ? 'Salvar venda' : 'Revise o resumo acima…'}
+ <button type="submit" className="btn btn--primary" disabled={!podeSalvar || (isCorretor && docsAnexar.length === 0)}>
+ <Icon name="check" size={14} /> {!podeSalvar ? 'Revise o resumo acima…' : (isCorretor && docsAnexar.length === 0) ? 'Anexe os documentos…' : 'Salvar venda'}
  </button>
  )}
  </div>
