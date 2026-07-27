@@ -2,7 +2,9 @@
 // quanto tem a receber, o que entra este mês e nos próximos, gráfico de
 // evolução e a lista de TODAS as parcelas de comissão dele, com filtros.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -34,9 +36,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Card({ label, valor, cor, icon }: { label: string; valor: number; cor: string; icon: string }) {
+function Card({ label, valor, cor, icon, onClick }: { label: string; valor: number; cor: string; icon: string; onClick?: () => void }) {
   return (
-    <div className="card" style={{ padding: '16px 18px', borderLeft: `4px solid ${cor}`, display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div className="card" style={{ padding: '16px 18px', borderLeft: `4px solid ${cor}`, display: 'flex', flexDirection: 'column', gap: 4, cursor: onClick ? 'pointer' : undefined }} onClick={onClick}>
       <div className="flex-between" style={{ alignItems: 'flex-start' }}>
         <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{label}</div>
         <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 9, background: cor + '1A', color: cor, flexShrink: 0 }}>
@@ -44,19 +46,33 @@ function Card({ label, valor, cor, icon }: { label: string; valor: number; cor: 
         </span>
       </div>
       <div style={{ fontSize: 'clamp(18px, 5.2vw, 24px)', fontWeight: 800, color: cor, whiteSpace: 'nowrap' }}>{brl(valor)}</div>
+      {onClick && <div className="text-xs" style={{ color: cor, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 2 }}>Ver detalhes <Icon name="chevron-right" size={13} /></div>}
     </div>
   );
 }
+
+// meta de cada card pro modal de detalhe
+const CARD_META: Record<string, { label: string; cor: string; def: string }> = {
+  recebido: { label: 'Já recebido', cor: '#16A34A', def: 'Parcelas de comissão que já caíram na sua conta (status pago).' },
+  aReceber: { label: 'A receber', cor: '#0E7C9B', def: 'Parcelas de comissão ainda não pagas — o que ainda vai entrar.' },
+  esteMs: { label: 'Entra este mês', cor: '#B45309', def: 'Parcelas a receber com vencimento dentro do mês atual.' },
+  proximos: { label: 'Próximos meses', cor: '#64748B', def: 'Parcelas a receber com vencimento a partir do mês que vem.' },
+};
 
 export default function MinhasComissoes() {
   const { data, loading, error } = useApi<any>(() => Api.minhasComissoes(), []);
   const [periodo, setPeriodo] = useState('tudo');
   const [empFiltro, setEmpFiltro] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('');
+  const [cardSel, setCardSel] = useState<string | null>(null);
+  const nav = useNavigate();
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInst = useRef<Chart | null>(null);
+  const vendasRef = useRef<HTMLCanvasElement>(null);
+  const vendasInst = useRef<Chart | null>(null);
 
   const todas: any[] = data?.parcelas || [];
+  const vendas: any[] = data?.vendas || [];
   const hoje = new Date();
   const statusEfetivo = (p: any) => {
     if (p.status === 'PAGO') return 'PAGO';
@@ -108,22 +124,38 @@ export default function MinhasComissoes() {
     return r;
   }, [parcelas]);
 
-  // séries mensais pro gráfico (recebido / a receber / atrasado por mês de vencimento)
+  // séries mensais contínuas (preenche meses vazios entre o 1º e o último) —
+  // evita o gráfico com 2 barrões colados. Comissões e vendas usam a mesma grade.
   const serie = useMemo(() => {
-    const buckets = new Map<string, { label: string; recebido: number; aReceber: number; atrasado: number }>();
-    for (const p of parcelas) {
-      const d = new Date(p.vencimento);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!buckets.has(key)) buckets.set(key, { label: `${MESES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`, recebido: 0, aReceber: 0, atrasado: 0 });
-      const b = buckets.get(key)!;
-      const ef = statusEfetivo(p);
-      const v = p.valorCorretor || 0;
-      if (ef === 'PAGO') b.recebido += v;
-      else if (ef === 'ATRASADO') b.atrasado += v;
-      else b.aReceber += v;
+    const datas: Date[] = [];
+    for (const p of parcelas) datas.push(new Date(p.vencimento));
+    for (const v of vendas) if (v.data) datas.push(new Date(v.data));
+    if (datas.length === 0) return [] as any[];
+    const min = new Date(Math.min(...datas.map((d) => d.getTime())));
+    const max = new Date(Math.max(...datas.map((d) => d.getTime())));
+    const meses: { key: string; label: string; recebido: number; aReceber: number; atrasado: number; vgv: number; vendas: number }[] = [];
+    const idx = new Map<string, number>();
+    const cur = new Date(min.getFullYear(), min.getMonth(), 1);
+    const fim = new Date(max.getFullYear(), max.getMonth(), 1);
+    // limita a 18 meses pra não estourar
+    let guard = 0;
+    while (cur <= fim && guard < 18) {
+      const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
+      idx.set(key, meses.length);
+      meses.push({ key, label: `${MESES[cur.getMonth()]}/${String(cur.getFullYear()).slice(2)}`, recebido: 0, aReceber: 0, atrasado: 0, vgv: 0, vendas: 0 });
+      cur.setMonth(cur.getMonth() + 1); guard++;
     }
-    return [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v);
-  }, [parcelas]);
+    const put = (d: Date, fn: (b: typeof meses[0]) => void) => {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const i = idx.get(key); if (i !== undefined) fn(meses[i]);
+    };
+    for (const p of parcelas) {
+      const ef = statusEfetivo(p); const v = p.valorCorretor || 0;
+      put(new Date(p.vencimento), (b) => { if (ef === 'PAGO') b.recebido += v; else if (ef === 'ATRASADO') b.atrasado += v; else b.aReceber += v; });
+    }
+    for (const v of vendas) if (v.data) put(new Date(v.data), (b) => { b.vgv += v.valorVenda || 0; b.vendas += 1; });
+    return meses;
+  }, [parcelas, vendas]);
 
   useEffect(() => {
     if (chartInst.current) { chartInst.current.destroy(); chartInst.current = null; }
@@ -134,15 +166,15 @@ export default function MinhasComissoes() {
       data: {
         labels: serie.map((m) => m.label),
         datasets: [
-          { label: 'Recebido', data: serie.map((m) => m.recebido), backgroundColor: '#16A34A', borderRadius: 5, stack: 's', maxBarThickness: 64 },
-          { label: 'A receber', data: serie.map((m) => m.aReceber), backgroundColor: '#0E7C9B', borderRadius: 5, stack: 's', maxBarThickness: 64 },
-          { label: 'Atrasado', data: serie.map((m) => m.atrasado), backgroundColor: '#DC2626', borderRadius: 5, stack: 's', maxBarThickness: 64 },
+          { label: 'Recebido', data: serie.map((m) => m.recebido), backgroundColor: '#16A34A', borderRadius: 4, stack: 's', maxBarThickness: 38 },
+          { label: 'A receber', data: serie.map((m) => m.aReceber), backgroundColor: '#0E7C9B', borderRadius: 4, stack: 's', maxBarThickness: 38 },
+          { label: 'Atrasado', data: serie.map((m) => m.atrasado), backgroundColor: '#DC2626', borderRadius: 4, stack: 's', maxBarThickness: 38 },
         ],
       },
       options: {
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, font: { size: 11 } } },
+          legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } },
           tooltip: { callbacks: { label: (x: any) => `${x.dataset.label}: ${brl(x.raw)}` } },
         },
         scales: {
@@ -154,10 +186,49 @@ export default function MinhasComissoes() {
     return () => { chartInst.current?.destroy(); chartInst.current = null; };
   }, [serie]);
 
+  // gráfico de vendas (VGV por mês) — mesma grade de meses
+  useEffect(() => {
+    if (vendasInst.current) { vendasInst.current.destroy(); vendasInst.current = null; }
+    if (!vendasRef.current || serie.length === 0) return;
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    vendasInst.current = new Chart(vendasRef.current, {
+      type: 'bar',
+      data: {
+        labels: serie.map((m) => m.label),
+        datasets: [{ label: 'VGV vendido', data: serie.map((m) => m.vgv), backgroundColor: '#7C3AED', borderRadius: 4, maxBarThickness: 38 }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (x: any) => `${brl(x.raw)} · ${serie[x.dataIndex].vendas} venda(s)` } },
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { callback: (v: any) => brlShort(v) } },
+        },
+      },
+    });
+    return () => { vendasInst.current?.destroy(); vendasInst.current = null; };
+  }, [serie]);
+
   if (loading && !data) return <Shell><LoadingBlock /></Shell>;
   if (error && !data) return <Shell><ErrorBlock error={error} label="Erro ao carregar comissões" /></Shell>;
 
   const temFiltro = periodo !== 'tudo' || empFiltro || statusFiltro;
+
+  // parcelas que compõem cada card (pro modal de detalhe)
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59);
+  const bucketParcelas = (key: string) => parcelas.filter((p) => {
+    const ef = statusEfetivo(p);
+    const venc = new Date(p.vencimento);
+    if (key === 'recebido') return ef === 'PAGO';
+    if (key === 'aReceber') return ef !== 'PAGO';
+    if (key === 'esteMs') return ef !== 'PAGO' && venc >= inicioMes && venc <= fimMes;
+    if (key === 'proximos') return ef !== 'PAGO' && venc > fimMes;
+    return false;
+  }).sort((a, b) => new Date(a.vencimento).getTime() - new Date(b.vencimento).getTime());
 
   return (
     <Shell>
@@ -202,10 +273,10 @@ export default function MinhasComissoes() {
           </div>
 
           <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
-            <Card label="Já recebido" valor={resumo.recebido} cor="#16A34A" icon="check" />
-            <Card label="A receber" valor={resumo.aReceber} cor="#0E7C9B" icon="clock" />
-            <Card label="Entra este mês" valor={resumo.esteMs} cor="#B45309" icon="calendar" />
-            <Card label="Próximos meses" valor={resumo.proximos} cor="#64748B" icon="wallet" />
+            <Card label="Já recebido" valor={resumo.recebido} cor="#16A34A" icon="check" onClick={() => setCardSel('recebido')} />
+            <Card label="A receber" valor={resumo.aReceber} cor="#0E7C9B" icon="clock" onClick={() => setCardSel('aReceber')} />
+            <Card label="Entra este mês" valor={resumo.esteMs} cor="#B45309" icon="calendar" onClick={() => setCardSel('esteMs')} />
+            <Card label="Próximos meses" valor={resumo.proximos} cor="#64748B" icon="wallet" onClick={() => setCardSel('proximos')} />
           </div>
 
           {/* Progresso */}
@@ -227,15 +298,26 @@ export default function MinhasComissoes() {
             );
           })()}
 
-          {/* Gráfico de evolução mensal */}
-          <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-            <h3 className="card__title" style={{ margin: '0 0 4px' }}>Evolução das comissões</h3>
-            <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>Por mês de vencimento — recebido, a receber e atrasado</div>
-            {serie.length === 0 ? (
-              <div className="text-sm text-secondary" style={{ padding: 16 }}>Sem parcelas no filtro selecionado.</div>
-            ) : (
-              <div style={{ position: 'relative', height: 280 }}><canvas ref={chartRef} /></div>
-            )}
+          {/* Gráficos: comissões + vendas, lado a lado */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 12, marginBottom: 12 }}>
+            <div className="card" style={{ padding: 16 }}>
+              <h3 className="card__title" style={{ margin: '0 0 4px' }}>Evolução das comissões</h3>
+              <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>Por mês de vencimento — recebido, a receber e atrasado</div>
+              {serie.length === 0 ? (
+                <div className="text-sm text-secondary" style={{ padding: 16 }}>Sem parcelas no filtro selecionado.</div>
+              ) : (
+                <div style={{ position: 'relative', height: 260 }}><canvas ref={chartRef} /></div>
+              )}
+            </div>
+            <div className="card" style={{ padding: 16 }}>
+              <h3 className="card__title" style={{ margin: '0 0 4px' }}>Minhas vendas (VGV)</h3>
+              <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>Volume geral de vendas por mês de fechamento</div>
+              {serie.length === 0 || vendas.length === 0 ? (
+                <div className="text-sm text-secondary" style={{ padding: 16 }}>Sem vendas no filtro selecionado.</div>
+              ) : (
+                <div style={{ position: 'relative', height: 260 }}><canvas ref={vendasRef} /></div>
+              )}
+            </div>
           </div>
 
           {resumo.atrasado > 0 && (
@@ -286,6 +368,58 @@ export default function MinhasComissoes() {
               </table>
             </div>
           </div>
+
+          {/* Drilldown do card financeiro: parcelas que compõem + link pra Vendas */}
+          {cardSel && (() => {
+            const meta = CARD_META[cardSel];
+            const itens = bucketParcelas(cardSel);
+            const total = itens.reduce((s, p) => s + (p.valorCorretor || 0), 0);
+            return (
+              <Modal
+                open={!!cardSel}
+                onClose={() => setCardSel(null)}
+                title={meta.label}
+                subtitle={meta.def}
+                size="lg"
+                footer={
+                  <>
+                    <button className="btn btn--secondary" onClick={() => setCardSel(null)}>Fechar</button>
+                    <button className="btn btn--primary" onClick={() => nav('/vendas')}>
+                      <Icon name="chevron-right" size={14} /> Abrir na aba Vendas
+                    </button>
+                  </>
+                }
+              >
+                <div className="flex-between" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>Total</div>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: meta.cor }}>{brl(total)}</div>
+                  </div>
+                  <div className="text-sm text-secondary">{itens.length} parcela{itens.length === 1 ? '' : 's'}</div>
+                </div>
+                {itens.length === 0 ? (
+                  <div className="text-sm text-secondary" style={{ padding: 12 }}>Nenhuma parcela nesta categoria.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="table tabela-compacta" style={{ minWidth: 520 }}>
+                      <thead><tr><th>Vencimento</th><th>Venda</th><th>Empreendimento</th><th>Parcela</th><th className="numeric">Comissão</th></tr></thead>
+                      <tbody>
+                        {itens.map((p) => (
+                          <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => nav(`/vendas?venda=${p.vendaId}`)} title="Abrir esta venda">
+                            <td style={{ whiteSpace: 'nowrap' }}>{dataBr(p.vencimento)}</td>
+                            <td><div style={{ fontWeight: 600 }}>{p.cliente}</div><div className="text-xs text-secondary">#{p.codigo}</div></td>
+                            <td>{p.empreendimento}{p.unidade ? ` · ${p.unidade}` : ''}</td>
+                            <td style={{ whiteSpace: 'nowrap' }}>{p.numero}/{p.total}</td>
+                            <td className="numeric money" style={{ fontWeight: 700 }}>{brl(p.valorCorretor)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Modal>
+            );
+          })()}
         </>
       )}
     </Shell>
