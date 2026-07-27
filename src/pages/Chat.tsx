@@ -616,24 +616,6 @@ export default function Chat() {
     setRecSecs(0);
   }, [activeId]);
 
-  const sincronizar = async () => {
-    if (!activeId || syncing) return;
-    setSyncing(true);
-    try {
-      const r = await Api.conversationSync(activeId);
-      if (r.importados > 0) toast.success(`${r.importados} mensagens importadas`);
-      else toast.info('Conversa atualizada.');
-      reloadConv();
-    } catch (err: any) {
-      const status = err?.status;
-      if (status === 503) toast.info('VAI não configurado.');
-      else if (status === 409) toast.info('Conversa ainda sem binding VAI. Aguarde o lead responder.');
-      else toast.error('Sync falhou: ' + (err?.message || 'erro'));
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const headerRight = useMemo(() => {
     const label = metaConfigured && vaiConfigured
       ? 'Meta + VAI conectados'
@@ -842,16 +824,13 @@ export default function Chat() {
                 {/* Ações (recolhível) — some do fluxo até o usuário abrir */}
                 {acoesOpen && (
                   <div className="thread__acoes">
-                    <button className="btn btn--ghost btn--sm" onClick={sincronizar} disabled={syncing} title="Buscar mensagens novas na VAI">
-                      <Icon name="speed" size={14} /> {syncing ? 'Sincronizando…' : 'Sync'}
-                    </button>
                     {!conv.reservado && (
                       <button className="btn btn--primary btn--sm" onClick={aceitarLead}>
                         <Icon name="check" size={12} /> Aceitar
                       </button>
                     )}
                     {!(conv as any).telefoneLiberado && conv.reservado && (
-                      <button className="btn btn--ghost btn--sm" onClick={liberarContato} title="Mostra o telefone do lead, marca como QUENTE e contabiliza no seu perfil">
+                      <button className="btn btn--ghost btn--sm" disabled title="Temporariamente indisponível">
                         <Icon name="phone" size={12} /> Liberar contato
                       </button>
                     )}
