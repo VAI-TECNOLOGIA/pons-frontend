@@ -15,6 +15,15 @@ const COLS: Record<string, { titulo: string; klass: string }> = {
   CONCLUIDO: { titulo: 'Concluído', klass: 'kanban__col--success' },
 };
 
+// Formata data (YYYY-MM-DD ou ISO) como DD/MM/AAAA SEM conversão de fuso — evita
+// a data "voltar" um dia (meia-noite UTC vira dia anterior em BRT). Datas de
+// solicitação/prazo são "dia cheio", então basta ler a parte da data direto.
+const dataBr = (s?: string | null) => {
+  if (!s) return '';
+  const [y, m, d] = String(s).slice(0, 10).split('-');
+  return d && m && y ? `${d}/${m}/${y}` : new Date(s).toLocaleDateString('pt-BR');
+};
+
 export default function Tarefas() {
   // Corretor não atribui tarefa a ninguém — o campo Responsável some pra ele
   // (e o backend força a tarefa pro próprio corretor de qualquer forma).
@@ -189,8 +198,8 @@ export default function Tarefas() {
                           <div className="kanban-card__title">{t.titulo}</div>
                           <div className="kanban-card__meta">
                             {t.area}
-                            {(t.solicitadoEm || t.createdAt) && ' · solicitada ' + new Date(t.solicitadoEm || t.createdAt).toLocaleDateString('pt-BR')}
-                            {t.prazo && ' · até ' + new Date(t.prazo).toLocaleDateString('pt-BR')}
+                            {(t.solicitadoEm || t.createdAt) && ' · solicitada ' + dataBr(t.solicitadoEm || t.createdAt)}
+                            {t.prazo && ' · até ' + dataBr(t.prazo)}
                           </div>
                         </div>
                         <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
@@ -390,11 +399,11 @@ export default function Tarefas() {
               )}
               <div className="field">
                 <label className="field__label">Data da Solicitação</label>
-                <input name="solicitadoEm" type="date" className="field__input" defaultValue={editTarefa.solicitadoEm ? new Date(editTarefa.solicitadoEm).toISOString().slice(0, 10) : ''} />
+                <input name="solicitadoEm" type="date" className="field__input" defaultValue={editTarefa.solicitadoEm ? String(editTarefa.solicitadoEm).slice(0, 10) : ''} />
               </div>
               <div className="field">
                 <label className="field__label">Prazo</label>
-                <input name="prazo" type="date" className="field__input" defaultValue={editTarefa.prazo ? new Date(editTarefa.prazo).toISOString().slice(0, 10) : ''} />
+                <input name="prazo" type="date" className="field__input" defaultValue={editTarefa.prazo ? String(editTarefa.prazo).slice(0, 10) : ''} />
               </div>
             </div>
             <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
