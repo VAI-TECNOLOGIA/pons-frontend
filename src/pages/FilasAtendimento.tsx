@@ -424,12 +424,10 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
             <span style={{ fontWeight: 600 }}>Fila ativa</span>
-            <span className="text-xs text-secondary">— quando desligada, não recebe leads novos</span>
           </label>
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ocultarPosicao} onChange={(e) => setOcultarPosicao(e.target.checked)} />
             <span style={{ fontWeight: 600 }}>Ocultar posição do corretor</span>
-            <span className="text-xs text-secondary">— quando ligado, esta fila NÃO aparece pro corretor ver a posição dele</span>
           </label>
         </div>
       )}
