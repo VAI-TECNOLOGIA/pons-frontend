@@ -295,6 +295,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const [origemFiltro, setOrigemFiltro] = useState(fila?.origemFiltro || '');
   const [ativa, setAtiva] = useState(fila?.ativa ?? true);
   const [formsSel, setFormsSel] = useState<string[]>(String(fila?.formularioFiltro || '').split(',').map((s) => s.trim()).filter(Boolean));
+  const [buscaForm, setBuscaForm] = useState(''); // filtro por nome dos formulários
   const [naFila, setNaFila] = useState<number[]>((fila?.participantes || []).map((p: any) => p.corretorId));
   // transferência automática
   const [slaHoras, setSlaHoras] = useState<number>(fila?.slaHoras ?? 4);
@@ -363,21 +364,36 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
             <label className="field__label">Produtos (formulários do Facebook)</label>
             {formularios.length === 0 ? (
               <div className="field__hint">Nenhum formulário capturado ainda — aparecem aqui quando chegam leads do Meta.</div>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 150, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 8, padding: 10 }}>
-                {[...formularios.map((f) => f.nome), ...formsSel.filter((s) => !formularios.some((f) => f.nome === s))].map((nm) => {
-                  const cnt = formularios.find((f) => f.nome === nm)?.leads ?? 0;
-                  const on = formsSel.includes(nm);
-                  return (
-                    <button key={nm} type="button" onClick={() => toggleForm(nm)}
-                      className={'badge ' + (on ? 'badge--analysis' : 'badge--neutral')}
-                      style={{ cursor: 'pointer', border: on ? '1px solid var(--pons-cyan, #52f7fe)' : '1px solid transparent', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      {on && <Icon name="check" size={11} />}<Icon name="doc" size={11} /> {nm} <span style={{ opacity: 0.6 }}>({cnt})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            ) : (() => {
+              const todos = [...formularios.map((f) => f.nome), ...formsSel.filter((s) => !formularios.some((f) => f.nome === s))];
+              const q = buscaForm.trim().toLowerCase();
+              const visiveis = q ? todos.filter((nm) => nm.toLowerCase().includes(q)) : todos;
+              return (
+                <>
+                  <input
+                    className="field__input"
+                    style={{ marginBottom: 8 }}
+                    placeholder="Buscar formulário por nome…"
+                    value={buscaForm}
+                    onChange={(e) => setBuscaForm(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 150, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 8, padding: 10 }}>
+                    {visiveis.map((nm) => {
+                      const cnt = formularios.find((f) => f.nome === nm)?.leads ?? 0;
+                      const on = formsSel.includes(nm);
+                      return (
+                        <button key={nm} type="button" onClick={() => toggleForm(nm)}
+                          className={'badge ' + (on ? 'badge--analysis' : 'badge--neutral')}
+                          style={{ cursor: 'pointer', border: on ? '1px solid var(--pons-cyan, #52f7fe)' : '1px solid transparent', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {on && <Icon name="check" size={11} />}<Icon name="doc" size={11} /> {nm} <span style={{ opacity: 0.6 }}>({cnt})</span>
+                        </button>
+                      );
+                    })}
+                    {visiveis.length === 0 && <span className="text-xs text-secondary">Nenhum formulário com "{buscaForm}".</span>}
+                  </div>
+                </>
+              );
+            })()}
             <div className="field__hint">Lead do formulário marcado cai nesta fila. Vazio = aceita qualquer formulário.</div>
           </div>
           <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 12 }}>
