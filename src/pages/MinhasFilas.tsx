@@ -82,21 +82,12 @@ export default function MinhasFilas() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
           {filas.map((f) => (
             <div key={f.id} className="card" style={{ padding: 16, opacity: f.pausado ? 0.7 : 1 }}>
-              <div className="flex-between" style={{ marginBottom: 8, gap: 8 }}>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>{f.nome}</span>
-                {!f.ativa && <span className="badge badge--neutral" style={{ fontSize: 10 }}>fila inativa</span>}
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>{f.nome}</div>
               {f.pausado ? (
-                <div className="text-sm" style={{ color: '#B45309', fontWeight: 600 }}>Você está pausado nesta fila.</div>
+                <div className="text-sm" style={{ color: '#B45309', fontWeight: 600 }}>Pausado</div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontSize: 30, fontWeight: 800, color: 'var(--pons-blue, #0E7C9B)' }}>{f.posicao ?? '—'}º</span>
-                  <span className="text-sm text-secondary">de {f.totalNaFila} na fila</span>
-                </div>
+                <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--pons-blue, #0E7C9B)' }}>{f.posicao ?? '—'}º</div>
               )}
-              <div className="text-xs text-secondary" style={{ marginTop: 6 }}>
-                {f.posicao === 1 ? 'Você é o próximo a receber.' : `Leads já recebidos: ${f.totalRecebidos}`}
-              </div>
             </div>
           ))}
         </div>
