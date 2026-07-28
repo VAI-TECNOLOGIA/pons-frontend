@@ -21,7 +21,7 @@ export default function FinanceiroPons() {
         <PageHeader
           breadcrumb="Sócios · Financeiro Pons"
           title="Financeiro — Regra Pons"
-          subtitle="Rateio de comissão, sócios, fechamento mensal e lotes Sicredi"
+          subtitle="Rateio de comissão, sócios e fechamento mensal"
         />
 
         <div className="card" style={{ marginBottom: 16 }}>
@@ -29,14 +29,13 @@ export default function FinanceiroPons() {
             <button className={`btn btn--sm ${tab === 'POLITICA' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('POLITICA')}>Política de Rateio</button>
             <button className={`btn btn--sm ${tab === 'SOCIOS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('SOCIOS')}>Sócios</button>
             <button className={`btn btn--sm ${tab === 'FECHAMENTO' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('FECHAMENTO')}>Fechamento Mensal</button>
-            <button className={`btn btn--sm ${tab === 'SICREDI' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('SICREDI')}>Lotes Sicredi</button>
+            {/* Aba "Lotes Sicredi" removida — integração não vai existir. */}
           </div>
         </div>
 
         {tab === 'POLITICA' && <PoliticaTab />}
         {tab === 'SOCIOS' && <SociosTab />}
         {tab === 'FECHAMENTO' && <FechamentoTab />}
-        {tab === 'SICREDI' && <SicrediTab />}
       </div>
     </>
   );

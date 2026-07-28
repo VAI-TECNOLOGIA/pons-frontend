@@ -77,11 +77,16 @@ const GROUPS: NavGroup[] = [
       { to: '/admin-vendas', label: 'Administrativo de Vendas', icon: 'doc', roles: ['CEO', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'ADMINISTRATIVO'] },
       { to: '/financeiro-pons', label: 'Rateio & Sócios', icon: 'wallet', roles: [...DIR_FINANCE, 'FINANCEIRO'] },
       { to: '/contas-bancarias', label: 'Contas Bancárias', icon: 'dollar', roles: FINANCE },
-      { to: '/onboarding-aprovacoes', label: 'Contratações', icon: 'users', roles: FINANCE },
+      // Contratações e Custos Meta escondidos por enquanto (roles: [] esconde de
+      // TODO perfil). Pra reativar, devolver os roles originais (comentados).
+      { to: '/onboarding-aprovacoes', label: 'Contratações', icon: 'users', roles: [] /* era FINANCE */ },
       { to: '/financeiro', label: 'Caixa & Lançamentos', icon: 'dollar', roles: FINANCE },
-      { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'MARKETING'] },
-      { to: '/relatorios', label: 'Relatórios', icon: 'chart', roles: RELATORIOS },
-      { to: '/painel-executivo', label: 'Painel Executivo', icon: 'activity', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'] },
+      { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: [] /* era ['CEO','DIRETOR_COMERCIAL','DIRETOR_FINANCEIRO','FINANCEIRO','MARKETING'] */ },
+      // Relatórios e Painel Executivo removidos do menu (pedido do cliente).
+      // As rotas/páginas seguem existindo (acessíveis por link direto) pra não
+      // quebrar navegações internas; só saíram da sidebar.
+      { to: '/relatorios', label: 'Relatórios', icon: 'chart', roles: [] /* removido do menu */ },
+      { to: '/painel-executivo', label: 'Painel Executivo', icon: 'activity', roles: [] /* removido do menu */ },
     ],
   },
   {
