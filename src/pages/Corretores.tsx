@@ -8,8 +8,12 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { MultiFiltro } from '../components/MultiFiltro';
+import { Auth } from '../lib/auth';
 
 export default function Corretores() {
+ // Gestor (líder de equipe) cadastra corretor SÓ nas equipes que lidera — a lista
+ // de equipes já vem escopada do backend; aqui a UI força a escolha da equipe.
+ const isGestor = Auth.user?.role === 'GERENTE_EQUIPE';
  const [search, setSearch] = useState('');
  const [filtroEquipe, setFiltroEquipe] = useState<string[]>([]); // nomes das equipes (multi)
  const [filtroStatus, setFiltroStatus] = useState<string | null>('ATIVO'); // padrão: só ativos na lista
@@ -317,9 +321,9 @@ export default function Corretores() {
  <input name="creci" className="field__input" placeholder="12345-F SC" />
  </div>
  <div className="field">
- <label className="field__label">Equipe</label>
- <select name="equipeId" className="field__select" defaultValue="">
- <option value="">— Sem equipe —</option>
+ <label className="field__label">Equipe{isGestor && <span className="field__required"> *</span>}</label>
+ <select name="equipeId" className="field__select" required={isGestor} defaultValue={isGestor && eqs.length ? String(eqs[0].id) : ''}>
+ {!isGestor && <option value="">— Sem equipe —</option>}
  {eqs.map((eq: any) => (
  <option key={eq.id} value={eq.id}>{eq.nome}</option>
  ))}
