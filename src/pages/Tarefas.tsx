@@ -19,6 +19,10 @@ export default function Tarefas() {
   // Corretor não atribui tarefa a ninguém — o campo Responsável some pra ele
   // (e o backend força a tarefa pro próprio corretor de qualquer forma).
   const ehCorretor = Auth.user?.role === 'CORRETOR';
+  // Regra: Namíta/admin/marketing NÃO vê corretores pra atribuir tarefa; GESTOR/
+  // SÓCIO vê (pra dar tarefa pro time da equipe dele). A lista já vem escopada
+  // do backend — aqui só decidimos mostrar ou não os corretores dela.
+  const ehGestor = Auth.user?.role === 'GERENTE_EQUIPE' || Auth.user?.role === 'SOCIO_UNIDADE';
   const [open, setOpen] = useState(false);
   const [waOn, setWaOn] = useState(false); // "Enviar pelo WhatsApp" no criar tarefa
   const { data, loading, error, reload } = useApi<any[]>(() => Api.tarefas());
@@ -289,8 +293,8 @@ export default function Tarefas() {
               <label className="field__label">Responsável</label>
               <select name="responsavelId" className="field__select" defaultValue="">
                 <option value="">— Sem atribuir —</option>
-                {/* Corretores ficam FORA da atribuição de tarefas (pedido da Namíta) */}
-                {(users || []).filter((u: any) => u.role !== 'CORRETOR').map((u: any) => (
+                {/* Corretores fora da atribuição pra Namíta/admin; gestor vê os da equipe dele */}
+                {(users || []).filter((u: any) => ehGestor || u.role !== 'CORRETOR').map((u: any) => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
@@ -378,7 +382,7 @@ export default function Tarefas() {
                 <select name="responsavelId" className="field__select" defaultValue={editTarefa.responsavelId ?? ''}>
                   <option value="">— Sem atribuir —</option>
                   {/* Sem corretores; mantém só o responsável atual se a tarefa antiga já apontar pra um */}
-                  {(users || []).filter((u: any) => u.role !== 'CORRETOR' || u.id === editTarefa.responsavelId).map((u: any) => (
+                  {(users || []).filter((u: any) => ehGestor || u.role !== 'CORRETOR' || u.id === editTarefa.responsavelId).map((u: any) => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
