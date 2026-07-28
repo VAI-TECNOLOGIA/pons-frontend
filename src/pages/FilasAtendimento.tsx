@@ -306,6 +306,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   // Modo de pulo no SLA: PROXIMO (próximo corretor da fila) ou BOLSAO (bolsão de recaptura)
   const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO'>((fila?.modoPulo as any) || 'PROXIMO');
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
+  const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
 
   const forasDaFila = corretores.filter((c) => c.ativo && !naFila.includes(c.id));
@@ -329,6 +330,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
       expedienteFimHora: Number(fimHora),
       modoPulo,
       bolsaoDestinoId: modoPulo === 'BOLSAO' && bolsaoDestinoId ? Number(bolsaoDestinoId) : null,
+      ocultarPosicao,
     };
     try {
       if (editando) {
@@ -423,6 +425,11 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
             <input type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
             <span style={{ fontWeight: 600 }}>Fila ativa</span>
             <span className="text-xs text-secondary">— quando desligada, não recebe leads novos</span>
+          </label>
+          <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
+            <input type="checkbox" checked={ocultarPosicao} onChange={(e) => setOcultarPosicao(e.target.checked)} />
+            <span style={{ fontWeight: 600 }}>Ocultar posição do corretor</span>
+            <span className="text-xs text-secondary">— quando ligado, esta fila NÃO aparece pro corretor ver a posição dele</span>
           </label>
         </div>
       )}

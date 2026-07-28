@@ -493,6 +493,11 @@ export const Api = {
   // Bolsões nomeados configuráveis
   bolsoes: () => request<any[]>('/bolsoes'),
   bolsaoCapturar: (id: number, leadId: number) => request<any>(`/bolsoes/${id}/capturar`, { method: 'POST', body: { leadId } }),
+  // ── Visão do CORRETOR: minhas filas (posição), pausar recebimento, meus bolsões ──
+  roletasMinhas: () => request<{ filas: any[]; recebendoLeads: boolean }>('/roletas/minhas'),
+  roletaReceber: (receber: boolean) => request<{ ok: boolean; recebendoLeads: boolean }>('/roletas/minhas/receber', { method: 'POST', body: { receber } }),
+  bolsoesMeus: () => request<any[]>('/bolsoes/meus'),
+  bolsaoMeusLeads: (id: number) => request<any[]>(`/bolsoes/meus/${id}/leads`),
   // Bases de Leads (categorias do marketing)
   basesLead: () => request<any[]>('/bases-lead'),
   baseLeadCreate: (body: any) => request<any>('/bases-lead', { method: 'POST', body }),

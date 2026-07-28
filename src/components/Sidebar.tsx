@@ -40,6 +40,8 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/chat', label: 'Atendimento', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/leads', label: 'Leads', icon: 'users', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/meus-leads', label: 'Meus Leads', icon: 'whatsapp', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
+  { to: '/minhas-filas', label: 'Minhas Filas', icon: 'layers', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
+  { to: '/meu-bolsao', label: 'Bolsão', icon: 'database', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
   { to: '/pipeline', label: 'Funil', icon: 'pipeline', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/vendas', label: 'Vendas', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'ADMINISTRATIVO', SOCIO] },
   { to: '/minhas-comissoes', label: 'Minhas Comissões', icon: 'wallet', roles: ['CORRETOR', 'GERENTE_EQUIPE', 'CEO'] },
