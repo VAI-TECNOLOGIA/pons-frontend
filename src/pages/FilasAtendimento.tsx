@@ -303,6 +303,10 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const [dias, setDias] = useState<string[]>(String(fila?.expedienteDias || '1,2,3,4,5').split(',').map((s) => s.trim()).filter(Boolean));
   const [iniHora, setIniHora] = useState<number>(fila?.expedienteInicioHora ?? 8);
   const [fimHora, setFimHora] = useState<number>(fila?.expedienteFimHora ?? 18);
+  // Modo de pulo no SLA: PROXIMO (próximo corretor da fila) ou BOLSAO (bolsão de recaptura)
+  const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO'>((fila?.modoPulo as any) || 'PROXIMO');
+  const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
+  const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
 
   const forasDaFila = corretores.filter((c) => c.ativo && !naFila.includes(c.id));
   const nesta = corretores.filter((c) => naFila.includes(c.id));
@@ -312,6 +316,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
 
   const salvar = async () => {
     if (!nome.trim()) { toast.error('Dê um título à fila'); setAba('config'); return; }
+    if (modoPulo === 'BOLSAO' && !bolsaoDestinoId) { toast.error('Selecione o bolsão de destino'); setAba('transferencia'); return; }
     setSaving(true);
     const base = {
       nome: nome.trim(), modo, ativa,
@@ -322,6 +327,8 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
       expedienteDias: dias.join(',') || '1,2,3,4,5',
       expedienteInicioHora: Number(iniHora),
       expedienteFimHora: Number(fimHora),
+      modoPulo,
+      bolsaoDestinoId: modoPulo === 'BOLSAO' && bolsaoDestinoId ? Number(bolsaoDestinoId) : null,
     };
     try {
       if (editando) {
@@ -470,10 +477,42 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
             </div>
             <div className="field">
               <label className="field__label">Máx. de transferências</label>
-              <input type="number" min={1} className="field__input" value={maxTransf} onChange={(e) => setMaxTransf(Number(e.target.value))} />
-              <div className="field__hint">Depois desse nº de pulos, para e cai no bolsão.</div>
+              <input type="number" min={1} className="field__input" value={maxTransf} onChange={(e) => setMaxTransf(Number(e.target.value))} disabled={modoPulo === 'BOLSAO'} />
+              <div className="field__hint">{modoPulo === 'BOLSAO' ? 'No modo bolsão, o lead vai direto — sem transferências.' : 'Depois desse nº de pulos, para e cai no bolsão.'}</div>
             </div>
           </div>
+
+          {/* Modo de pulo: o que fazer quando o corretor não responde no SLA */}
+          <div className="field">
+            <label className="field__label">Modo de pulo — quando o corretor não responde</label>
+            <select className="field__select" value={modoPulo} onChange={(e) => setModoPulo(e.target.value as 'PROXIMO' | 'BOLSAO')}>
+              <option value="PROXIMO">Ir pro próximo corretor da fila</option>
+              <option value="BOLSAO">Enviar pro bolsão de recaptura</option>
+            </select>
+            <div className="field__hint">
+              {modoPulo === 'PROXIMO'
+                ? 'O lead roda entre os corretores da fila; ao atingir o máx. de transferências, cai no bolsão.'
+                : 'O lead vai direto pro bolsão escolhido abaixo, sem rodar a fila.'}
+            </div>
+          </div>
+
+          {modoPulo === 'BOLSAO' && (
+            <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label className="field__label">Tipo de destino</label>
+                <select className="field__select" value="BOLSAO" disabled>
+                  <option value="BOLSAO">Enviar para um bolsão de recaptura</option>
+                </select>
+              </div>
+              <div className="field">
+                <label className="field__label">Selecione o bolsão <span className="field__required">*</span></label>
+                <select className="field__select" value={bolsaoDestinoId} onChange={(e) => setBolsaoDestinoId(e.target.value)}>
+                  <option value="">— Selecionar —</option>
+                  {(bolsoes || []).map((b: any) => <option key={b.id} value={b.id}>{b.nome}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
