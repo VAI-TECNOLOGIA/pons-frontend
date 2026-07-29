@@ -136,7 +136,14 @@ export default function Bolsoes() {
             <button className="btn btn--primary btn--sm" onClick={aplicar}>Filtrar</button>
             <button className="btn btn--secondary btn--sm" onClick={limpar}>Limpar</button>
             <button className="btn btn--ghost btn--sm" onClick={selecionarTodosDoFiltro}>Selecionar todos do filtro ({total})</button>
-            {sel.size > 0 && <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>{sel.size} selecionados</span>}
+            {sel.size > 0 && (
+              <>
+                <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>{sel.size} selecionados</span>
+                <button className="btn btn--primary btn--sm" style={{ marginLeft: 'auto' }} onClick={() => { setAba('corretor'); setModal(true); }}>
+                  Direcionar {sel.size} lead(s) →
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -180,15 +187,9 @@ export default function Bolsoes() {
       <Modal open={modal} onClose={() => setModal(false)} title={`Direcionar ${sel.size} lead(s)`} subtitle="Escolha o formato de direcionamento"
         footer={<>
           <button className="btn btn--secondary" onClick={() => setModal(false)}>Cancelar</button>
-          {aba === 'corretor' && <button className="btn btn--primary" onClick={direcionar} disabled={enviando}>{enviando ? 'Direcionando…' : 'Direcionar'}</button>}
-          {aba === 'api' && <button className="btn btn--primary" onClick={enviarCampanha} disabled={criandoCamp}>{criandoCamp ? 'Criando…' : 'Criar e enviar'}</button>}
+          <button className="btn btn--primary" onClick={direcionar} disabled={enviando}>{enviando ? 'Direcionando…' : 'Direcionar'}</button>
         </>}>
-        <div className="flex gap-2" style={{ marginBottom: 16 }}>
-          <button className={'btn btn--sm ' + (aba === 'corretor' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('corretor')}>Enviar para Corretor</button>
-          <button className={'btn btn--sm ' + (aba === 'api' ? 'btn--primary' : 'btn--secondary')} onClick={() => setAba('api')}>Enviar via API Oficial</button>
-        </div>
-
-        {aba === 'corretor' && (
+        {(
           <div className="form-grid form-grid--single">
             <div className="flex gap-2" style={{ marginBottom: 4 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}><input type="radio" checked={alvoTipo === 'corretor'} onChange={() => setAlvoTipo('corretor')} /> Um corretor</label>
@@ -218,29 +219,6 @@ export default function Bolsoes() {
               <span style={{ fontSize: 13 }}>Mostrar o telefone deste cliente pro corretor</span>
             </label>
             <div className="field__hint" style={{ marginTop: -4 }}>Por padrão o telefone fica oculto (corretor fala pelo template). Marque só quando o corretor puder ver o número.</div>
-          </div>
-        )}
-
-        {aba === 'api' && (
-          <div className="form-grid form-grid--single">
-            <div className="field">
-              <label className="field__label">Nome da campanha</label>
-              <input className="field__input" value={campanhaNome} onChange={(e) => setCampanhaNome(e.target.value)} placeholder="Ex: Reativação Itapema set/26" />
-            </div>
-            <div className="field">
-              <label className="field__label">Template aprovado (Meta)</label>
-              <select className="field__select" value={templateName} onChange={(e) => setTemplateName(e.target.value)}>
-                <option value="">Selecione…</option>
-                {(templates || []).map((t: any) => <option key={t.name} value={t.name}>{t.name} ({t.language || 'pt_BR'})</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label className="field__label">Número oficial de envio</label>
-              <select className="field__select" value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)}>
-                {numeros.map((n) => <option key={n.id || 'default'} value={n.id}>{n.label}</option>)}
-              </select>
-              <div className="field__hint">Dispara o template oficial pros {sel.size} leads selecionados. Quando o lead responder, ele cai na fila e a IA atende.</div>
-            </div>
           </div>
         )}
       </Modal>
