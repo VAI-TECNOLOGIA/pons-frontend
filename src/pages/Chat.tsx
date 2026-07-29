@@ -1653,7 +1653,11 @@ function TemplatePickerModal({
 
   useEffect(() => {
     Api.whatsappTemplates()
-      .then((r) => setItems(r.items || []))
+      // Esconde templates de AUTENTICAÇÃO (ex.: redefinir_senha_codigo) — são de
+      // sistema, não servem pra disparo manual no atendimento.
+      .then((r) => setItems((r.items || []).filter(
+        (t: any) => String(t.category).toUpperCase() !== 'AUTHENTICATION' && t.name !== 'redefinir_senha_codigo',
+      )))
       .catch((e) => toast.error('Erro ao carregar templates: ' + e.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
