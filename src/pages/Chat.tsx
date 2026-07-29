@@ -899,6 +899,7 @@ export default function Chat() {
               {!conv?.reservado ? (
                 <ComposerPendenteIA
                   onAceitar={aceitarLead}
+                  onAbrirTemplates={() => setTemplatePickerOpen(true)}
                   respostasUsadas={(conv as any).iaRespostasCount || 0}
                   limiteAtingido={!!(conv as any).iaLimiteAtingido}
                 />
@@ -1542,10 +1543,12 @@ function StatusTicks({ m }: { m: Mensagem }) {
 // com tom mais urgente — esse lead precisa do humano AGORA.
 function ComposerPendenteIA({
   onAceitar,
+  onAbrirTemplates,
   respostasUsadas,
   limiteAtingido,
 }: {
   onAceitar: () => void;
+  onAbrirTemplates: () => void;
   respostasUsadas: number;
   limiteAtingido: boolean;
 }) {
@@ -1578,9 +1581,16 @@ function ComposerPendenteIA({
           <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{sub}</div>
         </div>
       </div>
-      <button className="btn btn--primary btn--sm" onClick={onAceitar}>
-        <Icon name="check" size={14} /> Aceitar lead
-      </button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {/* Dispara o template Meta com o lead ainda PENDENTE — o corretor pega o
+            lead, manda o template e, se o cliente responder, a IA atende. */}
+        <button className="btn btn--secondary btn--sm" onClick={onAbrirTemplates} title="Enviar template Meta aprovado (inicia a conversa)">
+          <Icon name="doc" size={14} /> Enviar template
+        </button>
+        <button className="btn btn--primary btn--sm" onClick={onAceitar}>
+          <Icon name="check" size={14} /> Aceitar lead
+        </button>
+      </div>
     </div>
   );
 }
