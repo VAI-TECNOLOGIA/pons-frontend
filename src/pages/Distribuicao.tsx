@@ -112,6 +112,7 @@ export default function Distribuicao() {
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [alvoTransf, setAlvoTransf] = useState<DestinoTransf | null>(null);
   const [transferindo, setTransferindo] = useState(false);
+  const [telefoneVisivel, setTelefoneVisivel] = useState(false); // mostrar telefone pro corretor ao transferir
   const [buscaBolsao, setBuscaBolsao] = useState(''); // busca por nome/telefone no bolsão (antes de transferir)
   const toggleSel = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleTodos = (leads: any[]) => setSel((s) => s.size >= leads.length ? new Set() : new Set(leads.map((l) => l.id)));
@@ -119,9 +120,9 @@ export default function Distribuicao() {
     if (!sel.size || !alvoTransf) return;
     setTransferindo(true);
     try {
-      const r = await Api.leadsTransferirDestino([...sel], alvoTransf);
+      const r = await Api.leadsTransferirDestino([...sel], alvoTransf, telefoneVisivel);
       toast.success(`${r.transferidos} lead(s) transferido(s) para ${r.corretor}.`);
-      setSel(new Set()); setAlvoTransf(null);
+      setSel(new Set()); setAlvoTransf(null); setTelefoneVisivel(false);
       reloadBolsao();
     } catch (err: any) {
       toast.error('Erro: ' + (err.message || 'falha'));
@@ -329,7 +330,11 @@ export default function Distribuicao() {
                   <strong style={{ fontSize: 14 }}>{sel.size} selecionado(s)</strong>
                   <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
-                  <span style={{ marginLeft: 'auto' }} className="text-xs text-secondary">Transferir para:</span>
+                  <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} title="Por padrão o telefone fica oculto (corretor fala pelo template). Marque pra liberar o número.">
+                    <input type="checkbox" checked={telefoneVisivel} onChange={(e) => setTelefoneVisivel(e.target.checked)} />
+                    <span className="text-xs text-secondary">Mostrar telefone</span>
+                  </label>
+                  <span className="text-xs text-secondary">Transferir para:</span>
                   <DestinoPicker corretores={corretores} equipes={equipes} filas={filas} bases={basesLead} bolsoes={bolsoesNomeados} value={alvoTransf} onChange={setAlvoTransf} />
                   <button className="btn btn--primary btn--sm" onClick={transferirSelecionados} disabled={!alvoTransf || transferindo}>
                     {transferindo ? 'Transferindo…' : `Transferir ${sel.size}`}
