@@ -148,7 +148,7 @@ export default function FilasAtendimento() {
                 return (
                   <tr key={f.id}>
                     <td className="font-semibold">{f.nome}</td>
-                    <td className="numeric text-sm">{f.slaHoras ?? '—'}h</td>
+                    <td className="numeric text-sm">{f.slaHoras ?? '—'}min</td>
                     <td>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {forms.length === 0 && !f.origemFiltro && !f.campanhaFiltro && <span className="text-xs text-secondary">qualquer</span>}
@@ -476,9 +476,9 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
           </div>
           <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
-              <label className="field__label">Tempo de pulo (SLA, horas)</label>
+              <label className="field__label">Tempo de pulo (SLA, minutos)</label>
               <input type="number" min={1} className="field__input" value={slaHoras} onChange={(e) => setSlaHoras(Number(e.target.value))} />
-              <div className="field__hint">Sem resposta nesse tempo, o lead passa pro próximo.</div>
+              <div className="field__hint">Minutos pro corretor enviar o template. Sem template nesse tempo, o lead sai dele (vai pro modo de pulo).</div>
             </div>
             <div className="field">
               <label className="field__label">Máx. de transferências</label>
