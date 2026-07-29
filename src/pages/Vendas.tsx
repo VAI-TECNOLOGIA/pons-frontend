@@ -158,9 +158,9 @@ export default function Vendas() {
  // usa o rateio herdado da política — sem editar e sem ver a % do gestor.
  const podeEditarRateio = role === 'CEO' || role === 'DIRETOR_FINANCEIRO' || role === 'FINANCEIRO' || role === 'ADMINISTRATIVO';
  const podeEditarStatus = role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
- // Mudança de STATUS da venda (kanban/dropdown) é exclusiva do Administrativo de
- // Vendas (Glaucia) — pedido do cliente 27/07. Financeiro/CEO seguem só lendo.
- const podeMudarStatus = role === 'ADMINISTRATIVO';
+ // Mudança de STATUS da venda (kanban/dropdown): Administrativo de Vendas (Glaucia)
+ // e o CEO (Paulo) — pedido 29/07 reabriu pro CEO. Financeiro segue só lendo.
+ const podeMudarStatus = role === 'ADMINISTRATIVO' || role === 'CEO';
 
  // ── Lead vinculado: origem vem do banco (corretor não escolhe; pode contestar) ──
  const { data: leadsDisponiveis } = useApi<any[]>(() => Api.leads());
