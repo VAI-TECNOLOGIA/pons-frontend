@@ -504,7 +504,7 @@ export const Api = {
   baseLeadUpdate: (id: number, body: any) => request<any>(`/bases-lead/${id}`, { method: 'PATCH', body }),
   baseLeadDelete: (id: number) => request<any>(`/bases-lead/${id}`, { method: 'DELETE' }),
   // Transferência em massa pra qualquer destino: corretor, equipe, fila ou bolsão
-  leadsTransferirDestino: (leadIds: number[], destino: { tipo: string; id?: number }) =>
+  leadsTransferirDestino: (leadIds: number[], destino: { tipo: string; id?: number }, telefoneVisivel?: boolean) =>
     request<{ ok: boolean; transferidos: number; corretor: string }>('/roletas/transferir-massa', {
       method: 'POST',
       body: {
@@ -515,6 +515,7 @@ export const Api = {
         ...(destino.tipo === 'BOLSAO' && !destino.id && { bolsao: true }),
         ...(destino.tipo === 'BOLSAO' && destino.id && { bolsaoDestinoId: destino.id }),
         ...(destino.tipo === 'BASE' && { baseId: destino.id }),
+        ...(typeof telefoneVisivel === 'boolean' && { telefoneVisivel }),
       },
     }),
   // Arquivar leads em massa (somem das telas/distribuição, preservados no banco)
@@ -868,8 +869,11 @@ export const Api = {
   // Bolsão de Oportunidades (leads sem corretor) + direcionamento
   bolsaoOportunidades: (params: any = {}) => request<{ total: number; page: number; pageSize: number; leads: any[] }>(`/bolsoes/oportunidades${qs(params)}`),
   bolsaoOportunidadesIds: (params: any = {}) => request<{ ids: number[] }>(`/bolsoes/oportunidades/ids${qs(params)}`),
-  bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number }) =>
+  bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number; telefoneVisivel?: boolean }) =>
     request<{ direcionados: number; jaAtribuidos: number; porCorretor: Record<string, number> }>('/bolsoes/direcionar', { method: 'POST', body }),
+  // Config: telefone visível por formulário
+  configTelefoneFormularios: () => request<{ formularios: { nome: string; leads: number; visivel: boolean }[]; visiveis: string[] }>('/leads/config/telefone-formularios'),
+  salvarConfigTelefoneFormularios: (visiveis: string[]) => request<{ ok: boolean }>('/leads/config/telefone-formularios', { method: 'PUT', body: { visiveis } }),
   // Campos personalizados
   camposCustom: () => request<any[]>('/campos-custom'),
   campoCustomCreate: (data: any) => request<any>('/campos-custom', { method: 'POST', body: data }),

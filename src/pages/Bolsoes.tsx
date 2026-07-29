@@ -23,6 +23,7 @@ export default function Bolsoes() {
   const [alvoTipo, setAlvoTipo] = useState<'corretor' | 'equipe'>('corretor');
   const [alvoCorretor, setAlvoCorretor] = useState<number | ''>('');
   const [alvoEquipe, setAlvoEquipe] = useState<number | ''>('');
+  const [telefoneVisivel, setTelefoneVisivel] = useState(false); // toggle: telefone visível pro corretor
   const [enviando, setEnviando] = useState(false);
   const toast = useToast();
 
@@ -76,6 +77,7 @@ export default function Bolsoes() {
       if (!alvoEquipe) { toast.error('Escolha a equipe'); return; }
       body.equipeId = Number(alvoEquipe);
     }
+    body.telefoneVisivel = telefoneVisivel;
     setEnviando(true);
     try {
       const r = await Api.bolsaoDirecionar(body);
@@ -211,6 +213,11 @@ export default function Bolsoes() {
                 <div className="field__hint">Os {sel.size} leads são distribuídos em rodízio entre os corretores ativos da equipe.</div>
               </div>
             )}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, cursor: 'pointer' }}>
+              <input type="checkbox" checked={telefoneVisivel} onChange={(e) => setTelefoneVisivel(e.target.checked)} />
+              <span style={{ fontSize: 13 }}>Mostrar o telefone deste cliente pro corretor</span>
+            </label>
+            <div className="field__hint" style={{ marginTop: -4 }}>Por padrão o telefone fica oculto (corretor fala pelo template). Marque só quando o corretor puder ver o número.</div>
           </div>
         )}
 
