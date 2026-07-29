@@ -384,15 +384,19 @@
 /* ----- Mobile ----- */
 @media (max-width: 600px) {
   .assistant {
+    /* Respeita o notch/status bar (safe-area): antes o topo (header/X) ficava
+       cortado atrás da barra de status no app. top/bottom definem a altura. */
+    left: 12px;
     right: 12px;
-    bottom: 12px;
-    width: calc(100vw - 24px);
-    height: calc(100vh - 24px);
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    width: auto;
+    height: auto;
     max-width: none;
   }
   .assistant-fab {
     right: 16px;
-    bottom: 16px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   }
 }
 
