@@ -195,7 +195,9 @@ export default function Bolsoes() {
             {alvoTipo === 'corretor' ? (
               <div className="field">
                 <label className="field__label">Corretor</label>
-                <CorretorPicker corretores={corretores} value={alvoCorretor} onChange={(id) => setAlvoCorretor(id === 'sem' ? '' : id)} />
+                <div>
+                  <CorretorPicker corretores={corretores} value={alvoCorretor} onChange={(id) => setAlvoCorretor(id === 'sem' ? '' : id)} />
+                </div>
                 <div className="field__hint">Busque por nome, equipe ou telefone. Os {sel.size} leads vão todos pra esse corretor.</div>
               </div>
             ) : (
