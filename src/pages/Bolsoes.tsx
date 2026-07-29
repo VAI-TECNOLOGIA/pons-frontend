@@ -108,11 +108,7 @@ export default function Bolsoes() {
 
   return (
     <>
-      <Topbar title="Bolsão de Oportunidades" right={
-        <button className="btn btn--primary btn--sm" disabled={sel.size === 0} onClick={() => { setAba('corretor'); setModal(true); }}>
-          Direcionar Lead{sel.size ? ` (${sel.size})` : ''}
-        </button>
-      } />
+      <Topbar title="Bolsão de Oportunidades" />
       <div className="main__content page-enter">
         <PageHeader breadcrumb="Comercial · Bolsão" title={`${total.toLocaleString('pt-BR')} leads disponíveis`} subtitle="Leads sem corretor — filtre, selecione e direcione pra corretor ou equipe" />
 
