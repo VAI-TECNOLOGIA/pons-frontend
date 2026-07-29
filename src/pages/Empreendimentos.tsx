@@ -13,7 +13,7 @@ import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 import './empreendimentos.css';
 
 type Construtora = { id: number; nome: string };
-type Foto = { id: number; url: string; ordem: number };
+type Foto = { id: number; url: string; ordem: number; iaEnvia?: boolean };
 type Doc = { id: number; nome: string; url: string; tamanho?: number | null; tipo?: string };
 const ehMaterialAceito = (f: File) =>
   f.type === 'application/pdf' || f.type.startsWith('video/') || /\.(pdf|mp4|mov|webm|m4v|avi|mkv)$/i.test(f.name);
@@ -1369,6 +1369,21 @@ function GaleriaFotosModal({
     }
   };
 
+  // Marca/desmarca se a IA de atendimento pode enviar esta foto ao lead.
+  const toggleIA = async (foto: Foto) => {
+    setBusy(true);
+    try {
+      const r = await Api.empreendimentoFotoToggleIA(emp.id, foto.id, !foto.iaEnvia);
+      toast.success(r.iaEnvia ? 'IA pode enviar esta foto.' : 'IA não envia mais esta foto.');
+      await refetch();
+      onChanged();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleDelete = async () => {
     const ok = await confirm({
       title: 'Deletar empreendimento?',
@@ -1507,6 +1522,26 @@ function GaleriaFotosModal({
                       CAPA
                     </span>
                   )}
+                  {f.iaEnvia && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: '#16A34A',
+                        color: '#fff',
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                    >
+                      <Icon name="bot" size={10} /> IA
+                    </span>
+                  )}
                   <div
                     style={{
                       position: 'absolute',
@@ -1522,13 +1557,32 @@ function GaleriaFotosModal({
                     onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
                   >
-                    {!isCapa ? (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {!isCapa ? (
+                        <button
+                          onClick={() => setCapa(f)}
+                          disabled={busy}
+                          style={{
+                            background: 'rgba(255,255,255,0.92)',
+                            color: 'var(--pons-blue)',
+                            border: 'none',
+                            padding: '4px 8px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Definir capa
+                        </button>
+                      ) : <span />}
                       <button
-                        onClick={() => setCapa(f)}
+                        onClick={() => toggleIA(f)}
                         disabled={busy}
+                        title="Marcar se a IA pode enviar esta foto no atendimento"
                         style={{
-                          background: 'rgba(255,255,255,0.92)',
-                          color: 'var(--pons-blue)',
+                          background: f.iaEnvia ? 'rgba(22,163,74,0.92)' : 'rgba(255,255,255,0.92)',
+                          color: f.iaEnvia ? '#fff' : 'var(--text-primary)',
                           border: 'none',
                           padding: '4px 8px',
                           borderRadius: 6,
@@ -1537,9 +1591,9 @@ function GaleriaFotosModal({
                           cursor: 'pointer',
                         }}
                       >
-                        Definir capa
+                        {f.iaEnvia ? 'IA: sim' : 'IA: não'}
                       </button>
-                    ) : <span />}
+                    </div>
                     <button
                       onClick={() => deleteFoto(f)}
                       disabled={busy}

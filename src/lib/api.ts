@@ -371,6 +371,8 @@ export const Api = {
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
   empreendimentoFotoCapa: (id: number, fotoId: number) =>
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}/capa`, { method: 'POST' }),
+  empreendimentoFotoToggleIA: (id: number, fotoId: number, iaEnvia: boolean) =>
+    request<{ ok: boolean; iaEnvia: boolean }>(`/empreendimentos/${id}/fotos/${fotoId}/ia`, { method: 'POST', body: { iaEnvia } }),
   empreendimentoUnidades: (id: number) => request<any>(`/empreendimentos/${id}/unidades`),
   empreendimentoUnidadeCreate: (id: number, data: any) =>
     request<any>(`/empreendimentos/${id}/unidades`, { method: 'POST', body: data }),
