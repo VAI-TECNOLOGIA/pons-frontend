@@ -13,7 +13,7 @@ import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 import './empreendimentos.css';
 
 type Construtora = { id: number; nome: string };
-type Foto = { id: number; url: string; ordem: number; iaEnvia?: boolean };
+type Foto = { id: number; url: string; ordem: number; iaEnvia?: boolean; iaComentario?: string | null };
 type Doc = { id: number; nome: string; url: string; tamanho?: number | null; tipo?: string };
 const ehMaterialAceito = (f: File) =>
   f.type === 'application/pdf' || f.type.startsWith('video/') || /\.(pdf|mp4|mov|webm|m4v|avi|mkv)$/i.test(f.name);
@@ -1384,6 +1384,18 @@ function GaleriaFotosModal({
     }
   };
 
+  // Salva o rótulo da foto (ex.: "planta") — envio específico pela IA.
+  const salvarComentario = async (foto: Foto, valor: string) => {
+    if ((foto.iaComentario || '') === valor.trim()) return; // sem mudança
+    try {
+      await Api.empreendimentoFotoComentario(emp.id, foto.id, valor.trim());
+      await refetch();
+      onChanged();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    }
+  };
+
   const handleDelete = async () => {
     const ok = await confirm({
       title: 'Deletar empreendimento?',
@@ -1496,14 +1508,15 @@ function GaleriaFotosModal({
                 <div
                   key={f.id}
                   style={{
-                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
                     borderRadius: 10,
                     overflow: 'hidden',
-                    aspectRatio: '4/3',
                     background: 'var(--bg-card-hover)',
                     border: isCapa ? '2px solid var(--pons-blue)' : '1px solid var(--border-light)',
                   }}
                 >
+                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden' }}>
                   <img src={f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   {isCapa && (
                     <span
@@ -1611,6 +1624,18 @@ function GaleriaFotosModal({
                       <Icon name="trash" size={11} />
                     </button>
                   </div>
+                  </div>
+                  {f.iaEnvia && (
+                    <input
+                      className="field__input"
+                      defaultValue={f.iaComentario || ''}
+                      placeholder="rótulo p/ IA (ex.: planta)"
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={(e) => salvarComentario(f, e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                      style={{ margin: '4px 6px 6px', height: 26, fontSize: 11, padding: '2px 6px', width: 'auto' }}
+                    />
+                  )}
                 </div>
               );
             })}
