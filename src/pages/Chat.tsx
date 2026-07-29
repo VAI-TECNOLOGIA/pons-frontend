@@ -496,11 +496,13 @@ export default function Chat() {
     setEnviandoFotos(true);
     try {
       if (fotos.length) {
-        // A mensagem vai como legenda da PRIMEIRA foto; as demais seguem sem texto.
+        // O texto/descrição vai como mensagem SEPARADA (nunca como legenda de
+        // foto) e as fotos seguem TODAS sem legenda.
+        if (texto) await Api.conversationSend(activeId, texto, 'CORRETOR');
         for (let i = 0; i < fotos.length; i++) {
           await Api.conversationSend(
             activeId,
-            i === 0 ? texto : '',
+            '',
             'CORRETOR',
             { mediaUrl: fotos[i].url, mediaType: 'image' },
           );
