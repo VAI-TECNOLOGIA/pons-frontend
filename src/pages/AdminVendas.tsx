@@ -14,20 +14,22 @@ import { formatCurrencyShort } from '../lib/format';
 import { STATUS_MAP, FormularioGpi, VendaDocumentos } from './Vendas';
 
 // Fases na ordem do processo — a fila mostra por fase.
+// Fluxo novo (Glaucia 29/07): confecção → conferência → alteração → jurídica →
+// assinatura → assinado → pago. PRE_ANALISE é a entrada ("Contrato em confecção").
 const FASES: { key: string; label: string; hint: string }[] = [
-  { key: 'PRE_ANALISE', label: 'Aguardando auditoria', hint: 'Venda registrada pelo corretor — conferir dados e documentos.' },
-  { key: 'AGUARDANDO_CONSTRUTORA', label: 'Aguardando construtora', hint: 'Protocolo enviado — aguardando retorno.' },
-  { key: 'CONTRATO_EM_CONFECCAO', label: 'Contrato em confecção', hint: 'Construtora confeccionando o contrato.' },
+  { key: 'PRE_ANALISE', label: 'Contrato em confecção', hint: 'Venda registrada — conferir dados e documentos.' },
   { key: 'CONTRATO_EM_CONFERENCIA', label: 'Contrato em conferência', hint: 'Conferir minuta (Glaucia ↔ corretor ↔ cliente).' },
+  { key: 'CONTRATO_EM_ALTERACAO', label: 'Contrato em alteração', hint: 'Ajustes solicitados na minuta.' },
+  { key: 'ANALISE_JURIDICA', label: 'Análise jurídica', hint: 'Revisão jurídica do contrato.' },
   { key: 'EM_ASSINATURA', label: 'Em assinatura', hint: 'Na plataforma de assinatura da construtora.' },
   { key: 'ASSINADO', label: 'Assinado', hint: 'Cadeia de assinaturas concluída.' },
   { key: 'PAGO', label: 'Pago', hint: 'Entrada paga — processo concluído.' },
 ];
 const PROXIMA_FASE: Record<string, { para: string; rotulo: string }> = {
-  PRE_ANALISE: { para: 'AGUARDANDO_CONSTRUTORA', rotulo: 'Confirmar venda' },
-  AGUARDANDO_CONSTRUTORA: { para: 'CONTRATO_EM_CONFECCAO', rotulo: 'Construtora iniciou a confecção' },
-  CONTRATO_EM_CONFECCAO: { para: 'CONTRATO_EM_CONFERENCIA', rotulo: 'Contrato recebido → conferência' },
-  CONTRATO_EM_CONFERENCIA: { para: 'EM_ASSINATURA', rotulo: 'Conferido → enviar pra assinatura' },
+  PRE_ANALISE: { para: 'CONTRATO_EM_CONFERENCIA', rotulo: 'Confirmar venda → conferência' },
+  CONTRATO_EM_CONFERENCIA: { para: 'ANALISE_JURIDICA', rotulo: 'Conferido → análise jurídica' },
+  CONTRATO_EM_ALTERACAO: { para: 'ANALISE_JURIDICA', rotulo: 'Alterações feitas → análise jurídica' },
+  ANALISE_JURIDICA: { para: 'EM_ASSINATURA', rotulo: 'Jurídico ok → enviar pra assinatura' },
   EM_ASSINATURA: { para: 'ASSINADO', rotulo: 'Marcar assinado (todas as partes)' },
   ASSINADO: { para: 'PAGO', rotulo: 'Marcar pago' },
 };

@@ -19,6 +19,7 @@ export const STATUS_MAP: Record<string, [string, string]> = {
  AGUARDANDO_CONSTRUTORA: ['analysis', 'Aguardando construtora'],
  CONTRATO_EM_CONFECCAO: ['analysis', 'Contrato em confecção'],
  CONTRATO_EM_CONFERENCIA: ['signature', 'Contrato em conferência'],
+ CONTRATO_EM_ALTERACAO: ['signature', 'Contrato em alteração'],
  EM_ASSINATURA: ['signature', 'Em assinatura'],
  ASSINADO: ['signed', 'Assinado'],
  ASSINADO_AGUARDANDO_PAGAMENTO: ['signature', 'Assinado — aguardando pagamento'],
@@ -27,6 +28,24 @@ export const STATUS_MAP: Record<string, [string, string]> = {
  AGUARDANDO_REPASSE: ['analysis', 'Aguardando repasse'],
  CANCELADO: ['cancelled', 'Cancelado'],
 };
+
+// Ordem do dropdown de status (pedido da Glaucia 29/07): fluxo limpo do contrato.
+// Fora daqui: "Aguardando construtora" e o "Contrato em confecção" duplicado
+// (CONTRATO_EM_CONFECCAO) — legados. Se a venda já estiver num deles, o select
+// injeta a opção atual pra ela continuar visível/editável.
+export const STATUS_DROPDOWN = [
+ 'PRE_ANALISE',
+ 'CONTRATO_EM_CONFERENCIA',
+ 'CONTRATO_EM_ALTERACAO',
+ 'ANALISE_JURIDICA',
+ 'EM_ASSINATURA',
+ 'ASSINADO',
+ 'ASSINADO_AGUARDANDO_PAGAMENTO',
+ 'INADIMPLENTE',
+ 'PAGO',
+ 'AGUARDANDO_REPASSE',
+ 'CANCELADO',
+];
 
 const ESTADO_CIVIL = [
  'Solteiro(a)',
@@ -862,8 +881,8 @@ export default function Vendas() {
  onChange={(e) => atualizarStatus(sel.id, e.target.value)}
  style={{ width: 'auto', minWidth: 200, height: 34 }}
  >
- {Object.entries(STATUS_MAP).map(([val, [, lbl]]) => (
- <option key={val} value={val}>{lbl}</option>
+ {(STATUS_DROPDOWN.includes(sel.status) ? STATUS_DROPDOWN : [sel.status, ...STATUS_DROPDOWN]).map((val) => (
+ <option key={val} value={val}>{(STATUS_MAP[val] || ['neutral', val])[1]}</option>
  ))}
  </select>
  ) : (
