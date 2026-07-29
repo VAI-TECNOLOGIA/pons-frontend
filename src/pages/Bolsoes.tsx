@@ -8,6 +8,7 @@ import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useWhatsappNumeros } from '../lib/whatsappNumeros';
 import { Icon } from '../components/Icon';
+import { CorretorPicker } from '../components/CorretorPicker';
 import { useConfirm } from '../lib/confirm';
 
 const ORIGENS = ['META_ADS', 'GOOGLE', 'SITE', 'INDICACAO', 'WHATSAPP', 'IMPORTACAO_MANUAL', 'IMPORTACAO'];
@@ -194,11 +195,8 @@ export default function Bolsoes() {
             {alvoTipo === 'corretor' ? (
               <div className="field">
                 <label className="field__label">Corretor</label>
-                <select className="field__select" value={alvoCorretor} onChange={(e) => setAlvoCorretor(e.target.value ? Number(e.target.value) : '')}>
-                  <option value="">Selecione…</option>
-                  {(corretores || []).filter((c: any) => c.ativo).map((c: any) => <option key={c.id} value={c.id}>{c.nome}{c.equipe ? ` · ${c.equipe.nome}` : ''}</option>)}
-                </select>
-                <div className="field__hint">Os {sel.size} leads vão todos pra esse corretor.</div>
+                <CorretorPicker corretores={corretores} value={alvoCorretor} onChange={(id) => setAlvoCorretor(id === 'sem' ? '' : id)} />
+                <div className="field__hint">Busque por nome, equipe ou telefone. Os {sel.size} leads vão todos pra esse corretor.</div>
               </div>
             ) : (
               <div className="field">
