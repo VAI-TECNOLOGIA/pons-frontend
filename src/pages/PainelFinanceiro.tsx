@@ -59,6 +59,7 @@ export default function PainelFinanceiro() {
       {/* E) Resumo do caixa */}
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
         <ResumoCard titulo="A receber (total)" valor={previsao?.totalAReceber} icon="dollar" cor="var(--pons-blue)" />
+        <ResumoCard titulo="Vencidas (atrasadas)" valor={previsao?.vencidasTotal} icon="clock" cor="#e5484d" />
         <ResumoCard titulo="Entrou no mês" valor={resumo?.entrouMes} icon="arrow_up" cor="#16A34A" />
         <ResumoCard titulo="Saiu no mês" valor={resumo?.saiuMes} icon="arrow_down" cor="#e5484d" />
         <ResumoCard titulo="Saldo do mês" valor={resumo?.saldoMes} icon="bank" cor={(resumo?.saldoMes || 0) >= 0 ? '#16A34A' : '#e5484d'} />
