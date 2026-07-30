@@ -293,6 +293,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const [nome, setNome] = useState(fila?.nome || '');
   const [modo, setModo] = useState(fila?.modo || 'ROUND_ROBIN');
   const [origemFiltro, setOrigemFiltro] = useState(fila?.origemFiltro || '');
+  const [campanhaFiltro, setCampanhaFiltro] = useState(fila?.campanhaFiltro || '');
   const [ativa, setAtiva] = useState(fila?.ativa ?? true);
   const [formsSel, setFormsSel] = useState<string[]>(String(fila?.formularioFiltro || '').split(',').map((s) => s.trim()).filter(Boolean));
   const [buscaForm, setBuscaForm] = useState(''); // filtro por nome dos formulários
@@ -322,6 +323,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
     const base = {
       nome: nome.trim(), modo, ativa,
       origemFiltro: origemFiltro || null,
+      campanhaFiltro: campanhaFiltro.trim() || null,
       formularioFiltro: formsSel.join(',') || null,
       slaHoras: Number(slaHoras) || 4,
       maxTransferencias: Number(maxTransf) || 10,
@@ -420,6 +422,22 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
                 <option value="WHATSAPP">WhatsApp</option>
               </select>
             </div>
+          </div>
+          <div className="field">
+            <label className="field__label">Filtro de campanha (anúncio WhatsApp)</label>
+            <input
+              className="field__input"
+              value={campanhaFiltro}
+              placeholder="ex.: Conecta 2ª Avenida"
+              onChange={(e) => {
+                const v = e.target.value;
+                setCampanhaFiltro(v);
+                // Campanha de WhatsApp (clique no anúncio → WhatsApp) chega como
+                // META_ADS — já sugere a origem quando ainda estiver vazia (editável).
+                if (v.trim() && !origemFiltro) setOrigemFiltro('META_ADS');
+              }}
+            />
+            <div className="field__hint">Vincula campanha de WhatsApp (clique no anúncio → WhatsApp, sem formulário): casa quando o título do anúncio contém este texto. Vazio = qualquer campanha.</div>
           </div>
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
