@@ -94,7 +94,7 @@
    davam o aspecto "torto"). `display: contents` funde os dois blocos numa grade só. */
 .cal-month {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: auto repeat(6, minmax(96px, 1fr));
 }
 .cal-month__head { display: contents; }
@@ -116,6 +116,8 @@
   border-bottom: 1px solid var(--border-light);
   padding: 6px 6px 4px;
   min-height: 96px;
+  min-width: 0; /* deixa a coluna encolher no mobile — sem isso o evento longo empurra e desalinha */
+  overflow: hidden; /* corta o texto do evento em vez de esticar a coluna */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -193,7 +195,7 @@
 /* ------------------ SEMANA ------------------ */
 .cal-week__head {
   display: grid;
-  grid-template-columns: 56px repeat(7, 1fr);
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
   border-bottom: 1px solid var(--border-light);
 }
 .cal-week__corner {
@@ -224,7 +226,7 @@
 
 .cal-week__body {
   display: grid;
-  grid-template-columns: 56px repeat(7, 1fr);
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
   max-height: 560px;
   overflow-y: auto;
 }
