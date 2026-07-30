@@ -81,7 +81,15 @@ export function NotificationsBell() {
 
   const clicarItem = (n: Notificacao) => {
     setAberto(false);
-    if (n.link) navigate(n.link);
+    let destino = n.link || '';
+    // Rota legada: '/atendimento' nunca existiu no router → caía no catch-all e
+    // voltava pro login/dashboard. Remapeia pra rota real '/chat' (preservando
+    // querystring, ex.: ?lead=123 abre direto a conversa).
+    if (destino === '/atendimento' || destino.startsWith('/atendimento?') || destino.startsWith('/atendimento/')) {
+      destino = '/chat' + destino.slice('/atendimento'.length);
+    }
+    if (!destino.startsWith('/')) destino = '/dashboard';
+    navigate(destino);
   };
 
   return (
