@@ -37,7 +37,7 @@ type NavGroup = {
 // ── TOP (sempre visível) ──────────────────────────────────────────────────
 const TOP_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { to: '/chat', label: 'Atendimento', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
+  { to: '/chat', label: 'Atendimento', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO, 'GESTOR_MARKETING'] },
   { to: '/leads', label: 'Leads', icon: 'users', roles: [...COMERCIAL, 'CORRETOR', SOCIO] },
   { to: '/meus-leads', label: 'Meus Leads', icon: 'whatsapp', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
   { to: '/minhas-filas', label: 'Minhas Filas', icon: 'layers', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
