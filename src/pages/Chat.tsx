@@ -1492,11 +1492,12 @@ function StatusTicks({ m }: { m: Mensagem }) {
   if (m.errorReason) {
     const { kind, msg } = humanizeErrorReasonFull(m.errorReason);
     // Janela de 24h fechada / re-engajamento não é falha do sistema — é regra do
-    // WhatsApp. Mostra como aviso âmbar discreto em vez de erro vermelho.
+    // WhatsApp. Mostra um indicador NEUTRO e discreto ("não entregue"); o texto
+    // "janela 24h fechada" confundia a equipe (fica só no tooltip).
     if (kind === 'reengagement') {
       return (
-        <span title={msg} style={{ color: '#D97706', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-          <Icon name="clock" size={11} /> Janela 24h fechada
+        <span title={msg} style={{ color: 'var(--text-secondary)', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          <Icon name="clock" size={11} /> não entregue
         </span>
       );
     }
