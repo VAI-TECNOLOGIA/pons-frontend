@@ -144,12 +144,12 @@ export function CalendarView({
               {v === 'mes' ? 'Mês' : v === 'semana' ? 'Semana' : v === 'lista' ? 'Lista' : 'Checklist'}
             </button>
           ))}
-          {onNew && (
-            <button className="btn btn--primary btn--sm" onClick={() => onNew()} style={{ marginLeft: 8 }}>
-              + Novo
-            </button>
-          )}
         </div>
+        {onNew && (
+          <button className="cal__novo btn btn--primary btn--sm" onClick={() => onNew()}>
+            + Novo
+          </button>
+        )}
       </div>
 
       {view === 'mes' && (

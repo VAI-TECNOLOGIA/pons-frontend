@@ -70,6 +70,12 @@
   padding: 3px;
   gap: 2px;
 }
+/* Botão "+ Novo" — fora do pill de abas; compacto (não estica no mobile). */
+.cal__novo {
+  white-space: nowrap;
+  flex: 0 0 auto;
+  align-self: center;
+}
 .cal__view {
   background: transparent;
   border: none;
@@ -617,6 +623,8 @@
     justify-content: space-between;
   }
   .cal__view { flex: 1; text-align: center; }
+  /* Novo compacto, alinhado à esquerda (não estica na coluna do header). */
+  .cal__novo { align-self: flex-start; }
 
   .cal-month__weekday { padding: 4px 2px; font-size: 9px; }
   .cal-month {

@@ -637,6 +637,9 @@
   height: 100vh;        /* preenche a viewport */
   overflow-y: auto;     /* ESTE é o único container que rola; a topbar (sticky) fica fixa no topo */
   min-width: 0;         /* permite encolher o conteúdo dentro do grid */
+  /* Respiro no fundo pro home indicator do celular — sem isso a última linha
+     (ex.: última semana da agenda) fica atrás da barra inferior no app. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .main__content {
