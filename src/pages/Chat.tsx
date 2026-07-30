@@ -555,6 +555,17 @@ export default function Chat() {
   };
   const iniciarGravacao = async () => {
     if (recording) return;
+    // Navegador de dentro de app (WhatsApp/Instagram/Facebook) e contexto sem HTTPS
+    // não expõem getUserMedia — o prompt de microfone nunca aparece. Detecta antes
+    // de chamar pra dar uma orientação certa em vez de erro genérico.
+    if (!navigator.mediaDevices?.getUserMedia) {
+      if (!window.isSecureContext) {
+        toast.error('Gravar áudio exige conexão segura (https). Abra o app em app.grupopons.com.br.');
+      } else {
+        toast.error('Este navegador não libera microfone. Abra o link no Chrome/Safari — não pelo navegador de dentro do WhatsApp/Instagram.');
+      }
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recStreamRef.current = stream;
@@ -567,8 +578,17 @@ export default function Chat() {
       setRecSecs(0);
       setRecording(true);
       recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000);
-    } catch {
-      toast.error('Não consegui acessar o microfone — permita o acesso no navegador.');
+    } catch (e: any) {
+      const nome = e?.name || '';
+      if (nome === 'NotAllowedError' || nome === 'SecurityError') {
+        toast.error('Microfone bloqueado pra este site. Toque no ícone à esquerda do endereço (cadeado) → Permissões → Microfone → Permitir, e tente de novo.');
+      } else if (nome === 'NotFoundError' || nome === 'OverconstrainedError') {
+        toast.error('Nenhum microfone encontrado no aparelho.');
+      } else if (nome === 'NotReadableError' || nome === 'AbortError') {
+        toast.error('O microfone está em uso por outro app. Feche o outro app e tente de novo.');
+      } else {
+        toast.error(`Não consegui acessar o microfone${nome ? ` (${nome})` : ''}. Confira a permissão de microfone do navegador.`);
+      }
     }
   };
   const cancelarGravacao = () => {
