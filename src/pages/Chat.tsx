@@ -111,6 +111,9 @@ export default function Chat() {
   const [anexo, setAnexo] = useState<{ url: string; fileName: string; contentType: string } | null>(null);
   const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
+  const [traduzOpen, setTraduzOpen] = useState(false); // popover do tradutor (saída)
+  const [traduzindo, setTraduzindo] = useState(false);
+  const [draftPreTraducao, setDraftPreTraducao] = useState<string | null>(null); // p/ desfazer a tradução
   const [notaMode, setNotaMode] = useState(false); // composer em modo NOTA interna (não envia pro lead)
   const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
   const [recording, setRecording] = useState(false); // gravando áudio
@@ -294,6 +297,7 @@ export default function Chat() {
     if (!activeId || sending || uploadingAnexo) return;
     const texto = draft.trim();
     if (!texto && !anexo) return;
+    setDraftPreTraducao(null); // enviou → não faz mais sentido "voltar ao original"
     // Modo NOTA: registra na conversa e NÃO envia nada pro lead.
     if (notaMode) {
       if (!texto) return;
@@ -553,6 +557,29 @@ export default function Chat() {
     recStreamRef.current?.getTracks().forEach((t) => t.stop());
     recStreamRef.current = null;
   };
+  // ── Tradutor de saída (PT → inglês/espanhol) ───────────────────────────────
+  const traduzirDraft = async (idioma: 'en' | 'es') => {
+    const texto = draft.trim();
+    if (!texto || traduzindo) return;
+    setTraduzOpen(false);
+    setTraduzindo(true);
+    try {
+      const r = await Api.traduzir(texto, idioma);
+      setDraftPreTraducao(texto);
+      setDraft(r.traducao);
+    } catch {
+      toast.error('Não consegui traduzir agora. Tente de novo.');
+    } finally {
+      setTraduzindo(false);
+    }
+  };
+  const desfazerTraducao = () => {
+    if (draftPreTraducao == null) return;
+    setDraft(draftPreTraducao);
+    setDraftPreTraducao(null);
+    setTraduzOpen(false);
+  };
+
   const iniciarGravacao = async () => {
     if (recording) return;
     // Navegador de dentro de app (WhatsApp/Instagram/Facebook) e contexto sem HTTPS
@@ -1031,6 +1058,29 @@ export default function Chat() {
                         >
                           <Icon name="doc" size={14} /> <span className="composer__rotulo">Template</span>
                         </button>
+                        <div className="quick-wrap">
+                          <button
+                            className="btn btn--secondary btn--sm"
+                            title="Traduzir a mensagem antes de enviar (inglês/espanhol)"
+                            onClick={() => setTraduzOpen((o) => !o)}
+                            disabled={sending || traduzindo || (!draft.trim() && draftPreTraducao == null)}
+                          >
+                            <Icon name="globe" size={14} /> <span className="composer__rotulo">{traduzindo ? 'Traduzindo…' : 'Traduzir'}</span>
+                          </button>
+                          {traduzOpen && (
+                            <>
+                              <div className="quick-backdrop" onClick={() => setTraduzOpen(false)} />
+                              <div className="quick-pop">
+                                <div className="quick-pop__head">Traduzir mensagem</div>
+                                <button className="quick-item" onClick={() => traduzirDraft('en')}>Inglês (EN)</button>
+                                <button className="quick-item" onClick={() => traduzirDraft('es')}>Espanhol (ES)</button>
+                                {draftPreTraducao != null && (
+                                  <button className="quick-item" onClick={desfazerTraducao}>Voltar ao original</button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <button
                           className={'btn btn--sm' + (notaMode ? ' composer__nota-btn--on' : ' btn--secondary')}
                           title={notaMode ? 'Modo nota ativo — o lead NÃO recebe. Clique pra voltar ao envio normal.' : 'Escrever nota interna (o lead não recebe)'}
@@ -1338,6 +1388,7 @@ function MessageBubble({ m }: { m: Mensagem }) {
   return (
     <div className={`bubble bubble--${m.autor}`}>
       <MessageBody m={m} />
+      {!isOutbound && !!m.texto?.trim() && <TraduzirRecebida texto={m.texto} />}
       <div className="bubble__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <span>
           {who} · {timeAgo(m.createdAt)}
@@ -1372,6 +1423,41 @@ function MessageBody({ m }: { m: Mensagem }) {
     );
   }
   return <>{m.texto}</>;
+}
+
+// Tradução da mensagem RECEBIDA → português. Autocontido: cada bolha guarda seu
+// próprio estado. Clicar de novo esconde. Aparece só em mensagens do lead com texto.
+function TraduzirRecebida({ texto }: { texto: string }) {
+  const [loading, setLoading] = useState(false);
+  const [traducao, setTraducao] = useState<string | null>(null);
+  const [erro, setErro] = useState(false);
+  const acionar = async () => {
+    if (loading) return;
+    if (traducao) { setTraducao(null); return; }
+    setLoading(true); setErro(false);
+    try {
+      const r = await Api.traduzir(texto, 'pt');
+      setTraducao(r.traducao);
+    } catch { setErro(true); } finally { setLoading(false); }
+  };
+  return (
+    <div style={{ marginTop: 5 }}>
+      <button
+        type="button"
+        onClick={acionar}
+        disabled={loading}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 11, fontWeight: 600, opacity: 0.85 }}
+      >
+        <Icon name="globe" size={11} /> {loading ? 'Traduzindo…' : traducao ? 'Ocultar tradução' : 'Traduzir'}
+      </button>
+      {erro && <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-secondary)' }}>Não consegui traduzir agora.</div>}
+      {traducao && (
+        <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border-light)', fontSize: 13, whiteSpace: 'pre-wrap' }}>
+          {traducao}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Imagem recolhível: por padrão mostra só um chip "Ver imagem" pra não poluir a

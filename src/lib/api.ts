@@ -657,6 +657,9 @@ export const Api = {
   // Nota interna na conversa — NÃO é enviada pro lead (registro roxo no thread)
   conversationNota: (leadId: number, texto: string) =>
     request<{ ok: boolean; id: number }>(`/conversations/${leadId}/nota`, { method: 'POST', body: { texto } }),
+  // Tradutor do corretor: PT→en/es (mensagem a enviar) ou →pt (mensagem recebida).
+  traduzir: (texto: string, idioma: 'en' | 'es' | 'pt') =>
+    request<{ traducao: string; idioma: string }>(`/conversations/traduzir`, { method: 'POST', body: { texto, idioma } }),
   // Upload de mídia do chat → R2 (prefixo uploads). Retorna { url, key, size, contentType }.
   conversationUploadMedia: async (file: File) => {
     const form = new FormData();
