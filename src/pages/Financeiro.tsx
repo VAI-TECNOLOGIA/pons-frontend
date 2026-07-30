@@ -119,7 +119,6 @@ export default function Financeiro() {
  right={
  <>
  <button className="btn btn--secondary btn--sm" onClick={() => setOpenNew(true)}>+ Lançamento</button>
- <button className="btn btn--primary btn--sm" onClick={enviarSicredi}>Enviar ao Sicredi</button>
  </>
  }
  />
@@ -162,7 +161,6 @@ export default function Financeiro() {
  ['planejamento', 'Planejamento'],
  ['comissoes', 'Comissões & plano'],
  ['importar', 'Importar base'],
- ['sicredi', 'Sicredi'],
  ] as const).map(([key, label]) => (
  <button
  key={key}
@@ -388,7 +386,6 @@ function Shell({ tab, setTab, children, onNew, onSicredi }: { tab: Tab; setTab: 
  right={
  <>
  <button className="btn btn--secondary btn--sm" onClick={onNew}>+ Lançamento</button>
- <button className="btn btn--primary btn--sm" onClick={onSicredi}>Enviar ao Sicredi</button>
  </>
  }
  />
