@@ -1334,7 +1334,7 @@ function MessageBody({ m }: { m: Mensagem }) {
     return <ImageBody m={m} />;
   }
   if (ct === 'audio' && m.fileUrl) {
-    return <audio src={m.fileUrl} controls preload="none" style={{ maxWidth: 260 }} />;
+    return <AudioBody m={m} />;
   }
   if (ct === 'video' && m.fileUrl) {
     return <video src={m.fileUrl} controls preload="none" style={{ maxWidth: 280, borderRadius: 8 }} />;
@@ -1357,6 +1357,54 @@ function MessageBody({ m }: { m: Mensagem }) {
 // Imagem recolhível: por padrão mostra só um chip "Ver imagem" pra não poluir a
 // conversa quando há muitas mídias. Ao clicar, expande inline; pode recolher de
 // novo. Responsivo: a imagem nunca passa de 75% da largura disponível.
+const AUDIO_SPEEDS = [1, 1.25, 1.5, 2];
+function AudioBody({ m }: { m: Mensagem }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [speedIdx, setSpeedIdx] = useState(0);
+  const aplicar = (idx: number) => {
+    if (audioRef.current) audioRef.current.playbackRate = AUDIO_SPEEDS[idx];
+  };
+  const ciclar = () => {
+    const next = (speedIdx + 1) % AUDIO_SPEEDS.length;
+    setSpeedIdx(next);
+    aplicar(next);
+  };
+  const label = `${AUDIO_SPEEDS[speedIdx]}x`;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <audio
+        ref={audioRef}
+        src={m.fileUrl || undefined}
+        controls
+        preload="none"
+        style={{ maxWidth: 260 }}
+        onLoadedMetadata={() => aplicar(speedIdx)}
+        onPlay={() => aplicar(speedIdx)}
+      />
+      <button
+        type="button"
+        onClick={ciclar}
+        title="Velocidade de reprodução"
+        style={{
+          flex: '0 0 auto',
+          border: '1px solid var(--border, #d0d5dd)',
+          background: 'var(--surface, #fff)',
+          color: 'inherit',
+          borderRadius: 14,
+          padding: '3px 9px',
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: 'pointer',
+          minWidth: 46,
+          lineHeight: 1.2,
+        }}
+      >
+        {label}
+      </button>
+    </div>
+  );
+}
+
 function ImageBody({ m }: { m: Mensagem }) {
   const [aberta, setAberta] = useState(false);
   return (
