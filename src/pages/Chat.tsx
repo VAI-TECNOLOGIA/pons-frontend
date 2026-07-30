@@ -1422,17 +1422,9 @@ function Janela24h({ conv }: { conv: any }) {
     return Math.max(fromMsgs, fromFetch);
   })();
 
-  if (!lastInboundAt) {
-    return (
-      <span
-        className="badge"
-        style={{ background: 'rgba(148,163,184,0.18)', color: '#64748B' }}
-        title="Lead ainda não respondeu — só template Meta pra abrir conversa"
-      >
-        <Icon name="warn" size={10} /> Sem inbound
-      </span>
-    );
-  }
+  // Sem resposta do lead: não mostra badge (era confuso/redundante — se não
+  // respondeu, é óbvio que está fechada). O composer já convida a enviar template.
+  if (!lastInboundAt) return null;
 
   const expiry = lastInboundAt + 24 * 60 * 60 * 1000;
   const restante = expiry - tick;
@@ -1455,18 +1447,8 @@ function Janela24h({ conv }: { conv: any }) {
     );
   }
 
-  // Fechada — quantos dias?
-  const fechadaHaMs = -restante;
-  const dias = Math.floor(fechadaHaMs / 86_400_000);
-  return (
-    <span
-      className="badge"
-      style={{ background: 'rgba(245,158,11,0.15)', color: '#D97706' }}
-      title="Janela 24h fechada — envie um template HSM pra reabrir"
-    >
-      <Icon name="warn" size={10} /> Fechada {dias > 0 ? `· ${dias}d` : ''}
-    </span>
-  );
+  // Fechada: não mostra badge (só o "Aberta · contador" aparece, que é o útil).
+  return null;
 }
 
 // Banner amarelo mostrando que esta conversa foi recebida via redistribuição.
