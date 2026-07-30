@@ -908,7 +908,6 @@ export default function Chat() {
               ) : !janelaAberta ? (
                 <ComposerJanelaFechada
                   onAbrirTemplates={() => setTemplatePickerOpen(true)}
-                  hasInbound={lastInboundMs > 0}
                 />
               ) : (
                 <>
@@ -1599,17 +1598,14 @@ function ComposerPendenteIA({
 
 function ComposerJanelaFechada({
   onAbrirTemplates,
-  hasInbound,
 }: {
   onAbrirTemplates: () => void;
-  hasInbound: boolean;
 }) {
   return (
     <div
       className="composer"
       style={{
-        background: 'rgba(245,158,11,0.06)',
-        borderTop: '1px solid rgba(245,158,11,0.20)',
+        borderTop: '1px solid var(--border-light)',
         padding: '12px',
         display: 'flex',
         gap: 12,
@@ -1617,16 +1613,11 @@ function ComposerJanelaFechada({
         justifyContent: 'space-between',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#92400E' }}>
-        <Icon name="warn" size={16} />
-        <span style={{ fontSize: 13 }}>
-          {hasInbound
-            ? 'Janela de 24h fechou. Use um template Meta pra reabrir a conversa.'
-            : 'Cliente ainda não respondeu. Use um template Meta pra iniciar a conversa.'}
-        </span>
-      </div>
+      <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+        Envie um template pra falar com este contato.
+      </span>
       <button className="btn btn--primary btn--sm" onClick={onAbrirTemplates}>
-        <Icon name="doc" size={14} /> Escolher template
+        <Icon name="doc" size={14} /> Enviar template
       </button>
     </div>
   );
