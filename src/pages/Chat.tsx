@@ -565,7 +565,10 @@ export default function Chat() {
     setTraduzindo(true);
     try {
       const r = await Api.traduzir(texto, idioma);
-      setDraftPreTraducao(texto);
+      // Guarda só o PRIMEIRO original: traduzir de novo (ex.: PT→ES→EN) não pode
+      // sobrescrever com a tradução intermediária, senão "Voltar ao original" volta
+      // pro idioma errado.
+      setDraftPreTraducao((prev) => (prev == null ? texto : prev));
       setDraft(r.traducao);
     } catch {
       toast.error('Não consegui traduzir agora. Tente de novo.');
