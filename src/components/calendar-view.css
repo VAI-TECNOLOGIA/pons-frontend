@@ -88,12 +88,17 @@
 }
 
 /* ------------------ MÊS ------------------ */
-.cal-month__head {
+/* Cabeçalho (DOM/SEG/…) e a grade dos dias na MESMA grade de 7 colunas — assim é
+   impossível desalinhar em qualquer zoom/densidade/dispositivo (antes eram duas
+   grades separadas que arredondavam as colunas de forma ligeiramente diferente e
+   davam o aspecto "torto"). `display: contents` funde os dois blocos numa grade só. */
+.cal-month {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  border-bottom: 1px solid var(--border-light);
-  background: var(--bg-card-hover);
+  grid-template-rows: auto repeat(6, minmax(96px, 1fr));
 }
+.cal-month__head { display: contents; }
+.cal-month__grid { display: contents; }
 .cal-month__weekday {
   padding: 8px;
   font-size: 11px;
@@ -102,12 +107,8 @@
   letter-spacing: 0.08em;
   color: var(--text-secondary);
   text-align: center;
-}
-
-.cal-month__grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(6, minmax(96px, 1fr));
+  background: var(--bg-card-hover);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .cal-month__cell {
@@ -562,7 +563,7 @@
 
 /* Tablet/notebook menor */
 @media (max-width: 1100px) {
-  .cal-month__grid { grid-template-rows: repeat(6, minmax(80px, 1fr)); }
+  .cal-month { grid-template-rows: auto repeat(6, minmax(80px, 1fr)); }
   .cal-month__cell { min-height: 80px; }
 }
 
@@ -584,7 +585,7 @@
   .cal__nav { flex: 1; min-width: 0; }
   .cal__views { flex-wrap: wrap; }
 
-  .cal-month__grid { grid-template-rows: repeat(6, minmax(64px, 1fr)); }
+  .cal-month { grid-template-rows: auto repeat(6, minmax(64px, 1fr)); }
   .cal-month__cell { min-height: 64px; padding: 4px; }
   .cal-month__weekday { padding: 6px 4px; font-size: 10px; }
   .cal-chip__time { display: none; }
@@ -616,8 +617,8 @@
   .cal__view { flex: 1; text-align: center; }
 
   .cal-month__weekday { padding: 4px 2px; font-size: 9px; }
-  .cal-month__grid {
-    grid-template-rows: repeat(6, minmax(56px, 1fr));
+  .cal-month {
+    grid-template-rows: auto repeat(6, minmax(56px, 1fr));
   }
   .cal-month__cell {
     min-height: 56px;
