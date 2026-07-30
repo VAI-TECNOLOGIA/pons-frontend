@@ -577,6 +577,7 @@ export const Api = {
   finComissoesPlano: () => request<any>('/financeiro/comissoes-plano'),
   finPlanejamento: () => request<any>('/financeiro/planejamento'),
   finPagamentosSemana: (semana = 0) => request<any>(`/financeiro/pagamentos-semana?semana=${semana}`),
+  finPainelDiretor: () => request<any>('/financeiro/painel-diretor'),
   finImportar: (lancamentos: any[]) => request<any>('/financeiro/importar', { method: 'POST', body: { lancamentos } }),
   finSicrediStatus: () => request<any>('/financeiro/sicredi/status'),
   finSicrediEnviar: () => request<any>('/financeiro/sicredi/enviar', { method: 'POST' }),
