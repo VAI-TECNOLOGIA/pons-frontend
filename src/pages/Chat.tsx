@@ -463,10 +463,9 @@ export default function Chat() {
       `🏢 *${emp.nome}*`,
       loc,
       det,
-      // Mantém as quebras de linha da descrição (formatação do WhatsApp);
-      // limite de 900 chars pra caber como legenda de foto (teto Meta: 1024).
-      emp.descricao ? `\n${String(emp.descricao).replace(/\r\n/g, '\n').trim().slice(0, 900)}` : '',
-      `\nPosso te enviar a *tabela de valores* e as *plantas*. Quer que eu agende uma visita? 📅`,
+      // Mantém as quebras de linha da descrição (formatação do WhatsApp). Vai
+      // como mensagem de texto (teto 4096), então cabe a descrição completa.
+      emp.descricao ? `\n${String(emp.descricao).replace(/\r\n/g, '\n').trim().slice(0, 2000)}` : '',
     ].filter(Boolean).join('\n');
   };
 
