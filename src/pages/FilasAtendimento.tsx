@@ -309,6 +309,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
   const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
+  const { data: campanhasVistas } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaCampanhas());
 
   const forasDaFila = corretores.filter((c) => c.ativo && !naFila.includes(c.id));
   const nesta = corretores.filter((c) => naFila.includes(c.id));
@@ -429,6 +430,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
               className="field__input"
               value={campanhaFiltro}
               placeholder="ex.: Conecta 2ª Avenida"
+              list="fila-campanhas-vistas"
               onChange={(e) => {
                 const v = e.target.value;
                 setCampanhaFiltro(v);
@@ -437,7 +439,24 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
                 if (v.trim() && !origemFiltro) setOrigemFiltro('META_ADS');
               }}
             />
-            <div className="field__hint">Vincula campanha de WhatsApp (clique no anúncio → WhatsApp, sem formulário): casa quando o título do anúncio contém este texto. Vazio = qualquer campanha.</div>
+            {/* Autocomplete das campanhas que JÁ trouxeram lead (título do anúncio). */}
+            <datalist id="fila-campanhas-vistas">
+              {(campanhasVistas || []).map((c) => <option key={c.nome} value={c.nome}>{c.leads} lead(s)</option>)}
+            </datalist>
+            {/* Preview ao vivo: com quais campanhas já vistas o texto casa. */}
+            {campanhaFiltro.trim() && (() => {
+              const q = campanhaFiltro.trim().toLowerCase();
+              const casa = (campanhasVistas || []).filter((c) => String(c.nome).toLowerCase().includes(q));
+              return casa.length ? (
+                <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                  <span className="text-xs text-secondary">casa com:</span>
+                  {casa.slice(0, 6).map((c) => <span key={c.nome} className="badge badge--launch" style={{ fontSize: 11 }}>{c.nome} · {c.leads}</span>)}
+                </div>
+              ) : (
+                <div className="text-xs text-secondary" style={{ marginTop: 6 }}>Nenhuma campanha já vista casa com esse texto — ok se for campanha nova (o título vem no 1º lead).</div>
+              );
+            })()}
+            <div className="field__hint">Vincula campanha de WhatsApp (clique no anúncio → WhatsApp, sem formulário): casa quando o título do anúncio contém este texto. As campanhas que já trouxeram lead aparecem na lista; campanha nova é só digitar o título. Vazio = qualquer campanha.</div>
           </div>
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
