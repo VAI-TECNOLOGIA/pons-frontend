@@ -883,6 +883,9 @@ export const Api = {
   bolsaoOportunidadesIds: (params: any = {}) => request<{ ids: number[] }>(`/bolsoes/oportunidades/ids${qs(params)}`),
   bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number; telefoneVisivel?: boolean }) =>
     request<{ direcionados: number; jaAtribuidos: number; porCorretor: Record<string, number> }>('/bolsoes/direcionar', { method: 'POST', body }),
+  // Base de leads da equipe (leads de corretores desativados; o gestor redistribui).
+  baseEquipe: (params: { equipeId?: number } = {}) =>
+    request<{ bases: Array<{ id: number; equipeId: number | null; equipe: string | null }>; leads: any[] }>(`/bolsoes/base-equipe${qs(params)}`),
   // Config: telefone visível por formulário
   configTelefoneFormularios: () => request<{ formularios: { nome: string; leads: number; visivel: boolean }[]; visiveis: string[] }>('/leads/config/telefone-formularios'),
   salvarConfigTelefoneFormularios: (visiveis: string[]) => request<{ ok: boolean }>('/leads/config/telefone-formularios', { method: 'PUT', body: { visiveis } }),
