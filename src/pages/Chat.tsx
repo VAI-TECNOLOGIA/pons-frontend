@@ -1585,13 +1585,13 @@ function TraduzirRecebida({ texto }: { texto: string }) {
 function FichaCorretorModal({ id, onClose }: { id: number; onClose: () => void }) {
   const { data: c, loading, error } = useApi<any>(() => Api.corretor(id), [id]);
   const linha = (rotulo: string, valor: React.ReactNode) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
-      <span className="text-xs text-secondary" style={{ fontWeight: 700 }}>{rotulo}</span>
-      <span style={{ fontSize: 13, textAlign: 'right', wordBreak: 'break-word' }}>{valor}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '12px 2px', borderBottom: '1px solid var(--border-light)' }}>
+      <span className="text-secondary" style={{ fontWeight: 700, fontSize: 13 }}>{rotulo}</span>
+      <span style={{ fontSize: 14, textAlign: 'right', wordBreak: 'break-word' }}>{valor}</span>
     </div>
   );
   return (
-    <Modal open onClose={onClose} title="Ficha do corretor" size="sm">
+    <Modal open onClose={onClose} title="Ficha do corretor" size="md">
       {loading ? (
         <div style={{ padding: 16, color: 'var(--text-secondary)' }}>Carregando…</div>
       ) : error || !c ? (
