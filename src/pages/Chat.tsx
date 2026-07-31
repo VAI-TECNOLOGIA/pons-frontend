@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
@@ -102,10 +102,10 @@ export default function Chat() {
   // Deep-link: /chat?lead=123 abre direto a conversa daquele lead (botão
   // "Abrir conversa" no funil e afins).
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  // Gestor clica no nome do corretor → abre a ficha (painel) dele na tela Corretores.
+  const [fichaCorretorId, setFichaCorretorId] = useState<number | null>(null);
+  // Gestor clica no nome do corretor → abre um modal leve com a ficha dele.
   const abrirFichaCorretor = (corretorId?: number) => {
-    if (corretorId) navigate(`/corretores?painel=${corretorId}`);
+    if (corretorId) setFichaCorretorId(corretorId);
   };
   useEffect(() => {
     const leadParam = Number(searchParams.get('lead'));
@@ -1349,6 +1349,9 @@ export default function Chat() {
                   }}
                 />
               )}
+              {fichaCorretorId && (
+                <FichaCorretorModal id={fichaCorretorId} onClose={() => setFichaCorretorId(null)} />
+              )}
               <Modal
                 open={liberarOpen}
                 onClose={() => !liberarSending && setLiberarOpen(false)}
@@ -1577,6 +1580,41 @@ function TraduzirRecebida({ texto }: { texto: string }) {
 // Imagem recolhível: por padrão mostra só um chip "Ver imagem" pra não poluir a
 // conversa quando há muitas mídias. Ao clicar, expande inline; pode recolher de
 // novo. Responsivo: a imagem nunca passa de 75% da largura disponível.
+// Ficha leve do corretor — abre em modal no Atendimento (só gestor). Nome, CRECI,
+// e-mail e total de leads, sem sair da tela.
+function FichaCorretorModal({ id, onClose }: { id: number; onClose: () => void }) {
+  const { data: c, loading, error } = useApi<any>(() => Api.corretor(id), [id]);
+  const linha = (rotulo: string, valor: React.ReactNode) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+      <span className="text-xs text-secondary" style={{ fontWeight: 700 }}>{rotulo}</span>
+      <span style={{ fontSize: 13, textAlign: 'right', wordBreak: 'break-word' }}>{valor}</span>
+    </div>
+  );
+  return (
+    <Modal open onClose={onClose} title="Ficha do corretor" size="sm">
+      {loading ? (
+        <div style={{ padding: 16, color: 'var(--text-secondary)' }}>Carregando…</div>
+      ) : error || !c ? (
+        <div style={{ padding: 16, color: 'var(--text-secondary)' }}>Não consegui carregar a ficha.</div>
+      ) : (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div className="avatar">{c.initials}</div>
+            <div>
+              <div style={{ fontWeight: 700 }}>{c.nome}</div>
+              <div className="text-xs text-secondary">{c.equipe?.nome || 'Sem equipe'} · {c.status}</div>
+            </div>
+          </div>
+          {linha('CRECI', c.creci || '—')}
+          {linha('E-mail', c.email || '—')}
+          {linha('Telefone', c.phone || '—')}
+          {linha('Leads', <strong>{c.leadsCount ?? '—'}</strong>)}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 const AUDIO_SPEEDS = [1, 1.25, 1.5, 2];
 function AudioBody({ m }: { m: Mensagem }) {
   const audioRef = useRef<HTMLAudioElement>(null);

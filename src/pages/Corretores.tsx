@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { formatCurrencyShort } from '../lib/format';
@@ -20,14 +19,6 @@ export default function Corretores() {
  const [filtroStatus, setFiltroStatus] = useState<string | null>('ATIVO'); // padrão: só ativos na lista
  const [open, setOpen] = useState(false);
  const [painelId, setPainelId] = useState<number | null>(null);
- // Deep-link: /corretores?painel=123 abre a ficha direto (ex.: clique no nome do
- // corretor lá no Atendimento).
- const [searchParams, setSearchParams] = useSearchParams();
- useEffect(() => {
-   const p = Number(searchParams.get('painel'));
-   if (p) { setPainelId(p); searchParams.delete('painel'); setSearchParams(searchParams, { replace: true }); }
-   // eslint-disable-next-line react-hooks/exhaustive-deps
- }, []);
  const [leadsDe, setLeadsDe] = useState<any | null>(null);
  const [scoreDe, setScoreDe] = useState<any | null>(null);
  const [ordenar, setOrdenar] = useState('leads_desc');
