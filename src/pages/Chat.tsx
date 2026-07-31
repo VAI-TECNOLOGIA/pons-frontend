@@ -1523,7 +1523,7 @@ function MessageBubble({ m }: { m: Mensagem }) {
   return (
     <div className={`bubble bubble--${m.autor}`}>
       <MessageBody m={m} />
-      {!isOutbound && !!m.texto?.trim() && <TraduzirRecebida texto={m.texto} />}
+      {!isOutbound && (m.contentType || 'text').toLowerCase() === 'text' && !!m.texto?.trim() && <TraduzirRecebida texto={m.texto} />}
       <div className="bubble__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <span>
           {who} · {timeAgo(m.createdAt)}
@@ -1637,6 +1637,9 @@ const AUDIO_SPEEDS = [1, 1.25, 1.5, 2];
 function AudioBody({ m }: { m: Mensagem }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speedIdx, setSpeedIdx] = useState(0);
+  const [transcricao, setTranscricao] = useState<string | null>(null);
+  const [transcrevendo, setTranscrevendo] = useState(false);
+  const [transcErro, setTranscErro] = useState(false);
   const aplicar = (idx: number) => {
     if (audioRef.current) audioRef.current.playbackRate = AUDIO_SPEEDS[idx];
   };
@@ -1645,38 +1648,51 @@ function AudioBody({ m }: { m: Mensagem }) {
     setSpeedIdx(next);
     aplicar(next);
   };
+  const transcrever = async () => {
+    if (transcrevendo || !m.fileUrl) return;
+    if (transcricao) { setTranscricao(null); return; } // toggle: esconde
+    setTranscrevendo(true); setTranscErro(false);
+    try {
+      const r = await Api.transcreverAudio(m.fileUrl);
+      setTranscricao(r.texto || '(áudio sem fala reconhecível)');
+    } catch { setTranscErro(true); } finally { setTranscrevendo(false); }
+  };
   const label = `${AUDIO_SPEEDS[speedIdx]}x`;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <audio
-        ref={audioRef}
-        src={m.fileUrl || undefined}
-        controls
-        preload="none"
-        style={{ maxWidth: 260 }}
-        onLoadedMetadata={() => aplicar(speedIdx)}
-        onPlay={() => aplicar(speedIdx)}
-      />
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <audio
+          ref={audioRef}
+          src={m.fileUrl || undefined}
+          controls
+          preload="none"
+          style={{ maxWidth: 260 }}
+          onLoadedMetadata={() => aplicar(speedIdx)}
+          onPlay={() => aplicar(speedIdx)}
+        />
+        <button
+          type="button"
+          onClick={ciclar}
+          title="Velocidade de reprodução"
+          style={{ flex: '0 0 auto', border: '1px solid var(--border-light)', background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', borderRadius: 14, padding: '3px 9px', fontSize: 12, fontWeight: 700, cursor: 'pointer', minWidth: 46, lineHeight: 1.2 }}
+        >
+          {label}
+        </button>
+      </div>
       <button
         type="button"
-        onClick={ciclar}
-        title="Velocidade de reprodução"
-        style={{
-          flex: '0 0 auto',
-          border: '1px solid var(--border-light)',
-          background: 'var(--bg-card-hover)',
-          color: 'var(--text-secondary)',
-          borderRadius: 14,
-          padding: '3px 9px',
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: 'pointer',
-          minWidth: 46,
-          lineHeight: 1.2,
-        }}
+        onClick={transcrever}
+        disabled={transcrevendo}
+        style={{ marginTop: 5, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 11, fontWeight: 600, opacity: 0.85 }}
       >
-        {label}
+        <Icon name="doc" size={11} /> {transcrevendo ? 'Transcrevendo…' : transcricao ? 'Ocultar transcrição' : 'Transcrever'}
       </button>
+      {transcErro && <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-secondary)' }}>Não consegui transcrever agora.</div>}
+      {transcricao && (
+        <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border-light)', fontSize: 13, whiteSpace: 'pre-wrap' }}>
+          {transcricao}
+        </div>
+      )}
     </div>
   );
 }
