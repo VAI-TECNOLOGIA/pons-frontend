@@ -41,6 +41,14 @@ const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
 const statusLabel = (codigo?: string) =>
   STATUS_OPTIONS.find((s) => s.codigo === codigo)?.label || codigo || 'Novo';
 
+// Etiqueta de temperatura do lead — localização rápida por cor no Atendimento.
+const TEMPERATURAS = [
+  { key: 'QUENTE', label: 'Quente', cor: '#DC2626', bg: 'rgba(220,38,38,0.15)' },
+  { key: 'MORNO', label: 'Morno', cor: '#D97706', bg: 'rgba(245,158,11,0.18)' },
+  { key: 'FRIO', label: 'Frio', cor: '#2563EB', bg: 'rgba(37,99,235,0.15)' },
+] as const;
+const tempInfo = (c?: string) => TEMPERATURAS.find((t) => t.key === c) || TEMPERATURAS[2];
+
 type Mensagem = {
   id: number;
   autor: 'LEAD' | 'IA' | 'CORRETOR' | 'SISTEMA' | 'NOTA';
@@ -111,6 +119,8 @@ export default function Chat() {
   const [anexo, setAnexo] = useState<{ url: string; fileName: string; contentType: string } | null>(null);
   const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
+  const [filtroTemp, setFiltroTemp] = useState<string>(''); // filtro de temperatura no inbox
+  const [tempOpen, setTempOpen] = useState(false); // popover pra trocar a temperatura do lead
   const [traduzOpen, setTraduzOpen] = useState(false); // popover do tradutor (saída)
   const [traduzindo, setTraduzindo] = useState(false);
   const [draftPreTraducao, setDraftPreTraducao] = useState<string | null>(null); // p/ desfazer a tradução
@@ -149,7 +159,7 @@ export default function Chat() {
   const [limite, setLimite] = useState(80);
   const [buscaDeb, setBuscaDeb] = useState('');
   useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 350); return () => clearTimeout(t); }, [busca]);
-  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite }), [buscaDeb, limite]);
+  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined }), [buscaDeb, limite, filtroTemp]);
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
   const { data: tabMotivos } = useApi<Array<{ codigo: string; label: string; devolveBase?: boolean }>>(() => Api.tabulacaoMotivos());
   const { data: conv, reload: reloadConv } = useApi<ConversationDetail>(
@@ -557,6 +567,18 @@ export default function Chat() {
     recStreamRef.current?.getTracks().forEach((t) => t.stop());
     recStreamRef.current = null;
   };
+  // ── Etiqueta de temperatura (Quente/Morno/Frio) ────────────────────────────
+  const trocarTemperatura = async (leadId: number, key: 'QUENTE' | 'MORNO' | 'FRIO') => {
+    setTempOpen(false);
+    try {
+      await Api.setClassificacao(leadId, key);
+      reloadConv();
+      reloadInbox();
+    } catch {
+      toast.error('Não consegui atualizar a etiqueta. Tente de novo.');
+    }
+  };
+
   // ── Tradutor de saída (PT → inglês/espanhol) ───────────────────────────────
   const traduzirDraft = async (idioma: 'en' | 'es') => {
     const texto = draft.trim();
@@ -727,6 +749,30 @@ export default function Chat() {
                 {buscaDeb ? `${inbox.carregadas} resultado(s)` : `${inbox.carregadas} de ${inbox.totalConversas} conversas`}
               </div>
             )}
+            {/* Filtro por etiqueta de temperatura */}
+            <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setFiltroTemp('')}
+                style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: '1px solid var(--border-light)', background: filtroTemp === '' ? 'var(--bg-card-hover)' : 'transparent', color: 'var(--text-secondary)' }}
+              >
+                Todas
+              </button>
+              {TEMPERATURAS.map((t) => {
+                const on = filtroTemp === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setFiltroTemp(on ? '' : t.key)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${on ? t.cor : 'var(--border-light)'}`, background: on ? t.bg : 'transparent', color: on ? t.cor : 'var(--text-secondary)' }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {lista.length === 0 ? (
@@ -764,6 +810,10 @@ export default function Chat() {
                 <div className="conv__main">
                   <div className="conv__name">
                     <span>
+                      <span
+                        title={`Lead ${tempInfo(c.classificacao).label}`}
+                        style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: tempInfo(c.classificacao).cor, marginRight: 6, verticalAlign: 'middle', flexShrink: 0 }}
+                      />
                       {c.nome}
                       {c.vip && <Icon name="star" size={11} style={{ marginLeft: 4, color: '#EAB308', verticalAlign: 'middle' }} />}
                       {c.vaiConectado && (
@@ -851,11 +901,34 @@ export default function Chat() {
                   <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                     {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                   </span>
-                  {(conv as any).classificacao === 'QUENTE' && (
-                    <span className="badge" style={{ background: 'rgba(220,38,38,0.15)', color: '#DC2626' }}>
-                      <Icon name="fire" size={10} /> QUENTE
-                    </span>
-                  )}
+                  {/* Etiqueta de temperatura — clicável pra trocar */}
+                  <div className="quick-wrap" style={{ display: 'inline-block' }}>
+                    <button
+                      type="button"
+                      className="badge"
+                      onClick={() => setTempOpen((o) => !o)}
+                      title="Trocar etiqueta do lead"
+                      style={{ background: tempInfo((conv as any).classificacao).bg, color: tempInfo((conv as any).classificacao).cor, cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: tempInfo((conv as any).classificacao).cor, display: 'inline-block' }} />
+                      {tempInfo((conv as any).classificacao).label}
+                      <Icon name="chevron-down" size={10} />
+                    </button>
+                    {tempOpen && (
+                      <>
+                        <div className="quick-backdrop" onClick={() => setTempOpen(false)} />
+                        <div className="quick-pop">
+                          <div className="quick-pop__head">Etiqueta do lead</div>
+                          {TEMPERATURAS.map((t) => (
+                            <button key={t.key} className="quick-item" onClick={() => trocarTemperatura(conv.id, t.key)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ width: 9, height: 9, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                   {(conv as any).iaAtendendo && !conv.reservado && !(conv as any).iaLimiteAtingido && (
                     <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }}>
                       <Icon name="bot" size={10} /> IA respondendo · {(conv as any).iaRespostasCount || 0}/3

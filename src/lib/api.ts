@@ -636,11 +636,14 @@ export const Api = {
     request<{ importados: number; enviados: number }>('/integracoes/google/sync', { method: 'POST' }),
 
   // Conversations (VAI WhatsApp)
-  conversations: (params: { q?: string; limit?: number } = {}) =>
+  conversations: (params: { q?: string; limit?: number; classificacao?: string } = {}) =>
     request<{ pendente: any[]; atendendo: any[]; totalConversas?: number; carregadas?: number; busca?: string | null; vaiConfigured: boolean; metaConfigured: boolean }>(
       `/conversations${qs(params)}`,
     ),
   conversationGet: (leadId: number) => request<any>(`/conversations/${leadId}`),
+  // Etiqueta de temperatura do lead (Quente/Morno/Frio) no Atendimento.
+  setClassificacao: (leadId: number, classificacao: 'QUENTE' | 'MORNO' | 'FRIO') =>
+    request<{ ok: boolean; classificacao: string }>(`/conversations/${leadId}/classificacao`, { method: 'PATCH', body: { classificacao } }),
   conversationSend: (
     leadId: number,
     texto: string,
