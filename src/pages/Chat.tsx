@@ -767,20 +767,13 @@ export default function Chat() {
             )}
             {/* Só gestor: filtrar o inbox pelos atendimentos de um corretor específico */}
             {ehGestorAtendimento() && (
-              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <CorretorPicker
-                    corretores={corretoresFiltro}
-                    value={filtroCorretor}
-                    onChange={(id) => setFiltroCorretor(typeof id === 'number' ? id : '')}
-                    placeholder="Filtrar por corretor…"
-                  />
-                </div>
-                {filtroCorretor !== '' && (
-                  <button className="btn btn--ghost btn--sm" onClick={() => setFiltroCorretor('')} title="Limpar filtro de corretor">
-                    <Icon name="x" size={12} />
-                  </button>
-                )}
+              <div style={{ marginTop: 8 }}>
+                <CorretorPicker
+                  corretores={corretoresFiltro}
+                  value={filtroCorretor}
+                  onChange={(id) => setFiltroCorretor(typeof id === 'number' ? id : '')}
+                  placeholder="Filtrar por corretor…"
+                />
               </div>
             )}
             {/* Filtro por etiqueta de temperatura */}
