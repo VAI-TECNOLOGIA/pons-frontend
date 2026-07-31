@@ -309,6 +309,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
   const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
   const [autoTemplate, setAutoTemplate] = useState<string>(fila?.autoTemplate || ''); // template disparado ao lead cair na fila (CTWA)
+  const [direcionarAtendendo, setDirecionarAtendendo] = useState<boolean>(fila?.direcionarAtendendo ?? false); // vai direto pro Atendendo (sem IA)
   const { data: templatesResp } = useApi<{ items: any[] }>(() => Api.whatsappTemplates());
   const templatesAprovados = (templatesResp?.items || []).filter((t: any) => t.status === 'APPROVED');
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
@@ -338,6 +339,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
       bolsaoDestinoId: modoPulo === 'BOLSAO' && bolsaoDestinoId ? Number(bolsaoDestinoId) : null,
       ocultarPosicao,
       autoTemplate: autoTemplate.trim() || null,
+      direcionarAtendendo,
     };
     try {
       if (editando) {
@@ -470,6 +472,13 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
             </select>
             <div className="field__hint">Quando o lead cai nesta fila (ex.: clica no anúncio da campanha), dispara este template aprovado na hora — {'{{'}1{'}}'} recebe o nome. Ex.: <strong>conecta_towers_lead_novo</strong> (com o card). Deixe "Nenhum" pra a IA responder normalmente. O template escolhido deve ter só {'{{'}1{'}}'} = nome.</div>
           </div>
+          <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
+            <input type="checkbox" checked={direcionarAtendendo} onChange={(e) => setDirecionarAtendendo(e.target.checked)} style={{ marginTop: 3 }} />
+            <span>
+              <span style={{ fontWeight: 600 }}>Ir direto pro Atendendo (sem IA)</span>
+              <span className="field__hint" style={{ display: 'block' }}>Pós-template, o lead já cai reservado ao corretor (aba Atendendo) e a <strong>IA fica desligada</strong> — o corretor assume a conversa. Desmarcado = fica Pendente e a IA responde.</span>
+            </span>
+          </label>
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
             <span style={{ fontWeight: 600 }}>Fila ativa</span>
