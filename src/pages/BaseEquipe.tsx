@@ -52,10 +52,10 @@ export default function BaseEquipe() {
   return (
     <>
       <Topbar title="Base da Equipe" />
-      <div className="main">
+      <div className="main__content page-enter">
         <PageHeader
           breadcrumb="Equipe · Base de Leads"
-          title="Base da Equipe"
+          title={`${leads.length} lead(s) na base`}
           subtitle="Leads de corretores desativados da sua equipe. Escolha pra quem transferir — a data vira o dia da transferência e o histórico da conversa é preservado."
         />
 
