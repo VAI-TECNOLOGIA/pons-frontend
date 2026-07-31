@@ -48,11 +48,13 @@ const statusLabel = (codigo?: string) =>
 
 // Etiqueta de temperatura do lead — localização rápida por cor no Atendimento.
 const TEMPERATURAS = [
+  { key: 'NOVO', label: 'Novo', cor: '#16A34A', bg: 'rgba(22,163,74,0.15)' },
   { key: 'QUENTE', label: 'Quente', cor: '#DC2626', bg: 'rgba(220,38,38,0.15)' },
   { key: 'MORNO', label: 'Morno', cor: '#D97706', bg: 'rgba(245,158,11,0.18)' },
   { key: 'FRIO', label: 'Frio', cor: '#2563EB', bg: 'rgba(37,99,235,0.15)' },
 ] as const;
-const tempInfo = (c?: string) => TEMPERATURAS.find((t) => t.key === c) || TEMPERATURAS[2];
+// Sem classificação = NOVO (padrão verde de todo lead que entra).
+const tempInfo = (c?: string) => TEMPERATURAS.find((t) => t.key === c) || TEMPERATURAS[0];
 
 type Mensagem = {
   id: number;
@@ -578,7 +580,7 @@ export default function Chat() {
     recStreamRef.current = null;
   };
   // ── Etiqueta de temperatura (Quente/Morno/Frio) ────────────────────────────
-  const trocarTemperatura = async (leadId: number, key: 'QUENTE' | 'MORNO' | 'FRIO') => {
+  const trocarTemperatura = async (leadId: number, key: 'NOVO' | 'QUENTE' | 'MORNO' | 'FRIO') => {
     setTempOpen(false);
     try {
       await Api.setClassificacao(leadId, key);

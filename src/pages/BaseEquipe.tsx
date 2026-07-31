@@ -10,11 +10,12 @@ import { timeAgo } from '../lib/format';
 
 // Temperatura do lead (classificacao) — mesma paleta do Atendimento.
 const TEMP: Record<string, { label: string; cor: string; bg: string }> = {
+  NOVO: { label: 'Novo', cor: '#16A34A', bg: 'rgba(22,163,74,0.15)' },
   QUENTE: { label: 'Quente', cor: '#DC2626', bg: 'rgba(220,38,38,0.15)' },
   MORNO: { label: 'Morno', cor: '#D97706', bg: 'rgba(245,158,11,0.18)' },
   FRIO: { label: 'Frio', cor: '#2563EB', bg: 'rgba(37,99,235,0.15)' },
 };
-const temp = (c?: string) => TEMP[c || 'FRIO'] || TEMP.FRIO;
+const temp = (c?: string) => TEMP[c || 'NOVO'] || TEMP.NOVO;
 
 export default function BaseEquipe() {
   const [filtroEquipe, setFiltroEquipe] = useState<number | ''>('');

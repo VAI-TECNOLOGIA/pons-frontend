@@ -642,7 +642,7 @@ export const Api = {
     ),
   conversationGet: (leadId: number) => request<any>(`/conversations/${leadId}`),
   // Etiqueta de temperatura do lead (Quente/Morno/Frio) no Atendimento.
-  setClassificacao: (leadId: number, classificacao: 'QUENTE' | 'MORNO' | 'FRIO') =>
+  setClassificacao: (leadId: number, classificacao: 'NOVO' | 'QUENTE' | 'MORNO' | 'FRIO') =>
     request<{ ok: boolean; classificacao: string }>(`/conversations/${leadId}/classificacao`, { method: 'PATCH', body: { classificacao } }),
   conversationSend: (
     leadId: number,
