@@ -841,8 +841,9 @@ export default function Chat() {
                   <div className="conv__last">
                     {c.ultimaMensagem ? (
                       <>
-                        {c.ultimaMensagem.direction === 'outbound' && (
-                          <Icon name="arrowRight" size={10} style={{ verticalAlign: 'middle', marginRight: 2 }} />
+                        {/* Nossa msg (outbound): ticks de entregue/lido igual WhatsApp */}
+                        {(c.ultimaMensagem.direction === 'outbound' || c.ultimaMensagem.autor === 'CORRETOR' || c.ultimaMensagem.autor === 'IA') && (
+                          <span style={{ marginRight: 3, verticalAlign: 'middle' }}><StatusTicks m={c.ultimaMensagem} /></span>
                         )}
                         {(c.ultimaMensagem.texto || '').slice(0, 40)}
                       </>
