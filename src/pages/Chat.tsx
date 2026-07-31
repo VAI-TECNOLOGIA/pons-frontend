@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
@@ -102,6 +102,11 @@ export default function Chat() {
   // Deep-link: /chat?lead=123 abre direto a conversa daquele lead (botão
   // "Abrir conversa" no funil e afins).
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  // Gestor clica no nome do corretor → abre a ficha (painel) dele na tela Corretores.
+  const abrirFichaCorretor = (corretorId?: number) => {
+    if (corretorId) navigate(`/corretores?painel=${corretorId}`);
+  };
   useEffect(() => {
     const leadParam = Number(searchParams.get('lead'));
     if (leadParam) setActiveId(leadParam);
@@ -843,11 +848,17 @@ export default function Chat() {
                       c.origem + ' · ' + (c.interesse || '—')
                     )}
                   </div>
-                  {/* Só gestor: corretor que atende este lead */}
+                  {/* Só gestor: corretor que atende este lead — clica pra abrir a ficha */}
                   {ehGestorAtendimento() && c.corretor?.nome && (
-                    <div className="text-xs" style={{ marginTop: 2, color: 'var(--blue-600)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <button
+                      type="button"
+                      className="text-xs"
+                      onClick={(e) => { e.stopPropagation(); abrirFichaCorretor(c.corretor?.id); }}
+                      title="Abrir ficha do corretor"
+                      style={{ marginTop: 2, color: 'var(--blue-600)', display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                    >
                       <Icon name="users" size={10} /> {c.corretor.nome}
-                    </div>
+                    </button>
                   )}
                 </div>
               </div>
@@ -912,11 +923,17 @@ export default function Chat() {
                   <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                     {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                   </span>
-                  {/* Só gestor: quem é o corretor atendendo este lead */}
+                  {/* Só gestor: quem atende este lead — clica pra abrir a ficha do corretor */}
                   {ehGestorAtendimento() && (conv as any).corretor?.nome && (
-                    <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }} title="Corretor responsável">
+                    <button
+                      type="button"
+                      className="badge"
+                      onClick={() => abrirFichaCorretor((conv as any).corretor?.id)}
+                      title="Abrir ficha do corretor"
+                      style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
                       <Icon name="users" size={10} /> {(conv as any).corretor.nome}
-                    </span>
+                    </button>
                   )}
                   {/* Etiqueta de temperatura — clicável pra trocar (popover abre pra baixo) */}
                   <div style={{ position: 'relative', display: 'inline-block' }}>
