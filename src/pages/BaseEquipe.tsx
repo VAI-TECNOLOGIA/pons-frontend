@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Api } from '../lib/api';
@@ -28,7 +28,13 @@ export default function BaseEquipe() {
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
 
   const leads = data?.leads || [];
-  const bases = data?.bases || [];
+  // Guarda a lista COMPLETA de bases (carga sem filtro) — senão ao filtrar por uma
+  // equipe a resposta traz só 1 base e o dropdown de filtro sumia.
+  const [todasBases, setTodasBases] = useState<any[]>([]);
+  useEffect(() => {
+    if (data?.bases && !filtroEquipe) setTodasBases(data.bases);
+  }, [data, filtroEquipe]);
+  const bases = todasBases.length ? todasBases : (data?.bases || []);
   const temMultiEquipe = bases.length > 1;
 
   const toggle = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
