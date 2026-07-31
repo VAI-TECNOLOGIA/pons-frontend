@@ -308,6 +308,9 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO'>((fila?.modoPulo as any) || 'PROXIMO');
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
   const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
+  const [autoTemplate, setAutoTemplate] = useState<string>(fila?.autoTemplate || ''); // template disparado ao lead cair na fila (CTWA)
+  const { data: templatesResp } = useApi<{ items: any[] }>(() => Api.whatsappTemplates());
+  const templatesAprovados = (templatesResp?.items || []).filter((t: any) => t.status === 'APPROVED');
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
   const { data: campanhasVistas } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaCampanhas());
 
@@ -334,6 +337,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
       modoPulo,
       bolsaoDestinoId: modoPulo === 'BOLSAO' && bolsaoDestinoId ? Number(bolsaoDestinoId) : null,
       ocultarPosicao,
+      autoTemplate: autoTemplate.trim() || null,
     };
     try {
       if (editando) {
@@ -457,6 +461,14 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
               );
             })()}
             <div className="field__hint">Vincula campanha de WhatsApp (clique no anúncio → WhatsApp, sem formulário): casa quando o título do anúncio contém este texto. As campanhas que já trouxeram lead aparecem na lista; campanha nova é só digitar o título. Vazio = qualquer campanha.</div>
+          </div>
+          <div className="field">
+            <label className="field__label">Template automático (mensagem que dispara no 1º contato)</label>
+            <select className="field__select" value={autoTemplate} onChange={(e) => setAutoTemplate(e.target.value)}>
+              <option value="">— Nenhum (a IA responde) —</option>
+              {templatesAprovados.map((t: any) => <option key={t.name} value={t.name}>{t.name}</option>)}
+            </select>
+            <div className="field__hint">Quando o lead cai nesta fila (ex.: clica no anúncio da campanha), dispara este template aprovado na hora — {'{{'}1{'}}'} recebe o nome. Ex.: <strong>conecta_towers_lead_novo</strong> (com o card). Deixe "Nenhum" pra a IA responder normalmente. O template escolhido deve ter só {'{{'}1{'}}'} = nome.</div>
           </div>
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
