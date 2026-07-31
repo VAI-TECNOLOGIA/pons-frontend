@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
+import { CorretorPicker } from '../components/CorretorPicker';
 import { initials, timeAgo } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
@@ -132,6 +133,7 @@ export default function Chat() {
   const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
   const [filtroTemp, setFiltroTemp] = useState<string>(''); // filtro de temperatura no inbox
+  const [filtroCorretor, setFiltroCorretor] = useState<number | ''>(''); // filtro por corretor (gestor)
   const [tempOpen, setTempOpen] = useState(false); // popover pra trocar a temperatura do lead
   const [traduzOpen, setTraduzOpen] = useState(false); // popover do tradutor (saída)
   const [traduzindo, setTraduzindo] = useState(false);
@@ -171,7 +173,9 @@ export default function Chat() {
   const [limite, setLimite] = useState(80);
   const [buscaDeb, setBuscaDeb] = useState('');
   useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 350); return () => clearTimeout(t); }, [busca]);
-  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined }), [buscaDeb, limite, filtroTemp]);
+  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined, corretorId: filtroCorretor || undefined }), [buscaDeb, limite, filtroTemp, filtroCorretor]);
+  // Lista de corretores (pro filtro do gestor) — só carrega pra quem não é corretor comum.
+  const { data: corretoresFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.corretores() : Promise.resolve([])), []);
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
   const { data: tabMotivos } = useApi<Array<{ codigo: string; label: string; devolveBase?: boolean }>>(() => Api.tabulacaoMotivos());
   const { data: conv, reload: reloadConv } = useApi<ConversationDetail>(
@@ -759,6 +763,24 @@ export default function Chat() {
             {inbox?.totalConversas != null && (
               <div className="text-xs text-secondary" style={{ marginTop: 4 }}>
                 {buscaDeb ? `${inbox.carregadas} resultado(s)` : `${inbox.carregadas} de ${inbox.totalConversas} conversas`}
+              </div>
+            )}
+            {/* Só gestor: filtrar o inbox pelos atendimentos de um corretor específico */}
+            {ehGestorAtendimento() && (
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <CorretorPicker
+                    corretores={corretoresFiltro}
+                    value={filtroCorretor}
+                    onChange={(id) => setFiltroCorretor(typeof id === 'number' ? id : '')}
+                    placeholder="Filtrar por corretor…"
+                  />
+                </div>
+                {filtroCorretor !== '' && (
+                  <button className="btn btn--ghost btn--sm" onClick={() => setFiltroCorretor('')} title="Limpar filtro de corretor">
+                    <Icon name="x" size={12} />
+                  </button>
+                )}
               </div>
             )}
             {/* Filtro por etiqueta de temperatura */}

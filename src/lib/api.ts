@@ -636,7 +636,7 @@ export const Api = {
     request<{ importados: number; enviados: number }>('/integracoes/google/sync', { method: 'POST' }),
 
   // Conversations (VAI WhatsApp)
-  conversations: (params: { q?: string; limit?: number; classificacao?: string } = {}) =>
+  conversations: (params: { q?: string; limit?: number; classificacao?: string; corretorId?: number } = {}) =>
     request<{ pendente: any[]; atendendo: any[]; totalConversas?: number; carregadas?: number; busca?: string | null; vaiConfigured: boolean; metaConfigured: boolean }>(
       `/conversations${qs(params)}`,
     ),
