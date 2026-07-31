@@ -663,9 +663,10 @@ export const Api = {
   // Tradutor do corretor: PT→en/es (mensagem a enviar) ou →pt (mensagem recebida).
   traduzir: (texto: string, idioma: 'en' | 'es' | 'pt') =>
     request<{ traducao: string; idioma: string }>(`/conversations/traduzir`, { method: 'POST', body: { texto, idioma } }),
-  // Transcrição de áudio (Whisper/OpenAI) — recebe a URL do áudio, devolve o texto.
-  transcreverAudio: (url: string) =>
-    request<{ texto: string }>(`/conversations/transcrever`, { method: 'POST', body: { url } }),
+  // Transcrição de áudio (Whisper/OpenAI). Passa o messageId → o backend cacheia
+  // na mensagem e não re-transcreve (nem re-cobra) nas próximas.
+  transcreverAudio: (messageId: number) =>
+    request<{ texto: string; cache?: boolean }>(`/conversations/transcrever`, { method: 'POST', body: { messageId } }),
   // Upload de mídia do chat → R2 (prefixo uploads). Retorna { url, key, size, contentType }.
   conversationUploadMedia: async (file: File) => {
     const form = new FormData();

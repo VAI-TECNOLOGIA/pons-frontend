@@ -1649,11 +1649,14 @@ function AudioBody({ m }: { m: Mensagem }) {
     aplicar(next);
   };
   const transcrever = async () => {
-    if (transcrevendo || !m.fileUrl) return;
+    if (transcrevendo) return;
     if (transcricao) { setTranscricao(null); return; } // toggle: esconde
+    // Cache local: se a mensagem já veio com transcrição, mostra na hora (sem chamar).
+    if ((m as any).transcricao != null) { setTranscricao((m as any).transcricao || '(áudio sem fala reconhecível)'); return; }
+    if (!m.id) return;
     setTranscrevendo(true); setTranscErro(false);
     try {
-      const r = await Api.transcreverAudio(m.fileUrl);
+      const r = await Api.transcreverAudio(m.id);
       setTranscricao(r.texto || '(áudio sem fala reconhecível)');
     } catch { setTranscErro(true); } finally { setTranscrevendo(false); }
   };
