@@ -10,8 +10,13 @@ import { useToast } from '../lib/toast';
 import { useSSE } from '../lib/useSSE';
 import { humanizeErrorReasonFull } from '../lib/meta-errors';
 import { isNativeApp, currentPlatform } from '../lib/platform';
+import { Auth } from '../lib/auth';
 
 import './chat.css';
+
+// Gestor (qualquer papel que não seja corretor comum) vê quem está atendendo cada
+// lead — o corretor comum só enxerga os próprios, então seria redundante pra ele.
+const ehGestorAtendimento = () => Auth.user?.role !== 'CORRETOR';
 
 type Tab = 'pendente' | 'atendendo';
 
@@ -838,6 +843,12 @@ export default function Chat() {
                       c.origem + ' · ' + (c.interesse || '—')
                     )}
                   </div>
+                  {/* Só gestor: corretor que atende este lead */}
+                  {ehGestorAtendimento() && c.corretor?.nome && (
+                    <div className="text-xs" style={{ marginTop: 2, color: 'var(--blue-600)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Icon name="users" size={10} /> {c.corretor.nome}
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -901,6 +912,12 @@ export default function Chat() {
                   <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                     {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                   </span>
+                  {/* Só gestor: quem é o corretor atendendo este lead */}
+                  {ehGestorAtendimento() && (conv as any).corretor?.nome && (
+                    <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }} title="Corretor responsável">
+                      <Icon name="users" size={10} /> {(conv as any).corretor.nome}
+                    </span>
+                  )}
                   {/* Etiqueta de temperatura — clicável pra trocar (popover abre pra baixo) */}
                   <div style={{ position: 'relative', display: 'inline-block' }}>
                     <button
