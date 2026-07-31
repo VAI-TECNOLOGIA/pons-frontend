@@ -5,6 +5,7 @@ import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { Icon } from '../components/Icon';
+import { CorretorPicker } from '../components/CorretorPicker';
 import { timeAgo } from '../lib/format';
 
 // Temperatura do lead (classificacao) — mesma paleta do Atendimento.
@@ -36,6 +37,17 @@ export default function BaseEquipe() {
   }, [data, filtroEquipe]);
   const bases = todasBases.length ? todasBases : (data?.bases || []);
   const temMultiEquipe = bases.length > 1;
+
+  // Só corretores da(s) equipe(s) dos leads selecionados podem receber.
+  const equipesSelecionadas = useMemo(() => {
+    const s = new Set<number>();
+    for (const l of leads) if (sel.has(l.id) && l.equipeId) s.add(l.equipeId);
+    return s;
+  }, [leads, sel]);
+  const corretoresDaEquipe = useMemo(
+    () => (corretores || []).filter((c: any) => c.equipe?.id && equipesSelecionadas.has(c.equipe.id)),
+    [corretores, equipesSelecionadas],
+  );
 
   const toggle = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleTodos = () => setSel((s) => (s.size === leads.length ? new Set() : new Set(leads.map((l) => l.id))));
@@ -80,10 +92,14 @@ export default function BaseEquipe() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginBottom: 12, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, flexWrap: 'wrap' }}>
             <strong>{sel.size} selecionado(s)</strong>
             <span className="text-secondary">→ transferir para:</span>
-            <select className="field__select" style={{ maxWidth: 240 }} value={alvo} onChange={(e) => setAlvo(e.target.value ? Number(e.target.value) : '')}>
-              <option value="">Escolha o corretor…</option>
-              {(corretores || []).map((c: any) => <option key={c.id} value={c.id}>{c.nome}{c.equipe ? ` · ${c.equipe}` : ''}</option>)}
-            </select>
+            <div style={{ minWidth: 260 }}>
+              <CorretorPicker
+                corretores={corretoresDaEquipe}
+                value={alvo}
+                onChange={(id) => setAlvo(typeof id === 'number' ? id : '')}
+                placeholder="Buscar corretor da equipe pelo nome…"
+              />
+            </div>
             <button className="btn btn--primary btn--sm" onClick={transferir} disabled={!alvo || enviando}>
               {enviando ? 'Transferindo…' : 'Transferir'}
             </button>
