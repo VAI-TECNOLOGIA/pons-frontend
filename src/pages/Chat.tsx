@@ -901,8 +901,8 @@ export default function Chat() {
                   <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                     {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                   </span>
-                  {/* Etiqueta de temperatura — clicável pra trocar */}
-                  <div className="quick-wrap" style={{ display: 'inline-block' }}>
+                  {/* Etiqueta de temperatura — clicável pra trocar (popover abre pra baixo) */}
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
                     <button
                       type="button"
                       className="badge"
@@ -916,11 +916,15 @@ export default function Chat() {
                     </button>
                     {tempOpen && (
                       <>
-                        <div className="quick-backdrop" onClick={() => setTempOpen(false)} />
-                        <div className="quick-pop">
-                          <div className="quick-pop__head">Etiqueta do lead</div>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setTempOpen(false)} />
+                        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, minWidth: 150, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, boxShadow: '0 10px 28px rgba(0,0,0,.18)', padding: 6 }}>
                           {TEMPERATURAS.map((t) => (
-                            <button key={t.key} className="quick-item" onClick={() => trocarTemperatura(conv.id, t.key)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button
+                              key={t.key}
+                              type="button"
+                              onClick={() => trocarTemperatura(conv.id, t.key)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'transparent', border: 0, borderRadius: 7, padding: '7px 10px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}
+                            >
                               <span style={{ width: 9, height: 9, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
                               {t.label}
                             </button>
