@@ -1573,9 +1573,9 @@ function AudioBody({ m }: { m: Mensagem }) {
         title="Velocidade de reprodução"
         style={{
           flex: '0 0 auto',
-          border: '1px solid var(--border, #d0d5dd)',
-          background: 'var(--surface, #fff)',
-          color: 'inherit',
+          border: '1px solid var(--border-light)',
+          background: 'var(--bg-card-hover)',
+          color: 'var(--text-secondary)',
           borderRadius: 14,
           padding: '3px 9px',
           fontSize: 12,
