@@ -1970,11 +1970,16 @@ function TemplatePickerModal({
   const toast = useToast();
 
   useEffect(() => {
+    // Templates de SISTEMA/interno que não servem pra disparo manual no atendimento.
+    const OCULTOS = new Set([
+      'redefinir_senha_codigo', 'app_liberado', 'pons_teste', 'sistema_no_ar',
+      'cadastro_confirmado', 'lembrete_agenda', 'chegou_lead', 'lead_novo', 'novo_lead',
+      'venda_protocolo_p1', 'venda_protocolo_p2', 'venda_aprovada_protocolo',
+    ]);
     Api.whatsappTemplates()
-      // Esconde templates de AUTENTICAÇÃO (ex.: redefinir_senha_codigo) — são de
-      // sistema, não servem pra disparo manual no atendimento.
+      // Esconde AUTENTICAÇÃO + os internos acima (sistema/notificação, não atendimento).
       .then((r) => setItems((r.items || []).filter(
-        (t: any) => String(t.category).toUpperCase() !== 'AUTHENTICATION' && t.name !== 'redefinir_senha_codigo',
+        (t: any) => String(t.category).toUpperCase() !== 'AUTHENTICATION' && !OCULTOS.has(t.name),
       )))
       .catch((e) => toast.error('Erro ao carregar templates: ' + e.message))
       .finally(() => setLoading(false));
