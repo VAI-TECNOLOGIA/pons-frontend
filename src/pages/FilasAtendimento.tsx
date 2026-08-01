@@ -489,13 +489,21 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
                           style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 13 }}>
                           + Adicionar “{buscaCampanha.trim()}” (digitado)
                         </button>
-                      ) : sugestoes.map((s) => (
-                        <button key={s.campanha} type="button" onMouseDown={(e) => { e.preventDefault(); addTermo(s.campanha); }}
-                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                          <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.campanha}</div>
-                          <div className="text-xs text-secondary">{s.anuncios > 0 ? `${s.anuncios} anúncio(s) ativo(s)` : ''}{s.anuncios > 0 && s.leads > 0 ? ' · ' : ''}{s.leads > 0 ? `${s.leads} lead(s)` : ''}</div>
-                        </button>
-                      ))}
+                      ) : sugestoes.map((s) => {
+                        const jaSelecionada = termos.includes(s.campanha);
+                        return (
+                          <button key={s.campanha} type="button"
+                            onMouseDown={(e) => { e.preventDefault(); jaSelecionada ? removeTermo(s.campanha) : addTermo(s.campanha); }}
+                            title={jaSelecionada ? 'Já adicionada — clique pra remover' : 'Clique pra adicionar'}
+                            style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: jaSelecionada ? 'rgba(37,99,235,0.12)' : 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                            {jaSelecionada && <span style={{ flexShrink: 0, color: 'var(--pons-blue)', display: 'inline-flex' }}><Icon name="check" size={14} /></span>}
+                            <span style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: jaSelecionada ? 'var(--pons-blue)' : undefined }}>{s.campanha}</div>
+                              <div className="text-xs text-secondary">{jaSelecionada ? 'Adicionada' : ''}{jaSelecionada && (s.anuncios > 0 || s.leads > 0) ? ' · ' : ''}{s.anuncios > 0 ? `${s.anuncios} anúncio(s) ativo(s)` : ''}{s.anuncios > 0 && s.leads > 0 ? ' · ' : ''}{s.leads > 0 ? `${s.leads} lead(s)` : ''}</div>
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </>
