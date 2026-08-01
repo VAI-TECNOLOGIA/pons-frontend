@@ -80,16 +80,35 @@ export default function MinhasFilas() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
-          {filas.map((f) => (
-            <div key={f.id} className="card" style={{ padding: 16, opacity: f.pausado ? 0.7 : 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>{f.nome}</div>
-              {f.pausado ? (
-                <div className="text-sm" style={{ color: '#B45309', fontWeight: 600 }}>Pausado</div>
-              ) : (
-                <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--pons-blue, #0E7C9B)' }}>{f.posicao ?? '—'}º</div>
-              )}
-            </div>
-          ))}
+          {filas.map((f) => {
+            const proximo = f.posicao === 1;
+            const faltam = f.posicao ? f.posicao - 1 : null;
+            return (
+              <div key={f.id} className="card" style={{ padding: 16, opacity: f.pausado ? 0.7 : 1, borderLeft: !f.pausado && proximo ? '4px solid #16A34A' : undefined }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>{f.nome}</div>
+                {f.pausado ? (
+                  <div className="text-sm" style={{ color: '#B45309', fontWeight: 600 }}>Pausado</div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                      <span style={{ fontSize: 34, fontWeight: 800, color: proximo ? '#16A34A' : 'var(--pons-blue, #0E7C9B)' }}>{f.posicao ?? '—'}º</span>
+                      <span className="text-xs text-secondary">de {f.totalNaFila} na fila</span>
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: proximo ? '#16A34A' : 'var(--text-primary)' }}>
+                      {proximo
+                        ? 'Você é o PRÓXIMO a receber!'
+                        : faltam === 1
+                          ? 'Falta 1 pessoa antes de você'
+                          : `Faltam ${faltam} pessoas antes de você`}
+                    </div>
+                    <div className="text-xs text-secondary" style={{ marginTop: 4 }}>
+                      A cada lead que entra, quem recebe vai pro fim e você sobe uma posição. Já recebeu {f.totalRecebidos} nesta fila.
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </Shell>
