@@ -58,7 +58,7 @@ export default function BaseEquipe() {
     if (!sel.size || !alvo) return;
     setEnviando(true);
     try {
-      const r = await Api.bolsaoDirecionar({ leadIds: [...sel], corretorId: Number(alvo) });
+      const r = await Api.bolsaoDirecionar({ leadIds: [...sel], corretorId: Number(alvo), assumir: true });
       toast.success(`${r.direcionados} lead(s) transferido(s).${r.jaAtribuidos ? ` ${r.jaAtribuidos} já estavam com corretor.` : ''}`);
       setSel(new Set()); setAlvo('');
       reload();

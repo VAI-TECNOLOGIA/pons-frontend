@@ -887,7 +887,7 @@ export const Api = {
   // Bolsão de Oportunidades (leads sem corretor) + direcionamento
   bolsaoOportunidades: (params: any = {}) => request<{ total: number; page: number; pageSize: number; leads: any[] }>(`/bolsoes/oportunidades${qs(params)}`),
   bolsaoOportunidadesIds: (params: any = {}) => request<{ ids: number[] }>(`/bolsoes/oportunidades/ids${qs(params)}`),
-  bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number; telefoneVisivel?: boolean }) =>
+  bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number; telefoneVisivel?: boolean; assumir?: boolean }) =>
     request<{ direcionados: number; jaAtribuidos: number; porCorretor: Record<string, number> }>('/bolsoes/direcionar', { method: 'POST', body }),
   // Base de leads da equipe (leads de corretores desativados; o gestor redistribui).
   baseEquipe: (params: { equipeId?: number; classificacao?: string } = {}) =>
