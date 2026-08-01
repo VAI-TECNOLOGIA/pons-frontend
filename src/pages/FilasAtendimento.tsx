@@ -313,7 +313,8 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const { data: templatesResp } = useApi<{ items: any[] }>(() => Api.whatsappTemplates());
   const templatesAprovados = (templatesResp?.items || []).filter((t: any) => t.status === 'APPROVED');
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
-  const { data: campanhasVistas } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaCampanhas());
+  const { data: campanhasVistas } = useApi<{ nome: string; id: string | null; leads: number }[]>(() => Api.roletaCampanhas());
+  const [buscaCampanha, setBuscaCampanha] = useState('');
 
   const forasDaFila = corretores.filter((c) => c.ativo && !naFila.includes(c.id));
   const nesta = corretores.filter((c) => naFila.includes(c.id));
@@ -431,38 +432,60 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
             </div>
           </div>
           <div className="field">
-            <label className="field__label">Filtro de campanha (anúncio WhatsApp)</label>
-            <input
-              className="field__input"
-              value={campanhaFiltro}
-              placeholder="ex.: Conecta 2ª Avenida"
-              list="fila-campanhas-vistas"
-              onChange={(e) => {
-                const v = e.target.value;
-                setCampanhaFiltro(v);
-                // Campanha de WhatsApp (clique no anúncio → WhatsApp) chega como
-                // META_ADS — já sugere a origem quando ainda estiver vazia (editável).
-                if (v.trim() && !origemFiltro) setOrigemFiltro('META_ADS');
-              }}
-            />
-            {/* Autocomplete das campanhas que JÁ trouxeram lead (título do anúncio). */}
-            <datalist id="fila-campanhas-vistas">
-              {(campanhasVistas || []).map((c) => <option key={c.nome} value={c.nome}>{c.leads} lead(s)</option>)}
-            </datalist>
-            {/* Preview ao vivo: com quais campanhas já vistas o texto casa. */}
-            {campanhaFiltro.trim() && (() => {
-              const q = campanhaFiltro.trim().toLowerCase();
-              const casa = (campanhasVistas || []).filter((c) => String(c.nome).toLowerCase().includes(q));
-              return casa.length ? (
-                <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                  <span className="text-xs text-secondary">casa com:</span>
-                  {casa.slice(0, 6).map((c) => <span key={c.nome} className="badge badge--launch" style={{ fontSize: 11 }}>{c.nome} · {c.leads}</span>)}
-                </div>
-              ) : (
-                <div className="text-xs text-secondary" style={{ marginTop: 6 }}>Nenhuma campanha já vista casa com esse texto — ok se for campanha nova (o título vem no 1º lead).</div>
+            <label className="field__label">Anúncios da campanha (WhatsApp)</label>
+            {(() => {
+              const termos = campanhaFiltro.split(',').map((s: string) => s.trim()).filter(Boolean);
+              const addTermo = (t: string) => {
+                const v = t.trim();
+                if (!v || termos.includes(v)) return;
+                setCampanhaFiltro([...termos, v].join(', '));
+                if (!origemFiltro) setOrigemFiltro('META_ADS');
+                setBuscaCampanha('');
+              };
+              const removeTermo = (t: string) => setCampanhaFiltro(termos.filter((x: string) => x !== t).join(', '));
+              const q = buscaCampanha.trim().toLowerCase();
+              const sugestoes = (campanhasVistas || [])
+                .filter((c) => !q || String(c.nome).toLowerCase().includes(q) || String(c.id || '').toLowerCase().includes(q))
+                .slice(0, 8);
+              return (
+                <>
+                  {/* Chips dos anúncios já adicionados */}
+                  {termos.length > 0 && (
+                    <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                      {termos.map((t: string) => (
+                        <span key={t} className="badge badge--launch" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          {t}
+                          <button type="button" onClick={() => removeTermo(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'inline-flex' }} title="Remover"><Icon name="x" size={10} /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {/* Busca por título OU ID do anúncio */}
+                  <input
+                    className="field__input"
+                    value={buscaCampanha}
+                    placeholder="Buscar anúncio por nome ou ID… (Enter adiciona)"
+                    onChange={(e) => setBuscaCampanha(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTermo(buscaCampanha); } }}
+                  />
+                  {q && (
+                    <div style={{ marginTop: 4, border: '1px solid var(--border-light)', borderRadius: 8, overflow: 'hidden' }}>
+                      {sugestoes.length === 0 ? (
+                        <button type="button" className="quick-item" onClick={() => addTermo(buscaCampanha)} style={{ width: '100%', textAlign: 'left' }}>
+                          + Adicionar "{buscaCampanha.trim()}" (anúncio novo)
+                        </button>
+                      ) : sugestoes.map((c) => (
+                        <button key={(c.id || '') + c.nome} type="button" className="quick-item" onClick={() => addTermo(c.id || c.nome)} style={{ width: '100%', textAlign: 'left' }}>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{c.nome}</div>
+                          <div className="text-xs text-secondary">ID: {c.id || '—'} · {c.leads} lead(s)</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               );
             })()}
-            <div className="field__hint">Vincula campanha de WhatsApp (clique no anúncio → WhatsApp, sem formulário): casa quando o título do anúncio contém este texto. As campanhas que já trouxeram lead aparecem na lista; campanha nova é só digitar o título. Vazio = qualquer campanha.</div>
+            <div className="field__hint">Adicione um ou VÁRIOS anúncios (por nome/título ou pelo ID do anúncio). A fila pega o lead se ele vier de qualquer um deles. Vazio = qualquer anúncio de WhatsApp. Dica: o ID é mais preciso que o título (o título pode se repetir entre anúncios).</div>
           </div>
           <div className="field">
             <label className="field__label">Template automático (mensagem que dispara no 1º contato)</label>

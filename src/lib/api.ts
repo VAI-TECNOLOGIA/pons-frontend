@@ -527,7 +527,7 @@ export const Api = {
     request<{ ok: boolean; arquivados: number }>('/leads/arquivar', { method: 'POST', body: { leadIds } }),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
   roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
-  roletaCampanhas: () => request<{ nome: string; leads: number }[]>('/roletas/campanhas'),
+  roletaCampanhas: () => request<{ nome: string; id: string | null; leads: number }[]>('/roletas/campanhas'),
   // Histórico de alterações das filas (auditoria antes/depois)
   roletaHistorico: () => request<{ id: number; roletaId: number | null; roletaNome: string; acao: string; userNome: string | null; antes: any; depois: any; createdAt: string }[]>('/roletas/historico'),
   roletaSimular: (data: any) => request<any>('/roletas/simular', { method: 'POST', body: data }),
