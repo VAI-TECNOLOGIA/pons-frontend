@@ -449,15 +449,19 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
                 .slice(0, 8);
               return (
                 <>
-                  {/* Chips dos anúncios já adicionados */}
+                  {/* Chips dos anúncios já adicionados (mostra o nome quando o termo é um ID conhecido) */}
                   {termos.length > 0 && (
                     <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                      {termos.map((t: string) => (
-                        <span key={t} className="badge badge--launch" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          {t}
-                          <button type="button" onClick={() => removeTermo(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'inline-flex' }} title="Remover"><Icon name="x" size={10} /></button>
-                        </span>
-                      ))}
+                      {termos.map((t: string) => {
+                        const achado = (campanhasVistas || []).find((c) => c.id === t || c.nome === t);
+                        const rotulo = achado ? achado.nome : t;
+                        return (
+                          <span key={t} className="badge badge--launch" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 5, maxWidth: 260 }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={achado?.id ? `ID: ${achado.id}` : t}>{rotulo}</span>
+                            <button type="button" onClick={() => removeTermo(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'inline-flex', flexShrink: 0 }} title="Remover"><Icon name="x" size={10} /></button>
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                   {/* Busca por título OU ID do anúncio */}
@@ -469,13 +473,22 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTermo(buscaCampanha); } }}
                   />
                   {q && (
-                    <div style={{ marginTop: 4, border: '1px solid var(--border-light)', borderRadius: 8, overflow: 'hidden' }}>
+                    <div style={{ marginTop: 4, border: '1px solid var(--border-light)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)' }}>
                       {sugestoes.length === 0 ? (
-                        <button type="button" className="quick-item" onClick={() => addTermo(buscaCampanha)} style={{ width: '100%', textAlign: 'left' }}>
-                          + Adicionar "{buscaCampanha.trim()}" (anúncio novo)
+                        <button
+                          type="button"
+                          onMouseDown={(e) => { e.preventDefault(); addTermo(buscaCampanha); }}
+                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 13 }}
+                        >
+                          + Adicionar “{buscaCampanha.trim()}” (anúncio novo)
                         </button>
                       ) : sugestoes.map((c) => (
-                        <button key={(c.id || '') + c.nome} type="button" className="quick-item" onClick={() => addTermo(c.id || c.nome)} style={{ width: '100%', textAlign: 'left' }}>
+                        <button
+                          key={(c.id || '') + c.nome}
+                          type="button"
+                          onMouseDown={(e) => { e.preventDefault(); addTermo(c.id || c.nome); }}
+                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--text-primary)' }}
+                        >
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{c.nome}</div>
                           <div className="text-xs text-secondary">ID: {c.id || '—'} · {c.leads} lead(s)</div>
                         </button>
