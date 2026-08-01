@@ -528,6 +528,8 @@ export const Api = {
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
   roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
   roletaCampanhas: () => request<{ nome: string; id: string | null; leads: number }[]>('/roletas/campanhas'),
+  // Anúncios ATIVOS direto do Meta (pra configurar a fila antes de entrar lead).
+  anunciosMeta: () => request<{ anuncios: { id: string; anuncio: string; campanha: string | null }[]; erro?: string }>('/roletas/anuncios-meta'),
   // Histórico de alterações das filas (auditoria antes/depois)
   roletaHistorico: () => request<{ id: number; roletaId: number | null; roletaNome: string; acao: string; userNome: string | null; antes: any; depois: any; createdAt: string }[]>('/roletas/historico'),
   roletaSimular: (data: any) => request<any>('/roletas/simular', { method: 'POST', body: data }),

@@ -314,6 +314,8 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const templatesAprovados = (templatesResp?.items || []).filter((t: any) => t.status === 'APPROVED');
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
   const { data: campanhasVistas } = useApi<{ nome: string; id: string | null; leads: number }[]>(() => Api.roletaCampanhas());
+  // Anúncios ATIVOS do Meta — pra configurar a fila ANTES de entrar lead (com nome da campanha).
+  const { data: anunciosMeta } = useApi<{ anuncios: { id: string; anuncio: string; campanha: string | null }[]; erro?: string }>(() => Api.anunciosMeta());
   const [buscaCampanha, setBuscaCampanha] = useState('');
 
   const forasDaFila = corretores.filter((c) => c.ativo && !naFila.includes(c.id));
@@ -444,53 +446,56 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
               };
               const removeTermo = (t: string) => setCampanhaFiltro(termos.filter((x: string) => x !== t).join(', '));
               const q = buscaCampanha.trim().toLowerCase();
-              const sugestoes = (campanhasVistas || [])
-                .filter((c) => !q || String(c.nome).toLowerCase().includes(q) || String(c.id || '').toLowerCase().includes(q))
-                .slice(0, 8);
+              // Fonte 1: anúncios ATIVOS do Meta (com nome da campanha) — antes de entrar lead.
+              // Fonte 2: anúncios que já trouxeram lead (banco), pros que não vêm do Meta.
+              type Sug = { id: string; campanha: string; anuncio: string; leads: number | null };
+              const porId = new Map<string, Sug>();
+              for (const a of anunciosMeta?.anuncios || []) {
+                porId.set(a.id, { id: a.id, campanha: a.campanha || a.anuncio || a.id, anuncio: a.anuncio || '', leads: null });
+              }
+              for (const c of campanhasVistas || []) {
+                if (c.id && !porId.has(c.id)) porId.set(c.id, { id: c.id, campanha: c.nome, anuncio: '', leads: c.leads });
+                else if (c.id && porId.has(c.id)) porId.get(c.id)!.leads = c.leads;
+              }
+              const todas = [...porId.values()];
+              const sugestoes = todas
+                .filter((s) => !q || s.campanha.toLowerCase().includes(q) || s.anuncio.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+                .slice(0, 10);
+              const rotuloDe = (t: string) => porId.get(t)?.campanha || t;
               return (
                 <>
-                  {/* Chips dos anúncios já adicionados (mostra o nome quando o termo é um ID conhecido) */}
+                  {/* Chips dos anúncios adicionados (mostra o nome da campanha quando é um ID conhecido) */}
                   {termos.length > 0 && (
                     <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                      {termos.map((t: string) => {
-                        const achado = (campanhasVistas || []).find((c) => c.id === t || c.nome === t);
-                        const rotulo = achado ? achado.nome : t;
-                        return (
-                          <span key={t} className="badge badge--launch" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 5, maxWidth: 260 }}>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={achado?.id ? `ID: ${achado.id}` : t}>{rotulo}</span>
-                            <button type="button" onClick={() => removeTermo(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'inline-flex', flexShrink: 0 }} title="Remover"><Icon name="x" size={10} /></button>
-                          </span>
-                        );
-                      })}
+                      {termos.map((t: string) => (
+                        <span key={t} className="badge badge--launch" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 5, maxWidth: 280 }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`ID: ${t}`}>{rotuloDe(t)}</span>
+                          <button type="button" onClick={() => removeTermo(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, display: 'inline-flex', flexShrink: 0 }} title="Remover"><Icon name="x" size={10} /></button>
+                        </span>
+                      ))}
                     </div>
                   )}
-                  {/* Busca por título OU ID do anúncio */}
                   <input
                     className="field__input"
                     value={buscaCampanha}
-                    placeholder="Buscar anúncio por nome ou ID… (Enter adiciona)"
+                    placeholder="Buscar anúncio por campanha, nome ou ID… (Enter adiciona)"
                     onChange={(e) => setBuscaCampanha(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTermo(buscaCampanha); } }}
                   />
                   {q && (
-                    <div style={{ marginTop: 4, border: '1px solid var(--border-light)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)' }}>
+                    <div style={{ marginTop: 4, border: '1px solid var(--border-light)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)', maxHeight: 260, overflowY: 'auto' }}>
                       {sugestoes.length === 0 ? (
-                        <button
-                          type="button"
-                          onMouseDown={(e) => { e.preventDefault(); addTermo(buscaCampanha); }}
-                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 13 }}
-                        >
-                          + Adicionar “{buscaCampanha.trim()}” (anúncio novo)
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); addTermo(buscaCampanha); }}
+                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 13 }}>
+                          + Adicionar “{buscaCampanha.trim()}” (digitado)
                         </button>
-                      ) : sugestoes.map((c) => (
-                        <button
-                          key={(c.id || '') + c.nome}
-                          type="button"
-                          onMouseDown={(e) => { e.preventDefault(); addTermo(c.id || c.nome); }}
-                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--text-primary)' }}
-                        >
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{c.nome}</div>
-                          <div className="text-xs text-secondary">ID: {c.id || '—'} · {c.leads} lead(s)</div>
+                      ) : sugestoes.map((s) => (
+                        <button key={s.id} type="button" onMouseDown={(e) => { e.preventDefault(); addTermo(s.id); }}
+                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.campanha}</div>
+                          <div className="text-xs text-secondary" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {s.anuncio ? `${s.anuncio} · ` : ''}ID {s.id}{s.leads != null ? ` · ${s.leads} lead(s)` : ' · ativo'}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -498,7 +503,7 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
                 </>
               );
             })()}
-            <div className="field__hint">Adicione um ou VÁRIOS anúncios (por nome/título ou pelo ID do anúncio). A fila pega o lead se ele vier de qualquer um deles. Vazio = qualquer anúncio de WhatsApp. Dica: o ID é mais preciso que o título (o título pode se repetir entre anúncios).</div>
+            <div className="field__hint">Configure ANTES de rodar a campanha — os anúncios <strong>ativos</strong> do Meta já aparecem na busca (por nome da campanha, do anúncio ou ID). Adicione um ou vários. Vazio = qualquer anúncio de WhatsApp.{anunciosMeta?.erro ? ' (não consegui puxar do Meta agora — digite o ID/nome manualmente)' : ''}</div>
           </div>
           <div className="field">
             <label className="field__label">Template automático (mensagem que dispara no 1º contato)</label>
