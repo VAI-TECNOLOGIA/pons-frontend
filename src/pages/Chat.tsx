@@ -113,6 +113,9 @@ export default function Chat() {
   useEffect(() => {
     const leadParam = Number(searchParams.get('lead'));
     if (leadParam) setActiveId(leadParam);
+    // Deep-link do aviso de follow-up: /chat?filtro=parados|aguardando
+    const f = searchParams.get('filtro');
+    if (f === 'parados' || f === 'aguardando') setFiltroFollowup(f);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [draft, setDraft] = useState('');
@@ -134,12 +137,14 @@ export default function Chat() {
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
   const [filtroTemp, setFiltroTemp] = useState<string>(''); // filtro de temperatura no inbox
   const [filtroCorretor, setFiltroCorretor] = useState<number | ''>(''); // filtro por corretor (gestor)
+  const [filtroFollowup, setFiltroFollowup] = useState<'' | 'aguardando' | 'parados'>(''); // follow-up
   const [tempOpen, setTempOpen] = useState(false); // popover pra trocar a temperatura do lead
   const [traduzOpen, setTraduzOpen] = useState(false); // popover do tradutor (saída)
   const [traduzindo, setTraduzindo] = useState(false);
   const [draftPreTraducao, setDraftPreTraducao] = useState<string | null>(null); // p/ desfazer a tradução
   const [notaMode, setNotaMode] = useState(false); // composer em modo NOTA interna (não envia pro lead)
   const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
+  const [retornoOpen, setRetornoOpen] = useState(false); // popover "agendar retorno"
   const [recording, setRecording] = useState(false); // gravando áudio
   const [recSecs, setRecSecs] = useState(0);
   const [recSending, setRecSending] = useState(false);
@@ -173,7 +178,7 @@ export default function Chat() {
   const [limite, setLimite] = useState(80);
   const [buscaDeb, setBuscaDeb] = useState('');
   useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 350); return () => clearTimeout(t); }, [busca]);
-  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined, corretorId: filtroCorretor || undefined }), [buscaDeb, limite, filtroTemp, filtroCorretor]);
+  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined, corretorId: filtroCorretor || undefined, filtro: filtroFollowup || undefined }), [buscaDeb, limite, filtroTemp, filtroCorretor, filtroFollowup]);
   // Lista de corretores (pro filtro do gestor) — só carrega pra quem não é corretor comum.
   const { data: corretoresFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.corretores() : Promise.resolve([])), []);
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
@@ -425,6 +430,18 @@ export default function Chat() {
       toast.error('Erro: ' + (err?.message || 'falha'));
     } finally {
       setLiberarSending(false);
+    }
+  };
+
+  const agendarRetorno = async (horas: number, label: string) => {
+    if (!activeId) return;
+    setRetornoOpen(false);
+    try {
+      await Api.agendarRetorno(activeId, horas);
+      toast.success(`Retorno agendado ${label}. Você recebe um lembrete no WhatsApp.`);
+      reloadConv();
+    } catch (e: any) {
+      toast.error('Erro ao agendar: ' + (e?.message || 'falha'));
     }
   };
 
@@ -776,6 +793,23 @@ export default function Chat() {
                 />
               </div>
             )}
+            {/* Follow-up: aguardando resposta / parados (com contagem) */}
+            <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setFiltroFollowup(filtroFollowup === 'aguardando' ? '' : 'aguardando')}
+                title="Leads onde o cliente falou por último e espera sua resposta"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${filtroFollowup === 'aguardando' ? '#D97706' : 'var(--border-light)'}`, background: filtroFollowup === 'aguardando' ? 'rgba(245,158,11,0.18)' : 'transparent', color: filtroFollowup === 'aguardando' ? '#D97706' : 'var(--text-secondary)' }}>
+                <Icon name="clock" size={11} /> Aguardando resposta{inbox?.countAguardando ? ` (${inbox.countAguardando})` : ''}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroFollowup(filtroFollowup === 'parados' ? '' : 'parados')}
+                title="Leads sem nenhuma interação há mais de 1 dia — precisam de retorno"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${filtroFollowup === 'parados' ? '#DC2626' : 'var(--border-light)'}`, background: filtroFollowup === 'parados' ? 'rgba(220,38,38,0.15)' : 'transparent', color: filtroFollowup === 'parados' ? '#DC2626' : 'var(--text-secondary)' }}>
+                <Icon name="warn" size={11} /> Parados +1d{inbox?.countParados ? ` (${inbox.countParados})` : ''}
+              </button>
+            </div>
             {/* Filtro por etiqueta de temperatura */}
             <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
               <button
@@ -1016,6 +1050,29 @@ export default function Chat() {
                     )}
                     {conv.reservado && (
                       <>
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <button className="btn btn--ghost btn--sm" onClick={() => setRetornoOpen((o) => !o)} title="Me lembrar de dar retorno a este lead">
+                            <Icon name="clock" size={12} /> Agendar retorno
+                          </button>
+                          {retornoOpen && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setRetornoOpen(false)} />
+                              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 50, minWidth: 170, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, boxShadow: '0 10px 28px rgba(0,0,0,.18)', padding: 6 }}>
+                                {[
+                                  { h: 3, l: 'Em 3 horas' },
+                                  { h: 24, l: 'Amanhã' },
+                                  { h: 48, l: 'Em 2 dias' },
+                                  { h: 168, l: 'Em 1 semana' },
+                                ].map((o) => (
+                                  <button key={o.h} type="button" onClick={() => agendarRetorno(o.h, o.l.toLowerCase())}
+                                    style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, borderRadius: 7, padding: '7px 10px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>
+                                    {o.l}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <button className="btn btn--ghost btn--sm" onClick={abrirTabular} title="Registrar desfecho do lead (motivo). Pode devolver à base.">
                           <Icon name="warn" size={12} /> Tabular
                         </button>

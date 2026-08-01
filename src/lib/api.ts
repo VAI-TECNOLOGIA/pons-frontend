@@ -638,10 +638,13 @@ export const Api = {
     request<{ importados: number; enviados: number }>('/integracoes/google/sync', { method: 'POST' }),
 
   // Conversations (VAI WhatsApp)
-  conversations: (params: { q?: string; limit?: number; classificacao?: string; corretorId?: number } = {}) =>
-    request<{ pendente: any[]; atendendo: any[]; totalConversas?: number; carregadas?: number; busca?: string | null; vaiConfigured: boolean; metaConfigured: boolean }>(
+  conversations: (params: { q?: string; limit?: number; classificacao?: string; corretorId?: number; filtro?: string } = {}) =>
+    request<{ pendente: any[]; atendendo: any[]; totalConversas?: number; carregadas?: number; countAguardando?: number; countParados?: number; busca?: string | null; vaiConfigured: boolean; metaConfigured: boolean }>(
       `/conversations${qs(params)}`,
     ),
+  // "Me lembra de falar com esse lead depois" — cria tarefa c/ lembrete WhatsApp.
+  agendarRetorno: (leadId: number, horas: number) =>
+    request<{ ok: boolean; tarefaId: number; quando: string }>(`/conversations/${leadId}/agendar-retorno`, { method: 'POST', body: { horas } }),
   conversationGet: (leadId: number) => request<any>(`/conversations/${leadId}`),
   // Etiqueta de temperatura do lead (Quente/Morno/Frio) no Atendimento.
   setClassificacao: (leadId: number, classificacao: 'NOVO' | 'QUENTE' | 'MORNO' | 'FRIO') =>
