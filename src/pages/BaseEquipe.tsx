@@ -19,13 +19,14 @@ const temp = (c?: string) => TEMP[c || 'NOVO'] || TEMP.NOVO;
 
 export default function BaseEquipe() {
   const [filtroEquipe, setFiltroEquipe] = useState<number | ''>('');
+  const [filtroTemp, setFiltroTemp] = useState<string>('');
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [alvo, setAlvo] = useState<number | ''>('');
   const [enviando, setEnviando] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
-  const params = useMemo(() => (filtroEquipe ? { equipeId: Number(filtroEquipe) } : {}), [filtroEquipe]);
+  const params = useMemo(() => ({ ...(filtroEquipe ? { equipeId: Number(filtroEquipe) } : {}), ...(filtroTemp ? { classificacao: filtroTemp } : {}) }), [filtroEquipe, filtroTemp]);
   const { data, loading, reload } = useApi<{ bases: any[]; leads: any[] }>(() => Api.baseEquipe(params), [JSON.stringify(params)]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
 
@@ -78,15 +79,31 @@ export default function BaseEquipe() {
           subtitle="Leads de corretores desativados da sua equipe. Escolha pra quem transferir — a data vira o dia da transferência e o histórico da conversa é preservado."
         />
 
-        {/* Filtro por equipe (quando o gestor tem mais de uma base) */}
-        {temMultiEquipe && (
-          <div style={{ margin: '8px 0 12px' }}>
+        {/* Filtros: equipe (se +1 base) + temperatura */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '8px 0 12px' }}>
+          {temMultiEquipe && (
             <select className="field__select" style={{ maxWidth: 260 }} value={filtroEquipe} onChange={(e) => { setFiltroEquipe(e.target.value ? Number(e.target.value) : ''); setSel(new Set()); }}>
               <option value="">Todas as equipes</option>
               {bases.map((b) => <option key={b.id} value={b.equipeId}>{b.equipe || `Base ${b.id}`}</option>)}
             </select>
+          )}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => { setFiltroTemp(''); setSel(new Set()); }}
+              style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: '1px solid var(--border-light)', background: filtroTemp === '' ? 'var(--bg-card-hover)' : 'transparent', color: 'var(--text-secondary)' }}>
+              Todas
+            </button>
+            {Object.entries(TEMP).map(([key, t]) => {
+              const on = filtroTemp === key;
+              return (
+                <button key={key} type="button" onClick={() => { setFiltroTemp(on ? '' : key); setSel(new Set()); }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${on ? t.cor : 'var(--border-light)'}`, background: on ? t.bg : 'transparent', color: on ? t.cor : 'var(--text-secondary)' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         {/* Barra de transferência */}
         {sel.size > 0 && (
