@@ -51,6 +51,7 @@ export default function Leads() {
  const [dataInicial, setDataInicial] = useState('');
  const [dataFinal, setDataFinal] = useState('');
  const [semFollowup, setSemFollowup] = useState(false); // KPI "Sem follow-up"
+ const [novosHoje, setNovosHoje] = useState(false); // KPI "Novos hoje"
  const [kpiAtivo, setKpiAtivo] = useState<'' | 'novos' | 'negociacao' | 'semfollowup'>(''); // qual card está selecionado
  const [busca, setBusca] = useState('');
  const [buscaDeb, setBuscaDeb] = useState('');
@@ -77,6 +78,7 @@ export default function Leads() {
  if (dataInicial) params.dataInicial = dataInicial;
  if (dataFinal) params.dataFinal = dataFinal;
  if (semFollowup) params.semFollowup = 'true';
+ if (novosHoje) params.novosHoje = 'true';
  if (buscaDeb) params.q = buscaDeb;
  const paramsKey = JSON.stringify(params);
 
@@ -145,21 +147,21 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length || semFollowup);
+ const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length || semFollowup || novosHoje);
  const limparFiltros = () => {
  setFilterStatus([]); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
- setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setKpiAtivo(''); setBusca(''); setBuscaDeb(''); setPage(1);
+ setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setNovosHoje(false); setKpiAtivo(''); setBusca(''); setBuscaDeb(''); setPage(1);
  };
  // Clicar num KPI (card) aplica o filtro correspondente. Toggle: clicar de novo limpa.
  const NEGOCIACAO_STATUS = ['NEGOCIANDO', 'PROPOSTA', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA'];
  const aplicarKpi = (kpi: 'novos' | 'negociacao' | 'semfollowup') => {
  // sempre zera os filtros que os KPIs controlam, pra não somar/conflitar
- setFilterStatus([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setPage(1);
+ setFilterStatus([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setNovosHoje(false); setPage(1);
  if (kpiAtivo === kpi) { setKpiAtivo(''); return; } // toggle off
  setKpiAtivo(kpi);
- if (kpi === 'novos') { const hoje = new Date().toISOString().slice(0, 10); setDataInicial(hoje); setDataFinal(hoje); }
- else if (kpi === 'negociacao') { setFilterStatus(NEGOCIACAO_STATUS); }
- else if (kpi === 'semfollowup') { setSemFollowup(true); }
+ if (kpi === 'novos') setNovosHoje(true);
+ else if (kpi === 'negociacao') setFilterStatus(NEGOCIACAO_STATUS);
+ else if (kpi === 'semfollowup') setSemFollowup(true);
  };
  // troca de filtro sempre volta pra página 1
  const aoFiltrar = (setter: (v: any) => void) => (v: any) => { setter(v); setPage(1); };
