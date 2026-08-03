@@ -137,6 +137,7 @@ export default function Chat() {
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
   const [filtroTemp, setFiltroTemp] = useState<string>(''); // filtro de temperatura no inbox
   const [filtroCorretor, setFiltroCorretor] = useState<number | ''>(''); // filtro por corretor (gestor)
+  const [filtroEquipe, setFiltroEquipe] = useState<number | ''>(''); // filtro por equipe (gestor que vê +1 equipe)
   const [filtroFollowup, setFiltroFollowup] = useState<'' | 'aguardando' | 'parados'>(''); // follow-up
   const [tempOpen, setTempOpen] = useState(false); // popover pra trocar a temperatura do lead
   const [traduzOpen, setTraduzOpen] = useState(false); // popover do tradutor (saída)
@@ -178,9 +179,11 @@ export default function Chat() {
   const [limite, setLimite] = useState(80);
   const [buscaDeb, setBuscaDeb] = useState('');
   useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 350); return () => clearTimeout(t); }, [busca]);
-  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined, corretorId: filtroCorretor || undefined, filtro: filtroFollowup || undefined }), [buscaDeb, limite, filtroTemp, filtroCorretor, filtroFollowup]);
+  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined, corretorId: filtroCorretor || undefined, equipeId: filtroEquipe || undefined, filtro: filtroFollowup || undefined }), [buscaDeb, limite, filtroTemp, filtroCorretor, filtroEquipe, filtroFollowup]);
   // Lista de corretores (pro filtro do gestor) — só carrega pra quem não é corretor comum.
   const { data: corretoresFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.corretores() : Promise.resolve([])), []);
+  // Equipes no escopo do usuário (pro filtro por equipe). Só mostra o filtro se vê +1.
+  const { data: equipesFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.equipes() : Promise.resolve([])), []);
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
   const { data: tabMotivos } = useApi<Array<{ codigo: string; label: string; devolveBase?: boolean }>>(() => Api.tabulacaoMotivos());
   const { data: conv, reload: reloadConv } = useApi<ConversationDetail>(
@@ -783,11 +786,26 @@ export default function Chat() {
                 {buscaDeb ? `${inbox.carregadas} resultado(s)` : `${inbox.carregadas} de ${inbox.totalConversas} conversas`}
               </div>
             )}
+            {/* Filtro por equipe — só pra quem vê MAIS DE UMA equipe (some pra quem
+                comanda uma só, tipo Leiken/Vine na 2ª Avenida). */}
+            {ehGestorAtendimento() && (equipesFiltro?.length || 0) > 1 && (
+              <div style={{ marginTop: 8 }}>
+                <select
+                  className="field__input"
+                  style={{ width: '100%', height: 38 }}
+                  value={filtroEquipe}
+                  onChange={(e) => { setFiltroEquipe(e.target.value ? Number(e.target.value) : ''); setFiltroCorretor(''); }}
+                >
+                  <option value="">Todas as equipes</option>
+                  {(equipesFiltro || []).map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+                </select>
+              </div>
+            )}
             {/* Só gestor: filtrar o inbox pelos atendimentos de um corretor específico */}
             {ehGestorAtendimento() && (
               <div style={{ marginTop: 8 }}>
                 <CorretorPicker
-                  corretores={corretoresFiltro}
+                  corretores={filtroEquipe ? (corretoresFiltro || []).filter((c: any) => (c.equipe?.id ?? c.equipeId) === filtroEquipe) : corretoresFiltro}
                   value={filtroCorretor}
                   onChange={(id) => setFiltroCorretor(typeof id === 'number' ? id : '')}
                   placeholder="Filtrar por corretor…"
