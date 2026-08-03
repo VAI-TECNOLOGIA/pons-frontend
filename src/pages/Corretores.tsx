@@ -143,9 +143,6 @@ export default function Corretores() {
  onChange={(e) => setSearch(e.target.value)}
  />
  </div>
- <button className="btn btn--ghost btn--sm" onClick={exportarCadastrosApp} title="Baixar Excel dos corretores que se cadastraram pelo app">
- <Icon name="doc" size={14} /> Cadastros do app
- </button>
  <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>+ Novo Corretor</button>
  </>
  }
@@ -209,6 +206,14 @@ export default function Corretores() {
  <option value="entrada_desc">Ordenar: entrada + recente</option>
  <option value="entrada_asc">Ordenar: entrada + antiga</option>
  </select>
+ <button
+ className="btn btn--ghost btn--sm"
+ style={{ height: 32, marginLeft: 'auto' }}
+ onClick={exportarCadastrosApp}
+ title="Baixar Excel dos corretores que se cadastraram pelo app"
+ >
+ <Icon name="sheet" size={14} /> Cadastros do app
+ </button>
  </div>
 
  <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
