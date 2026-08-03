@@ -26,6 +26,10 @@ export default function Corretores() {
  const { data: equipes } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
  const confirm = useConfirm();
+ const exportarCadastrosApp = async () => {
+   try { await Api.corretoresAutoCadastroExport(); }
+   catch { toast.error('Não foi possível gerar o Excel dos cadastros.'); }
+ };
 
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -139,6 +143,9 @@ export default function Corretores() {
  onChange={(e) => setSearch(e.target.value)}
  />
  </div>
+ <button className="btn btn--ghost btn--sm" onClick={exportarCadastrosApp} title="Baixar Excel dos corretores que se cadastraram pelo app">
+ <Icon name="doc" size={14} /> Cadastros do app
+ </button>
  <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>+ Novo Corretor</button>
  </>
  }

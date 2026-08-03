@@ -370,6 +370,21 @@ export const Api = {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   },
+  // Baixa o Excel dos corretores que se cadastraram pelo app
+  corretoresAutoCadastroExport: async () => {
+    const r = await fetch(`${BASE}/corretores/auto-cadastro/export`, {
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+    });
+    if (!r.ok) throw new Error('export_failed');
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'corretores-cadastrados-app.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  },
   empreendimentoFotoDelete: (id: number, fotoId: number) =>
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
   empreendimentoFotoCapa: (id: number, fotoId: number) =>
