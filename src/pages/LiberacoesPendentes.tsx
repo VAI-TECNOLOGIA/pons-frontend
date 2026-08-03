@@ -2,6 +2,7 @@
 // feitas pelos corretores da equipe e permite aprovar ou reprovar cada uma. O
 // corretor é avisado do resultado no app e no WhatsApp. Chegou aqui pela notificação.
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
@@ -62,6 +63,13 @@ export default function LiberacoesPendentes() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
+                  <Link
+                    className="btn btn--ghost btn--sm"
+                    to={`/chat?lead=${p.id}`}
+                    title="Abrir a conversa do lead pra analisar antes de decidir"
+                  >
+                    <Icon name="chat" size={12} /> Abrir conversa
+                  </Link>
                   <button
                     className="btn btn--ghost btn--sm"
                     onClick={() => decidir(p.id, false)}
