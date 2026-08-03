@@ -212,9 +212,22 @@
 .login-field__input::placeholder { color: rgba(140, 140, 140, 0.7); }
 .login-field__input:focus {
   border-color: var(--cyan);
-  background: rgba(255, 255, 255, 0.07);
+  background-color: rgba(255, 255, 255, 0.07);
   box-shadow: 0 0 0 3px rgba(82, 247, 254, 0.18);
 }
+/* Select (equipe) no tema escuro: tira a seta nativa feia, põe uma custom e força
+   o dropdown escuro (color-scheme). Sem isso, o select nativo destoa dos inputs. */
+select.login-field__input {
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: dark;
+  cursor: pointer;
+  padding-right: 42px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%239aa3b2' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+select.login-field__input option { background: #14161c; color: #fff; }
 /* Mantém o input escuro mesmo com autofill do Chrome (que força fundo claro) */
 .login-field__input:-webkit-autofill,
 .login-field__input:-webkit-autofill:hover,
