@@ -2036,6 +2036,8 @@ function TemplatePickerModal({
       'redefinir_senha_codigo', 'app_liberado', 'pons_teste', 'sistema_no_ar',
       'cadastro_confirmado', 'lembrete_agenda', 'chegou_lead', 'lead_novo', 'novo_lead',
       'venda_protocolo_p1', 'venda_protocolo_p2', 'venda_aprovada_protocolo',
+      // Notificações internas (sistema dispara sozinho pro corretor/gestor):
+      'leads_aguardando', 'lead_respondeu', 'liberacao_solicitada', 'liberacao_aprovada', 'liberacao_reprovada',
     ]);
     Api.whatsappTemplates()
       // Esconde AUTENTICAÇÃO + os internos acima (sistema/notificação, não atendimento).
