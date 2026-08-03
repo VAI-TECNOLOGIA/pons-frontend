@@ -9,6 +9,44 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import './equipes.css';
 
+// Editor inline da meta mensal (R$) da equipe. A soma das metas das equipes vira a
+// meta geral da casa (alimenta a corrida do mês no Financeiro).
+function MetaEquipeEditor({ eq, admin, onSaved }: { eq: any; admin: boolean; onSaved: () => void }) {
+  const toast = useToast();
+  const [valor, setValor] = useState<string>(eq.metaMensal != null ? String(eq.metaMensal) : '');
+  const [saving, setSaving] = useState(false);
+  const mudou = String(valor) !== (eq.metaMensal != null ? String(eq.metaMensal) : '');
+  const salvar = async () => {
+    setSaving(true);
+    try {
+      await Api.equipeUpdate(eq.id, { metaMensal: valor.trim() === '' ? null : Number(valor) });
+      toast.success('Meta da equipe salva');
+      onSaved();
+    } catch (e: any) {
+      toast.error('Erro: ' + (e?.message || 'falha'));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div className="uppercase-tag">Meta mensal (R$)</div>
+      <div className="flex gap-2" style={{ alignItems: 'center', marginTop: 4 }}>
+        <input
+          type="number" min={0} className="field__input" style={{ maxWidth: 170 }}
+          value={valor} placeholder="Ex: 2000000" disabled={!admin || saving}
+          onChange={(e) => setValor(e.target.value)}
+        />
+        {admin && (
+          <button className="btn btn--primary btn--sm" onClick={salvar} disabled={saving || !mudou} style={{ flexShrink: 0 }}>
+            {saving ? 'Salvando…' : 'Salvar'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Equipes() {
  const [view, setView] = useState<'escuderias' | 'resultados'>('escuderias');
  const [open, setOpen] = useState(false);
@@ -119,6 +157,7 @@ export default function Equipes() {
  nome: String(fd.get('nome') || ''),
  descricao: fd.get('descricao') ? String(fd.get('descricao')) : undefined,
  cor: String(fd.get('cor') || '#0E7C9B'),
+ metaMensal: fd.get('metaMensal') ? Number(fd.get('metaMensal')) : null,
  });
  toast.success('Equipe criada');
  setOpen(false);
@@ -350,7 +389,8 @@ export default function Equipes() {
  </div>
  </div>
 
- {(eq.vendasMes != null || eq.volumeMes != null) && (
+ <MetaEquipeEditor eq={eq} admin={!!minhas?.admin} onSaved={reload} />
+          {(eq.vendasMes != null || eq.volumeMes != null) && (
  <div className="flex-between" style={{ marginTop: 12 }}>
  <div>
  <div className="uppercase-tag">Vendas mês</div>
@@ -459,6 +499,10 @@ export default function Equipes() {
  <div className="field">
  <label className="field__label">Cor da equipe</label>
  <input name="cor" type="color" className="field__input" defaultValue="#0E7C9B" style={{ height: 44, padding: 4 }} />
+ </div>
+ <div className="field">
+ <label className="field__label">Meta mensal (R$)</label>
+ <input name="metaMensal" type="number" min={0} className="field__input" placeholder="Ex: 2000000" />
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
