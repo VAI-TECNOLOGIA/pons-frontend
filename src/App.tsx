@@ -172,6 +172,7 @@ export default function App() {
           <Route path="/templates" element={<Templates />} />
           <Route path="/roletas" element={<Roletas />} />
           <Route path="/filas-atendimento" element={<FilasAtendimento />} />
+          <Route path="/filas-disparo" element={<FilasAtendimento tipo="DISPARO" />} />
           <Route path="/trafego" element={<Trafego />} />
           <Route path="/tarefas" element={<Tarefas />} />
           <Route path="/relatorios" element={<Relatorios />} />

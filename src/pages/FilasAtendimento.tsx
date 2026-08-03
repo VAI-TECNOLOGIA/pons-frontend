@@ -32,8 +32,9 @@ const ordemRR = (a: any, b: any) => {
 
 const fmtData = (d?: string) => (d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
 
-export default function FilasAtendimento() {
-  const { data: filas, loading, error, reload } = useApi<any[]>(() => Api.roletas());
+export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATENDIMENTO' | 'DISPARO' } = {}) {
+  const ehDisparo = tipo === 'DISPARO';
+  const { data: filas, loading, error, reload } = useApi<any[]>(() => Api.roletas(tipo), [tipo]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   const { data: formularios } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaFormularios());
   const [filaAtivaId, setFilaAtivaId] = useState<number | null>(null);
@@ -57,8 +58,8 @@ export default function FilasAtendimento() {
     catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
   };
 
-  if (loading) return <Shell onNova={() => setModal('nova')}><LoadingBlock /></Shell>;
-  if (error) return <Shell onNova={() => setModal('nova')}><ErrorBlock error={error} /></Shell>;
+  if (loading) return <Shell onNova={() => setModal('nova')} ehDisparo={ehDisparo}><LoadingBlock /></Shell>;
+  if (error) return <Shell onNova={() => setModal('nova')} ehDisparo={ehDisparo}><ErrorBlock error={error} /></Shell>;
 
   const lista = filas || [];
   const ativa = lista.find((f) => f.id === filaAtivaId) || lista.find((f) => f.ativa) || lista[0];
@@ -66,7 +67,7 @@ export default function FilasAtendimento() {
   const filtradas = lista.filter((f) => f.nome.toLowerCase().includes(busca.toLowerCase()));
 
   return (
-    <Shell onNova={() => setModal('nova')}>
+    <Shell onNova={() => setModal('nova')} ehDisparo={ehDisparo}>
       {/* ═══════════ FILAS ATIVAS ═══════════ */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="flex-between" style={{ marginBottom: 4, flexWrap: 'wrap', gap: 12 }}>
@@ -186,6 +187,7 @@ export default function FilasAtendimento() {
           fila={modal === 'nova' ? null : modal}
           corretores={corretores || []}
           formularios={formularios || []}
+          ehDisparo={ehDisparo}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); reload(); }}
         />
@@ -263,15 +265,17 @@ function DiffView({ antes, depois }: { antes: any; depois: any }) {
   );
 }
 
-function Shell({ children, onNova }: { children: React.ReactNode; onNova: () => void }) {
+function Shell({ children, onNova, ehDisparo }: { children: React.ReactNode; onNova: () => void; ehDisparo?: boolean }) {
   return (
     <>
-      <Topbar title="Filas de Atendimento" />
+      <Topbar title={ehDisparo ? 'Filas de Disparo' : 'Filas de Atendimento'} />
       <div className="main__content">
         <PageHeader
-          breadcrumb="Comercial · Distribuição de leads"
-          title="Filas de Atendimento"
-          subtitle="Cada fila leva os leads de um formulário do Facebook para os corretores certos, na ordem definida."
+          breadcrumb={ehDisparo ? 'Marketing · Campanhas de WhatsApp' : 'Comercial · Distribuição de leads'}
+          title={ehDisparo ? 'Filas de Disparo' : 'Filas de Atendimento'}
+          subtitle={ehDisparo
+            ? 'Cada fila define a ordem dos corretores que atendem quem RESPONDER à campanha de WhatsApp (o lead levanta a mão e cai pro próximo).'
+            : 'Cada fila leva os leads de um formulário do Facebook para os corretores certos, na ordem definida.'}
         />
         {children}
       </div>
@@ -280,8 +284,8 @@ function Shell({ children, onNova }: { children: React.ReactNode; onNova: () => 
 }
 
 // ─────────────────────── Modal Cadastrar/Editar fila (3 abas) ───────────────────────
-function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
-  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number }[];
+function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved }: {
+  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number }[]; ehDisparo?: boolean;
   onClose: () => void; onSaved: () => void;
 }) {
   const editando = !!fila;
@@ -328,7 +332,8 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
     if (!nome.trim()) { toast.error('Dê um título à fila'); setAba('config'); return; }
     if (modoPulo === 'BOLSAO' && !bolsaoDestinoId) { toast.error('Selecione o bolsão de destino'); setAba('transferencia'); return; }
     setSaving(true);
-    const base = {
+    const base: any = {
+      ...(ehDisparo ? { tipo: 'DISPARO' } : {}),
       nome: nome.trim(), modo, ativa,
       origemFiltro: origemFiltro || null,
       campanhaFiltro: campanhaFiltro.trim() || null,

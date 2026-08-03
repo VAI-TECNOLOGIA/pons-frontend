@@ -492,7 +492,7 @@ export const Api = {
   tarefaAnexoDelete: (id: number, anexoId: number) => request<{ ok: boolean }>(`/tarefas/${id}/anexos/${anexoId}`, { method: 'DELETE' }),
 
   // Roletas
-  roletas: () => request<any[]>('/roletas'),
+  roletas: (tipo?: 'ATENDIMENTO' | 'DISPARO') => request<any[]>(`/roletas${tipo ? `?tipo=${tipo}` : ''}`),
   roletaCreate: (data: any) => request<any>('/roletas', { method: 'POST', body: data }),
   roletaUpdate: (id: number, data: any) => request<any>(`/roletas/${id}`, { method: 'PATCH', body: data }),
   roletaDelete: (id: number) => request<any>(`/roletas/${id}`, { method: 'DELETE' }),
