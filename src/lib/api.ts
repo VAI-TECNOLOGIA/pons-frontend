@@ -189,8 +189,11 @@ export const Api = {
   redefinirSenhaCodigo: (telefone: string, codigo: string, password: string) =>
     request<any>('/auth/redefinir-senha-codigo', { method: 'POST', body: { telefone, codigo, password }, auth: false }),
   redefinirSenha: (token: string, password: string) => request<any>('/auth/redefinir-senha', { method: 'POST', body: { token, password }, auth: false }),
-  registrar: (data: { name: string; email: string; password: string; phone?: string }) =>
+  registrar: (data: { name: string; email: string; password: string; phone?: string; equipeId?: number | null }) =>
     request<{ token: string; user: import('./auth').User }>('/auth/registrar', { method: 'POST', body: data, auth: false }),
+  // Lista pública de equipes pro dropdown do "Criar conta"
+  equipesPublicas: () =>
+    request<{ equipes: Array<{ id: number; nome: string }> }>('/auth/equipes-publicas', { auth: false }),
 
   // Push nativa: registra o device token do aparelho + dispara push de teste.
   registerDevice: (token: string, platform: 'ios' | 'android') =>
