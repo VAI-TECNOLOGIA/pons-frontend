@@ -61,6 +61,7 @@ const Construtoras    = lazyRetry(() => import('./pages/Construtoras'));
 const Vendas          = lazyRetry(() => import('./pages/Vendas'));
 const MinhasComissoes = lazyRetry(() => import('./pages/MinhasComissoes'));
 const MinhasFilas = lazyRetry(() => import('./pages/MinhasFilas'));
+const LiberacoesPendentes = lazyRetry(() => import('./pages/LiberacoesPendentes'));
 const MeuBolsao = lazyRetry(() => import('./pages/MeuBolsao'));
 const TelefoneFormularios = lazyRetry(() => import('./pages/TelefoneFormularios'));
 const AnaliseVendas   = lazyRetry(() => import('./pages/AnaliseVendas'));
@@ -161,6 +162,7 @@ export default function App() {
           <Route path="/vendas" element={<Vendas />} />
           <Route path="/minhas-comissoes" element={<MinhasComissoes />} />
           <Route path="/minhas-filas" element={<MinhasFilas />} />
+          <Route path="/liberacoes" element={<LiberacoesPendentes />} />
           <Route path="/meu-bolsao" element={<MeuBolsao />} />
           <Route path="/telefone-formularios" element={<TelefoneFormularios />} />
           <Route path="/analise-vendas" element={<AnaliseVendas />} />

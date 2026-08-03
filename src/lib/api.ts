@@ -1005,9 +1005,20 @@ export const Api = {
   // ─── Lead — aceitar / liberar contato ────────────────────────────
   leadAceitar: (id: number) => request<{ ok: boolean; nome: string; estadoAtendimento: string }>(`/leads/${id}/aceitar`, { method: 'POST' }),
   leadLiberarContato: (id: number, justificativa?: string) =>
-    request<{ ok: boolean; telefone: string; classificacao: string; jaLiberado?: boolean }>(
+    request<{ ok: boolean; telefone?: string; jaLiberado?: boolean; pendente?: boolean; message?: string }>(
       `/leads/${id}/liberar-contato`,
       { method: 'POST', body: { justificativa: justificativa || null } },
+    ),
+  // Gestor: lista solicitações pendentes de liberação de contato
+  liberacoesPendentes: () =>
+    request<{ pendentes: Array<{ id: number; leadNome: string; solicitante: string; motivo: string; solicitadaEm: string }> }>(
+      '/leads/liberacoes-pendentes',
+    ),
+  // Gestor: aprova ou reprova a solicitação de liberação
+  liberacaoDecidir: (id: number, aprovar: boolean) =>
+    request<{ ok: boolean; aprovado: boolean }>(
+      `/leads/${id}/liberar-contato/decidir`,
+      { method: 'POST', body: { aprovar } },
     ),
 
   // ─── WhatsApp templates (Meta Cloud) ────────────────────────────

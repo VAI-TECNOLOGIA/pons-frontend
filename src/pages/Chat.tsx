@@ -422,7 +422,8 @@ export default function Chat() {
     setLiberarSending(true);
     try {
       const r = await Api.leadLiberarContato(activeId, liberarJustif.trim());
-      toast.success(`Telefone liberado: ${r.telefone}`);
+      if (r.jaLiberado && r.telefone) toast.success(`Telefone: ${r.telefone}`);
+      else toast.success(r.message || 'Solicitação enviada ao gestor pra aprovação.');
       setLiberarOpen(false);
       reloadConv();
       reloadInbox();
@@ -1040,14 +1041,17 @@ export default function Chat() {
                     duplicar o botão. */}
                 {acoesOpen && (
                   <div className="thread__acoes">
-                    {/* Liberar contato BLOQUEADO por enquanto: aparece sempre
-                        (desabilitado) enquanto o telefone não foi liberado. Ao
-                        reativar, voltar a exigir `conv.reservado` e o onClick. */}
-                    {!(conv as any).telefoneLiberado && (
-                      <button className="btn btn--ghost btn--sm" disabled title="Temporariamente indisponível">
-                        <Icon name="phone" size={12} /> Liberar contato
+                    {/* Solicitar liberação de contato: vai pra aprovação do gestor.
+                        Enquanto pendente mostra o estado; quando liberado, some. */}
+                    {!(conv as any).telefoneLiberado && (conv as any).liberacaoStatus === 'PENDENTE' ? (
+                      <button className="btn btn--ghost btn--sm" disabled title="Aguardando aprovação do gestor">
+                        <Icon name="clock" size={12} /> Liberação pendente
                       </button>
-                    )}
+                    ) : !(conv as any).telefoneLiberado ? (
+                      <button className="btn btn--ghost btn--sm" onClick={liberarContato} title="Solicitar liberação do contato ao gestor">
+                        <Icon name="phone" size={12} /> Solicitar liberação
+                      </button>
+                    ) : null}
                     {conv.reservado && (
                       <>
                         <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -1430,8 +1434,8 @@ export default function Chat() {
               <Modal
                 open={liberarOpen}
                 onClose={() => !liberarSending && setLiberarOpen(false)}
-                title="Liberar contato do lead"
-                subtitle={`O telefone de ${conv?.nome || 'lead'} será exibido pra você. Lead vira QUENTE e contará na sua estatística "leads chamados externamente". Ação auditada.`}
+                title="Solicitar liberação de contato"
+                subtitle={`Sua solicitação para ver o telefone de ${conv?.nome || 'lead'} vai pro gestor aprovar. Você é avisado do resultado no app e no WhatsApp. Ação auditada.`}
                 size="sm"
                 footer={
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -1439,7 +1443,7 @@ export default function Chat() {
                       Cancelar
                     </button>
                     <button className="btn btn--primary" onClick={confirmarLiberar} disabled={liberarSending || !liberarJustif.trim()}>
-                      {liberarSending ? 'Liberando…' : 'Liberar contato'}
+                      {liberarSending ? 'Enviando…' : 'Solicitar liberação'}
                     </button>
                   </div>
                 }
