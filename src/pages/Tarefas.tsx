@@ -286,7 +286,7 @@ export default function Tarefas() {
             <div className="field">
               <label className="field__label">Área</label>
               <select name="area" className="field__select" defaultValue="MARKETING">
-                <option value="MARKETING">Marketing</option>
+                <option value="MARKETING">Marketing (privada — só o time de marketing vê)</option>
                 <option value="ADM">ADM</option>
                 <option value="FINANCEIRO">Financeiro</option>
                 <option value="JURIDICO">Jurídico</option>
@@ -374,7 +374,7 @@ export default function Tarefas() {
               <div className="field">
                 <label className="field__label">Área</label>
                 <select name="area" className="field__select" defaultValue={editTarefa.area || 'GERAL'}>
-                  <option value="MARKETING">Marketing</option>
+                  <option value="MARKETING">Marketing (privada — só o time de marketing vê)</option>
                   <option value="ADM">ADM</option>
                   <option value="FINANCEIRO">Financeiro</option>
                   <option value="JURIDICO">Jurídico</option>
