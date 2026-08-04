@@ -651,7 +651,7 @@ export const Api = {
   // Users
   users: () => request<any[]>('/users'),
   meProfile: () => request<import('./auth').User & { aniversarioHoje?: boolean }>('/users/me'),
-  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null }) =>
+  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null; creci?: string | null }) =>
     request<any>('/users/me', { method: 'PATCH', body: data }),
   mePassword: (senhaAtual: string, novaSenha: string) =>
     request<{ ok: boolean }>('/users/me/password', { method: 'POST', body: { senhaAtual, novaSenha } }),

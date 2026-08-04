@@ -34,6 +34,7 @@ export interface User {
   unidade?: { id: number; nome: string } | null;
   corretor?: {
     id: number;
+    creci?: string | null;
     scoreAtual?: number;
     scoreMes?: number;
     scoreAno?: number;

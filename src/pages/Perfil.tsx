@@ -60,6 +60,7 @@ export default function Perfil() {
         phone: fd.get('phone') ? String(fd.get('phone')) : null,
         dataNascimento: fd.get('dataNascimento') ? String(fd.get('dataNascimento')) : null,
         avatarUrl: avatar,
+        ...(user.corretor ? { creci: fd.get('creci') ? String(fd.get('creci')) : null } : {}),
       });
       setUser({ ...user, ...u });
       await reload();
@@ -178,6 +179,19 @@ export default function Perfil() {
                 <label className="field__label">Cargo</label>
                 <input className="field__input" value={formatRole(user.role)} disabled />
               </div>
+              {user.corretor && (
+                <div className="field">
+                  <label className="field__label">CRECI</label>
+                  <input
+                    name="creci"
+                    className="field__input"
+                    defaultValue={user.corretor?.creci || ''}
+                    placeholder="Ex.: 12345-F ou 12345/SC"
+                    maxLength={30}
+                  />
+                  <div className="field__hint">Seu registro no CRECI — necessário pra contratos e protocolos</div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
