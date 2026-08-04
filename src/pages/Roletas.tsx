@@ -289,7 +289,17 @@ export default function Roletas() {
 
  <div className="grid-2">
  {roletas.map((r: any) => {
- const participantes = r.participantes || [];
+ // Ordem REAL da fila (igual ao round-robin do backend): elegíveis primeiro,
+ // quem recebeu há mais tempo no topo; pausados/inelegíveis pro fim da lista.
+ const elegivel = (p: any) => p.ativo && p.recebendoLeads !== false && p.contaAtiva !== false;
+ const participantes = [...(r.participantes || [])].sort((a: any, b: any) => {
+ if (elegivel(a) !== elegivel(b)) return elegivel(a) ? -1 : 1;
+ const ta = a.ultimaAtribuicao ? new Date(a.ultimaAtribuicao).getTime() : 0;
+ const tb = b.ultimaAtribuicao ? new Date(b.ultimaAtribuicao).getTime() : 0;
+ if (ta !== tb) return ta - tb;
+ if ((a.totalRecebidos || 0) !== (b.totalRecebidos || 0)) return (a.totalRecebidos || 0) - (b.totalRecebidos || 0);
+ return a.corretorId - b.corretorId;
+ });
  return (
  <div className="card" style={{ position: 'relative', overflow: 'hidden' }} key={r.id}>
  <div className="racing-stripe" style={{ ['--team-color' as any]: r.ativa ? 'var(--pons-blue)' : 'var(--gray-300)' }} />
@@ -330,14 +340,21 @@ export default function Roletas() {
  {participantes.length === 0 ? (
  <div className="text-sm text-secondary" style={{ padding: '8px 0' }}>Sem corretores nesta roleta</div>
  ) : (
- participantes.map((p: any) => (
+ participantes.map((p: any, idx: number) => (
  <div className="list__item" style={{ padding: '8px 0' }} key={p.id}>
+ {r.modo === 'ROUND_ROBIN' && (
+ <span className="text-xs" style={{ minWidth: 26, textAlign: 'center', fontWeight: 700, color: elegivel(p) ? 'var(--pons-blue, #0E7C9B)' : 'var(--text-secondary)' }}>
+ {elegivel(p) ? `${idx + 1}º` : '—'}
+ </span>
+ )}
  <div className="avatar avatar--sm" style={p.ativo ? {} : { opacity: 0.4 }}>{p.initials}</div>
  <div className="list__main">
  <div className="list__title" style={p.ativo ? {} : { opacity: 0.5, textDecoration: 'line-through' }}>{p.nome}</div>
  <div className="list__meta">
  {p.totalRecebidos ?? 0} recebidos · {p.ultimaAtribuicao ? 'último ' + timeAgo(p.ultimaAtribuicao) : 'nenhum ainda'}
  {r.modo === 'PONDERADA' && ' · peso ' + (p.peso ?? 1)}
+ {p.ativo && p.recebendoLeads === false && ' · pausado (não recebendo)'}
+ {p.contaAtiva === false && ' · conta inativa'}
  </div>
  </div>
  <button className="btn btn--ghost btn--sm" onClick={() => togglePausar(p.id, p.ativo)}>

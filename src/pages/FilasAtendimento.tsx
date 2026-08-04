@@ -63,7 +63,15 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
 
   const lista = filas || [];
   const ativa = lista.find((f) => f.id === filaAtivaId) || lista.find((f) => f.ativa) || lista[0];
-  const ordem = ativa ? [...(ativa.participantes || [])].filter((p: any) => p.ativo).sort(ordemRR) : [];
+  // Ordem = só quem REALMENTE pode receber (mesmo filtro da distribuição no
+  // backend): pausado por recebendoLeads ou conta inativa aparece à parte,
+  // senão o gestor vê "1º" alguém que a fila pula e a ordem parece furada.
+  const ordem = ativa
+    ? [...(ativa.participantes || [])].filter((p: any) => p.ativo && p.recebendoLeads !== false && p.contaAtiva !== false).sort(ordemRR)
+    : [];
+  const foraDaOrdem = ativa
+    ? (ativa.participantes || []).filter((p: any) => p.ativo && (p.recebendoLeads === false || p.contaAtiva === false))
+    : [];
   const filtradas = lista.filter((f) => f.nome.toLowerCase().includes(busca.toLowerCase()));
 
   return (
@@ -109,6 +117,20 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
                       ? <Icon name="check" size={16} style={{ color: 'var(--color-success)' }} />
                       : <span title="Offline" style={{ color: 'var(--text-secondary)', opacity: 0.5 }}>—</span>}
                   </td>
+                </tr>
+              ))}
+              {foraDaOrdem.map((p: any) => (
+                <tr key={p.id} style={{ opacity: 0.45 }}>
+                  <td><div className="avatar avatar--sm">{p.initials}</div></td>
+                  <td className="font-semibold">
+                    {p.nome}
+                    <span className="text-xs text-secondary" style={{ marginLeft: 8 }}>
+                      {p.contaAtiva === false ? 'conta inativa — fora da fila' : 'pausado (não recebendo) — fora da fila'}
+                    </span>
+                  </td>
+                  <td className="text-sm text-secondary">{p.email || '—'}</td>
+                  <td className="text-sm text-secondary">{p.telefone || '—'}</td>
+                  <td style={{ textAlign: 'center' }}><span style={{ color: 'var(--text-secondary)', opacity: 0.5 }}>—</span></td>
                 </tr>
               ))}
             </tbody>
