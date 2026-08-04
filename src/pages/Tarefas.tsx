@@ -34,7 +34,8 @@ export default function Tarefas() {
   const ehGestor = Auth.user?.role === 'GERENTE_EQUIPE' || Auth.user?.role === 'SOCIO_UNIDADE';
   // Gestor de Marketing (Vine): só atribui pra ele mesmo ou pra logins de marketing.
   const ehMktGestor = Auth.user?.role === 'GESTOR_MARKETING';
-  const MKT_ROLES = ['MARKETING', 'GESTOR_MARKETING', 'GESTOR_TRAFEGO', 'ASSESSORA_MARKETING'];
+  // Namíta (ASSESSORA_MARKETING) fora da bolha de tarefas do marketing
+  const MKT_ROLES = ['MARKETING', 'GESTOR_MARKETING', 'GESTOR_TRAFEGO'];
   const podeAtribuir = (u: any) =>
     ehMktGestor
       ? (MKT_ROLES.includes(u.role) || u.id === Auth.user?.id)
