@@ -924,11 +924,24 @@ function DreTab() {
 function SemanaTab() {
   const [semana, setSemana] = useState(0);
   const { data, loading, error } = useApi<any>(() => Api.finPagamentosSemana(semana), [semana]);
+  const [baixando, setBaixando] = useState(false);
+  const toast = useToast();
+  const baixarPdf = async () => {
+    setBaixando(true);
+    try {
+      await Api.finPdf('/financeiro/pagamentos-semana.pdf', { semana });
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível gerar o PDF');
+    } finally {
+      setBaixando(false);
+    }
+  };
   return (
     <div className="card">
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <h3 className="card__title" style={{ margin: 0 }}>Pagamentos a realizar na semana</h3>
         <div className="flex gap-2" style={{ alignItems: 'center' }}>
+          <button className="btn btn--secondary btn--sm" disabled={baixando} onClick={baixarPdf}>{baixando ? 'Gerando...' : 'Baixar PDF'}</button>
           <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s - 1)}>‹ Anterior</button>
           {semana !== 0 && <button className="btn btn--secondary btn--sm" onClick={() => setSemana(0)}>Hoje</button>}
           <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s + 1)}>Próxima ›</button>
@@ -1044,18 +1057,74 @@ function FluxoTab() {
 
 // ───────────────────────── Contas a Pagar/Receber (aging) ─────────────────────────
 const FAIXA_LABEL: Record<string, string> = { aVencer: 'A vencer', d1_30: '1–30 dias', d31_60: '31–60 dias', d60: '60+ dias' };
+const CATEGORIAS_SAIDA = ['COMISSAO', 'ALUGUEL', 'FOLHA', 'MARKETING', 'IMPOSTO', 'VENDA', 'REPASSE', 'OUTRO'];
+
 function ContasTab() {
   const [tipo, setTipo] = useState<'PAGAR' | 'RECEBER'>('PAGAR');
-  const { data, loading, error } = useApi<any>(() => Api.finContas(tipo), [tipo]);
+  const [categoria, setCategoria] = useState('');
+  const [unidadeId, setUnidadeId] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const filtros = { tipo, ...(categoria ? { categoria } : {}), ...(unidadeId ? { unidadeId: Number(unidadeId) } : {}), ...(from ? { from } : {}), ...(to ? { to } : {}) };
+  const { data, loading, error } = useApi<any>(() => Api.finContas(filtros), [tipo, categoria, unidadeId, from, to]);
+  const { data: unidades } = useApi<any[]>(() => Api.unidadesList());
+  const [baixando, setBaixando] = useState(false);
+  const toast = useToast();
+
+  const baixarPdf = async () => {
+    setBaixando(true);
+    try {
+      await Api.finPdf('/financeiro/contas-a-pagar.pdf', { ...(categoria ? { categoria } : {}), ...(unidadeId ? { unidadeId: Number(unidadeId) } : {}), ...(from ? { from } : {}), ...(to ? { to } : {}) });
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível gerar o PDF');
+    } finally {
+      setBaixando(false);
+    }
+  };
+
   return (
     <div className="card">
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <h3 className="card__title" style={{ margin: 0 }}>Contas a {tipo === 'PAGAR' ? 'Pagar' : 'Receber'}</h3>
-        <div className="tabs" style={{ margin: 0 }}>
-          <button className={'tab ' + (tipo === 'PAGAR' ? 'tab--active' : '')} onClick={() => setTipo('PAGAR')}>A Pagar</button>
-          <button className={'tab ' + (tipo === 'RECEBER' ? 'tab--active' : '')} onClick={() => setTipo('RECEBER')}>A Receber</button>
+        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+          <div className="tabs" style={{ margin: 0 }}>
+            <button className={'tab ' + (tipo === 'PAGAR' ? 'tab--active' : '')} onClick={() => setTipo('PAGAR')}>A Pagar</button>
+            <button className={'tab ' + (tipo === 'RECEBER' ? 'tab--active' : '')} onClick={() => setTipo('RECEBER')}>A Receber</button>
+          </div>
+          {tipo === 'PAGAR' && (
+            <button className="btn btn--secondary btn--sm" disabled={baixando} onClick={baixarPdf}>{baixando ? 'Gerando...' : 'Baixar PDF'}</button>
+          )}
         </div>
       </div>
+
+      <div className="flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 16 }}>
+        <div className="field" style={{ margin: 0, minWidth: 170 }}>
+          <label className="field__label">Filial</label>
+          <select className="field__select" value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)}>
+            <option value="">Todas</option>
+            {(unidades || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0, minWidth: 150 }}>
+          <label className="field__label">Categoria</label>
+          <select className="field__select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+            <option value="">Todas</option>
+            {CATEGORIAS_SAIDA.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field__label">Venc. de</label>
+          <input type="date" className="field__input" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field__label">até</label>
+          <input type="date" className="field__input" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
+        {(categoria || unidadeId || from || to) && (
+          <button className="btn btn--secondary btn--sm" onClick={() => { setCategoria(''); setUnidadeId(''); setFrom(''); setTo(''); }}>Limpar</button>
+        )}
+      </div>
+
       {loading && <LoadingBlock />}
       {error && <ErrorBlock error={error} />}
       {data && (
@@ -1072,7 +1141,7 @@ function ContasTab() {
           </div>
           <table className="table">
             <thead>
-              <tr><th>Descrição</th><th>Categoria</th><th>Beneficiário</th><th>Vencimento</th><th>Faixa</th><th className="text-right">Valor</th></tr>
+              <tr><th>Descrição</th><th>Categoria</th><th>Beneficiário</th><th>Filial</th><th>Vencimento</th><th>Faixa</th><th className="text-right">Valor</th></tr>
             </thead>
             <tbody>
               {(data.itens || []).map((i: any) => (
@@ -1080,16 +1149,51 @@ function ContasTab() {
                   <td>{i.descricao}</td>
                   <td><span className="badge badge--neutral">{i.categoria}</span></td>
                   <td className="text-sm text-secondary">{i.beneficiario || '—'}</td>
+                  <td className="text-sm">{i.filial || '—'}</td>
                   <td className="text-sm">{formatDate(i.vencimento)}{i.diasAtraso ? <span style={{ color: 'var(--color-danger)' }}> ({i.diasAtraso}d)</span> : null}</td>
                   <td className="text-sm">{FAIXA_LABEL[i.faixa] || i.faixa}</td>
                   <td className="text-right money">{formatCurrency(i.valor)}</td>
                 </tr>
               ))}
               {!data.itens?.length && (
-                <tr><td colSpan={6} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nada em aberto.</td></tr>
+                <tr><td colSpan={7} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nada em aberto.</td></tr>
               )}
             </tbody>
           </table>
+
+          {tipo === 'PAGAR' && (data.porRecebedor?.length > 0 || data.porFilial?.length > 0) && (
+            <div className="flex gap-2" style={{ marginTop: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              {data.porFilial?.length > 0 && (
+                <div style={{ flex: 1, minWidth: 260 }}>
+                  <h4 className="card__title" style={{ margin: '0 0 8px' }}>Total por filial</h4>
+                  <table className="table">
+                    <tbody>
+                      {data.porFilial.map((f: any) => (
+                        <tr key={f.nome}><td>{f.nome}</td><td className="text-right money">{formatCurrency(f.valor)}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {data.porRecebedor?.length > 0 && (
+                <div style={{ flex: 1, minWidth: 300 }}>
+                  <h4 className="card__title" style={{ margin: '0 0 8px' }}>Consolidado por recebedor (PIX)</h4>
+                  <table className="table">
+                    <thead><tr><th>Recebedor</th><th>Chave PIX</th><th className="text-right">Valor</th></tr></thead>
+                    <tbody>
+                      {data.porRecebedor.map((r: any, idx: number) => (
+                        <tr key={idx}>
+                          <td>{r.nome}</td>
+                          <td className="text-sm text-secondary">{r.chavePix || '—'}</td>
+                          <td className="text-right money">{formatCurrency(r.valor)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

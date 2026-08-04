@@ -588,7 +588,8 @@ export const Api = {
   finResumo: () => request<any>('/financeiro/resumo'),
   finDre: (params: any = {}) => request<any>(`/financeiro/dre${qs(params)}`),
   finFluxoCaixa: (meses = 6) => request<any>(`/financeiro/fluxo-caixa?meses=${meses}`),
-  finContas: (tipo = 'PAGAR') => request<any>(`/financeiro/contas?tipo=${tipo}`),
+  finContas: (params: { tipo?: string; categoria?: string; unidadeId?: number; from?: string; to?: string } = {}) =>
+    request<any>(`/financeiro/contas${qs({ tipo: 'PAGAR', ...params })}`),
   finComissoesPorCorretor: (params: any = {}) => request<any>(`/financeiro/comissoes-por-corretor${qs(params)}`),
   finComissaoPagar: (body: { corretorId: number; from?: string; to?: string; metodo?: string; observacao?: string }) =>
     request<{ pagos: number; valorTotal: number; corretor?: string; message?: string }>('/financeiro/comissoes/pagar', { method: 'POST', body }),
@@ -608,6 +609,16 @@ export const Api = {
       headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
     });
     if (!r.ok) throw new Error(`Falha ao gerar comprovante (${r.status})`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+  finPdf: async (path: string, params: any = {}) => {
+    const r = await fetch(`${BASE}${path}${qs(params)}`, {
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+    });
+    if (!r.ok) throw new Error(`Falha ao gerar PDF (${r.status})`);
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
