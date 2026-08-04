@@ -595,6 +595,8 @@ export const Api = {
   finComissaoEstornar: (body: { corretorId: number; from?: string; to?: string }) =>
     request<{ estornados: number; lancamentosCancelados?: number; corretor?: string; message?: string }>('/financeiro/comissoes/estornar', { method: 'POST', body }),
   finComissoesPlano: () => request<any>('/financeiro/comissoes-plano'),
+  finPrevisaoEntrada: (params: { mes?: string; equipeId?: number; sala?: string } = {}) =>
+    request<any>(`/financeiro/previsao-entrada${qs(params)}`),
   finPlanejamento: () => request<any>('/financeiro/planejamento'),
   finPagamentosSemana: (semana = 0) => request<any>(`/financeiro/pagamentos-semana?semana=${semana}`),
   finPainelDiretor: () => request<any>('/financeiro/painel-diretor'),

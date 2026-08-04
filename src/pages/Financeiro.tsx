@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { formatCurrency, formatCurrencyShort, formatDate } from '../lib/format';
@@ -17,7 +17,7 @@ const STATUS_BADGE: Record<string, [string, string]> = {
  CANCELADO: ['cancelled', 'CANCELADO'],
 };
 
-type Tab = 'extrato' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
+type Tab = 'extrato' | 'previsao' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
 
 export default function Financeiro() {
  const [tab, setTab] = useState<Tab>('extrato');
@@ -154,6 +154,7 @@ export default function Financeiro() {
  <div className="tabs">
  {([
  ['extrato', 'Extrato'],
+ ['previsao', 'Previsão de entrada'],
  ['semana', 'Pagamentos da semana'],
  ['dre', 'DRE'],
  ['fluxo', 'Fluxo de caixa'],
@@ -262,6 +263,7 @@ export default function Financeiro() {
  );
  })()}
 
+ {tab === 'previsao' && <PrevisaoTab />}
  {tab === 'dre' && <DreTab />}
  {tab === 'semana' && <SemanaTab />}
  {tab === 'fluxo' && <FluxoTab />}
@@ -417,6 +419,162 @@ function DreRow({ label, value, strong = false }: { label: string; value: number
  <span className="money" style={{ color }}>{formatted}</span>
  </div>
  );
+}
+
+function PrevisaoTab() {
+  const [mes, setMes] = useState(() => new Date().toISOString().slice(0, 7));
+  const [equipeId, setEquipeId] = useState('');
+  const [sala, setSala] = useState('');
+  const { data, loading, error, reload } = useApi<any>(
+    () => Api.finPrevisaoEntrada({ mes, ...(equipeId ? { equipeId: Number(equipeId) } : {}), ...(sala ? { sala } : {}) }),
+    [mes, equipeId, sala],
+  );
+  const [expandido, setExpandido] = useState<number | null>(null);
+  const [salvando, setSalvando] = useState<number | null>(null);
+  const toast = useToast();
+  const confirm = useConfirm();
+
+  const alterarStatus = async (linha: any, status: string) => {
+    if (status === 'PAGO') {
+      const ok = await confirm({
+        title: `Confirmar entrada de ${linha.cliente}?`,
+        message: `Parcela ${linha.numero}/${linha.total} da venda ${linha.codigo} — ${formatCurrency(linha.valor)}. Marca como recebida e sai do radar de atraso.`,
+        confirmText: 'Marcar recebido',
+      });
+      if (!ok) return;
+    }
+    setSalvando(linha.pagamentoId);
+    try {
+      await Api.vendaParcelaStatus(linha.vendaId, linha.pagamentoId, status);
+      toast.success(status === 'PAGO' ? 'Entrada confirmada' : 'Status atualizado');
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atualizar');
+    } finally {
+      setSalvando(null);
+    }
+  };
+
+  const equipes = data?.filtros?.equipes || [];
+  const salas = data?.filtros?.salas || [];
+
+  return (
+    <>
+      <div className="card flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 12 }}>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field__label">Mês (vencimento)</label>
+          <input type="month" className="field__input" value={mes} onChange={(e) => setMes(e.target.value)} />
+        </div>
+        <div className="field" style={{ margin: 0, minWidth: 190 }}>
+          <label className="field__label">Equipe</label>
+          <select className="field__select" value={equipeId} onChange={(e) => setEquipeId(e.target.value)}>
+            <option value="">Todas</option>
+            {equipes.map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0, minWidth: 160 }}>
+          <label className="field__label">Sala/Unidade</label>
+          <select className="field__select" value={sala} onChange={(e) => setSala(e.target.value)}>
+            <option value="">Todas</option>
+            {salas.map((s: string) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        {(equipeId || sala) && (
+          <button className="btn btn--secondary btn--sm" onClick={() => { setEquipeId(''); setSala(''); }}>Limpar</button>
+        )}
+      </div>
+
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <div className="kpi-grid" style={{ marginBottom: 12 }}>
+            <div className="kpi">
+              <div className="kpi__label">Previsto no mês</div>
+              <div className="kpi__value money">{formatCurrency(data.totalPrevisto)}</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi__label">Recebido</div>
+              <div className="kpi__value money" style={{ color: 'var(--money-positive)' }}>{formatCurrency(data.totalPago)}</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi__label">A receber</div>
+              <div className="kpi__value money" style={{ color: 'var(--money-negative)' }}>{formatCurrency(data.totalAReceber)}</div>
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: 0 }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Sala</th>
+                  <th>Empreendimento</th>
+                  <th>Cliente</th>
+                  <th>Corretor</th>
+                  <th>Equipe</th>
+                  <th className="numeric">Parcela</th>
+                  <th className="numeric">Valor</th>
+                  <th>Vencimento</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.linhas.length === 0 ? (
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>Nenhuma entrada prevista para o filtro</td></tr>
+                ) : (
+                  data.linhas.map((l: any) => {
+                    const [k, lbl] = STATUS_BADGE[l.status] || ['neutral', l.status];
+                    const aberto = expandido === l.pagamentoId;
+                    return (
+                      <Fragment key={l.pagamentoId}>
+                        <tr>
+                          <td className="font-semibold">{l.sala}</td>
+                          <td className="text-sm">{l.empreendimento}</td>
+                          <td className="text-sm">{l.cliente}</td>
+                          <td className="text-sm">{l.corretor}</td>
+                          <td className="text-sm">{l.equipe}</td>
+                          <td className="numeric text-sm">{l.numero}/{l.total}</td>
+                          <td className="numeric money">{formatCurrency(l.valor)}</td>
+                          <td className="text-sm">{formatDate(l.vencimento)}</td>
+                          <td><span className={`badge badge--${k}`}>{lbl}</span></td>
+                          <td>
+                            <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+                              {l.rateio?.length > 0 && (
+                                <button className="btn btn--ghost btn--sm" onClick={() => setExpandido(aberto ? null : l.pagamentoId)}>{aberto ? 'Ocultar' : 'Rateio'}</button>
+                              )}
+                              {l.status !== 'PAGO' ? (
+                                <button className="btn btn--secondary btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'PAGO')}>Marcar recebido</button>
+                              ) : (
+                                <button className="btn btn--ghost btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'ABERTO')}>Estornar</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                        {aberto && (
+                          <tr>
+                            <td colSpan={10} style={{ background: 'var(--surface-2, rgba(0,0,0,0.15))', padding: '8px 16px' }}>
+                              <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+                                {l.rateio.map((r: any, i: number) => (
+                                  <span key={i} className="badge badge--neutral" style={{ fontWeight: 500 }}>
+                                    {r.papel}: {r.nome} — {formatCurrency(r.valorParcela)}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </>
+  );
 }
 
 function ComissoesTab() {
