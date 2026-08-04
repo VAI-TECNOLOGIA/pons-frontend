@@ -62,7 +62,7 @@ export default function LiberacoesPendentes() {
                     {p.motivo ? <> · {p.motivo}</> : null}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%', minWidth: 0 }}>
                   <Link
                     className="btn btn--ghost btn--sm"
                     to={`/chat?lead=${p.id}`}
