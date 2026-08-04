@@ -18,6 +18,9 @@ import './chat.css';
 // Gestor (qualquer papel que não seja corretor comum) vê quem está atendendo cada
 // lead — o corretor comum só enxerga os próprios, então seria redundante pra ele.
 const ehGestorAtendimento = () => Auth.user?.role !== 'CORRETOR';
+// Papéis que liberam o contato DIRETO (mesma lista que aprova na aba Liberações)
+const PAPEIS_LIBERAM_DIRETO = ['GESTOR', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'CEO', 'DIRETOR_COMERCIAL', 'GESTOR_MARKETING'];
+const liberaDireto = () => PAPEIS_LIBERAM_DIRETO.includes(Auth.user?.role || '');
 
 type Tab = 'pendente' | 'atendendo';
 
@@ -1059,15 +1062,20 @@ export default function Chat() {
                     duplicar o botão. */}
                 {acoesOpen && (
                   <div className="thread__acoes">
-                    {/* Solicitar liberação de contato: vai pra aprovação do gestor.
-                        Enquanto pendente mostra o estado; quando liberado, some. */}
-                    {!(conv as any).telefoneLiberado && (conv as any).liberacaoStatus === 'PENDENTE' ? (
+                    {/* Liberação de contato: corretor SOLICITA (vai pro gestor aprovar);
+                        gestor/CEO LIBERA DIRETO — inclusive quando há pendência de um
+                        corretor (o clique aprova e avisa o solicitante). */}
+                    {!(conv as any).telefoneLiberado && (conv as any).liberacaoStatus === 'PENDENTE' && !liberaDireto() ? (
                       <button className="btn btn--ghost btn--sm" disabled title="Aguardando aprovação do gestor">
                         <Icon name="clock" size={12} /> Liberação pendente
                       </button>
                     ) : !(conv as any).telefoneLiberado ? (
-                      <button className="btn btn--ghost btn--sm" onClick={liberarContato} title="Solicitar liberação do contato ao gestor">
-                        <Icon name="phone" size={12} /> Solicitar liberação
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={liberarContato}
+                        title={liberaDireto() ? 'Liberar o telefone do lead agora (auditado)' : 'Solicitar liberação do contato ao gestor'}
+                      >
+                        <Icon name="phone" size={12} /> {liberaDireto() ? 'Liberar contato' : 'Solicitar liberação'}
                       </button>
                     ) : null}
                     {conv.reservado && (
@@ -1452,8 +1460,10 @@ export default function Chat() {
               <Modal
                 open={liberarOpen}
                 onClose={() => !liberarSending && setLiberarOpen(false)}
-                title="Solicitar liberação de contato"
-                subtitle={`Sua solicitação para ver o telefone de ${conv?.nome || 'lead'} vai pro gestor aprovar. Você é avisado do resultado no app e no WhatsApp. Ação auditada.`}
+                title={liberaDireto() ? 'Liberar contato' : 'Solicitar liberação de contato'}
+                subtitle={liberaDireto()
+                  ? `O telefone de ${conv?.nome || 'lead'} fica visível na hora pra quem atende o lead. Ação auditada.`
+                  : `Sua solicitação para ver o telefone de ${conv?.nome || 'lead'} vai pro gestor aprovar. Você é avisado do resultado no app e no WhatsApp. Ação auditada.`}
                 size="sm"
                 footer={
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -1461,7 +1471,7 @@ export default function Chat() {
                       Cancelar
                     </button>
                     <button className="btn btn--primary" onClick={confirmarLiberar} disabled={liberarSending || !liberarJustif.trim()}>
-                      {liberarSending ? 'Enviando…' : 'Solicitar liberação'}
+                      {liberarSending ? 'Enviando…' : liberaDireto() ? 'Liberar contato' : 'Solicitar liberação'}
                     </button>
                   </div>
                 }
