@@ -86,15 +86,14 @@ function origemDoLead(origem?: string | null) {
  return ORIGEM_LEAD_INFO[origem] || { rotulo: origem, comissao: 'ORGANICA' as const };
 }
 
-// Origem manual (venda sem lead vinculado)
+// Origem manual (venda sem lead vinculado). A classe de comissão define o rateio:
+// LEAD → Gestor de Tráfego (Vinícius) recebe a campanha 6,5%+6,5%; BASE → lázaro
+// 3%/1%; ORGANICA → sem desconto, o Gestor de Tráfego NÃO participa.
 const ORIGENS_MANUAIS: { rotulo: string; comissao: 'LEAD' | 'BASE' | 'ORGANICA' }[] = [
- { rotulo: 'Tráfego pago (Meta/Google)', comissao: 'LEAD' },
- { rotulo: 'Campanha WhatsApp / Base da casa', comissao: 'BASE' },
+ { rotulo: 'Gestor de Tráfego da imobiliária (Vinícius)', comissao: 'LEAD' },
+ { rotulo: 'Base da imobiliária', comissao: 'BASE' },
  { rotulo: 'Network', comissao: 'ORGANICA' },
- { rotulo: 'Campanha Particular', comissao: 'ORGANICA' },
- { rotulo: 'Compra Própria', comissao: 'ORGANICA' },
- { rotulo: 'Indicação', comissao: 'ORGANICA' },
- { rotulo: 'Orgânico / walk-in', comissao: 'ORGANICA' },
+ { rotulo: 'Tráfego pago sem o gestor da imobiliária', comissao: 'ORGANICA' },
 ];
 
 // Documentos exigidos — padrão imobiliária, por tipo de comprador e estado civil.
