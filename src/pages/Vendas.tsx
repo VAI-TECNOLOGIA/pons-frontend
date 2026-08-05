@@ -1075,32 +1075,32 @@ export default function Vendas() {
  <input name="clienteNome" className="field__input" required value={cliente.nome} onChange={(e) => setCliente((c) => ({ ...c, nome: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">CPF</label>
- <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
+ <label className="field__label">CPF <span className="field__required">*</span></label>
+ <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required />
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
  <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required />
  </div>
  <div className="field">
- <label className="field__label">Data de nascimento</label>
- <input ref={nascimentoRef} name="clienteNascimento" type="date" className="field__input" onChange={(e) => validaNascimento(e.currentTarget)} />
+ <label className="field__label">Data de nascimento <span className="field__required">*</span></label>
+ <input ref={nascimentoRef} name="clienteNascimento" type="date" className="field__input" onChange={(e) => validaNascimento(e.currentTarget)} required />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}>
  <input type="checkbox" checked={emancipado} onChange={(e) => setEmancipado(e.target.checked)} />
  Menor emancipado (16–18 anos)
  </label>
  </div>
  <div className="field">
- <label className="field__label">Profissão</label>
- <input name="clienteProfissao" className="field__input" />
+ <label className="field__label">Profissão <span className="field__required">*</span></label>
+ <input name="clienteProfissao" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">E-mail</label>
- <input name="clienteEmail" type="email" className="field__input" value={cliente.email} onChange={onEmailCtrl} />
+ <label className="field__label">E-mail <span className="field__required">*</span></label>
+ <input name="clienteEmail" type="email" className="field__input" value={cliente.email} onChange={onEmailCtrl} required />
  </div>
  <div className="field">
- <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} value={cliente.telefone} onChange={onTelefoneCtrl} />
+ <label className="field__label">Telefone <span className="field__required">*</span></label>
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} value={cliente.telefone} onChange={onTelefoneCtrl} required />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
  <input type="checkbox" checked={telIntl} onChange={(e) => { setTelIntl(e.target.checked); if (!e.target.checked) setCliente((c) => ({ ...c, telefone: maskTelefone(c.telefone) })); }} style={{ width: 'auto' }} />
  Número internacional (sem máscara nacional)
@@ -1115,37 +1115,37 @@ export default function Vendas() {
  <div className="field__hint">Define os documentos exigidos e os dados do cônjuge.</div>
  </div>
  <div className="field">
- <label className="field__label">CEP</label>
+ <label className="field__label">CEP <span className="field__required">*</span></label>
  <div style={{ display: 'flex', gap: 6 }}>
- <input className="field__input" inputMode="numeric" placeholder="00000-000" value={endPF.cep}
+ <input className="field__input" inputMode="numeric" placeholder="00000-000" required value={endPF.cep}
  onChange={(e) => setEndPF((c) => ({ ...c, cep: maskCEP(e.target.value) }))}
  onBlur={() => { if (endPF.cep.replace(/\D/g, '').length === 8 && !endPF.logradouro) onBuscarCep(); }} />
  <button type="button" className="btn btn--secondary btn--sm" onClick={onBuscarCep} disabled={buscandoCep}>{buscandoCep ? '...' : 'Buscar'}</button>
  </div>
  </div>
  <div className="field">
- <label className="field__label">Logradouro</label>
- <input className="field__input" value={endPF.logradouro} onChange={(e) => setEndPF((c) => ({ ...c, logradouro: e.target.value }))} />
+ <label className="field__label">Logradouro <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.logradouro} onChange={(e) => setEndPF((c) => ({ ...c, logradouro: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">Número</label>
- <input className="field__input" value={endPF.numero} onChange={(e) => setEndPF((c) => ({ ...c, numero: e.target.value }))} />
+ <label className="field__label">Número <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.numero} onChange={(e) => setEndPF((c) => ({ ...c, numero: e.target.value }))} />
  </div>
  <div className="field">
  <label className="field__label">Complemento</label>
  <input className="field__input" value={endPF.complemento} onChange={(e) => setEndPF((c) => ({ ...c, complemento: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">Bairro</label>
- <input className="field__input" value={endPF.bairro} onChange={(e) => setEndPF((c) => ({ ...c, bairro: e.target.value }))} />
+ <label className="field__label">Bairro <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.bairro} onChange={(e) => setEndPF((c) => ({ ...c, bairro: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">Cidade</label>
- <input className="field__input" value={endPF.cidade} onChange={(e) => setEndPF((c) => ({ ...c, cidade: e.target.value }))} />
+ <label className="field__label">Cidade <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.cidade} onChange={(e) => setEndPF((c) => ({ ...c, cidade: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">UF</label>
- <input className="field__input" maxLength={2} value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: e.target.value.toUpperCase() }))} />
+ <label className="field__label">UF <span className="field__required">*</span></label>
+ <input className="field__input" maxLength={2} required value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: e.target.value.toUpperCase() }))} />
  </div>
  <input type="hidden" name="clienteEndereco" value={enderecoPFStr} />
  </div>
@@ -1162,20 +1162,20 @@ export default function Vendas() {
  <input name="conjugeNome" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">CPF</label>
- <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
+ <label className="field__label">CPF {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">RG (c/ órgão expedidor)</label>
- <input name="conjugeRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} />
+ <label className="field__label">RG (c/ órgão expedidor) {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">Data de nascimento</label>
- <input name="conjugeNascimento" type="date" className="field__input" />
+ <label className="field__label">Data de nascimento {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeNascimento" type="date" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">Profissão</label>
- <input name="conjugeProfissao" className="field__input" />
+ <label className="field__label">Profissão {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeProfissao" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
@@ -1201,44 +1201,44 @@ export default function Vendas() {
  <CampoCnpj name="clienteCnpj" label="CNPJ" onInfo={preencherDaReceita} />
  </div>
  <div className="field">
- <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} onInput={onTelefoneCliente} />
+ <label className="field__label">Telefone <span className="field__required">*</span></label>
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} onInput={onTelefoneCliente} required />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
  <input type="checkbox" checked={telIntl} onChange={(e) => setTelIntl(e.target.checked)} style={{ width: 'auto' }} />
  Número internacional (sem máscara nacional)
  </label>
  </div>
  <div className="field">
- <label className="field__label">E-mail</label>
- <input name="clienteEmail" type="email" className="field__input" onInput={onEmail} />
+ <label className="field__label">E-mail <span className="field__required">*</span></label>
+ <input name="clienteEmail" type="email" className="field__input" onInput={onEmail} required />
  </div>
  <div className="field field--span-2">
- <label className="field__label">Endereço completo (c/ CEP)</label>
- <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+ <label className="field__label">Endereço completo (c/ CEP) <span className="field__required">*</span></label>
+ <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" required />
  </div>
  </div>
  <div style={{ borderLeft: '3px solid var(--border-light)', paddingLeft: 14, marginTop: 6 }}>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Sócio-administrador</div>
  <div className="form-grid" style={{ marginBottom: 4 }}>
  <div className="field field--span-2">
- <label className="field__label">Nome completo</label>
- <input name="socioNome" className="field__input" />
+ <label className="field__label">Nome completo <span className="field__required">*</span></label>
+ <input name="socioNome" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">CPF</label>
- <input name="socioCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
+ <label className="field__label">CPF <span className="field__required">*</span></label>
+ <input name="socioCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required />
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
  <input name="socioRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required />
  </div>
  <div className="field">
- <label className="field__label">Data de nascimento</label>
- <input name="socioNascimento" type="date" className="field__input" />
+ <label className="field__label">Data de nascimento <span className="field__required">*</span></label>
+ <input name="socioNascimento" type="date" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">Profissão</label>
- <input name="socioProfissao" className="field__input" />
+ <label className="field__label">Profissão <span className="field__required">*</span></label>
+ <input name="socioProfissao" className="field__input" required />
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
