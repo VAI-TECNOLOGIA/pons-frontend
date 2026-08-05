@@ -10,6 +10,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { CampoCnpj } from '../components/CampoCnpj';
+import { BuscaSelect } from '../components/BuscaSelect';
 import type { CnpjInfo } from '../lib/consultaCnpj';
 import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
@@ -625,6 +626,9 @@ export default function Vendas() {
  const num = (v: FormDataEntryValue | null) => parseMoedaBR(String(v || ''));
  const str = (k: string) => { const v = fd.get(k); return v ? String(v) : undefined; };
  const optNum = (k: string) => (fd.get(k) ? num(fd.get(k)) : undefined);
+ // Pickers com busca usam input hidden (sem validação nativa do browser)
+ if (!empSelId) { toast.error('Selecione o empreendimento.'); return; }
+ if (!isCorretor && !corretorTitularId) { toast.error('Selecione o corretor titular.'); return; }
  // Entrada abaixo do mínimo do empreendimento NÃO prossegue (antes só alertava
  // e mandava pra aprovação — regra endurecida em 21/07).
  if (politicaVigente?.entradaMinimaPct != null) {
@@ -710,8 +714,8 @@ export default function Vendas() {
  mensaisValor: optNum('mensaisValor'),
  mensaisMelhorDia: fd.get('mensaisMelhorDia') ? Number(fd.get('mensaisMelhorDia')) : undefined,
  mensaisQtd: fd.get('mensaisQtd') ? Number(fd.get('mensaisQtd')) : undefined,
- // input type="month" devolve "2026-12" → salva legível: "Dezembro/2026"
- mensaisInicio: (() => { const v = str('mensaisInicio'); if (!v) return undefined; const [y, m] = v.split('-'); return `${MESES[Number(m) - 1]}/${y}`; })(),
+ // Selects Mês+Ano → salva legível: "Dezembro/2026"
+ mensaisInicio: (() => { const m = str('mensaisInicioMes'); if (!m) return undefined; return `${m}/${str('mensaisInicioAno') || new Date().getFullYear()}`; })(),
  anuaisValor: optNum('anuaisValor'),
  anuaisInicio: str('anuaisInicio'),
  anuaisQtd: fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined,
@@ -1279,12 +1283,18 @@ export default function Vendas() {
  <div className="form-grid" style={{ marginBottom: 12 }}>
  <div className="field">
  <label className="field__label">Empreendimento <span className="field__required">*</span></label>
- <select name="empreendimentoId" className="field__select" required value={empSelId} onChange={(e) => setEmpSelId(e.target.value)}>
- <option value="">— Selecionar —</option>
- {[...(emps || [])].sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome), 'pt-BR')).map((e: any) => (
- <option key={e.id} value={e.id}>{e.nome}</option>
- ))}
- </select>
+ <BuscaSelect
+ itens={[...(emps || [])].sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome), 'pt-BR')).map((e: any) => ({
+ id: e.id,
+ label: e.nome,
+ sub: [e.construtora?.nome, e.cidade && `${e.cidade}/${e.estado || ''}`].filter(Boolean).join(' · '),
+ }))}
+ value={empSelId}
+ onChange={(id) => setEmpSelId(id ? String(id) : '')}
+ placeholder="Buscar empreendimento pelo nome…"
+ vazio="Nenhum empreendimento encontrado."
+ />
+ <input type="hidden" name="empreendimentoId" value={empSelId} />
  </div>
  {unidades.length > 0 ? (
  <div className="field">
@@ -1323,11 +1333,20 @@ export default function Vendas() {
  <div className="field__hint">A venda é registrada no seu nome.</div>
  </>
  ) : (
- <select name="corretorTitularId" className="field__select" required value={corretorTitularId} onChange={(e) => setCorretorTitularId(e.target.value)}>
- {(corretores || []).map((c: any) => (
- <option key={c.id} value={c.id}>{c.nome}</option>
- ))}
- </select>
+ <>
+ <BuscaSelect
+ itens={(corretores || []).map((c: any) => ({
+ id: c.id,
+ label: c.nome,
+ sub: (c.equipe && (c.equipe.nome || (typeof c.equipe === 'string' ? c.equipe : ''))) || '',
+ }))}
+ value={corretorTitularId}
+ onChange={(id) => setCorretorTitularId(id ? String(id) : '')}
+ placeholder="Buscar corretor pelo nome…"
+ vazio="Nenhum corretor encontrado."
+ />
+ <input type="hidden" name="corretorTitularId" value={corretorTitularId} />
+ </>
  )}
  </div>
  <div className="field">
@@ -1386,20 +1405,24 @@ export default function Vendas() {
  )}
  </div>
  {contestarOpen && (
- <div style={{ marginTop: 10 }} className="fade-in">
- <label className="field__label">Por que você não concorda com essa origem?</label>
+ <div className="fade-in" style={{ marginTop: 12, padding: 12, border: '1px dashed var(--pons-blue)', borderRadius: 10, background: 'var(--bg-card)' }}>
+ <label className="field__label" style={{ display: 'block', marginBottom: 6 }}>Por que você não concorda com essa origem?</label>
  <textarea
- className="field__input"
- rows={2}
+ className="field__textarea"
+ rows={3}
  maxLength={600}
  value={contestacao}
  onChange={(e) => setContestacao(e.target.value)}
  placeholder="Ex.: o cliente veio por indicação do proprietário da unidade 302, não pela campanha."
+ style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
  />
- <div className="flex" style={{ gap: 8, marginTop: 6 }}>
- <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setContestarOpen(false); setContestacao(''); }}>Cancelar contestação</button>
- <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>A contestação vai junto com a venda pro financeiro analisar.</span>
+ <div className="flex-between" style={{ marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
+ <span className="text-xs text-secondary">A contestação vai junto com a venda pro financeiro analisar.</span>
+ <span className="text-xs text-secondary">{contestacao.length}/600</span>
  </div>
+ <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={() => { setContestarOpen(false); setContestacao(''); }}>
+ <Icon name="x" size={12} /> Cancelar contestação
+ </button>
  </div>
  )}
  </>
@@ -1526,7 +1549,15 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Mês da 1ª parcela mensal</label>
- <input name="mensaisInicio" type="month" className="field__input" />
+ <div style={{ display: 'flex', gap: 8 }}>
+ <select name="mensaisInicioMes" className="field__select" style={{ flex: 2 }} defaultValue="">
+ <option value="">— Mês —</option>
+ {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
+ </select>
+ <select name="mensaisInicioAno" className="field__select" style={{ flex: 1 }} defaultValue={String(new Date().getFullYear())}>
+ {[0, 1, 2].map((i) => { const a = new Date().getFullYear() + i; return <option key={a} value={a}>{a}</option>; })}
+ </select>
+ </div>
  <div className="field__hint">Quando começa a pagar — nem sempre é o mês seguinte (pode ser meses depois)</div>
  </div>
  <div className="field">
