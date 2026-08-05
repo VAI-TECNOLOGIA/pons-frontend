@@ -1073,8 +1073,8 @@ export default function Vendas() {
  <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
  </div>
  <div className="field">
- <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
- <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required />
+ <label className="field__label">RG (c/ órgão expedidor)</label>
+ <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} />
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento</label>
@@ -1223,8 +1223,8 @@ export default function Vendas() {
  <input name="socioCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
  </div>
  <div className="field">
- <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
- <input name="socioRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required />
+ <label className="field__label">RG (c/ órgão expedidor)</label>
+ <input name="socioRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} />
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento</label>
