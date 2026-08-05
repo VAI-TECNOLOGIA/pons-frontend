@@ -710,6 +710,8 @@ export default function Vendas() {
  mensaisValor: optNum('mensaisValor'),
  mensaisMelhorDia: fd.get('mensaisMelhorDia') ? Number(fd.get('mensaisMelhorDia')) : undefined,
  mensaisQtd: fd.get('mensaisQtd') ? Number(fd.get('mensaisQtd')) : undefined,
+ // input type="month" devolve "2026-12" → salva legível: "Dezembro/2026"
+ mensaisInicio: (() => { const v = str('mensaisInicio'); if (!v) return undefined; const [y, m] = v.split('-'); return `${MESES[Number(m) - 1]}/${y}`; })(),
  anuaisValor: optNum('anuaisValor'),
  anuaisInicio: str('anuaisInicio'),
  anuaisQtd: fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined,
@@ -1523,6 +1525,11 @@ export default function Vendas() {
  <input name="mensaisMelhorDia" type="number" min={1} max={31} className="field__input" placeholder="10" value={mensaisDia} onChange={(e) => setMensaisDia(e.target.value)} />
  </div>
  <div className="field">
+ <label className="field__label">Mês da 1ª parcela mensal</label>
+ <input name="mensaisInicio" type="month" className="field__input" />
+ <div className="field__hint">Quando começa a pagar — nem sempre é o mês seguinte (pode ser meses depois)</div>
+ </div>
+ <div className="field">
  <label className="field__label">Reforços anuais / balões (R$)</label>
  <input name="anuaisValor" className="field__input" inputMode="numeric" placeholder="R$ 30.000,00" value={anuaisValor} onChange={(e) => setAnuaisValor(maskMoedaBR(e.target.value))} />
  </div>
@@ -1805,7 +1812,7 @@ export function FormularioGpi({ f }: { f: any }) {
  ['Origem do lead', f.origemLead],
  ['Construtora (form)', f.construtora],
  ['Arras', f.arrasValor ? `${brl(f.arrasValor)} · venc. ${f.arrasVencimento || '—'}` : null],
- ['Mensais', f.mensaisValor ? `${brl(f.mensaisValor)} · dia ${f.mensaisMelhorDia || '—'}` : null],
+ ['Mensais', f.mensaisValor ? `${brl(f.mensaisValor)} · dia ${f.mensaisMelhorDia || '—'}${f.mensaisInicio ? ` · início ${f.mensaisInicio}` : ''}` : null],
  ['Anuais', f.anuaisValor ? `${brl(f.anuaisValor)} · início ${f.anuaisInicio || '—'}` : null],
  ['Chaves', brl(f.chavesValor)],
  ] as [string, any][]).filter(([, v]) => v !== null && v !== undefined && v !== '');
