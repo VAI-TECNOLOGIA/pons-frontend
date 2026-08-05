@@ -1,16 +1,16 @@
-import { useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 import { Icon } from './Icon';
 
-// Seletor genérico com BUSCA por nome — substitui <select> gigantes (ex.:
-// empreendimentos no registro de venda). Mesmo padrão do CorretorPicker:
-// lista filtrada em dropdown via portal; selecionado vira chip com X.
+// Seletor com BUSCA pelo nome — mesmo padrão da busca de campanhas na criação
+// de fila: a lista de opções aparece INLINE logo abaixo do campo (ao focar já
+// mostra tudo; digitando filtra). Só seleciona CLICANDO numa opção — texto
+// digitado nunca "passa" como valor. Selecionado vira chip com X pra trocar.
 export function BuscaSelect({
   itens,
   value,
   onChange,
-  placeholder = 'Buscar pelo nome…',
-  vazio = 'Nenhum resultado.',
+  placeholder = 'Digite pra buscar…',
+  vazio = 'Nenhum resultado encontrado.',
 }: {
   itens: { id: number | string; label: string; sub?: string }[];
   value: number | string | '';
@@ -20,23 +20,12 @@ export function BuscaSelect({
 }) {
   const [busca, setBusca] = useState('');
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; acima: boolean } | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const abrir = () => {
-    const r = inputRef.current?.getBoundingClientRect();
-    if (r) {
-      const abaixo = window.innerHeight - r.bottom;
-      const acima = abaixo < 280 && r.top > abaixo;
-      setPos({ top: acima ? r.top - 4 : r.bottom + 4, left: r.left, width: Math.max(r.width, 280), acima });
-    }
-    setOpen(true);
-  };
 
   const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const q = norm(busca.trim());
   const lista = itens
-    .filter((i) => !busca.trim() || norm(i.label).includes(norm(busca)) || norm(i.sub || '').includes(norm(busca)))
-    .slice(0, 40);
+    .filter((i) => !q || norm(i.label).includes(q) || norm(i.sub || '').includes(q))
+    .slice(0, 30);
 
   const selecionado = itens.find((i) => String(i.id) === String(value));
 
@@ -53,7 +42,7 @@ export function BuscaSelect({
           {selecionado.label}
           {selecionado.sub ? <span className="text-secondary" style={{ fontWeight: 400 }}> · {selecionado.sub}</span> : null}
         </span>
-        <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '2px 6px' }} onClick={() => { onChange(''); setBusca(''); }} title="Trocar">
+        <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '2px 6px', flexShrink: 0 }} onClick={() => { onChange(''); setBusca(''); setOpen(true); }} title="Trocar">
           <Icon name="x" size={12} />
         </button>
       </span>
@@ -61,60 +50,41 @@ export function BuscaSelect({
   }
 
   return (
-    <span style={{ position: 'relative', display: 'block', width: '100%' }}>
+    <div style={{ width: '100%' }}>
       <input
-        ref={inputRef}
         className="field__input"
         style={{ width: '100%' }}
         placeholder={placeholder}
         value={busca}
-        onChange={(e) => { setBusca(e.target.value); abrir(); }}
-        onFocus={abrir}
+        onChange={(e) => { setBusca(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
-      {open && pos && createPortal(
-        <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setOpen(false)} />
-          <div
-            style={{
-              position: 'fixed',
-              ...(pos.acima ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),
-              left: Math.min(pos.left, window.innerWidth - pos.width - 8),
-              width: pos.width,
-              zIndex: 9999,
-              maxHeight: 260,
-              overflowY: 'auto',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-light)',
-              borderRadius: 10,
-              boxShadow: 'var(--shadow-lg)',
-              padding: 4,
-            }}
-          >
-            {lista.length === 0 ? (
-              <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>{vazio}</div>
-            ) : (
-              lista.map((i) => (
-                <button
-                  key={String(i.id)}
-                  type="button"
-                  onClick={() => { onChange(i.id); setOpen(false); }}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%',
-                    padding: '8px 10px', border: 'none', borderRadius: 8, background: 'transparent',
-                    font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card-hover)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{i.label}</span>
-                  {i.sub ? <span className="text-xs text-secondary">{i.sub}</span> : null}
-                </button>
-              ))
-            )}
-          </div>
-        </>,
-        document.body,
+      {open && (
+        <div style={{ marginTop: 4, border: '1px solid var(--border-light)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)', maxHeight: 240, overflowY: 'auto' }}>
+          {lista.length === 0 ? (
+            <div className="text-xs text-secondary" style={{ padding: '10px 12px' }}>{vazio}</div>
+          ) : (
+            lista.map((i) => (
+              <button
+                key={String(i.id)}
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); onChange(i.id); setOpen(false); setBusca(''); }}
+                style={{
+                  width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px',
+                  background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)',
+                  cursor: 'pointer', color: 'var(--text-primary)', font: 'inherit',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card-hover)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.label}</div>
+                {i.sub ? <div className="text-xs text-secondary">{i.sub}</div> : null}
+              </button>
+            ))
+          )}
+        </div>
       )}
-    </span>
+    </div>
   );
 }
