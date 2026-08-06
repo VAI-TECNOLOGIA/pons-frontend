@@ -78,7 +78,9 @@ export default function Empreendimentos() {
     let editing: any = null;
     try {
       const pols: any[] = await Api.rateioPoliticas();
-      editing = (pols || []).find((p) => p.empreendimentoId === e.id && p.ativa !== false) || null;
+      // Edita a política existente MESMO se inativa (o form de venda lê qualquer
+      // uma vinculada; salvar reativa) — evita duplicar política do empreendimento.
+      editing = (pols || []).find((p) => p.empreendimentoId === e.id) || null;
     } catch { /* sem acesso à lista → abre em modo criação */ }
     setCondicoesEmp({ id: e.id, nome: e.nome, editing });
   };
