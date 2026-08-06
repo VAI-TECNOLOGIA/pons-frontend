@@ -32,13 +32,14 @@ export default function Tarefas() {
   // SÓCIO vê (pra dar tarefa pro time da equipe dele). A lista já vem escopada
   // do backend — aqui só decidimos mostrar ou não os corretores dela.
   const ehGestor = Auth.user?.role === 'GERENTE_EQUIPE' || Auth.user?.role === 'SOCIO_UNIDADE';
-  // Gestor de Marketing (Vine): só atribui pra ele mesmo ou pra logins de marketing.
-  const ehMktGestor = Auth.user?.role === 'GESTOR_MARKETING';
-  // Namíta (ASSESSORA_MARKETING) fora da bolha de tarefas do marketing
-  const MKT_ROLES = ['MARKETING', 'GESTOR_MARKETING', 'GESTOR_TRAFEGO'];
+  // Bolha marketing (quadro: Vine, Namíta, Bianca, Estevan + Paulo/Vinícius):
+  // atribui só entre os membros do quadro.
+  const MKT_ROLES = ['MARKETING', 'GESTOR_MARKETING', 'GESTOR_TRAFEGO', 'ASSESSORA_MARKETING'];
+  const ehBolhaMkt = MKT_ROLES.includes(Auth.user?.role || '');
+  const MEMBROS_QUADRO_MKT = [...MKT_ROLES, 'CEO', 'DIRETOR_COMERCIAL'];
   const podeAtribuir = (u: any) =>
-    ehMktGestor
-      ? (MKT_ROLES.includes(u.role) || u.id === Auth.user?.id)
+    ehBolhaMkt
+      ? (MEMBROS_QUADRO_MKT.includes(u.role) || u.id === Auth.user?.id)
       : (ehGestor || u.role !== 'CORRETOR');
   const [open, setOpen] = useState(false);
   const [waOn, setWaOn] = useState(false); // "Enviar pelo WhatsApp" no criar tarefa
