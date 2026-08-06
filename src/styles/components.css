@@ -1139,6 +1139,77 @@
   color: var(--text-secondary);
 }
 
+/* ---------- TIMELINE VERTICAL (régua de cadência) ---------- */
+/* Modificador de .timeline — NÃO edita as regras horizontais acima, só
+   reorienta via seletores mais específicos (.timeline--vertical .timeline__x). */
+
+.timeline--vertical {
+  flex-direction: column;
+  align-items: stretch;
+  margin: 8px 0;
+}
+
+.timeline--vertical .timeline__step {
+  flex-direction: row;
+  align-items: flex-start;
+  text-align: left;
+  padding-bottom: 28px;
+}
+.timeline--vertical .timeline__step:last-child {
+  padding-bottom: 0;
+}
+
+/* Linha conectora vertical: do fundo de um dot até o topo do próximo
+   (top:40px = altura do dot; bottom:0 = fundo do step, que já inclui o
+   padding-bottom — é exatamente onde o próximo step/dot começa). */
+.timeline--vertical .timeline__step:not(:last-child)::after {
+  top: 40px;
+  left: 20px;
+  right: auto;
+  bottom: 0;
+  width: 2px;
+  height: auto;
+}
+
+.timeline--vertical .timeline__dot {
+  flex-shrink: 0;
+}
+
+.timeline--vertical .timeline__body {
+  margin-left: 16px;
+  padding-top: 6px;
+  min-width: 0; /* permite o conteúdo (ex.: textarea) encolher dentro do flex */
+  flex: 1;
+}
+
+.timeline--vertical .timeline__label {
+  margin-top: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 14px;
+}
+
+.timeline--vertical .timeline__date {
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline--vertical .timeline__detalhe {
+  margin-top: 10px;
+}
+
+.timeline__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-light);
+}
+
 /* ---------- FUNNEL ---------- */
 
 .funnel {

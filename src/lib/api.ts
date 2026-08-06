@@ -791,6 +791,17 @@ export const Api = {
   remarketingPreview: (id: number) => request<{ total: number; custoEstimado: number }>(`/remarketing/${id}/preview-segmento`),
   remarketingEnvios:  (id: number) => request<any[]>(`/remarketing/${id}/envios`),
 
+  // Régua de cadência (NAO_RESPONDEU / RESPONDEU_24H)
+  reguaList:            () => request<any[]>('/reguas'),
+  reguaGet:             (id: number) => request<any>(`/reguas/${id}`),
+  reguaCreate:          (data: any) => request<any>('/reguas', { method: 'POST', body: data }),
+  reguaUpdate:          (id: number, data: any) => request<any>(`/reguas/${id}`, { method: 'PATCH', body: data }),
+  reguaSetPassos:       (id: number, passos: any[]) => request<any[]>(`/reguas/${id}/passos`, { method: 'PUT', body: { passos } }),
+  reguaExecucoes:       (id: number, params: { status?: string; limit?: number; offset?: number } = {}) =>
+    request<{ itens: any[]; total: number }>(`/reguas/${id}/execucoes${qs(params)}`),
+  reguaIniciar:         (reguaId: number, leadId: number) => request<any>(`/reguas/${reguaId}/leads/${leadId}/iniciar`, { method: 'POST' }),
+  reguaCancelarExecucao:(execId: number) => request<any>(`/reguas/execucoes/${execId}/cancelar`, { method: 'POST' }),
+
   // ─── Fase C — Custos Meta ────────────────────────────────────────
   metaCustosResumo: (dias = 30) => request<any>(`/meta-custos/resumo?dias=${dias}`),
   metaCustosSerie:  (dias = 30) => request<any[]>(`/meta-custos/serie?dias=${dias}`),

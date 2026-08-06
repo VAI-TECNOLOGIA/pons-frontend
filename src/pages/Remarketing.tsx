@@ -6,6 +6,9 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Icon } from '../components/Icon';
+import { ReguaCadenciaTab } from './remarketing/ReguaCadenciaTab';
+
+type Tab = 'campanhas' | 'regua';
 
 const CANAIS = ['WHATSAPP', 'EMAIL', 'SMS', 'PUSH'];
 const STATUS_BADGES: Record<string, string> = {
@@ -17,6 +20,7 @@ const STATUS_BADGES: Record<string, string> = {
 };
 
 export default function Remarketing() {
+  const [tab, setTab] = useState<Tab>('campanhas');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const { data, loading, error, reload } = useApi<any[]>(() => Api.remarketingList());
@@ -72,7 +76,9 @@ export default function Remarketing() {
     <>
       <Topbar
         title="Remarketing"
-        right={<button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova campanha</button>}
+        right={tab === 'campanhas' ? (
+          <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova campanha</button>
+        ) : undefined}
       />
       <div className="main__content">
         <PageHeader
@@ -81,36 +87,57 @@ export default function Remarketing() {
           subtitle="Nutrir base segmentada via WhatsApp, Email, SMS ou Push"
         />
 
-        {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
-
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-          {(data || []).map((c) => (
-            <div key={c.id} className="card">
-              <div className="flex-between" style={{ marginBottom: 6 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700 }}>{c.nome}</h3>
-                <span className={`badge ${STATUS_BADGES[c.status] || 'badge--neutral'}`}>{c.status}</span>
-              </div>
-              <div className="text-xs text-secondary">{c.canal} · {c.totalEnviados}/{c.totalDestinatarios} enviados</div>
-              <p style={{ fontSize: 13, marginTop: 8, color: 'var(--gray-700)', maxHeight: 60, overflow: 'hidden' }}>{c.mensagem}</p>
-              <div className="flex" style={{ gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                <button className="btn btn--ghost btn--sm" onClick={() => verPreview(c)}>
-                  <Icon name="eye" size={12} /> Preview
-                </button>
-                {c.status === 'RASCUNHO' && (
-                  <button className="btn btn--primary btn--sm" onClick={() => agendar(c)}>
-                    <Icon name="play" size={12} /> Disparar
-                  </button>
-                )}
-                {c.status === 'RASCUNHO' && <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(c); setOpen(true); }}>Editar</button>}
-                {['AGENDADA','ENVIANDO'].includes(c.status) && <button className="btn btn--ghost btn--sm" onClick={() => cancelar(c)}>Cancelar</button>}
-              </div>
-              <div className="text-xs text-secondary" style={{ marginTop: 8 }}>
-                Custo: R$ {(c.custoReal || 0).toFixed(2)} · estimado R$ {(c.custoEstimado || 0).toFixed(2)}
-              </div>
-            </div>
+        <div className="tabs">
+          {([
+            ['campanhas', 'Campanhas'],
+            ['regua', 'Régua de Cadência'],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              className={'tab ' + (tab === key ? 'tab--active' : '')}
+              onClick={() => setTab(key as Tab)}
+            >
+              {label}
+            </button>
           ))}
-          {data?.length === 0 && <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Nenhuma campanha criada</div>}
         </div>
+
+        {tab === 'campanhas' && (
+          <>
+            {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
+
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+              {(data || []).map((c) => (
+                <div key={c.id} className="card">
+                  <div className="flex-between" style={{ marginBottom: 6 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700 }}>{c.nome}</h3>
+                    <span className={`badge ${STATUS_BADGES[c.status] || 'badge--neutral'}`}>{c.status}</span>
+                  </div>
+                  <div className="text-xs text-secondary">{c.canal} · {c.totalEnviados}/{c.totalDestinatarios} enviados</div>
+                  <p style={{ fontSize: 13, marginTop: 8, color: 'var(--gray-700)', maxHeight: 60, overflow: 'hidden' }}>{c.mensagem}</p>
+                  <div className="flex" style={{ gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                    <button className="btn btn--ghost btn--sm" onClick={() => verPreview(c)}>
+                      <Icon name="eye" size={12} /> Preview
+                    </button>
+                    {c.status === 'RASCUNHO' && (
+                      <button className="btn btn--primary btn--sm" onClick={() => agendar(c)}>
+                        <Icon name="play" size={12} /> Disparar
+                      </button>
+                    )}
+                    {c.status === 'RASCUNHO' && <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(c); setOpen(true); }}>Editar</button>}
+                    {['AGENDADA','ENVIANDO'].includes(c.status) && <button className="btn btn--ghost btn--sm" onClick={() => cancelar(c)}>Cancelar</button>}
+                  </div>
+                  <div className="text-xs text-secondary" style={{ marginTop: 8 }}>
+                    Custo: R$ {(c.custoReal || 0).toFixed(2)} · estimado R$ {(c.custoEstimado || 0).toFixed(2)}
+                  </div>
+                </div>
+              ))}
+              {data?.length === 0 && <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Nenhuma campanha criada</div>}
+            </div>
+          </>
+        )}
+
+        {tab === 'regua' && <ReguaCadenciaTab />}
       </div>
 
       <Modal

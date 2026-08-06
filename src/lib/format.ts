@@ -31,6 +31,19 @@ export function timeAgo(iso: string | Date | null | undefined): string {
   return `há ${Math.floor(diff / 86400)}d`;
 }
 
+// timeAgo() trata só o passado (diff sempre >0) — não serve pra "próximo
+// disparo em Xh" (futuro). diff<=0 cobre o intervalo normal entre o
+// vencimento e o worker processar (tick de até 3min de atraso).
+export function timeUntil(iso: string | Date | null | undefined): string {
+  if (!iso) return '';
+  const diff = (new Date(iso).getTime() - Date.now()) / 1000;
+  if (diff <= 0) return 'processando…';
+  if (diff < 60) return 'em instantes';
+  if (diff < 3600) return `em ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `em ${Math.floor(diff / 3600)}h`;
+  return `em ${Math.floor(diff / 86400)}d`;
+}
+
 // Title Case PT-BR para nomes próprios: 1ª letra de cada palavra maiúscula,
 // resto minúsculo; conectivos (de, da, do, dos, das, e) ficam minúsculos
 // (exceto no início). Trata hífen/apóstrofo. Ex.: "FABIO DE PAULA" → "Fabio de Paula",
