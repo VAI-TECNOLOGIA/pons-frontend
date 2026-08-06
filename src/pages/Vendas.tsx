@@ -196,6 +196,9 @@ export default function Vendas() {
  const temConjuge = EXIGE_CONJUGE.has(estadoCivil); // obrigatório
  const mostraConjuge = MOSTRA_CONJUGE.has(estadoCivil); // exibe os campos (obrigatório OU opcional)
  const [emancipado, setEmancipado] = useState(false);
+ // Cliente internacional sem CPF (imóvel não incorporado): tira a
+ // obrigatoriedade do CPF do cliente e do cônjuge — pedido Marcelo 06/08.
+ const [clienteInternacional, setClienteInternacional] = useState(false);
  const nascimentoRef = useRef<HTMLInputElement>(null);
 
  // Busca automática do lead na base enquanto o corretor preenche nome/telefone/email.
@@ -481,7 +484,7 @@ export default function Vendas() {
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
- setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
+ setEmancipado(false); setClienteInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
  setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
@@ -1075,8 +1078,13 @@ export default function Vendas() {
  <input name="clienteNome" className="field__input" required value={cliente.nome} onChange={(e) => setCliente((c) => ({ ...c, nome: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">CPF <span className="field__required">*</span></label>
- <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required />
+ <label className="field__label">CPF {!clienteInternacional && <span className="field__required">*</span>}</label>
+ <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={!clienteInternacional} />
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}>
+ <input type="checkbox" checked={clienteInternacional} onChange={(e) => setClienteInternacional(e.target.checked)} style={{ width: 'auto' }} />
+ Cliente internacional (ainda sem CPF)
+ </label>
+ {clienteInternacional && <div className="field__hint">Imóvel sem incorporação — CPF dispensado no cadastro. Identificação sai pelo RG/passaporte.</div>}
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
@@ -1162,8 +1170,8 @@ export default function Vendas() {
  <input name="conjugeNome" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">CPF {temConjuge && <span className="field__required">*</span>}</label>
- <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={temConjuge} />
+ <label className="field__label">CPF {temConjuge && !clienteInternacional && <span className="field__required">*</span>}</label>
+ <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={temConjuge && !clienteInternacional} />
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor) {temConjuge && <span className="field__required">*</span>}</label>
