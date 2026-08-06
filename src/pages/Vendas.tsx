@@ -1566,7 +1566,6 @@ export default function Vendas() {
  {[0, 1, 2].map((i) => { const a = new Date().getFullYear() + i; return <option key={a} value={a}>{a}</option>; })}
  </select>
  </div>
- <div className="field__hint">Quando começa a pagar — nem sempre é o mês seguinte (pode ser meses depois)</div>
  </div>
  <div className="field">
  <label className="field__label">Reforços anuais / balões (R$)</label>
