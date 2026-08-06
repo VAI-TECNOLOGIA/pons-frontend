@@ -32,6 +32,14 @@ export default function Tarefas() {
   // SÓCIO vê (pra dar tarefa pro time da equipe dele). A lista já vem escopada
   // do backend — aqui só decidimos mostrar ou não os corretores dela.
   const ehGestor = Auth.user?.role === 'GERENTE_EQUIPE' || Auth.user?.role === 'SOCIO_UNIDADE';
+  // Gestor de Marketing (Vine): só atribui pra ele mesmo ou pra logins de marketing.
+  const ehMktGestor = Auth.user?.role === 'GESTOR_MARKETING';
+  // Namíta (ASSESSORA_MARKETING) fora da bolha de tarefas do marketing
+  const MKT_ROLES = ['MARKETING', 'GESTOR_MARKETING', 'GESTOR_TRAFEGO'];
+  const podeAtribuir = (u: any) =>
+    ehMktGestor
+      ? (MKT_ROLES.includes(u.role) || u.id === Auth.user?.id)
+      : (ehGestor || u.role !== 'CORRETOR');
   const [open, setOpen] = useState(false);
   const [waOn, setWaOn] = useState(false); // "Enviar pelo WhatsApp" no criar tarefa
   const { data, loading, error, reload } = useApi<any[]>(() => Api.tarefas());
@@ -279,7 +287,7 @@ export default function Tarefas() {
             <div className="field">
               <label className="field__label">Área</label>
               <select name="area" className="field__select" defaultValue="MARKETING">
-                <option value="MARKETING">Marketing</option>
+                <option value="MARKETING">Marketing (privada — só o time de marketing vê)</option>
                 <option value="ADM">ADM</option>
                 <option value="FINANCEIRO">Financeiro</option>
                 <option value="JURIDICO">Jurídico</option>
@@ -302,8 +310,8 @@ export default function Tarefas() {
               <label className="field__label">Responsável</label>
               <select name="responsavelId" className="field__select" defaultValue="">
                 <option value="">— Sem atribuir —</option>
-                {/* Corretores fora da atribuição pra Namíta/admin; gestor vê os da equipe dele */}
-                {(users || []).filter((u: any) => ehGestor || u.role !== 'CORRETOR').map((u: any) => (
+                {/* Corretores fora da atribuição pra Namíta/admin; gestor vê os da equipe dele; marketing só o time de marketing */}
+                {(users || []).filter(podeAtribuir).map((u: any) => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
@@ -367,7 +375,7 @@ export default function Tarefas() {
               <div className="field">
                 <label className="field__label">Área</label>
                 <select name="area" className="field__select" defaultValue={editTarefa.area || 'GERAL'}>
-                  <option value="MARKETING">Marketing</option>
+                  <option value="MARKETING">Marketing (privada — só o time de marketing vê)</option>
                   <option value="ADM">ADM</option>
                   <option value="FINANCEIRO">Financeiro</option>
                   <option value="JURIDICO">Jurídico</option>
@@ -391,7 +399,7 @@ export default function Tarefas() {
                 <select name="responsavelId" className="field__select" defaultValue={editTarefa.responsavelId ?? ''}>
                   <option value="">— Sem atribuir —</option>
                   {/* Sem corretores; mantém só o responsável atual se a tarefa antiga já apontar pra um */}
-                  {(users || []).filter((u: any) => ehGestor || u.role !== 'CORRETOR' || u.id === editTarefa.responsavelId).map((u: any) => (
+                  {(users || []).filter((u: any) => podeAtribuir(u) || u.id === editTarefa.responsavelId).map((u: any) => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>

@@ -64,11 +64,24 @@ export default function Empreendimentos() {
   const [gallery, setGallery] = useState<Empreendimento | null>(null);
   const [docsEmp, setDocsEmp] = useState<Empreendimento | null>(null);
   const [unidadesEmp, setUnidadesEmp] = useState<Empreendimento | null>(null);
-  // Condições de venda (política de rateio) — abre logo após cadastrar o empreendimento
-  const [condicoesEmp, setCondicoesEmp] = useState<{ id: number; nome: string } | null>(null);
+  // Condições de venda (política de rateio) — abre após cadastrar o empreendimento
+  // e também pelo botão do card (editar comissão de empreendimento existente).
+  const [condicoesEmp, setCondicoesEmp] = useState<{ id: number; nome: string; editing?: any } | null>(null);
 
   const userRole = Auth.user?.role || '';
   const canEdit = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO', 'GESTOR_MARKETING', 'SOCIO_UNIDADE'].includes(userRole);
+  // Salvar comissão/rateio exige papel que o backend aceita (senão o botão só frustra)
+  const canCondicoes = ['CEO', 'DIRETOR_FINANCEIRO', 'SOCIO_UNIDADE'].includes(userRole);
+
+  const abrirCondicoes = async (e: Empreendimento) => {
+    // Carrega a política existente do empreendimento (se houver) pra EDITAR em vez de duplicar
+    let editing: any = null;
+    try {
+      const pols: any[] = await Api.rateioPoliticas();
+      editing = (pols || []).find((p) => p.empreendimentoId === e.id && p.ativa !== false) || null;
+    } catch { /* sem acesso à lista → abre em modo criação */ }
+    setCondicoesEmp({ id: e.id, nome: e.nome, editing });
+  };
 
   if (loading) return <Shell canEdit={canEdit}><LoadingBlock /></Shell>;
   if (error) return <Shell canEdit={canEdit}><ErrorBlock error={error} /></Shell>;
@@ -193,6 +206,16 @@ export default function Empreendimentos() {
                   >
                     <Icon name="doc" size={13} /> Documentos{e.documentos?.length ? ` (${e.documentos.length})` : ''}
                   </button>
+                  {canCondicoes && (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      style={{ width: '100%', marginTop: 8 }}
+                      onClick={() => abrirCondicoes(e)}
+                      title="Comissão da Pons, rateio e condições comerciais deste empreendimento"
+                    >
+                      <Icon name="dollar" size={13} /> Condições de venda (comissão)
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -217,6 +240,7 @@ export default function Empreendimentos() {
         <CondicoesVendaModal
           open
           empreendimento={condicoesEmp}
+          editing={condicoesEmp.editing || undefined}
           onClose={() => setCondicoesEmp(null)}
           onSaved={() => { setCondicoesEmp(null); reload(); }}
         />

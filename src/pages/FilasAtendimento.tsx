@@ -32,8 +32,9 @@ const ordemRR = (a: any, b: any) => {
 
 const fmtData = (d?: string) => (d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
 
-export default function FilasAtendimento() {
-  const { data: filas, loading, error, reload } = useApi<any[]>(() => Api.roletas());
+export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATENDIMENTO' | 'DISPARO' } = {}) {
+  const ehDisparo = tipo === 'DISPARO';
+  const { data: filas, loading, error, reload } = useApi<any[]>(() => Api.roletas(tipo), [tipo]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   const { data: formularios } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaFormularios());
   const [filaAtivaId, setFilaAtivaId] = useState<number | null>(null);
@@ -57,16 +58,24 @@ export default function FilasAtendimento() {
     catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
   };
 
-  if (loading) return <Shell onNova={() => setModal('nova')}><LoadingBlock /></Shell>;
-  if (error) return <Shell onNova={() => setModal('nova')}><ErrorBlock error={error} /></Shell>;
+  if (loading) return <Shell onNova={() => setModal('nova')} ehDisparo={ehDisparo}><LoadingBlock /></Shell>;
+  if (error) return <Shell onNova={() => setModal('nova')} ehDisparo={ehDisparo}><ErrorBlock error={error} /></Shell>;
 
   const lista = filas || [];
   const ativa = lista.find((f) => f.id === filaAtivaId) || lista.find((f) => f.ativa) || lista[0];
-  const ordem = ativa ? [...(ativa.participantes || [])].filter((p: any) => p.ativo).sort(ordemRR) : [];
+  // Ordem = só quem REALMENTE pode receber (mesmo filtro da distribuição no
+  // backend): pausado por recebendoLeads ou conta inativa aparece à parte,
+  // senão o gestor vê "1º" alguém que a fila pula e a ordem parece furada.
+  const ordem = ativa
+    ? [...(ativa.participantes || [])].filter((p: any) => p.ativo && p.recebendoLeads !== false && p.contaAtiva !== false).sort(ordemRR)
+    : [];
+  const foraDaOrdem = ativa
+    ? (ativa.participantes || []).filter((p: any) => p.ativo && (p.recebendoLeads === false || p.contaAtiva === false))
+    : [];
   const filtradas = lista.filter((f) => f.nome.toLowerCase().includes(busca.toLowerCase()));
 
   return (
-    <Shell onNova={() => setModal('nova')}>
+    <Shell onNova={() => setModal('nova')} ehDisparo={ehDisparo}>
       {/* ═══════════ FILAS ATIVAS ═══════════ */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="flex-between" style={{ marginBottom: 4, flexWrap: 'wrap', gap: 12 }}>
@@ -108,6 +117,20 @@ export default function FilasAtendimento() {
                       ? <Icon name="check" size={16} style={{ color: 'var(--color-success)' }} />
                       : <span title="Offline" style={{ color: 'var(--text-secondary)', opacity: 0.5 }}>—</span>}
                   </td>
+                </tr>
+              ))}
+              {foraDaOrdem.map((p: any) => (
+                <tr key={p.id} style={{ opacity: 0.45 }}>
+                  <td><div className="avatar avatar--sm">{p.initials}</div></td>
+                  <td className="font-semibold">
+                    {p.nome}
+                    <span className="text-xs text-secondary" style={{ marginLeft: 8 }}>
+                      {p.contaAtiva === false ? 'conta inativa — fora da fila' : 'pausado (não recebendo) — fora da fila'}
+                    </span>
+                  </td>
+                  <td className="text-sm text-secondary">{p.email || '—'}</td>
+                  <td className="text-sm text-secondary">{p.telefone || '—'}</td>
+                  <td style={{ textAlign: 'center' }}><span style={{ color: 'var(--text-secondary)', opacity: 0.5 }}>—</span></td>
                 </tr>
               ))}
             </tbody>
@@ -186,6 +209,7 @@ export default function FilasAtendimento() {
           fila={modal === 'nova' ? null : modal}
           corretores={corretores || []}
           formularios={formularios || []}
+          ehDisparo={ehDisparo}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); reload(); }}
         />
@@ -263,15 +287,17 @@ function DiffView({ antes, depois }: { antes: any; depois: any }) {
   );
 }
 
-function Shell({ children, onNova }: { children: React.ReactNode; onNova: () => void }) {
+function Shell({ children, onNova, ehDisparo }: { children: React.ReactNode; onNova: () => void; ehDisparo?: boolean }) {
   return (
     <>
-      <Topbar title="Filas de Atendimento" />
+      <Topbar title={ehDisparo ? 'Filas de Disparo' : 'Filas de Atendimento'} />
       <div className="main__content">
         <PageHeader
-          breadcrumb="Comercial · Distribuição de leads"
-          title="Filas de Atendimento"
-          subtitle="Cada fila leva os leads de um formulário do Facebook para os corretores certos, na ordem definida."
+          breadcrumb={ehDisparo ? 'Marketing · Campanhas de WhatsApp' : 'Comercial · Distribuição de leads'}
+          title={ehDisparo ? 'Filas de Disparo' : 'Filas de Atendimento'}
+          subtitle={ehDisparo
+            ? 'Cada fila define a ordem dos corretores que atendem quem RESPONDER à campanha de WhatsApp (o lead levanta a mão e cai pro próximo).'
+            : 'Cada fila leva os leads de um formulário do Facebook para os corretores certos, na ordem definida.'}
         />
         {children}
       </div>
@@ -280,8 +306,8 @@ function Shell({ children, onNova }: { children: React.ReactNode; onNova: () => 
 }
 
 // ─────────────────────── Modal Cadastrar/Editar fila (3 abas) ───────────────────────
-function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
-  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number }[];
+function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved }: {
+  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number }[]; ehDisparo?: boolean;
   onClose: () => void; onSaved: () => void;
 }) {
   const editando = !!fila;
@@ -308,8 +334,15 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
   const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO'>((fila?.modoPulo as any) || 'PROXIMO');
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
   const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
+  const [autoTemplate, setAutoTemplate] = useState<string>(fila?.autoTemplate || ''); // template disparado ao lead cair na fila (CTWA)
+  const [direcionarAtendendo, setDirecionarAtendendo] = useState<boolean>(fila?.direcionarAtendendo ?? false); // vai direto pro Atendendo (sem IA)
+  const { data: templatesResp } = useApi<{ items: any[] }>(() => Api.whatsappTemplates());
+  const templatesAprovados = (templatesResp?.items || []).filter((t: any) => t.status === 'APPROVED');
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
-  const { data: campanhasVistas } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaCampanhas());
+  const { data: campanhasVistas } = useApi<{ nome: string; id: string | null; leads: number }[]>(() => Api.roletaCampanhas());
+  // Anúncios ATIVOS do Meta — pra configurar a fila ANTES de entrar lead (com nome da campanha).
+  const { data: anunciosMeta } = useApi<{ anuncios: { id: string; anuncio: string; campanha: string | null }[]; erro?: string }>(() => Api.anunciosMeta());
+  const [buscaCampanha, setBuscaCampanha] = useState('');
 
   const forasDaFila = corretores.filter((c) => c.ativo && !naFila.includes(c.id));
   const nesta = corretores.filter((c) => naFila.includes(c.id));
@@ -321,7 +354,8 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
     if (!nome.trim()) { toast.error('Dê um título à fila'); setAba('config'); return; }
     if (modoPulo === 'BOLSAO' && !bolsaoDestinoId) { toast.error('Selecione o bolsão de destino'); setAba('transferencia'); return; }
     setSaving(true);
-    const base = {
+    const base: any = {
+      ...(ehDisparo ? { tipo: 'DISPARO' } : {}),
       nome: nome.trim(), modo, ativa,
       origemFiltro: origemFiltro || null,
       campanhaFiltro: campanhaFiltro.trim() || null,
@@ -334,6 +368,8 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
       modoPulo,
       bolsaoDestinoId: modoPulo === 'BOLSAO' && bolsaoDestinoId ? Number(bolsaoDestinoId) : null,
       ocultarPosicao,
+      autoTemplate: autoTemplate.trim() || null,
+      direcionarAtendendo,
     };
     try {
       if (editando) {
@@ -425,39 +461,98 @@ function FilaModal({ fila, corretores, formularios, onClose, onSaved }: {
             </div>
           </div>
           <div className="field">
-            <label className="field__label">Filtro de campanha (anúncio WhatsApp)</label>
-            <input
-              className="field__input"
-              value={campanhaFiltro}
-              placeholder="ex.: Conecta 2ª Avenida"
-              list="fila-campanhas-vistas"
-              onChange={(e) => {
-                const v = e.target.value;
-                setCampanhaFiltro(v);
-                // Campanha de WhatsApp (clique no anúncio → WhatsApp) chega como
-                // META_ADS — já sugere a origem quando ainda estiver vazia (editável).
-                if (v.trim() && !origemFiltro) setOrigemFiltro('META_ADS');
-              }}
-            />
-            {/* Autocomplete das campanhas que JÁ trouxeram lead (título do anúncio). */}
-            <datalist id="fila-campanhas-vistas">
-              {(campanhasVistas || []).map((c) => <option key={c.nome} value={c.nome}>{c.leads} lead(s)</option>)}
-            </datalist>
-            {/* Preview ao vivo: com quais campanhas já vistas o texto casa. */}
-            {campanhaFiltro.trim() && (() => {
-              const q = campanhaFiltro.trim().toLowerCase();
-              const casa = (campanhasVistas || []).filter((c) => String(c.nome).toLowerCase().includes(q));
-              return casa.length ? (
-                <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                  <span className="text-xs text-secondary">casa com:</span>
-                  {casa.slice(0, 6).map((c) => <span key={c.nome} className="badge badge--launch" style={{ fontSize: 11 }}>{c.nome} · {c.leads}</span>)}
-                </div>
-              ) : (
-                <div className="text-xs text-secondary" style={{ marginTop: 6 }}>Nenhuma campanha já vista casa com esse texto — ok se for campanha nova (o título vem no 1º lead).</div>
+            <label className="field__label">Anúncios da campanha (WhatsApp)</label>
+            {(() => {
+              const termos = campanhaFiltro.split(',').map((s: string) => s.trim()).filter(Boolean);
+              const addTermo = (t: string) => {
+                const v = t.trim();
+                if (!v || termos.includes(v)) return;
+                setCampanhaFiltro([...termos, v].join(', '));
+                if (!origemFiltro) setOrigemFiltro('META_ADS');
+                setBuscaCampanha('');
+              };
+              const removeTermo = (t: string) => setCampanhaFiltro(termos.filter((x: string) => x !== t).join(', '));
+              const q = buscaCampanha.trim().toLowerCase();
+              // Agrupa por CAMPANHA (uma opção por campanha, não cada criativo/anúncio).
+              // O termo adicionado é o NOME DA CAMPANHA — casa todos os anúncios dela.
+              const porCampanha = new Map<string, { campanha: string; anuncios: number; leads: number }>();
+              const add = (nome: string | null, anuncios: number, leads: number) => {
+                const n = String(nome || '').trim();
+                if (!n) return;
+                const cur = porCampanha.get(n) || { campanha: n, anuncios: 0, leads: 0 };
+                cur.anuncios += anuncios; cur.leads += leads;
+                porCampanha.set(n, cur);
+              };
+              for (const a of anunciosMeta?.anuncios || []) add(a.campanha, 1, 0);
+              for (const c of campanhasVistas || []) add(c.nome, 0, c.leads);
+              const sugestoes = [...porCampanha.values()]
+                .filter((s) => !q || s.campanha.toLowerCase().includes(q))
+                .sort((a, b) => b.leads - a.leads || a.campanha.localeCompare(b.campanha))
+                .slice(0, 12);
+              return (
+                <>
+                  {/* Chips das campanhas adicionadas */}
+                  {termos.length > 0 && (
+                    <div className="flex" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                      {termos.map((t: string) => (
+                        <span key={t} style={{ fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: 300, background: 'var(--pons-blue)', color: '#fff', borderRadius: 14, padding: '4px 6px 4px 10px' }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t}</span>
+                          <button type="button" onClick={() => removeTermo(t)} title="Remover" style={{ background: 'rgba(255,255,255,0.25)', border: 'none', cursor: 'pointer', color: '#fff', width: 18, height: 18, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}><Icon name="x" size={11} /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    className="field__input"
+                    value={buscaCampanha}
+                    placeholder="Buscar campanha… (Enter adiciona)"
+                    onChange={(e) => setBuscaCampanha(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTermo(buscaCampanha); } }}
+                  />
+                  {q && (
+                    <div style={{ marginTop: 4, border: '1px solid var(--border-light)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)', maxHeight: 260, overflowY: 'auto' }}>
+                      {sugestoes.length === 0 ? (
+                        <button type="button" onMouseDown={(e) => { e.preventDefault(); addTermo(buscaCampanha); }}
+                          style={{ width: '100%', textAlign: 'left', display: 'block', padding: '8px 10px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 13 }}>
+                          + Adicionar “{buscaCampanha.trim()}” (digitado)
+                        </button>
+                      ) : sugestoes.map((s) => {
+                        const jaSelecionada = termos.includes(s.campanha);
+                        return (
+                          <button key={s.campanha} type="button"
+                            onMouseDown={(e) => { e.preventDefault(); jaSelecionada ? removeTermo(s.campanha) : addTermo(s.campanha); }}
+                            title={jaSelecionada ? 'Já adicionada — clique pra remover' : 'Clique pra adicionar'}
+                            style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: jaSelecionada ? 'rgba(37,99,235,0.12)' : 'transparent', border: 'none', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                            {jaSelecionada && <span style={{ flexShrink: 0, color: 'var(--pons-blue)', display: 'inline-flex' }}><Icon name="check" size={14} /></span>}
+                            <span style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: jaSelecionada ? 'var(--pons-blue)' : undefined }}>{s.campanha}</div>
+                              <div className="text-xs text-secondary">{jaSelecionada ? 'Adicionada' : ''}{jaSelecionada && (s.anuncios > 0 || s.leads > 0) ? ' · ' : ''}{s.anuncios > 0 ? `${s.anuncios} anúncio(s) ativo(s)` : ''}{s.anuncios > 0 && s.leads > 0 ? ' · ' : ''}{s.leads > 0 ? `${s.leads} lead(s)` : ''}</div>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               );
             })()}
-            <div className="field__hint">Vincula campanha de WhatsApp (clique no anúncio → WhatsApp, sem formulário): casa quando o título do anúncio contém este texto. As campanhas que já trouxeram lead aparecem na lista; campanha nova é só digitar o título. Vazio = qualquer campanha.</div>
+            <div className="field__hint">Configure ANTES de rodar a campanha — as campanhas <strong>ativas</strong> do Meta já aparecem na busca. Escolha uma ou várias (cada uma pega todos os anúncios dela). Vazio = qualquer anúncio de WhatsApp.{anunciosMeta?.erro ? ' (não consegui puxar do Meta agora — digite o nome manualmente)' : ''}</div>
           </div>
+          <div className="field">
+            <label className="field__label">Template automático (mensagem que dispara no 1º contato)</label>
+            <select className="field__select" value={autoTemplate} onChange={(e) => setAutoTemplate(e.target.value)}>
+              <option value="">— Nenhum (a IA responde) —</option>
+              {templatesAprovados.map((t: any) => <option key={t.name} value={t.name}>{t.name}</option>)}
+            </select>
+            <div className="field__hint">Quando o lead cai nesta fila (ex.: clica no anúncio da campanha), dispara este template aprovado na hora — {'{{'}1{'}}'} recebe o nome. Ex.: <strong>conecta_towers_lead_novo</strong> (com o card). Deixe "Nenhum" pra a IA responder normalmente. O template escolhido deve ter só {'{{'}1{'}}'} = nome.</div>
+          </div>
+          <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
+            <input type="checkbox" checked={direcionarAtendendo} onChange={(e) => setDirecionarAtendendo(e.target.checked)} style={{ marginTop: 3 }} />
+            <span>
+              <span style={{ fontWeight: 600 }}>Ir direto pro Atendendo (sem IA)</span>
+              <span className="field__hint" style={{ display: 'block' }}>Pós-template, o lead já cai reservado ao corretor (aba Atendendo) e a <strong>IA fica desligada</strong> — o corretor assume a conversa. Desmarcado = fica Pendente e a IA responde.</span>
+            </span>
+          </label>
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
             <span style={{ fontWeight: 600 }}>Fila ativa</span>

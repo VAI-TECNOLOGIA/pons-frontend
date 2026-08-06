@@ -50,6 +50,9 @@ export default function Leads() {
  const [filtroEmp, setFiltroEmp] = useState<string[]>([]); // empreendimentos de interesse (Produto)
  const [dataInicial, setDataInicial] = useState('');
  const [dataFinal, setDataFinal] = useState('');
+ const [semFollowup, setSemFollowup] = useState(false); // KPI "Sem follow-up"
+ const [novosHoje, setNovosHoje] = useState(false); // KPI "Novos hoje"
+ const [kpiAtivo, setKpiAtivo] = useState<'' | 'novos' | 'negociacao' | 'semfollowup'>(''); // qual card está selecionado
  const [busca, setBusca] = useState('');
  const [buscaDeb, setBuscaDeb] = useState('');
  const [page, setPage] = useState(1);
@@ -74,6 +77,8 @@ export default function Leads() {
  if (filtroBase.length) params.baseId = filtroBase.join(',');
  if (dataInicial) params.dataInicial = dataInicial;
  if (dataFinal) params.dataFinal = dataFinal;
+ if (semFollowup) params.semFollowup = 'true';
+ if (novosHoje) params.novosHoje = 'true';
  if (buscaDeb) params.q = buscaDeb;
  const paramsKey = JSON.stringify(params);
 
@@ -142,10 +147,21 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length);
+ const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length || semFollowup || novosHoje);
  const limparFiltros = () => {
  setFilterStatus([]); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
- setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setBusca(''); setBuscaDeb(''); setPage(1);
+ setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setNovosHoje(false); setKpiAtivo(''); setBusca(''); setBuscaDeb(''); setPage(1);
+ };
+ // Clicar num KPI (card) aplica o filtro correspondente. Toggle: clicar de novo limpa.
+ const NEGOCIACAO_STATUS = ['NEGOCIANDO', 'PROPOSTA', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA'];
+ const aplicarKpi = (kpi: 'novos' | 'negociacao' | 'semfollowup') => {
+ // sempre zera os filtros que os KPIs controlam, pra não somar/conflitar
+ setFilterStatus([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setNovosHoje(false); setPage(1);
+ if (kpiAtivo === kpi) { setKpiAtivo(''); return; } // toggle off
+ setKpiAtivo(kpi);
+ if (kpi === 'novos') setNovosHoje(true);
+ else if (kpi === 'negociacao') setFilterStatus(NEGOCIACAO_STATUS);
+ else if (kpi === 'semfollowup') setSemFollowup(true);
  };
  // troca de filtro sempre volta pra página 1
  const aoFiltrar = (setter: (v: any) => void) => (v: any) => { setter(v); setPage(1); };
@@ -197,10 +213,10 @@ export default function Leads() {
  />
 
  <div className="kpi-grid">
- <KpiSimple color="blue" label="Novos hoje" value={stats?.novosHoje ?? 0} />
- <KpiSimple color="green" label="Em negociação" value={stats?.qualificados ?? 0} />
- <KpiSimple color="amber" label="Sem follow-up" value={stats?.semFollowup ?? 0} />
- <KpiSimple color="navy" label={temFiltro ? 'Total no filtro' : 'Total no funil'} value={temFiltro ? total : (stats?.total ?? leads.length)} />
+ <KpiSimple color="blue" label="Novos hoje" value={stats?.novosHoje ?? 0} onClick={() => aplicarKpi('novos')} active={kpiAtivo === 'novos'} />
+ <KpiSimple color="green" label="Em negociação" value={stats?.qualificados ?? 0} onClick={() => aplicarKpi('negociacao')} active={kpiAtivo === 'negociacao'} />
+ <KpiSimple color="amber" label="Sem follow-up" value={stats?.semFollowup ?? 0} onClick={() => aplicarKpi('semfollowup')} active={kpiAtivo === 'semfollowup'} />
+ <KpiSimple color="navy" label={temFiltro ? 'Total no filtro' : 'Total no funil'} value={temFiltro ? total : (stats?.total ?? leads.length)} onClick={limparFiltros} />
  </div>
 
  <div className="filter-bar">
@@ -459,15 +475,20 @@ function LeadsShell({ children, onNew }: { children: React.ReactNode; onNew?: ()
  );
 }
 
-function KpiSimple({ color, label, value }: { color: string; label: string; value: number }) {
+function KpiSimple({ color, label, value, onClick, active }: { color: string; label: string; value: number; onClick?: () => void; active?: boolean }) {
  return (
- <div className="kpi">
+ <div
+ className="kpi"
+ onClick={onClick}
+ style={onClick ? { cursor: 'pointer', outline: active ? '2px solid var(--pons-blue)' : undefined, outlineOffset: -2, borderRadius: 10 } : undefined}
+ title={onClick ? (active ? 'Clique pra limpar o filtro' : `Filtrar por "${label}"`) : undefined}
+ >
  <div className={`kpi__icon kpi__icon--${color}`}>
  <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
  <circle cx="12" cy="12" r="10" />
  </svg>
  </div>
- <div className="kpi__label">{label}</div>
+ <div className="kpi__label">{label}{onClick && active ? ' ·  ✕' : ''}</div>
  <div className="kpi__value">{value}</div>
  </div>
  );

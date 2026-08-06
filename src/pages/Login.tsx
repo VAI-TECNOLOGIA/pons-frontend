@@ -313,15 +313,21 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [equipes, setEquipes] = useState<{ id: number; nome: string }[]>([]);
+  const [equipeId, setEquipeId] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    Api.equipesPublicas().then((r) => setEquipes(r.equipes || [])).catch(() => {});
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setBusy(true);
     try {
-      const { token, user } = await Api.registrar({ name: nome.trim(), email: email.trim(), password: senha, phone: telefone.trim() || undefined });
+      const { token, user } = await Api.registrar({ name: nome.trim(), email: email.trim(), password: senha, phone: telefone.trim() || undefined, equipeId: equipeId ? Number(equipeId) : null });
       Auth.set(token, user);
       setUser(user);
       sessionStorage.setItem('pons.welcome.show', '1');
@@ -357,6 +363,13 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
           <label className="login-field">
             <span className="login-field__label">Telefone (opcional)</span>
             <input className="login-field__input" type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+          </label>
+          <label className="login-field">
+            <span className="login-field__label">Equipe</span>
+            <select className="login-field__input" value={equipeId} onChange={(e) => setEquipeId(e.target.value)}>
+              <option value="">Selecione sua equipe</option>
+              {equipes.map((eq) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+            </select>
           </label>
           <label className="login-field">
             <span className="login-field__label">Senha</span>

@@ -905,12 +905,19 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 20px;
 }
 
-.form-grid--single { grid-template-columns: 1fr; }
-.form-grid--3      { grid-template-columns: repeat(3, 1fr); }
+.form-grid--single { grid-template-columns: minmax(0, 1fr); }
+.form-grid--3      { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* Itens do grid precisam encolher (min-width:auto padrão = min-content dos inputs
+   estoura a coluna → overflow horizontal / precisa arrastar). */
+.form-grid > * { min-width: 0; }
+.form-grid .field__input,
+.form-grid .field__select,
+.form-grid textarea { min-width: 0; max-width: 100%; }
 
 .field {
   display: flex;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { formatCurrency, formatCurrencyShort, formatDate } from '../lib/format';
@@ -17,7 +17,7 @@ const STATUS_BADGE: Record<string, [string, string]> = {
  CANCELADO: ['cancelled', 'CANCELADO'],
 };
 
-type Tab = 'extrato' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
+type Tab = 'extrato' | 'previsao' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
 
 export default function Financeiro() {
  const [tab, setTab] = useState<Tab>('extrato');
@@ -154,6 +154,7 @@ export default function Financeiro() {
  <div className="tabs">
  {([
  ['extrato', 'Extrato'],
+ ['previsao', 'Previsão de entrada'],
  ['semana', 'Pagamentos da semana'],
  ['dre', 'DRE'],
  ['fluxo', 'Fluxo de caixa'],
@@ -262,6 +263,7 @@ export default function Financeiro() {
  );
  })()}
 
+ {tab === 'previsao' && <PrevisaoTab />}
  {tab === 'dre' && <DreTab />}
  {tab === 'semana' && <SemanaTab />}
  {tab === 'fluxo' && <FluxoTab />}
@@ -417,6 +419,162 @@ function DreRow({ label, value, strong = false }: { label: string; value: number
  <span className="money" style={{ color }}>{formatted}</span>
  </div>
  );
+}
+
+function PrevisaoTab() {
+  const [mes, setMes] = useState(() => new Date().toISOString().slice(0, 7));
+  const [equipeId, setEquipeId] = useState('');
+  const [sala, setSala] = useState('');
+  const { data, loading, error, reload } = useApi<any>(
+    () => Api.finPrevisaoEntrada({ mes, ...(equipeId ? { equipeId: Number(equipeId) } : {}), ...(sala ? { sala } : {}) }),
+    [mes, equipeId, sala],
+  );
+  const [expandido, setExpandido] = useState<number | null>(null);
+  const [salvando, setSalvando] = useState<number | null>(null);
+  const toast = useToast();
+  const confirm = useConfirm();
+
+  const alterarStatus = async (linha: any, status: string) => {
+    if (status === 'PAGO') {
+      const ok = await confirm({
+        title: `Confirmar entrada de ${linha.cliente}?`,
+        message: `Parcela ${linha.numero}/${linha.total} da venda ${linha.codigo} — ${formatCurrency(linha.valor)}. Marca como recebida e sai do radar de atraso.`,
+        confirmText: 'Marcar recebido',
+      });
+      if (!ok) return;
+    }
+    setSalvando(linha.pagamentoId);
+    try {
+      await Api.vendaParcelaStatus(linha.vendaId, linha.pagamentoId, status);
+      toast.success(status === 'PAGO' ? 'Entrada confirmada' : 'Status atualizado');
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atualizar');
+    } finally {
+      setSalvando(null);
+    }
+  };
+
+  const equipes = data?.filtros?.equipes || [];
+  const salas = data?.filtros?.salas || [];
+
+  return (
+    <>
+      <div className="card flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 12 }}>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field__label">Mês (vencimento)</label>
+          <input type="month" className="field__input" value={mes} onChange={(e) => setMes(e.target.value)} />
+        </div>
+        <div className="field" style={{ margin: 0, minWidth: 190 }}>
+          <label className="field__label">Equipe</label>
+          <select className="field__select" value={equipeId} onChange={(e) => setEquipeId(e.target.value)}>
+            <option value="">Todas</option>
+            {equipes.map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0, minWidth: 160 }}>
+          <label className="field__label">Sala/Unidade</label>
+          <select className="field__select" value={sala} onChange={(e) => setSala(e.target.value)}>
+            <option value="">Todas</option>
+            {salas.map((s: string) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        {(equipeId || sala) && (
+          <button className="btn btn--secondary btn--sm" onClick={() => { setEquipeId(''); setSala(''); }}>Limpar</button>
+        )}
+      </div>
+
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && (
+        <>
+          <div className="kpi-grid" style={{ marginBottom: 12 }}>
+            <div className="kpi">
+              <div className="kpi__label">Previsto no mês</div>
+              <div className="kpi__value money">{formatCurrency(data.totalPrevisto)}</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi__label">Recebido</div>
+              <div className="kpi__value money" style={{ color: 'var(--money-positive)' }}>{formatCurrency(data.totalPago)}</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi__label">A receber</div>
+              <div className="kpi__value money" style={{ color: 'var(--money-negative)' }}>{formatCurrency(data.totalAReceber)}</div>
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: 0 }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Sala</th>
+                  <th>Empreendimento</th>
+                  <th>Cliente</th>
+                  <th>Corretor</th>
+                  <th>Equipe</th>
+                  <th className="numeric">Parcela</th>
+                  <th className="numeric">Valor</th>
+                  <th>Vencimento</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.linhas.length === 0 ? (
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>Nenhuma entrada prevista para o filtro</td></tr>
+                ) : (
+                  data.linhas.map((l: any) => {
+                    const [k, lbl] = STATUS_BADGE[l.status] || ['neutral', l.status];
+                    const aberto = expandido === l.pagamentoId;
+                    return (
+                      <Fragment key={l.pagamentoId}>
+                        <tr>
+                          <td className="font-semibold">{l.sala}</td>
+                          <td className="text-sm">{l.empreendimento}</td>
+                          <td className="text-sm">{l.cliente}</td>
+                          <td className="text-sm">{l.corretor}</td>
+                          <td className="text-sm">{l.equipe}</td>
+                          <td className="numeric text-sm">{l.numero}/{l.total}</td>
+                          <td className="numeric money">{formatCurrency(l.valor)}</td>
+                          <td className="text-sm">{formatDate(l.vencimento)}</td>
+                          <td><span className={`badge badge--${k}`}>{lbl}</span></td>
+                          <td>
+                            <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+                              {l.rateio?.length > 0 && (
+                                <button className="btn btn--ghost btn--sm" onClick={() => setExpandido(aberto ? null : l.pagamentoId)}>{aberto ? 'Ocultar' : 'Rateio'}</button>
+                              )}
+                              {l.status !== 'PAGO' ? (
+                                <button className="btn btn--secondary btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'PAGO')}>Marcar recebido</button>
+                              ) : (
+                                <button className="btn btn--ghost btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'ABERTO')}>Estornar</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                        {aberto && (
+                          <tr>
+                            <td colSpan={10} style={{ background: 'var(--surface-2, rgba(0,0,0,0.15))', padding: '8px 16px' }}>
+                              <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+                                {l.rateio.map((r: any, i: number) => (
+                                  <span key={i} className="badge badge--neutral" style={{ fontWeight: 500 }}>
+                                    {r.papel}: {r.nome} — {formatCurrency(r.valorParcela)}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </>
+  );
 }
 
 function ComissoesTab() {
@@ -766,11 +924,24 @@ function DreTab() {
 function SemanaTab() {
   const [semana, setSemana] = useState(0);
   const { data, loading, error } = useApi<any>(() => Api.finPagamentosSemana(semana), [semana]);
+  const [baixando, setBaixando] = useState(false);
+  const toast = useToast();
+  const baixarPdf = async () => {
+    setBaixando(true);
+    try {
+      await Api.finPdf('/financeiro/pagamentos-semana.pdf', { semana });
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível gerar o PDF');
+    } finally {
+      setBaixando(false);
+    }
+  };
   return (
     <div className="card">
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <h3 className="card__title" style={{ margin: 0 }}>Pagamentos a realizar na semana</h3>
         <div className="flex gap-2" style={{ alignItems: 'center' }}>
+          <button className="btn btn--secondary btn--sm" disabled={baixando} onClick={baixarPdf}>{baixando ? 'Gerando...' : 'Baixar PDF'}</button>
           <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s - 1)}>‹ Anterior</button>
           {semana !== 0 && <button className="btn btn--secondary btn--sm" onClick={() => setSemana(0)}>Hoje</button>}
           <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s + 1)}>Próxima ›</button>
@@ -886,18 +1057,74 @@ function FluxoTab() {
 
 // ───────────────────────── Contas a Pagar/Receber (aging) ─────────────────────────
 const FAIXA_LABEL: Record<string, string> = { aVencer: 'A vencer', d1_30: '1–30 dias', d31_60: '31–60 dias', d60: '60+ dias' };
+const CATEGORIAS_SAIDA = ['COMISSAO', 'ALUGUEL', 'FOLHA', 'MARKETING', 'IMPOSTO', 'VENDA', 'REPASSE', 'OUTRO'];
+
 function ContasTab() {
   const [tipo, setTipo] = useState<'PAGAR' | 'RECEBER'>('PAGAR');
-  const { data, loading, error } = useApi<any>(() => Api.finContas(tipo), [tipo]);
+  const [categoria, setCategoria] = useState('');
+  const [unidadeId, setUnidadeId] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const filtros = { tipo, ...(categoria ? { categoria } : {}), ...(unidadeId ? { unidadeId: Number(unidadeId) } : {}), ...(from ? { from } : {}), ...(to ? { to } : {}) };
+  const { data, loading, error } = useApi<any>(() => Api.finContas(filtros), [tipo, categoria, unidadeId, from, to]);
+  const { data: unidades } = useApi<any[]>(() => Api.unidadesList());
+  const [baixando, setBaixando] = useState(false);
+  const toast = useToast();
+
+  const baixarPdf = async () => {
+    setBaixando(true);
+    try {
+      await Api.finPdf('/financeiro/contas-a-pagar.pdf', { ...(categoria ? { categoria } : {}), ...(unidadeId ? { unidadeId: Number(unidadeId) } : {}), ...(from ? { from } : {}), ...(to ? { to } : {}) });
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível gerar o PDF');
+    } finally {
+      setBaixando(false);
+    }
+  };
+
   return (
     <div className="card">
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <h3 className="card__title" style={{ margin: 0 }}>Contas a {tipo === 'PAGAR' ? 'Pagar' : 'Receber'}</h3>
-        <div className="tabs" style={{ margin: 0 }}>
-          <button className={'tab ' + (tipo === 'PAGAR' ? 'tab--active' : '')} onClick={() => setTipo('PAGAR')}>A Pagar</button>
-          <button className={'tab ' + (tipo === 'RECEBER' ? 'tab--active' : '')} onClick={() => setTipo('RECEBER')}>A Receber</button>
+        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+          <div className="tabs" style={{ margin: 0 }}>
+            <button className={'tab ' + (tipo === 'PAGAR' ? 'tab--active' : '')} onClick={() => setTipo('PAGAR')}>A Pagar</button>
+            <button className={'tab ' + (tipo === 'RECEBER' ? 'tab--active' : '')} onClick={() => setTipo('RECEBER')}>A Receber</button>
+          </div>
+          {tipo === 'PAGAR' && (
+            <button className="btn btn--secondary btn--sm" disabled={baixando} onClick={baixarPdf}>{baixando ? 'Gerando...' : 'Baixar PDF'}</button>
+          )}
         </div>
       </div>
+
+      <div className="flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 16 }}>
+        <div className="field" style={{ margin: 0, minWidth: 170 }}>
+          <label className="field__label">Filial</label>
+          <select className="field__select" value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)}>
+            <option value="">Todas</option>
+            {(unidades || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0, minWidth: 150 }}>
+          <label className="field__label">Categoria</label>
+          <select className="field__select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+            <option value="">Todas</option>
+            {CATEGORIAS_SAIDA.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field__label">Venc. de</label>
+          <input type="date" className="field__input" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field__label">até</label>
+          <input type="date" className="field__input" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
+        {(categoria || unidadeId || from || to) && (
+          <button className="btn btn--secondary btn--sm" onClick={() => { setCategoria(''); setUnidadeId(''); setFrom(''); setTo(''); }}>Limpar</button>
+        )}
+      </div>
+
       {loading && <LoadingBlock />}
       {error && <ErrorBlock error={error} />}
       {data && (
@@ -914,7 +1141,7 @@ function ContasTab() {
           </div>
           <table className="table">
             <thead>
-              <tr><th>Descrição</th><th>Categoria</th><th>Beneficiário</th><th>Vencimento</th><th>Faixa</th><th className="text-right">Valor</th></tr>
+              <tr><th>Descrição</th><th>Categoria</th><th>Beneficiário</th><th>Filial</th><th>Vencimento</th><th>Faixa</th><th className="text-right">Valor</th></tr>
             </thead>
             <tbody>
               {(data.itens || []).map((i: any) => (
@@ -922,16 +1149,51 @@ function ContasTab() {
                   <td>{i.descricao}</td>
                   <td><span className="badge badge--neutral">{i.categoria}</span></td>
                   <td className="text-sm text-secondary">{i.beneficiario || '—'}</td>
+                  <td className="text-sm">{i.filial || '—'}</td>
                   <td className="text-sm">{formatDate(i.vencimento)}{i.diasAtraso ? <span style={{ color: 'var(--color-danger)' }}> ({i.diasAtraso}d)</span> : null}</td>
                   <td className="text-sm">{FAIXA_LABEL[i.faixa] || i.faixa}</td>
                   <td className="text-right money">{formatCurrency(i.valor)}</td>
                 </tr>
               ))}
               {!data.itens?.length && (
-                <tr><td colSpan={6} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nada em aberto.</td></tr>
+                <tr><td colSpan={7} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nada em aberto.</td></tr>
               )}
             </tbody>
           </table>
+
+          {tipo === 'PAGAR' && (data.porRecebedor?.length > 0 || data.porFilial?.length > 0) && (
+            <div className="flex gap-2" style={{ marginTop: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              {data.porFilial?.length > 0 && (
+                <div style={{ flex: 1, minWidth: 260 }}>
+                  <h4 className="card__title" style={{ margin: '0 0 8px' }}>Total por filial</h4>
+                  <table className="table">
+                    <tbody>
+                      {data.porFilial.map((f: any) => (
+                        <tr key={f.nome}><td>{f.nome}</td><td className="text-right money">{formatCurrency(f.valor)}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {data.porRecebedor?.length > 0 && (
+                <div style={{ flex: 1, minWidth: 300 }}>
+                  <h4 className="card__title" style={{ margin: '0 0 8px' }}>Consolidado por recebedor (PIX)</h4>
+                  <table className="table">
+                    <thead><tr><th>Recebedor</th><th>Chave PIX</th><th className="text-right">Valor</th></tr></thead>
+                    <tbody>
+                      {data.porRecebedor.map((r: any, idx: number) => (
+                        <tr key={idx}>
+                          <td>{r.nome}</td>
+                          <td className="text-sm text-secondary">{r.chavePix || '—'}</td>
+                          <td className="text-right money">{formatCurrency(r.valor)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
+import { CorretorPicker } from '../components/CorretorPicker';
 import { initials, timeAgo } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
@@ -10,8 +11,16 @@ import { useToast } from '../lib/toast';
 import { useSSE } from '../lib/useSSE';
 import { humanizeErrorReasonFull } from '../lib/meta-errors';
 import { isNativeApp, currentPlatform } from '../lib/platform';
+import { Auth } from '../lib/auth';
 
 import './chat.css';
+
+// Gestor (qualquer papel que não seja corretor comum) vê quem está atendendo cada
+// lead — o corretor comum só enxerga os próprios, então seria redundante pra ele.
+const ehGestorAtendimento = () => Auth.user?.role !== 'CORRETOR';
+// Papéis que liberam o contato DIRETO (mesma lista que aprova na aba Liberações)
+const PAPEIS_LIBERAM_DIRETO = ['GESTOR', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'CEO', 'DIRETOR_COMERCIAL', 'GESTOR_MARKETING'];
+const liberaDireto = () => PAPEIS_LIBERAM_DIRETO.includes(Auth.user?.role || '');
 
 type Tab = 'pendente' | 'atendendo';
 
@@ -40,6 +49,16 @@ const STATUS_OPTIONS: Array<{ codigo: string; label: string; desc: string }> = [
 
 const statusLabel = (codigo?: string) =>
   STATUS_OPTIONS.find((s) => s.codigo === codigo)?.label || codigo || 'Novo';
+
+// Etiqueta de temperatura do lead — localização rápida por cor no Atendimento.
+const TEMPERATURAS = [
+  { key: 'NOVO', label: 'Novo', cor: '#16A34A', bg: 'rgba(22,163,74,0.15)' },
+  { key: 'QUENTE', label: 'Quente', cor: '#DC2626', bg: 'rgba(220,38,38,0.15)' },
+  { key: 'MORNO', label: 'Morno', cor: '#D97706', bg: 'rgba(245,158,11,0.18)' },
+  { key: 'FRIO', label: 'Frio', cor: '#2563EB', bg: 'rgba(37,99,235,0.15)' },
+] as const;
+// Sem classificação = NOVO (padrão verde de todo lead que entra).
+const tempInfo = (c?: string) => TEMPERATURAS.find((t) => t.key === c) || TEMPERATURAS[0];
 
 type Mensagem = {
   id: number;
@@ -89,9 +108,17 @@ export default function Chat() {
   // Deep-link: /chat?lead=123 abre direto a conversa daquele lead (botão
   // "Abrir conversa" no funil e afins).
   const [searchParams] = useSearchParams();
+  const [fichaCorretorId, setFichaCorretorId] = useState<number | null>(null);
+  // Gestor clica no nome do corretor → abre um modal leve com a ficha dele.
+  const abrirFichaCorretor = (corretorId?: number) => {
+    if (corretorId) setFichaCorretorId(corretorId);
+  };
   useEffect(() => {
     const leadParam = Number(searchParams.get('lead'));
     if (leadParam) setActiveId(leadParam);
+    // Deep-link do aviso de follow-up: /chat?filtro=parados|aguardando
+    const f = searchParams.get('filtro');
+    if (f === 'parados' || f === 'aguardando') setFiltroFollowup(f);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [draft, setDraft] = useState('');
@@ -111,11 +138,17 @@ export default function Chat() {
   const [anexo, setAnexo] = useState<{ url: string; fileName: string; contentType: string } | null>(null);
   const [uploadingAnexo, setUploadingAnexo] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false); // popover de respostas rápidas
+  const [filtroTemp, setFiltroTemp] = useState<string>(''); // filtro de temperatura no inbox
+  const [filtroCorretor, setFiltroCorretor] = useState<number | ''>(''); // filtro por corretor (gestor)
+  const [filtroEquipe, setFiltroEquipe] = useState<number | ''>(''); // filtro por equipe (gestor que vê +1 equipe)
+  const [filtroFollowup, setFiltroFollowup] = useState<'' | 'aguardando' | 'parados'>(''); // follow-up
+  const [tempOpen, setTempOpen] = useState(false); // popover pra trocar a temperatura do lead
   const [traduzOpen, setTraduzOpen] = useState(false); // popover do tradutor (saída)
   const [traduzindo, setTraduzindo] = useState(false);
   const [draftPreTraducao, setDraftPreTraducao] = useState<string | null>(null); // p/ desfazer a tradução
   const [notaMode, setNotaMode] = useState(false); // composer em modo NOTA interna (não envia pro lead)
   const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
+  const [retornoOpen, setRetornoOpen] = useState(false); // popover "agendar retorno"
   const [recording, setRecording] = useState(false); // gravando áudio
   const [recSecs, setRecSecs] = useState(0);
   const [recSending, setRecSending] = useState(false);
@@ -149,7 +182,11 @@ export default function Chat() {
   const [limite, setLimite] = useState(80);
   const [buscaDeb, setBuscaDeb] = useState('');
   useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 350); return () => clearTimeout(t); }, [busca]);
-  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite }), [buscaDeb, limite]);
+  const { data: inbox, reload: reloadInbox } = useApi<any>(() => Api.conversations({ q: buscaDeb || undefined, limit: limite, classificacao: filtroTemp || undefined, corretorId: filtroCorretor || undefined, equipeId: filtroEquipe || undefined, filtro: filtroFollowup || undefined }), [buscaDeb, limite, filtroTemp, filtroCorretor, filtroEquipe, filtroFollowup]);
+  // Lista de corretores (pro filtro do gestor) — só carrega pra quem não é corretor comum.
+  const { data: corretoresFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.corretores() : Promise.resolve([])), []);
+  // Equipes no escopo do usuário (pro filtro por equipe). Só mostra o filtro se vê +1.
+  const { data: equipesFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.equipes() : Promise.resolve([])), []);
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
   const { data: tabMotivos } = useApi<Array<{ codigo: string; label: string; devolveBase?: boolean }>>(() => Api.tabulacaoMotivos());
   const { data: conv, reload: reloadConv } = useApi<ConversationDetail>(
@@ -391,7 +428,8 @@ export default function Chat() {
     setLiberarSending(true);
     try {
       const r = await Api.leadLiberarContato(activeId, liberarJustif.trim());
-      toast.success(`Telefone liberado: ${r.telefone}`);
+      if (r.jaLiberado && r.telefone) toast.success(`Telefone: ${r.telefone}`);
+      else toast.success(r.message || 'Solicitação enviada ao gestor pra aprovação.');
       setLiberarOpen(false);
       reloadConv();
       reloadInbox();
@@ -399,6 +437,18 @@ export default function Chat() {
       toast.error('Erro: ' + (err?.message || 'falha'));
     } finally {
       setLiberarSending(false);
+    }
+  };
+
+  const agendarRetorno = async (horas: number, label: string) => {
+    if (!activeId) return;
+    setRetornoOpen(false);
+    try {
+      await Api.agendarRetorno(activeId, horas);
+      toast.success(`Retorno agendado ${label}. Você recebe um lembrete no WhatsApp.`);
+      reloadConv();
+    } catch (e: any) {
+      toast.error('Erro ao agendar: ' + (e?.message || 'falha'));
     }
   };
 
@@ -557,6 +607,18 @@ export default function Chat() {
     recStreamRef.current?.getTracks().forEach((t) => t.stop());
     recStreamRef.current = null;
   };
+  // ── Etiqueta de temperatura (Quente/Morno/Frio) ────────────────────────────
+  const trocarTemperatura = async (leadId: number, key: 'NOVO' | 'QUENTE' | 'MORNO' | 'FRIO') => {
+    setTempOpen(false);
+    try {
+      await Api.setClassificacao(leadId, key);
+      reloadConv();
+      reloadInbox();
+    } catch {
+      toast.error('Não consegui atualizar a etiqueta. Tente de novo.');
+    }
+  };
+
   // ── Tradutor de saída (PT → inglês/espanhol) ───────────────────────────────
   const traduzirDraft = async (idioma: 'en' | 'es') => {
     const texto = draft.trim();
@@ -727,6 +789,73 @@ export default function Chat() {
                 {buscaDeb ? `${inbox.carregadas} resultado(s)` : `${inbox.carregadas} de ${inbox.totalConversas} conversas`}
               </div>
             )}
+            {/* Filtro por equipe — só pra quem vê MAIS DE UMA equipe (some pra quem
+                comanda uma só, tipo Leiken/Vine na 2ª Avenida). */}
+            {ehGestorAtendimento() && (equipesFiltro?.length || 0) > 1 && (
+              <div style={{ marginTop: 8 }}>
+                <select
+                  className="field__input"
+                  style={{ width: '100%', height: 38 }}
+                  value={filtroEquipe}
+                  onChange={(e) => { setFiltroEquipe(e.target.value ? Number(e.target.value) : ''); setFiltroCorretor(''); }}
+                >
+                  <option value="">Todas as equipes</option>
+                  {(equipesFiltro || []).map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+                </select>
+              </div>
+            )}
+            {/* Só gestor: filtrar o inbox pelos atendimentos de um corretor específico */}
+            {ehGestorAtendimento() && (
+              <div style={{ marginTop: 8 }}>
+                <CorretorPicker
+                  corretores={filtroEquipe ? (corretoresFiltro || []).filter((c: any) => (c.equipe?.id ?? c.equipeId) === filtroEquipe) : corretoresFiltro}
+                  value={filtroCorretor}
+                  onChange={(id) => setFiltroCorretor(typeof id === 'number' ? id : '')}
+                  placeholder="Filtrar por corretor…"
+                />
+              </div>
+            )}
+            {/* Follow-up: aguardando resposta / parados (com contagem) */}
+            <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setFiltroFollowup(filtroFollowup === 'aguardando' ? '' : 'aguardando')}
+                title="Leads onde o cliente falou por último e espera sua resposta"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${filtroFollowup === 'aguardando' ? '#D97706' : 'var(--border-light)'}`, background: filtroFollowup === 'aguardando' ? 'rgba(245,158,11,0.18)' : 'transparent', color: filtroFollowup === 'aguardando' ? '#D97706' : 'var(--text-secondary)' }}>
+                <Icon name="clock" size={11} /> Aguardando resposta{inbox?.countAguardando ? ` (${inbox.countAguardando})` : ''}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroFollowup(filtroFollowup === 'parados' ? '' : 'parados')}
+                title="Leads sem nenhuma interação há mais de 1 dia — precisam de retorno"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${filtroFollowup === 'parados' ? '#DC2626' : 'var(--border-light)'}`, background: filtroFollowup === 'parados' ? 'rgba(220,38,38,0.15)' : 'transparent', color: filtroFollowup === 'parados' ? '#DC2626' : 'var(--text-secondary)' }}>
+                <Icon name="warn" size={11} /> Parados +1d{inbox?.countParados ? ` (${inbox.countParados})` : ''}
+              </button>
+            </div>
+            {/* Filtro por etiqueta de temperatura */}
+            <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setFiltroTemp('')}
+                style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: '1px solid var(--border-light)', background: filtroTemp === '' ? 'var(--bg-card-hover)' : 'transparent', color: 'var(--text-secondary)' }}
+              >
+                Todas
+              </button>
+              {TEMPERATURAS.map((t) => {
+                const on = filtroTemp === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setFiltroTemp(on ? '' : t.key)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${on ? t.cor : 'var(--border-light)'}`, background: on ? t.bg : 'transparent', color: on ? t.cor : 'var(--text-secondary)' }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {lista.length === 0 ? (
@@ -764,6 +893,10 @@ export default function Chat() {
                 <div className="conv__main">
                   <div className="conv__name">
                     <span>
+                      <span
+                        title={`Lead ${tempInfo(c.classificacao).label}`}
+                        style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: tempInfo(c.classificacao).cor, marginRight: 6, verticalAlign: 'middle', flexShrink: 0 }}
+                      />
                       {c.nome}
                       {c.vip && <Icon name="star" size={11} style={{ marginLeft: 4, color: '#EAB308', verticalAlign: 'middle' }} />}
                       {c.vaiConectado && (
@@ -779,8 +912,9 @@ export default function Chat() {
                   <div className="conv__last">
                     {c.ultimaMensagem ? (
                       <>
-                        {c.ultimaMensagem.direction === 'outbound' && (
-                          <Icon name="arrowRight" size={10} style={{ verticalAlign: 'middle', marginRight: 2 }} />
+                        {/* Nossa msg (outbound): ticks de entregue/lido igual WhatsApp */}
+                        {(c.ultimaMensagem.direction === 'outbound' || c.ultimaMensagem.autor === 'CORRETOR' || c.ultimaMensagem.autor === 'IA') && (
+                          <span style={{ marginRight: 3, verticalAlign: 'middle' }}><StatusTicks m={c.ultimaMensagem} /></span>
                         )}
                         {(c.ultimaMensagem.texto || '').slice(0, 40)}
                       </>
@@ -788,6 +922,18 @@ export default function Chat() {
                       c.origem + ' · ' + (c.interesse || '—')
                     )}
                   </div>
+                  {/* Só gestor: corretor que atende este lead — clica pra abrir a ficha */}
+                  {ehGestorAtendimento() && c.corretor?.nome && (
+                    <button
+                      type="button"
+                      className="text-xs"
+                      onClick={(e) => { e.stopPropagation(); abrirFichaCorretor(c.corretor?.id); }}
+                      title="Abrir ficha do corretor"
+                      style={{ marginTop: 2, color: 'var(--blue-600)', display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                    >
+                      <Icon name="users" size={10} /> {c.corretor.nome}
+                    </button>
+                  )}
                 </div>
               </div>
             ))
@@ -851,11 +997,50 @@ export default function Chat() {
                   <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                     {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                   </span>
-                  {(conv as any).classificacao === 'QUENTE' && (
-                    <span className="badge" style={{ background: 'rgba(220,38,38,0.15)', color: '#DC2626' }}>
-                      <Icon name="fire" size={10} /> QUENTE
-                    </span>
+                  {/* Só gestor: quem atende este lead — clica pra abrir a ficha do corretor */}
+                  {ehGestorAtendimento() && (conv as any).corretor?.nome && (
+                    <button
+                      type="button"
+                      className="badge"
+                      onClick={() => abrirFichaCorretor((conv as any).corretor?.id)}
+                      title="Abrir ficha do corretor"
+                      style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <Icon name="users" size={10} /> {(conv as any).corretor.nome}
+                    </button>
                   )}
+                  {/* Etiqueta de temperatura — clicável pra trocar (popover abre pra baixo) */}
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <button
+                      type="button"
+                      className="badge"
+                      onClick={() => setTempOpen((o) => !o)}
+                      title="Trocar etiqueta do lead"
+                      style={{ background: tempInfo((conv as any).classificacao).bg, color: tempInfo((conv as any).classificacao).cor, cursor: 'pointer', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: tempInfo((conv as any).classificacao).cor, display: 'inline-block' }} />
+                      {tempInfo((conv as any).classificacao).label}
+                      <Icon name="chevron-down" size={10} />
+                    </button>
+                    {tempOpen && (
+                      <>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setTempOpen(false)} />
+                        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, minWidth: 150, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, boxShadow: '0 10px 28px rgba(0,0,0,.18)', padding: 6 }}>
+                          {TEMPERATURAS.map((t) => (
+                            <button
+                              key={t.key}
+                              type="button"
+                              onClick={() => trocarTemperatura(conv.id, t.key)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'transparent', border: 0, borderRadius: 7, padding: '7px 10px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}
+                            >
+                              <span style={{ width: 9, height: 9, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                   {(conv as any).iaAtendendo && !conv.reservado && !(conv as any).iaLimiteAtingido && (
                     <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }}>
                       <Icon name="bot" size={10} /> IA respondendo · {(conv as any).iaRespostasCount || 0}/3
@@ -877,16 +1062,47 @@ export default function Chat() {
                     duplicar o botão. */}
                 {acoesOpen && (
                   <div className="thread__acoes">
-                    {/* Liberar contato BLOQUEADO por enquanto: aparece sempre
-                        (desabilitado) enquanto o telefone não foi liberado. Ao
-                        reativar, voltar a exigir `conv.reservado` e o onClick. */}
-                    {!(conv as any).telefoneLiberado && (
-                      <button className="btn btn--ghost btn--sm" disabled title="Temporariamente indisponível">
-                        <Icon name="phone" size={12} /> Liberar contato
+                    {/* Liberação de contato: corretor SOLICITA (vai pro gestor aprovar);
+                        gestor/CEO LIBERA DIRETO — inclusive quando há pendência de um
+                        corretor (o clique aprova e avisa o solicitante). */}
+                    {!(conv as any).telefoneLiberado && (conv as any).liberacaoStatus === 'PENDENTE' && !liberaDireto() ? (
+                      <button className="btn btn--ghost btn--sm" disabled title="Aguardando aprovação do gestor">
+                        <Icon name="clock" size={12} /> Liberação pendente
                       </button>
-                    )}
+                    ) : !(conv as any).telefoneLiberado ? (
+                      <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={liberarContato}
+                        title={liberaDireto() ? 'Liberar o telefone do lead agora (auditado)' : 'Solicitar liberação do contato ao gestor'}
+                      >
+                        <Icon name="phone" size={12} /> {liberaDireto() ? 'Liberar contato' : 'Solicitar liberação'}
+                      </button>
+                    ) : null}
                     {conv.reservado && (
                       <>
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <button className="btn btn--ghost btn--sm" onClick={() => setRetornoOpen((o) => !o)} title="Me lembrar de dar retorno a este lead">
+                            <Icon name="clock" size={12} /> Agendar retorno
+                          </button>
+                          {retornoOpen && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setRetornoOpen(false)} />
+                              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 50, minWidth: 170, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, boxShadow: '0 10px 28px rgba(0,0,0,.18)', padding: 6 }}>
+                                {[
+                                  { h: 3, l: 'Em 3 horas' },
+                                  { h: 24, l: 'Amanhã' },
+                                  { h: 48, l: 'Em 2 dias' },
+                                  { h: 168, l: 'Em 1 semana' },
+                                ].map((o) => (
+                                  <button key={o.h} type="button" onClick={() => agendarRetorno(o.h, o.l.toLowerCase())}
+                                    style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, borderRadius: 7, padding: '7px 10px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>
+                                    {o.l}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <button className="btn btn--ghost btn--sm" onClick={abrirTabular} title="Registrar desfecho do lead (motivo). Pode devolver à base.">
                           <Icon name="warn" size={12} /> Tabular
                         </button>
@@ -1238,11 +1454,16 @@ export default function Chat() {
                   }}
                 />
               )}
+              {fichaCorretorId && (
+                <FichaCorretorModal id={fichaCorretorId} onClose={() => setFichaCorretorId(null)} />
+              )}
               <Modal
                 open={liberarOpen}
                 onClose={() => !liberarSending && setLiberarOpen(false)}
-                title="Liberar contato do lead"
-                subtitle={`O telefone de ${conv?.nome || 'lead'} será exibido pra você. Lead vira QUENTE e contará na sua estatística "leads chamados externamente". Ação auditada.`}
+                title={liberaDireto() ? 'Liberar contato' : 'Solicitar liberação de contato'}
+                subtitle={liberaDireto()
+                  ? `O telefone de ${conv?.nome || 'lead'} fica visível na hora pra quem atende o lead. Ação auditada.`
+                  : `Sua solicitação para ver o telefone de ${conv?.nome || 'lead'} vai pro gestor aprovar. Você é avisado do resultado no app e no WhatsApp. Ação auditada.`}
                 size="sm"
                 footer={
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -1250,7 +1471,7 @@ export default function Chat() {
                       Cancelar
                     </button>
                     <button className="btn btn--primary" onClick={confirmarLiberar} disabled={liberarSending || !liberarJustif.trim()}>
-                      {liberarSending ? 'Liberando…' : 'Liberar contato'}
+                      {liberarSending ? 'Enviando…' : liberaDireto() ? 'Liberar contato' : 'Solicitar liberação'}
                     </button>
                   </div>
                 }
@@ -1391,7 +1612,7 @@ function MessageBubble({ m }: { m: Mensagem }) {
   return (
     <div className={`bubble bubble--${m.autor}`}>
       <MessageBody m={m} />
-      {!isOutbound && !!m.texto?.trim() && <TraduzirRecebida texto={m.texto} />}
+      {!isOutbound && (m.contentType || 'text').toLowerCase() === 'text' && !!m.texto?.trim() && <TraduzirRecebida texto={m.texto} />}
       <div className="bubble__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <span>
           {who} · {timeAgo(m.createdAt)}
@@ -1466,10 +1687,48 @@ function TraduzirRecebida({ texto }: { texto: string }) {
 // Imagem recolhível: por padrão mostra só um chip "Ver imagem" pra não poluir a
 // conversa quando há muitas mídias. Ao clicar, expande inline; pode recolher de
 // novo. Responsivo: a imagem nunca passa de 75% da largura disponível.
+// Ficha leve do corretor — abre em modal no Atendimento (só gestor). Nome, CRECI,
+// e-mail e total de leads, sem sair da tela.
+function FichaCorretorModal({ id, onClose }: { id: number; onClose: () => void }) {
+  const { data: c, loading, error } = useApi<any>(() => Api.corretor(id), [id]);
+  const linha = (rotulo: string, valor: React.ReactNode) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '12px 2px', borderBottom: '1px solid var(--border-light)' }}>
+      <span className="text-secondary" style={{ fontWeight: 700, fontSize: 13 }}>{rotulo}</span>
+      <span style={{ fontSize: 14, textAlign: 'right', wordBreak: 'break-word' }}>{valor}</span>
+    </div>
+  );
+  return (
+    <Modal open onClose={onClose} title="Ficha do corretor" size="md">
+      {loading ? (
+        <div style={{ padding: 16, color: 'var(--text-secondary)' }}>Carregando…</div>
+      ) : error || !c ? (
+        <div style={{ padding: 16, color: 'var(--text-secondary)' }}>Não consegui carregar a ficha.</div>
+      ) : (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div className="avatar">{c.initials}</div>
+            <div>
+              <div style={{ fontWeight: 700 }}>{c.nome}</div>
+              <div className="text-xs text-secondary">{c.equipe?.nome || 'Sem equipe'} · {c.status}</div>
+            </div>
+          </div>
+          {linha('CRECI', c.creci || '—')}
+          {linha('E-mail', c.email || '—')}
+          {linha('Telefone', c.phone || '—')}
+          {linha('Leads', <strong>{c.leadsCount ?? '—'}</strong>)}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 const AUDIO_SPEEDS = [1, 1.25, 1.5, 2];
 function AudioBody({ m }: { m: Mensagem }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speedIdx, setSpeedIdx] = useState(0);
+  const [transcricao, setTranscricao] = useState<string | null>(null);
+  const [transcrevendo, setTranscrevendo] = useState(false);
+  const [transcErro, setTranscErro] = useState(false);
   const aplicar = (idx: number) => {
     if (audioRef.current) audioRef.current.playbackRate = AUDIO_SPEEDS[idx];
   };
@@ -1478,38 +1737,54 @@ function AudioBody({ m }: { m: Mensagem }) {
     setSpeedIdx(next);
     aplicar(next);
   };
+  const transcrever = async () => {
+    if (transcrevendo) return;
+    if (transcricao) { setTranscricao(null); return; } // toggle: esconde
+    // Cache local: se a mensagem já veio com transcrição, mostra na hora (sem chamar).
+    if ((m as any).transcricao != null) { setTranscricao((m as any).transcricao || '(áudio sem fala reconhecível)'); return; }
+    if (!m.id) return;
+    setTranscrevendo(true); setTranscErro(false);
+    try {
+      const r = await Api.transcreverAudio(m.id);
+      setTranscricao(r.texto || '(áudio sem fala reconhecível)');
+    } catch { setTranscErro(true); } finally { setTranscrevendo(false); }
+  };
   const label = `${AUDIO_SPEEDS[speedIdx]}x`;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <audio
-        ref={audioRef}
-        src={m.fileUrl || undefined}
-        controls
-        preload="none"
-        style={{ maxWidth: 260 }}
-        onLoadedMetadata={() => aplicar(speedIdx)}
-        onPlay={() => aplicar(speedIdx)}
-      />
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <audio
+          ref={audioRef}
+          src={m.fileUrl || undefined}
+          controls
+          preload="none"
+          style={{ maxWidth: 260 }}
+          onLoadedMetadata={() => aplicar(speedIdx)}
+          onPlay={() => aplicar(speedIdx)}
+        />
+        <button
+          type="button"
+          onClick={ciclar}
+          title="Velocidade de reprodução"
+          style={{ flex: '0 0 auto', border: '1px solid var(--border-light)', background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', borderRadius: 14, padding: '3px 9px', fontSize: 12, fontWeight: 700, cursor: 'pointer', minWidth: 46, lineHeight: 1.2 }}
+        >
+          {label}
+        </button>
+      </div>
       <button
         type="button"
-        onClick={ciclar}
-        title="Velocidade de reprodução"
-        style={{
-          flex: '0 0 auto',
-          border: '1px solid var(--border, #d0d5dd)',
-          background: 'var(--surface, #fff)',
-          color: 'inherit',
-          borderRadius: 14,
-          padding: '3px 9px',
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: 'pointer',
-          minWidth: 46,
-          lineHeight: 1.2,
-        }}
+        onClick={transcrever}
+        disabled={transcrevendo}
+        style={{ marginTop: 5, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 11, fontWeight: 600, opacity: 0.85 }}
       >
-        {label}
+        <Icon name="doc" size={11} /> {transcrevendo ? 'Transcrevendo…' : transcricao ? 'Ocultar transcrição' : 'Transcrever'}
       </button>
+      {transcErro && <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-secondary)' }}>Não consegui transcrever agora.</div>}
+      {transcricao && (
+        <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border-light)', fontSize: 13, whiteSpace: 'pre-wrap' }}>
+          {transcricao}
+        </div>
+      )}
     </div>
   );
 }
@@ -1784,11 +2059,18 @@ function TemplatePickerModal({
   const toast = useToast();
 
   useEffect(() => {
+    // Templates de SISTEMA/interno que não servem pra disparo manual no atendimento.
+    const OCULTOS = new Set([
+      'redefinir_senha_codigo', 'app_liberado', 'pons_teste', 'sistema_no_ar',
+      'cadastro_confirmado', 'lembrete_agenda', 'chegou_lead', 'lead_novo', 'novo_lead',
+      'venda_protocolo_p1', 'venda_protocolo_p2', 'venda_aprovada_protocolo',
+      // Notificações internas (sistema dispara sozinho pro corretor/gestor):
+      'leads_aguardando', 'lead_respondeu', 'liberacao_solicitada', 'liberacao_aprovada', 'liberacao_reprovada',
+    ]);
     Api.whatsappTemplates()
-      // Esconde templates de AUTENTICAÇÃO (ex.: redefinir_senha_codigo) — são de
-      // sistema, não servem pra disparo manual no atendimento.
+      // Esconde AUTENTICAÇÃO + os internos acima (sistema/notificação, não atendimento).
       .then((r) => setItems((r.items || []).filter(
-        (t: any) => String(t.category).toUpperCase() !== 'AUTHENTICATION' && t.name !== 'redefinir_senha_codigo',
+        (t: any) => String(t.category).toUpperCase() !== 'AUTHENTICATION' && !OCULTOS.has(t.name),
       )))
       .catch((e) => toast.error('Erro ao carregar templates: ' + e.message))
       .finally(() => setLoading(false));

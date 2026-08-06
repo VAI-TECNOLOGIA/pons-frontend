@@ -1,0 +1,183 @@
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Topbar, PageHeader } from '../components/PageHeader';
+import { Api } from '../lib/api';
+import { useApi } from '../lib/useApi';
+import { useToast } from '../lib/toast';
+import { Icon } from '../components/Icon';
+import { CorretorPicker } from '../components/CorretorPicker';
+import { timeAgo } from '../lib/format';
+
+// Temperatura do lead (classificacao) — mesma paleta do Atendimento.
+const TEMP: Record<string, { label: string; cor: string; bg: string }> = {
+  NOVO: { label: 'Novo', cor: '#16A34A', bg: 'rgba(22,163,74,0.15)' },
+  QUENTE: { label: 'Quente', cor: '#DC2626', bg: 'rgba(220,38,38,0.15)' },
+  MORNO: { label: 'Morno', cor: '#D97706', bg: 'rgba(245,158,11,0.18)' },
+  FRIO: { label: 'Frio', cor: '#2563EB', bg: 'rgba(37,99,235,0.15)' },
+};
+const temp = (c?: string) => TEMP[c || 'NOVO'] || TEMP.NOVO;
+
+export default function BaseEquipe() {
+  const [filtroEquipe, setFiltroEquipe] = useState<number | ''>('');
+  const [filtroTemp, setFiltroTemp] = useState<string>('');
+  const [sel, setSel] = useState<Set<number>>(new Set());
+  const [alvo, setAlvo] = useState<number | ''>('');
+  const [enviando, setEnviando] = useState(false);
+  const toast = useToast();
+  const navigate = useNavigate();
+
+  const params = useMemo(() => ({ ...(filtroEquipe ? { equipeId: Number(filtroEquipe) } : {}), ...(filtroTemp ? { classificacao: filtroTemp } : {}) }), [filtroEquipe, filtroTemp]);
+  const { data, loading, reload } = useApi<{ bases: any[]; leads: any[] }>(() => Api.baseEquipe(params), [JSON.stringify(params)]);
+  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+
+  const leads = data?.leads || [];
+  // Guarda a lista COMPLETA de bases (carga sem filtro) — senão ao filtrar por uma
+  // equipe a resposta traz só 1 base e o dropdown de filtro sumia.
+  const [todasBases, setTodasBases] = useState<any[]>([]);
+  useEffect(() => {
+    if (data?.bases && !filtroEquipe) setTodasBases(data.bases);
+  }, [data, filtroEquipe]);
+  const bases = todasBases.length ? todasBases : (data?.bases || []);
+  const temMultiEquipe = bases.length > 1;
+
+  // Só corretores da(s) equipe(s) dos leads selecionados podem receber.
+  const equipesSelecionadas = useMemo(() => {
+    const s = new Set<number>();
+    for (const l of leads) if (sel.has(l.id) && l.equipeId) s.add(l.equipeId);
+    return s;
+  }, [leads, sel]);
+  const corretoresDaEquipe = useMemo(
+    () => (corretores || []).filter((c: any) => c.equipe?.id && equipesSelecionadas.has(c.equipe.id)),
+    [corretores, equipesSelecionadas],
+  );
+
+  const toggle = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleTodos = () => setSel((s) => (s.size === leads.length ? new Set() : new Set(leads.map((l) => l.id))));
+
+  const transferir = async () => {
+    if (!sel.size || !alvo) return;
+    setEnviando(true);
+    try {
+      const r = await Api.bolsaoDirecionar({ leadIds: [...sel], corretorId: Number(alvo), assumir: true });
+      toast.success(`${r.direcionados} lead(s) transferido(s).${r.jaAtribuidos ? ` ${r.jaAtribuidos} já estavam com corretor.` : ''}`);
+      setSel(new Set()); setAlvo('');
+      reload();
+    } catch (e: any) {
+      toast.error('Erro ao transferir: ' + (e?.message || 'falha'));
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <>
+      <Topbar title="Base da Equipe" />
+      <div className="main__content page-enter">
+        <PageHeader
+          breadcrumb="Equipe · Base de Leads"
+          title={`${leads.length} lead(s) na base`}
+          subtitle="Leads de corretores desativados da sua equipe. Escolha pra quem transferir — a data vira o dia da transferência e o histórico da conversa é preservado."
+        />
+
+        {/* Filtros: equipe (se +1 base) + temperatura */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '8px 0 12px' }}>
+          {temMultiEquipe && (
+            <select className="field__select" style={{ maxWidth: 260 }} value={filtroEquipe} onChange={(e) => { setFiltroEquipe(e.target.value ? Number(e.target.value) : ''); setSel(new Set()); }}>
+              <option value="">Todas as equipes</option>
+              {bases.map((b) => <option key={b.id} value={b.equipeId}>{b.equipe || `Base ${b.id}`}</option>)}
+            </select>
+          )}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => { setFiltroTemp(''); setSel(new Set()); }}
+              style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: '1px solid var(--border-light)', background: filtroTemp === '' ? 'var(--bg-card-hover)' : 'transparent', color: 'var(--text-secondary)' }}>
+              Todas
+            </button>
+            {Object.entries(TEMP).map(([key, t]) => {
+              const on = filtroTemp === key;
+              return (
+                <button key={key} type="button" onClick={() => { setFiltroTemp(on ? '' : key); setSel(new Set()); }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${on ? t.cor : 'var(--border-light)'}`, background: on ? t.bg : 'transparent', color: on ? t.cor : 'var(--text-secondary)' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Barra de transferência */}
+        {sel.size > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginBottom: 12, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, flexWrap: 'wrap' }}>
+            <strong>{sel.size} selecionado(s)</strong>
+            <span className="text-secondary">→ transferir para:</span>
+            <div style={{ minWidth: 260 }}>
+              <CorretorPicker
+                corretores={corretoresDaEquipe}
+                value={alvo}
+                onChange={(id) => setAlvo(typeof id === 'number' ? id : '')}
+                placeholder="Buscar corretor da equipe pelo nome…"
+              />
+            </div>
+            <button className="btn btn--primary btn--sm" onClick={transferir} disabled={!alvo || enviando}>
+              {enviando ? 'Transferindo…' : 'Transferir'}
+            </button>
+            <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
+          </div>
+        )}
+
+        <div className="card" style={{ overflowX: 'auto' }}>
+          {loading ? (
+            <div style={{ padding: 24, color: 'var(--text-secondary)' }}>Carregando…</div>
+          ) : leads.length === 0 ? (
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-secondary)' }}>
+              Nenhum lead na base da equipe. Quando um corretor for desativado, os leads dele caem aqui.
+            </div>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: 32 }}><input type="checkbox" checked={sel.size === leads.length && leads.length > 0} onChange={toggleTodos} /></th>
+                  <th>Temperatura</th>
+                  <th>Nome</th>
+                  <th>Telefone</th>
+                  <th>Origem</th>
+                  <th>Status</th>
+                  {temMultiEquipe && <th>Equipe</th>}
+                  <th>Na base há</th>
+                  <th>Conversa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((l) => {
+                  const t = temp(l.classificacao);
+                  return (
+                    <tr key={l.id}>
+                      <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} /></td>
+                      <td>
+                        <span className="badge" style={{ background: t.bg, color: t.cor, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
+                          {t.label}
+                        </span>
+                      </td>
+                      <td className="font-semibold">{l.nome || '—'}</td>
+                      <td className="text-xs">{l.telefone || l.telefoneMasked || '—'}</td>
+                      <td className="text-xs">{l.origem || '—'}</td>
+                      <td className="text-xs">{l.status || '—'}</td>
+                      {temMultiEquipe && <td className="text-xs text-secondary">{l.equipe || '—'}</td>}
+                      <td className="text-xs text-secondary">{timeAgo(l.distribuidoEm || l.createdAt)}</td>
+                      <td>
+                        <button className="btn btn--ghost btn--sm" onClick={() => navigate(`/chat?lead=${l.id}`)} title="Ver histórico da conversa">
+                          <Icon name="chat" size={12} /> Ver{l.temHistorico ? '' : ''}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

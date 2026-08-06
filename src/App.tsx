@@ -61,6 +61,7 @@ const Construtoras    = lazyRetry(() => import('./pages/Construtoras'));
 const Vendas          = lazyRetry(() => import('./pages/Vendas'));
 const MinhasComissoes = lazyRetry(() => import('./pages/MinhasComissoes'));
 const MinhasFilas = lazyRetry(() => import('./pages/MinhasFilas'));
+const LiberacoesPendentes = lazyRetry(() => import('./pages/LiberacoesPendentes'));
 const MeuBolsao = lazyRetry(() => import('./pages/MeuBolsao'));
 const TelefoneFormularios = lazyRetry(() => import('./pages/TelefoneFormularios'));
 const AnaliseVendas   = lazyRetry(() => import('./pages/AnaliseVendas'));
@@ -96,6 +97,7 @@ const LPPublica       = lazyRetry(() => import('./pages/LPPublica'));
 const Transferencias  = lazyRetry(() => import('./pages/Transferencias'));
 const Auditoria       = lazyRetry(() => import('./pages/Auditoria'));
 const Bolsoes         = lazyRetry(() => import('./pages/Bolsoes'));
+const BaseEquipe      = lazyRetry(() => import('./pages/BaseEquipe'));
 const FinanceiroPons  = lazyRetry(() => import('./pages/FinanceiroPons'));
 const PainelFinanceiro = lazyRetry(() => import('./pages/PainelFinanceiro'));
 const ContasBancarias = lazyRetry(() => import('./pages/ContasBancarias'));
@@ -160,6 +162,7 @@ export default function App() {
           <Route path="/vendas" element={<Vendas />} />
           <Route path="/minhas-comissoes" element={<MinhasComissoes />} />
           <Route path="/minhas-filas" element={<MinhasFilas />} />
+          <Route path="/liberacoes" element={<LiberacoesPendentes />} />
           <Route path="/meu-bolsao" element={<MeuBolsao />} />
           <Route path="/telefone-formularios" element={<TelefoneFormularios />} />
           <Route path="/analise-vendas" element={<AnaliseVendas />} />
@@ -169,6 +172,7 @@ export default function App() {
           <Route path="/templates" element={<Templates />} />
           <Route path="/roletas" element={<Roletas />} />
           <Route path="/filas-atendimento" element={<FilasAtendimento />} />
+          <Route path="/filas-disparo" element={<FilasAtendimento tipo="DISPARO" />} />
           <Route path="/trafego" element={<Trafego />} />
           <Route path="/tarefas" element={<Tarefas />} />
           <Route path="/relatorios" element={<Relatorios />} />
@@ -193,6 +197,7 @@ export default function App() {
           <Route path="/transferencias" element={<Transferencias />} />
           <Route path="/auditoria" element={<Auditoria />} />
           <Route path="/bolsoes" element={<Bolsoes />} />
+          <Route path="/base-equipe" element={<BaseEquipe />} />
           <Route path="/financeiro-pons" element={<FinanceiroPons />} />
           <Route path="/painel-financeiro" element={<PainelFinanceiro />} />
           <Route path="/contas-bancarias" element={<ContasBancarias />} />

@@ -10,6 +10,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { CampoCnpj } from '../components/CampoCnpj';
+import { BuscaSelect } from '../components/BuscaSelect';
 import type { CnpjInfo } from '../lib/consultaCnpj';
 import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
@@ -86,15 +87,14 @@ function origemDoLead(origem?: string | null) {
  return ORIGEM_LEAD_INFO[origem] || { rotulo: origem, comissao: 'ORGANICA' as const };
 }
 
-// Origem manual (venda sem lead vinculado)
+// Origem manual (venda sem lead vinculado). A classe de comissão define o rateio:
+// LEAD → Gestor de Tráfego (Vinícius) recebe a campanha 6,5%+6,5%; BASE → lázaro
+// 3%/1%; ORGANICA → sem desconto, o Gestor de Tráfego NÃO participa.
 const ORIGENS_MANUAIS: { rotulo: string; comissao: 'LEAD' | 'BASE' | 'ORGANICA' }[] = [
- { rotulo: 'Tráfego pago (Meta/Google)', comissao: 'LEAD' },
- { rotulo: 'Campanha WhatsApp / Base da casa', comissao: 'BASE' },
+ { rotulo: 'Gestor de Tráfego da imobiliária (Vinícius)', comissao: 'LEAD' },
+ { rotulo: 'Base da imobiliária', comissao: 'BASE' },
  { rotulo: 'Network', comissao: 'ORGANICA' },
- { rotulo: 'Campanha Particular', comissao: 'ORGANICA' },
- { rotulo: 'Compra Própria', comissao: 'ORGANICA' },
- { rotulo: 'Indicação', comissao: 'ORGANICA' },
- { rotulo: 'Orgânico / walk-in', comissao: 'ORGANICA' },
+ { rotulo: 'Tráfego pago sem o gestor da imobiliária', comissao: 'ORGANICA' },
 ];
 
 // Documentos exigidos — padrão imobiliária, por tipo de comprador e estado civil.
@@ -196,6 +196,9 @@ export default function Vendas() {
  const temConjuge = EXIGE_CONJUGE.has(estadoCivil); // obrigatório
  const mostraConjuge = MOSTRA_CONJUGE.has(estadoCivil); // exibe os campos (obrigatório OU opcional)
  const [emancipado, setEmancipado] = useState(false);
+ // Cliente internacional sem CPF (imóvel não incorporado): tira a
+ // obrigatoriedade do CPF do cliente e do cônjuge — pedido Marcelo 06/08.
+ const [clienteInternacional, setClienteInternacional] = useState(false);
  const nascimentoRef = useRef<HTMLInputElement>(null);
 
  // Busca automática do lead na base enquanto o corretor preenche nome/telefone/email.
@@ -481,7 +484,7 @@ export default function Vendas() {
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
- setEmancipado(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
+ setEmancipado(false); setClienteInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
  setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
@@ -626,6 +629,9 @@ export default function Vendas() {
  const num = (v: FormDataEntryValue | null) => parseMoedaBR(String(v || ''));
  const str = (k: string) => { const v = fd.get(k); return v ? String(v) : undefined; };
  const optNum = (k: string) => (fd.get(k) ? num(fd.get(k)) : undefined);
+ // Pickers com busca usam input hidden (sem validação nativa do browser)
+ if (!empSelId) { toast.error('Selecione o empreendimento.'); return; }
+ if (!isCorretor && !corretorTitularId) { toast.error('Selecione o corretor titular.'); return; }
  // Entrada abaixo do mínimo do empreendimento NÃO prossegue (antes só alertava
  // e mandava pra aprovação — regra endurecida em 21/07).
  if (politicaVigente?.entradaMinimaPct != null) {
@@ -711,6 +717,8 @@ export default function Vendas() {
  mensaisValor: optNum('mensaisValor'),
  mensaisMelhorDia: fd.get('mensaisMelhorDia') ? Number(fd.get('mensaisMelhorDia')) : undefined,
  mensaisQtd: fd.get('mensaisQtd') ? Number(fd.get('mensaisQtd')) : undefined,
+ // Selects Mês+Ano → salva legível: "Dezembro/2026"
+ mensaisInicio: (() => { const m = str('mensaisInicioMes'); if (!m) return undefined; return `${m}/${str('mensaisInicioAno') || new Date().getFullYear()}`; })(),
  anuaisValor: optNum('anuaisValor'),
  anuaisInicio: str('anuaisInicio'),
  anuaisQtd: fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined,
@@ -1070,32 +1078,37 @@ export default function Vendas() {
  <input name="clienteNome" className="field__input" required value={cliente.nome} onChange={(e) => setCliente((c) => ({ ...c, nome: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">CPF</label>
- <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
+ <label className="field__label">CPF {!clienteInternacional && <span className="field__required">*</span>}</label>
+ <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={!clienteInternacional} />
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}>
+ <input type="checkbox" checked={clienteInternacional} onChange={(e) => setClienteInternacional(e.target.checked)} style={{ width: 'auto' }} />
+ Cliente internacional (ainda sem CPF)
+ </label>
+ {clienteInternacional && <div className="field__hint">Imóvel sem incorporação — CPF dispensado no cadastro. Identificação sai pelo RG/passaporte.</div>}
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
  <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required />
  </div>
  <div className="field">
- <label className="field__label">Data de nascimento</label>
- <input ref={nascimentoRef} name="clienteNascimento" type="date" className="field__input" onChange={(e) => validaNascimento(e.currentTarget)} />
+ <label className="field__label">Data de nascimento <span className="field__required">*</span></label>
+ <input ref={nascimentoRef} name="clienteNascimento" type="date" className="field__input" onChange={(e) => validaNascimento(e.currentTarget)} required />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}>
  <input type="checkbox" checked={emancipado} onChange={(e) => setEmancipado(e.target.checked)} />
  Menor emancipado (16–18 anos)
  </label>
  </div>
  <div className="field">
- <label className="field__label">Profissão</label>
- <input name="clienteProfissao" className="field__input" />
+ <label className="field__label">Profissão <span className="field__required">*</span></label>
+ <input name="clienteProfissao" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">E-mail</label>
- <input name="clienteEmail" type="email" className="field__input" value={cliente.email} onChange={onEmailCtrl} />
+ <label className="field__label">E-mail <span className="field__required">*</span></label>
+ <input name="clienteEmail" type="email" className="field__input" value={cliente.email} onChange={onEmailCtrl} required />
  </div>
  <div className="field">
- <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} value={cliente.telefone} onChange={onTelefoneCtrl} />
+ <label className="field__label">Telefone <span className="field__required">*</span></label>
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} value={cliente.telefone} onChange={onTelefoneCtrl} required />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
  <input type="checkbox" checked={telIntl} onChange={(e) => { setTelIntl(e.target.checked); if (!e.target.checked) setCliente((c) => ({ ...c, telefone: maskTelefone(c.telefone) })); }} style={{ width: 'auto' }} />
  Número internacional (sem máscara nacional)
@@ -1110,37 +1123,37 @@ export default function Vendas() {
  <div className="field__hint">Define os documentos exigidos e os dados do cônjuge.</div>
  </div>
  <div className="field">
- <label className="field__label">CEP</label>
+ <label className="field__label">CEP <span className="field__required">*</span></label>
  <div style={{ display: 'flex', gap: 6 }}>
- <input className="field__input" inputMode="numeric" placeholder="00000-000" value={endPF.cep}
+ <input className="field__input" inputMode="numeric" placeholder="00000-000" required value={endPF.cep}
  onChange={(e) => setEndPF((c) => ({ ...c, cep: maskCEP(e.target.value) }))}
  onBlur={() => { if (endPF.cep.replace(/\D/g, '').length === 8 && !endPF.logradouro) onBuscarCep(); }} />
  <button type="button" className="btn btn--secondary btn--sm" onClick={onBuscarCep} disabled={buscandoCep}>{buscandoCep ? '...' : 'Buscar'}</button>
  </div>
  </div>
  <div className="field">
- <label className="field__label">Logradouro</label>
- <input className="field__input" value={endPF.logradouro} onChange={(e) => setEndPF((c) => ({ ...c, logradouro: e.target.value }))} />
+ <label className="field__label">Logradouro <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.logradouro} onChange={(e) => setEndPF((c) => ({ ...c, logradouro: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">Número</label>
- <input className="field__input" value={endPF.numero} onChange={(e) => setEndPF((c) => ({ ...c, numero: e.target.value }))} />
+ <label className="field__label">Número <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.numero} onChange={(e) => setEndPF((c) => ({ ...c, numero: e.target.value }))} />
  </div>
  <div className="field">
  <label className="field__label">Complemento</label>
  <input className="field__input" value={endPF.complemento} onChange={(e) => setEndPF((c) => ({ ...c, complemento: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">Bairro</label>
- <input className="field__input" value={endPF.bairro} onChange={(e) => setEndPF((c) => ({ ...c, bairro: e.target.value }))} />
+ <label className="field__label">Bairro <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.bairro} onChange={(e) => setEndPF((c) => ({ ...c, bairro: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">Cidade</label>
- <input className="field__input" value={endPF.cidade} onChange={(e) => setEndPF((c) => ({ ...c, cidade: e.target.value }))} />
+ <label className="field__label">Cidade <span className="field__required">*</span></label>
+ <input className="field__input" required value={endPF.cidade} onChange={(e) => setEndPF((c) => ({ ...c, cidade: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">UF</label>
- <input className="field__input" maxLength={2} value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: e.target.value.toUpperCase() }))} />
+ <label className="field__label">UF <span className="field__required">*</span></label>
+ <input className="field__input" maxLength={2} required value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: e.target.value.toUpperCase() }))} />
  </div>
  <input type="hidden" name="clienteEndereco" value={enderecoPFStr} />
  </div>
@@ -1157,20 +1170,20 @@ export default function Vendas() {
  <input name="conjugeNome" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">CPF</label>
- <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
+ <label className="field__label">CPF {temConjuge && !clienteInternacional && <span className="field__required">*</span>}</label>
+ <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={temConjuge && !clienteInternacional} />
  </div>
  <div className="field">
- <label className="field__label">RG (c/ órgão expedidor)</label>
- <input name="conjugeRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} />
+ <label className="field__label">RG (c/ órgão expedidor) {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">Data de nascimento</label>
- <input name="conjugeNascimento" type="date" className="field__input" />
+ <label className="field__label">Data de nascimento {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeNascimento" type="date" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">Profissão</label>
- <input name="conjugeProfissao" className="field__input" />
+ <label className="field__label">Profissão {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeProfissao" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
@@ -1196,44 +1209,44 @@ export default function Vendas() {
  <CampoCnpj name="clienteCnpj" label="CNPJ" onInfo={preencherDaReceita} />
  </div>
  <div className="field">
- <label className="field__label">Telefone</label>
- <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} onInput={onTelefoneCliente} />
+ <label className="field__label">Telefone <span className="field__required">*</span></label>
+ <input name="clienteTelefone" className="field__input" inputMode="tel" placeholder={telIntl ? '+1 305 555 0100' : '(47) 99999-9999'} onInput={onTelefoneCliente} required />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
  <input type="checkbox" checked={telIntl} onChange={(e) => setTelIntl(e.target.checked)} style={{ width: 'auto' }} />
  Número internacional (sem máscara nacional)
  </label>
  </div>
  <div className="field">
- <label className="field__label">E-mail</label>
- <input name="clienteEmail" type="email" className="field__input" onInput={onEmail} />
+ <label className="field__label">E-mail <span className="field__required">*</span></label>
+ <input name="clienteEmail" type="email" className="field__input" onInput={onEmail} required />
  </div>
  <div className="field field--span-2">
- <label className="field__label">Endereço completo (c/ CEP)</label>
- <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" />
+ <label className="field__label">Endereço completo (c/ CEP) <span className="field__required">*</span></label>
+ <input name="clienteEndereco" className="field__input" placeholder="Rua, nº, bairro, cidade/UF, CEP" required />
  </div>
  </div>
  <div style={{ borderLeft: '3px solid var(--border-light)', paddingLeft: 14, marginTop: 6 }}>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Sócio-administrador</div>
  <div className="form-grid" style={{ marginBottom: 4 }}>
  <div className="field field--span-2">
- <label className="field__label">Nome completo</label>
- <input name="socioNome" className="field__input" />
+ <label className="field__label">Nome completo <span className="field__required">*</span></label>
+ <input name="socioNome" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">CPF</label>
- <input name="socioCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} />
+ <label className="field__label">CPF <span className="field__required">*</span></label>
+ <input name="socioCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required />
  </div>
  <div className="field">
  <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
  <input name="socioRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required />
  </div>
  <div className="field">
- <label className="field__label">Data de nascimento</label>
- <input name="socioNascimento" type="date" className="field__input" />
+ <label className="field__label">Data de nascimento <span className="field__required">*</span></label>
+ <input name="socioNascimento" type="date" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">Profissão</label>
- <input name="socioProfissao" className="field__input" />
+ <label className="field__label">Profissão <span className="field__required">*</span></label>
+ <input name="socioProfissao" className="field__input" required />
  </div>
  <div className="field">
  <label className="field__label">E-mail</label>
@@ -1278,12 +1291,18 @@ export default function Vendas() {
  <div className="form-grid" style={{ marginBottom: 12 }}>
  <div className="field">
  <label className="field__label">Empreendimento <span className="field__required">*</span></label>
- <select name="empreendimentoId" className="field__select" required value={empSelId} onChange={(e) => setEmpSelId(e.target.value)}>
- <option value="">— Selecionar —</option>
- {[...(emps || [])].sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome), 'pt-BR')).map((e: any) => (
- <option key={e.id} value={e.id}>{e.nome}</option>
- ))}
- </select>
+ <BuscaSelect
+ itens={[...(emps || [])].sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome), 'pt-BR')).map((e: any) => ({
+ id: e.id,
+ label: e.nome,
+ sub: [e.construtora?.nome, e.cidade && `${e.cidade}/${e.estado || ''}`].filter(Boolean).join(' · '),
+ }))}
+ value={empSelId}
+ onChange={(id) => setEmpSelId(id ? String(id) : '')}
+ placeholder="Buscar empreendimento pelo nome…"
+ vazio="Nenhum empreendimento encontrado."
+ />
+ <input type="hidden" name="empreendimentoId" value={empSelId} />
  </div>
  {unidades.length > 0 ? (
  <div className="field">
@@ -1322,11 +1341,20 @@ export default function Vendas() {
  <div className="field__hint">A venda é registrada no seu nome.</div>
  </>
  ) : (
- <select name="corretorTitularId" className="field__select" required value={corretorTitularId} onChange={(e) => setCorretorTitularId(e.target.value)}>
- {(corretores || []).map((c: any) => (
- <option key={c.id} value={c.id}>{c.nome}</option>
- ))}
- </select>
+ <>
+ <BuscaSelect
+ itens={(corretores || []).map((c: any) => ({
+ id: c.id,
+ label: c.nome,
+ sub: (c.equipe && (c.equipe.nome || (typeof c.equipe === 'string' ? c.equipe : ''))) || '',
+ }))}
+ value={corretorTitularId}
+ onChange={(id) => setCorretorTitularId(id ? String(id) : '')}
+ placeholder="Buscar corretor pelo nome…"
+ vazio="Nenhum corretor encontrado."
+ />
+ <input type="hidden" name="corretorTitularId" value={corretorTitularId} />
+ </>
  )}
  </div>
  <div className="field">
@@ -1385,20 +1413,24 @@ export default function Vendas() {
  )}
  </div>
  {contestarOpen && (
- <div style={{ marginTop: 10 }} className="fade-in">
- <label className="field__label">Por que você não concorda com essa origem?</label>
+ <div className="fade-in" style={{ marginTop: 12, padding: 12, border: '1px dashed var(--pons-blue)', borderRadius: 10, background: 'var(--bg-card)' }}>
+ <label className="field__label" style={{ display: 'block', marginBottom: 6 }}>Por que você não concorda com essa origem?</label>
  <textarea
- className="field__input"
- rows={2}
+ className="field__textarea"
+ rows={3}
  maxLength={600}
  value={contestacao}
  onChange={(e) => setContestacao(e.target.value)}
  placeholder="Ex.: o cliente veio por indicação do proprietário da unidade 302, não pela campanha."
+ style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
  />
- <div className="flex" style={{ gap: 8, marginTop: 6 }}>
- <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setContestarOpen(false); setContestacao(''); }}>Cancelar contestação</button>
- <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>A contestação vai junto com a venda pro financeiro analisar.</span>
+ <div className="flex-between" style={{ marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
+ <span className="text-xs text-secondary">A contestação vai junto com a venda pro financeiro analisar.</span>
+ <span className="text-xs text-secondary">{contestacao.length}/600</span>
  </div>
+ <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={() => { setContestarOpen(false); setContestacao(''); }}>
+ <Icon name="x" size={12} /> Cancelar contestação
+ </button>
  </div>
  )}
  </>
@@ -1522,6 +1554,18 @@ export default function Vendas() {
  <div className="field">
  <label className="field__label">Melhor dia do mês</label>
  <input name="mensaisMelhorDia" type="number" min={1} max={31} className="field__input" placeholder="10" value={mensaisDia} onChange={(e) => setMensaisDia(e.target.value)} />
+ </div>
+ <div className="field">
+ <label className="field__label">Mês da 1ª parcela mensal</label>
+ <div style={{ display: 'flex', gap: 8 }}>
+ <select name="mensaisInicioMes" className="field__select" style={{ flex: 2 }} defaultValue="">
+ <option value="">— Mês —</option>
+ {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
+ </select>
+ <select name="mensaisInicioAno" className="field__select" style={{ flex: 1 }} defaultValue={String(new Date().getFullYear())}>
+ {[0, 1, 2].map((i) => { const a = new Date().getFullYear() + i; return <option key={a} value={a}>{a}</option>; })}
+ </select>
+ </div>
  </div>
  <div className="field">
  <label className="field__label">Reforços anuais / balões (R$)</label>
@@ -1806,7 +1850,7 @@ export function FormularioGpi({ f }: { f: any }) {
  ['Origem do lead', f.origemLead],
  ['Construtora (form)', f.construtora],
  ['Arras', f.arrasValor ? `${brl(f.arrasValor)} · venc. ${f.arrasVencimento || '—'}` : null],
- ['Mensais', f.mensaisValor ? `${brl(f.mensaisValor)} · dia ${f.mensaisMelhorDia || '—'}` : null],
+ ['Mensais', f.mensaisValor ? `${brl(f.mensaisValor)} · dia ${f.mensaisMelhorDia || '—'}${f.mensaisInicio ? ` · início ${f.mensaisInicio}` : ''}` : null],
  ['Anuais', f.anuaisValor ? `${brl(f.anuaisValor)} · início ${f.anuaisInicio || '—'}` : null],
  ['Chaves', brl(f.chavesValor)],
  ] as [string, any][]).filter(([, v]) => v !== null && v !== undefined && v !== '');

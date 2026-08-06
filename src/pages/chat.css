@@ -269,6 +269,7 @@
 .composer .btn {
   flex-shrink: 0;
   height: 40px;
+  min-width: 40px;
   padding-top: 0;
   padding-bottom: 0;
   white-space: nowrap;
@@ -277,6 +278,9 @@
   justify-content: center;
   gap: 7px; /* respiro entre ícone e rótulo */
 }
+/* Composer ICON-ONLY (igual no celular): os rótulos de texto apertavam a barra e
+   espremiam a textarea no desktop. Cada botão tem tooltip (title) pra clareza. */
+.composer__rotulo { display: none; }
 .composer > .quick-wrap { flex-shrink: 0; }
 .composer textarea {
   flex: 1;

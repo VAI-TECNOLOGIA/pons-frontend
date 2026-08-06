@@ -189,8 +189,11 @@ export const Api = {
   redefinirSenhaCodigo: (telefone: string, codigo: string, password: string) =>
     request<any>('/auth/redefinir-senha-codigo', { method: 'POST', body: { telefone, codigo, password }, auth: false }),
   redefinirSenha: (token: string, password: string) => request<any>('/auth/redefinir-senha', { method: 'POST', body: { token, password }, auth: false }),
-  registrar: (data: { name: string; email: string; password: string; phone?: string }) =>
+  registrar: (data: { name: string; email: string; password: string; phone?: string; equipeId?: number | null }) =>
     request<{ token: string; user: import('./auth').User }>('/auth/registrar', { method: 'POST', body: data, auth: false }),
+  // Lista pública de equipes pro dropdown do "Criar conta"
+  equipesPublicas: () =>
+    request<{ equipes: Array<{ id: number; nome: string }> }>('/auth/equipes-publicas', { auth: false }),
 
   // Push nativa: registra o device token do aparelho + dispara push de teste.
   registerDevice: (token: string, platform: 'ios' | 'android') =>
@@ -367,6 +370,21 @@ export const Api = {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   },
+  // Baixa o Excel dos corretores que se cadastraram pelo app
+  corretoresAutoCadastroExport: async () => {
+    const r = await fetch(`${BASE}/corretores/auto-cadastro/export`, {
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+    });
+    if (!r.ok) throw new Error('export_failed');
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'corretores-cadastrados-app.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  },
   empreendimentoFotoDelete: (id: number, fotoId: number) =>
     request<any>(`/empreendimentos/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
   empreendimentoFotoCapa: (id: number, fotoId: number) =>
@@ -474,7 +492,7 @@ export const Api = {
   tarefaAnexoDelete: (id: number, anexoId: number) => request<{ ok: boolean }>(`/tarefas/${id}/anexos/${anexoId}`, { method: 'DELETE' }),
 
   // Roletas
-  roletas: () => request<any[]>('/roletas'),
+  roletas: (tipo?: 'ATENDIMENTO' | 'DISPARO') => request<any[]>(`/roletas${tipo ? `?tipo=${tipo}` : ''}`),
   roletaCreate: (data: any) => request<any>('/roletas', { method: 'POST', body: data }),
   roletaUpdate: (id: number, data: any) => request<any>(`/roletas/${id}`, { method: 'PATCH', body: data }),
   roletaDelete: (id: number) => request<any>(`/roletas/${id}`, { method: 'DELETE' }),
@@ -527,7 +545,9 @@ export const Api = {
     request<{ ok: boolean; arquivados: number }>('/leads/arquivar', { method: 'POST', body: { leadIds } }),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
   roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
-  roletaCampanhas: () => request<{ nome: string; leads: number }[]>('/roletas/campanhas'),
+  roletaCampanhas: () => request<{ nome: string; id: string | null; leads: number }[]>('/roletas/campanhas'),
+  // Anúncios ATIVOS direto do Meta (pra configurar a fila antes de entrar lead).
+  anunciosMeta: () => request<{ anuncios: { id: string; anuncio: string; campanha: string | null }[]; erro?: string }>('/roletas/anuncios-meta'),
   // Histórico de alterações das filas (auditoria antes/depois)
   roletaHistorico: () => request<{ id: number; roletaId: number | null; roletaNome: string; acao: string; userNome: string | null; antes: any; depois: any; createdAt: string }[]>('/roletas/historico'),
   roletaSimular: (data: any) => request<any>('/roletas/simular', { method: 'POST', body: data }),
@@ -568,13 +588,16 @@ export const Api = {
   finResumo: () => request<any>('/financeiro/resumo'),
   finDre: (params: any = {}) => request<any>(`/financeiro/dre${qs(params)}`),
   finFluxoCaixa: (meses = 6) => request<any>(`/financeiro/fluxo-caixa?meses=${meses}`),
-  finContas: (tipo = 'PAGAR') => request<any>(`/financeiro/contas?tipo=${tipo}`),
+  finContas: (params: { tipo?: string; categoria?: string; unidadeId?: number; from?: string; to?: string } = {}) =>
+    request<any>(`/financeiro/contas${qs({ tipo: 'PAGAR', ...params })}`),
   finComissoesPorCorretor: (params: any = {}) => request<any>(`/financeiro/comissoes-por-corretor${qs(params)}`),
   finComissaoPagar: (body: { corretorId: number; from?: string; to?: string; metodo?: string; observacao?: string }) =>
     request<{ pagos: number; valorTotal: number; corretor?: string; message?: string }>('/financeiro/comissoes/pagar', { method: 'POST', body }),
   finComissaoEstornar: (body: { corretorId: number; from?: string; to?: string }) =>
     request<{ estornados: number; lancamentosCancelados?: number; corretor?: string; message?: string }>('/financeiro/comissoes/estornar', { method: 'POST', body }),
   finComissoesPlano: () => request<any>('/financeiro/comissoes-plano'),
+  finPrevisaoEntrada: (params: { mes?: string; equipeId?: number; sala?: string } = {}) =>
+    request<any>(`/financeiro/previsao-entrada${qs(params)}`),
   finPlanejamento: () => request<any>('/financeiro/planejamento'),
   finPagamentosSemana: (semana = 0) => request<any>(`/financeiro/pagamentos-semana?semana=${semana}`),
   finPainelDiretor: () => request<any>('/financeiro/painel-diretor'),
@@ -586,6 +609,16 @@ export const Api = {
       headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
     });
     if (!r.ok) throw new Error(`Falha ao gerar comprovante (${r.status})`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+  finPdf: async (path: string, params: any = {}) => {
+    const r = await fetch(`${BASE}${path}${qs(params)}`, {
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+    });
+    if (!r.ok) throw new Error(`Falha ao gerar PDF (${r.status})`);
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
@@ -618,7 +651,7 @@ export const Api = {
   // Users
   users: () => request<any[]>('/users'),
   meProfile: () => request<import('./auth').User & { aniversarioHoje?: boolean }>('/users/me'),
-  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null }) =>
+  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null; creci?: string | null }) =>
     request<any>('/users/me', { method: 'PATCH', body: data }),
   mePassword: (senhaAtual: string, novaSenha: string) =>
     request<{ ok: boolean }>('/users/me/password', { method: 'POST', body: { senhaAtual, novaSenha } }),
@@ -636,11 +669,17 @@ export const Api = {
     request<{ importados: number; enviados: number }>('/integracoes/google/sync', { method: 'POST' }),
 
   // Conversations (VAI WhatsApp)
-  conversations: (params: { q?: string; limit?: number } = {}) =>
-    request<{ pendente: any[]; atendendo: any[]; totalConversas?: number; carregadas?: number; busca?: string | null; vaiConfigured: boolean; metaConfigured: boolean }>(
+  conversations: (params: { q?: string; limit?: number; classificacao?: string; corretorId?: number; equipeId?: number; filtro?: string } = {}) =>
+    request<{ pendente: any[]; atendendo: any[]; totalConversas?: number; carregadas?: number; countAguardando?: number; countParados?: number; busca?: string | null; vaiConfigured: boolean; metaConfigured: boolean }>(
       `/conversations${qs(params)}`,
     ),
+  // "Me lembra de falar com esse lead depois" — cria tarefa c/ lembrete WhatsApp.
+  agendarRetorno: (leadId: number, horas: number) =>
+    request<{ ok: boolean; tarefaId: number; quando: string }>(`/conversations/${leadId}/agendar-retorno`, { method: 'POST', body: { horas } }),
   conversationGet: (leadId: number) => request<any>(`/conversations/${leadId}`),
+  // Etiqueta de temperatura do lead (Quente/Morno/Frio) no Atendimento.
+  setClassificacao: (leadId: number, classificacao: 'NOVO' | 'QUENTE' | 'MORNO' | 'FRIO') =>
+    request<{ ok: boolean; classificacao: string }>(`/conversations/${leadId}/classificacao`, { method: 'PATCH', body: { classificacao } }),
   conversationSend: (
     leadId: number,
     texto: string,
@@ -660,6 +699,10 @@ export const Api = {
   // Tradutor do corretor: PT→en/es (mensagem a enviar) ou →pt (mensagem recebida).
   traduzir: (texto: string, idioma: 'en' | 'es' | 'pt') =>
     request<{ traducao: string; idioma: string }>(`/conversations/traduzir`, { method: 'POST', body: { texto, idioma } }),
+  // Transcrição de áudio (Whisper/OpenAI). Passa o messageId → o backend cacheia
+  // na mensagem e não re-transcreve (nem re-cobra) nas próximas.
+  transcreverAudio: (messageId: number) =>
+    request<{ texto: string; cache?: boolean }>(`/conversations/transcrever`, { method: 'POST', body: { messageId } }),
   // Upload de mídia do chat → R2 (prefixo uploads). Retorna { url, key, size, contentType }.
   conversationUploadMedia: async (file: File) => {
     const form = new FormData();
@@ -889,8 +932,11 @@ export const Api = {
   // Bolsão de Oportunidades (leads sem corretor) + direcionamento
   bolsaoOportunidades: (params: any = {}) => request<{ total: number; page: number; pageSize: number; leads: any[] }>(`/bolsoes/oportunidades${qs(params)}`),
   bolsaoOportunidadesIds: (params: any = {}) => request<{ ids: number[] }>(`/bolsoes/oportunidades/ids${qs(params)}`),
-  bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number; telefoneVisivel?: boolean }) =>
+  bolsaoDirecionar: (body: { leadIds: number[]; corretorId?: number; corretorIds?: number[]; equipeId?: number; telefoneVisivel?: boolean; assumir?: boolean }) =>
     request<{ direcionados: number; jaAtribuidos: number; porCorretor: Record<string, number> }>('/bolsoes/direcionar', { method: 'POST', body }),
+  // Base de leads da equipe (leads de corretores desativados; o gestor redistribui).
+  baseEquipe: (params: { equipeId?: number; classificacao?: string } = {}) =>
+    request<{ bases: Array<{ id: number; equipeId: number | null; equipe: string | null }>; leads: any[] }>(`/bolsoes/base-equipe${qs(params)}`),
   // Config: telefone visível por formulário
   configTelefoneFormularios: () => request<{ formularios: { nome: string; leads: number; visivel: boolean }[]; visiveis: string[] }>('/leads/config/telefone-formularios'),
   salvarConfigTelefoneFormularios: (visiveis: string[]) => request<{ ok: boolean }>('/leads/config/telefone-formularios', { method: 'PUT', body: { visiveis } }),
@@ -1001,9 +1047,20 @@ export const Api = {
   // ─── Lead — aceitar / liberar contato ────────────────────────────
   leadAceitar: (id: number) => request<{ ok: boolean; nome: string; estadoAtendimento: string }>(`/leads/${id}/aceitar`, { method: 'POST' }),
   leadLiberarContato: (id: number, justificativa?: string) =>
-    request<{ ok: boolean; telefone: string; classificacao: string; jaLiberado?: boolean }>(
+    request<{ ok: boolean; telefone?: string; jaLiberado?: boolean; pendente?: boolean; message?: string }>(
       `/leads/${id}/liberar-contato`,
       { method: 'POST', body: { justificativa: justificativa || null } },
+    ),
+  // Gestor: lista solicitações pendentes de liberação de contato
+  liberacoesPendentes: () =>
+    request<{ pendentes: Array<{ id: number; leadNome: string; solicitante: string; motivo: string; solicitadaEm: string }> }>(
+      '/leads/liberacoes-pendentes',
+    ),
+  // Gestor: aprova ou reprova a solicitação de liberação
+  liberacaoDecidir: (id: number, aprovar: boolean) =>
+    request<{ ok: boolean; aprovado: boolean }>(
+      `/leads/${id}/liberar-contato/decidir`,
+      { method: 'POST', body: { aprovar } },
     ),
 
   // ─── WhatsApp templates (Meta Cloud) ────────────────────────────

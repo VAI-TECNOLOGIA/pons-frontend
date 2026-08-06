@@ -107,9 +107,20 @@ export default function AdminVendas() {
                 <td className="numeric money">{formatCurrencyShort(v.valorVenda)}</td>
                 <td className="text-xs text-secondary">{new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
                 <td>
-                  <button className="btn btn--secondary btn--sm" onClick={() => setSelId(v.id)}>
-                    <Icon name="doc" size={13} /> Auditar
-                  </button>
+                  {v.aguardandoAprovacao ? (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      disabled
+                      title="Parcelamento acima de 4x — aguardando aprovação do Paulo. O botão libera assim que ele aprovar."
+                      style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                    >
+                      <Icon name="lock" size={13} /> Aguardando Paulo
+                    </button>
+                  ) : (
+                    <button className="btn btn--secondary btn--sm" onClick={() => setSelId(v.id)}>
+                      <Icon name="doc" size={13} /> Auditar
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

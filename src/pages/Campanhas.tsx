@@ -155,6 +155,9 @@ function Wizard({ onClose }: { onClose: () => void }) {
   const [templates, setTemplates] = useState<any[]>([]);
   const [templateName, setTemplateName] = useState('');
   const [vars, setVars] = useState<string[]>([]);
+  // fila de disparo (distribui quem responder)
+  const [roletaId, setRoletaId] = useState<number | ''>('');
+  const [filasDisparo, setFilasDisparo] = useState<any[]>([]);
   // envio
   const [enviando, setEnviando] = useState(false);
   const [prog, setProg] = useState<{ enviados: number; falhas: number; restantes: number } | null>(null);
@@ -164,6 +167,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     Api.corretores().then((r) => setCorretores((r || []).filter((c: any) => c.user?.name))).catch(() => {});
     Api.whatsappTemplates().then((r) => setTemplates(r.items || [])).catch(() => {});
+    Api.roletas('DISPARO').then((r) => setFilasDisparo(r || [])).catch(() => {});
   }, []);
 
   const filtro = useMemo(() => ({
@@ -225,6 +229,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
         audienciaTipo,
         audienciaFiltro: filtro,
         audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
+        roletaId: roletaId || null,
       });
       // loop de disparo em lote até zerar
       let guard = 0;
@@ -251,6 +256,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
         numeroExibicao: NUMEROS.find((n) => n.id === phoneNumberId)?.label || null,
         templateName: templateName || null, templateLang: tpl?.language || 'pt_BR', templateVars: vars,
         audienciaTipo, audienciaFiltro: filtro, audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
+        roletaId: roletaId || null,
       });
       onClose();
     } catch (e: any) { setErro(e?.message || 'Falha ao salvar.'); }
@@ -288,6 +294,14 @@ function Wizard({ onClose }: { onClose: () => void }) {
                     {NUMEROS.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
                   </select>
                   <small className="camp-hint">No WhatsApp Business o envio é por template aprovado.</small>
+                </div>
+                <div className="field">
+                  <label className="field__label">Fila de disparo (distribuição de quem responder)</label>
+                  <select className="field__select" value={roletaId} onChange={(e) => setRoletaId(e.target.value ? Number(e.target.value) : '')}>
+                    <option value="">Nenhuma (não distribui automaticamente)</option>
+                    {filasDisparo.map((f: any) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                  </select>
+                  <small className="camp-hint">Quando o lead responder (levantar a mão), cai pro próximo corretor da fila escolhida. Crie as filas em “Filas de Disparo”.</small>
                 </div>
               </>
             )}
