@@ -1487,6 +1487,7 @@ export default function Vendas() {
  placeholder="R$ 780.000,00"
  value={valorVenda}
  onChange={(e) => setValorVenda(maskMoedaBR(e.target.value))}
+ onFocus={(e) => e.currentTarget.select()}
  />
  {!!(unidadeSel?.valor || empSel?.valorInicial) && (
  <div className="field__hint">Sugerido pelo valor de tabela — ajuste para o valor negociado.</div>
@@ -1494,7 +1495,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Entrada total</label>
- <input name="entradaTotal" className="field__input" inputMode="numeric" placeholder="R$ 156.000,00" value={entradaTotal} onChange={(e) => setEntradaTotal(maskMoedaBR(e.target.value))} />
+ <input name="entradaTotal" className="field__input" inputMode="numeric" placeholder="R$ 156.000,00" value={entradaTotal} onChange={(e) => setEntradaTotal(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
  {entradaMinimaOficial != null && (() => {
  const vv = parseMoedaBR(valorVenda), et = parseMoedaBR(entradaTotal);
  if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {entradaMinimaOficial}% de entrada.</div>;
@@ -1585,7 +1586,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Chaves (R$)</label>
- <input name="chavesValor" className="field__input" inputMode="numeric" placeholder="R$ 150.000,00" value={chavesValor} onChange={(e) => setChavesValor(maskMoedaBR(e.target.value))} />
+ <input name="chavesValor" className="field__input" inputMode="numeric" placeholder="R$ 150.000,00" value={chavesValor} onChange={(e) => setChavesValor(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
  {politicaVigente?.chavesPct ? <div className="field__hint">Sugerido: {politicaVigente.chavesPct}% do valor da venda (regra do empreendimento) — ajuste se negociado.</div> : null}
  </div>
  </div>
