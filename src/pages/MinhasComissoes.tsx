@@ -326,6 +326,37 @@ export default function MinhasComissoes() {
             </div>
           )}
 
+          {/* Comissões de GESTÃO — fatia de gestor/líder em vendas de outros corretores */}
+          {(data?.gestao?.itens?.length || 0) > 0 && (
+            <div className="card" style={{ padding: 0, marginBottom: 12 }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>Comissões de gestão <span className="text-xs text-secondary" style={{ fontWeight: 400 }}>· sua fatia como gestor nas vendas da equipe</span></span>
+                <span className="text-xs">
+                  Total <strong>{brl(data.gestao.total)}</strong> · Recebido <strong>{brl(data.gestao.pago)}</strong> · A receber <strong style={{ color: 'var(--blue-500)' }}>{brl(data.gestao.aReceber)}</strong>
+                </span>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="table tabela-compacta" style={{ minWidth: 620 }}>
+                  <thead>
+                    <tr><th>Venda</th><th>Cliente</th><th>Empreendimento</th><th>Corretor</th><th className="numeric">Sua fatia</th><th className="numeric">Recebido</th></tr>
+                  </thead>
+                  <tbody>
+                    {data.gestao.itens.map((g: any) => (
+                      <tr key={`${g.vendaId}-${g.papel}`}>
+                        <td className="font-semibold">#{g.codigo}</td>
+                        <td>{g.cliente}</td>
+                        <td className="text-xs">{g.empreendimento} · {g.unidade}</td>
+                        <td className="text-xs">{g.corretor}</td>
+                        <td className="numeric money">{brl(g.valorTotal)}</td>
+                        <td className="numeric text-xs">{brl(g.valorPago)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="card" style={{ padding: 0 }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', fontWeight: 700, fontSize: 14 }}>
               Extrato de parcelas <span className="text-xs text-secondary" style={{ fontWeight: 400 }}>· {parcelas.length} parcela{parcelas.length === 1 ? '' : 's'}, por vencimento</span>
