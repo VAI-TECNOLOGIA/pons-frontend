@@ -10,7 +10,7 @@ import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
-import { formatCurrencyShort } from '../lib/format';
+import { formatCurrencyExact } from '../lib/format';
 import { Auth } from '../lib/auth';
 import { STATUS_MAP, FormularioGpi, VendaDocumentos } from './Vendas';
 
@@ -105,7 +105,7 @@ export default function AdminVendas() {
                 <td>{v.clienteNome}</td>
                 <td className="text-xs">{v.empreendimento} · {v.unidade}</td>
                 <td className="text-xs">{v.corretor?.nome || '—'}</td>
-                <td className="numeric money">{formatCurrencyShort(v.valorVenda)}</td>
+                <td className="numeric money">{formatCurrencyExact(v.valorVenda)}</td>
                 <td className="text-xs text-secondary">{new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
                 <td>
                   {v.aguardandoAprovacao ? (
@@ -167,8 +167,8 @@ export default function AdminVendas() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.7 }}>Valor da venda</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: '#88C559', lineHeight: 1.1 }}>
-                  {formatCurrencyShort(sel.valorVenda)}
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: '#88C559', lineHeight: 1.1 }}>
+                  {formatCurrencyExact(sel.valorVenda)}
                 </div>
                 <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>Registrada em {new Date(sel.createdAt).toLocaleDateString('pt-BR')}</div>
               </div>

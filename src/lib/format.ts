@@ -6,6 +6,17 @@ export function formatCurrency(value: number | null | undefined): string {
   }).format(value || 0);
 }
 
+// Valor exato com centavos — telas de auditoria/contrato, onde arredondar
+// é errado (adm confere o protocolo contra este número).
+export function formatCurrencyExact(value: number | null | undefined): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value || 0);
+}
+
 export function formatCurrencyShort(value: number | null | undefined): string {
   if (!value || !Number.isFinite(value)) return 'R$ 0';
   // pt-BR usa vírgula decimal: "R$ 22,9M", não "R$ 22.9M".
