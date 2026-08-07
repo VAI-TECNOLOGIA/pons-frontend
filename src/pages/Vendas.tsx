@@ -353,6 +353,8 @@ export default function Vendas() {
  const [anuaisValor, setAnuaisValor] = useState('');
  const [anuaisQtd, setAnuaisQtd] = useState('');
  const [anuaisMes, setAnuaisMes] = useState('');
+ // Parte paga FORA do parcelamento Pons (financiamento/direto com a construtora)
+ const [saldoRem, setSaldoRem] = useState('');
  // ── Reconciliação com o VGV ──────────────────────────────────────────────
  const recon = (() => {
  const vgv = parseMoedaBR(valorVenda);
@@ -361,7 +363,8 @@ export default function Vendas() {
  const mensaisTot = parseMoedaBR(mensaisValor) * (Number(mensaisQtd) || 0);
  const anuaisTot = parseMoedaBR(anuaisValor) * (Number(anuaisQtd) || 0);
  const chaves = parseMoedaBR(chavesValor);
- const soma = entrada + mensaisTot + anuaisTot + chaves;
+ const saldoFora = parseMoedaBR(saldoRem);
+ const soma = entrada + mensaisTot + anuaisTot + chaves + saldoFora;
  const saldo = vgv - soma; // > 0 = a financiar; < 0 = excede o VGV
  const nParc = Math.max(1, Number(entradaParcelas) || 1);
  const parcela = Math.max(0, (entrada - arras)) / nParc;
@@ -483,7 +486,7 @@ export default function Vendas() {
  setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
- setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
+ setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setClienteInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
  setResumo(null); setOrigemManualIdx(0);
@@ -583,7 +586,12 @@ export default function Vendas() {
  if (step === 1 && unidadeOcupadaCod) { toast.error(`Esta unidade já tem uma venda ativa (${unidadeOcupadaCod}). Cancele a anterior para liberá-la.`); return; }
  // Reconciliação: na Negociação, os valores preenchidos têm que FECHAR EXATO com
  // o VGV pra avançar (sem saldo em aberto). Nas outras etapas não trava.
- if (step === 2 && !recon.fecha) { toast.error('Os valores preenchidos precisam fechar com o valor da venda (VGV). Ajuste antes de avançar.'); return; }
+ if (step === 2 && !recon.fecha) {
+ toast.error(recon.saldo > 0
+ ? `Faltam ${formatMoedaBR(recon.saldo)} pra fechar com o VGV. Ajuste os valores ou declare a diferença como Saldo remanescente (pago fora do parcelamento).`
+ : `A soma dos pagamentos passa ${formatMoedaBR(Math.abs(recon.saldo))} do VGV. Reduza algum valor pra fechar.`);
+ return;
+ }
  // Entrada abaixo do mínimo do empreendimento: NÃO avança (regra 21/07 — antes
  // só alertava e a venda seguia pra aprovação).
  if (step === 2 && politicaVigente?.entradaMinimaPct != null) {
@@ -723,6 +731,7 @@ export default function Vendas() {
  anuaisInicio: str('anuaisInicio'),
  anuaisQtd: fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined,
  chavesValor: optNum('chavesValor'),
+ saldoRemanescente: parseMoedaBR(saldoRem) || undefined,
  });
  // Anexa os documentos selecionados na criação à venda recém-criada.
  if (r?.id && docsAnexar.length) {
@@ -1587,6 +1596,11 @@ export default function Vendas() {
  <div className="field">
  <label className="field__label">Chaves (R$)</label>
  <input name="chavesValor" className="field__input" inputMode="numeric" placeholder="R$ 150.000,00" value={chavesValor} onChange={(e) => setChavesValor(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
+ </div>
+ <div className="field">
+ <label className="field__label">Saldo remanescente (R$)</label>
+ <input className="field__input" inputMode="numeric" placeholder="R$ 0,00" value={saldoRem} onChange={(e) => setSaldoRem(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
+ <div className="field__hint">Parte paga FORA do parcelamento (financiamento / direto com a construtora) — entra na conferência e sai no protocolo.</div>
  {politicaVigente?.chavesPct ? <div className="field__hint">Sugerido: {politicaVigente.chavesPct}% do valor da venda (regra do empreendimento) — ajuste se negociado.</div> : null}
  </div>
  </div>
@@ -1597,7 +1611,7 @@ export default function Vendas() {
  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>Conferência dos valores × VGV</div>
  <div className="text-xs" style={{ display: 'grid', gap: 3 }}>
  <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Valor da venda (VGV)</span><strong>{formatMoedaBR(recon.vgv)}</strong></div>
- <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Entrada + mensais + reforços + chaves</span><strong>{formatMoedaBR(recon.soma)}</strong></div>
+ <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Entrada + mensais + reforços + chaves + saldo remanescente</span><strong>{formatMoedaBR(recon.soma)}</strong></div>
  {!recon.fecha && (
  <div className="flex" style={{ justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-light)' }}>
  <span className="text-secondary">Diferença</span>
@@ -1607,7 +1621,11 @@ export default function Vendas() {
  </div>
  {recon.fecha
  ? <div className="text-xs" style={{ color: 'var(--color-success)', marginTop: 6, fontWeight: 600 }}>Os valores fecham com o VGV ✓</div>
- : <div className="text-xs" style={{ color: 'var(--color-danger)', marginTop: 6, fontWeight: 600 }}>A soma dos pagamentos precisa fechar com o VGV — ajuste antes de avançar.</div>}
+ : <div className="text-xs" style={{ color: 'var(--color-danger)', marginTop: 6, fontWeight: 600 }}>
+ {recon.saldo > 0
+ ? `Faltam ${formatMoedaBR(recon.saldo)} pra fechar com o VGV — ajuste algum valor ou declare como Saldo remanescente (pago fora do parcelamento).`
+ : `A soma passa ${formatMoedaBR(Math.abs(recon.saldo))} do VGV — reduza algum valor pra fechar.`}
+ </div>}
  </div>
  )}
 
