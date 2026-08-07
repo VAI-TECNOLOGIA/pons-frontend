@@ -390,15 +390,18 @@ export default function Vendas() {
  return;
  }
  if (entradaV <= 0) { setParcelasEntrada([]); return; }
- const base = Math.round(entradaV / n);
+ // Conta em CENTAVOS — em reais inteiros as parcelas arredondavam e a soma
+ // não fechava com a entrada (R$ 62.073,91 em 5x saía R$ 62.074, Glaucia 07/08).
+ const cents = (x: number) => Math.round(x * 100);
+ const base = Math.round(cents(entradaV) / n);
  const vals = Array.from({ length: n }, () => base);
- vals[0] = base - arrasV;
- const alvo = Math.round(entradaV - arrasV);
+ vals[0] = base - cents(arrasV);
+ const alvo = cents(entradaV) - cents(arrasV);
  vals[n - 1] += alvo - vals.reduce((a, b) => a + b, 0);
  const baseDate = entradaData ? new Date(entradaData + 'T00:00:00') : (() => { const dd = new Date(); dd.setMonth(dd.getMonth() + 1); return dd; })();
  const arr = vals.map((v, i) => {
  const dd = new Date(baseDate); dd.setMonth(dd.getMonth() + i);
- return { valor: formatMoedaBR(Math.max(0, v)), venc: dd.toISOString().slice(0, 10) };
+ return { valor: formatMoedaBR(Math.max(0, v) / 100), venc: dd.toISOString().slice(0, 10) };
  });
  setParcelasEntrada(arr);
  // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -408,17 +411,19 @@ export default function Vendas() {
  const editarParcelaValor = (i: number, vMask: string) => {
  setParcelasEntrada((cur) => {
  const arr = cur.map((x, j) => (j === i ? { ...x, valor: vMask } : { ...x }));
- const alvo = Math.round(parseMoedaBR(entradaTotal) - parseMoedaBR(arrasValor));
+ // Mesma regra do pré-cálculo: tudo em CENTAVOS pra soma fechar exata.
+ const cents = (x: number) => Math.round(x * 100);
+ const alvo = cents(parseMoedaBR(entradaTotal)) - cents(parseMoedaBR(arrasValor));
  const nRest = arr.length - (i + 1);
  if (nRest > 0 && alvo > 0) {
- const somaAte = arr.slice(0, i + 1).reduce((a, p) => a + parseMoedaBR(p.valor), 0);
+ const somaAte = arr.slice(0, i + 1).reduce((a, p) => a + cents(parseMoedaBR(p.valor)), 0);
  const resto = alvo - somaAte;
  const base = Math.floor(resto / nRest);
- for (let j = i + 1; j < arr.length; j++) arr[j] = { ...arr[j], valor: formatMoedaBR(Math.max(0, base)) };
- const somaTotal = arr.reduce((a, p) => a + parseMoedaBR(p.valor), 0);
+ for (let j = i + 1; j < arr.length; j++) arr[j] = { ...arr[j], valor: formatMoedaBR(Math.max(0, base) / 100) };
+ const somaTotal = arr.reduce((a, p) => a + cents(parseMoedaBR(p.valor)), 0);
  const diff = alvo - somaTotal;
  const last = arr.length - 1;
- if (diff !== 0) arr[last] = { ...arr[last], valor: formatMoedaBR(Math.max(0, parseMoedaBR(arr[last].valor) + diff)) };
+ if (diff !== 0) arr[last] = { ...arr[last], valor: formatMoedaBR(Math.max(0, cents(parseMoedaBR(arr[last].valor)) + diff) / 100) };
  }
  return arr;
  });
