@@ -465,7 +465,8 @@ export default function Vendas() {
  const vv = parseMoedaBR(valorVenda);
  if (!vv || !politicaVigente) return;
  if (!entradaTotal && entradaMinimaOficial) {
- setEntradaTotal(formatMoedaBR(Math.round(vv * (entradaMinimaOficial / 100))));
+ // Ceil: a sugestão nunca fica um centavo ABAIXO do mínimo (Math.round podia)
+ setEntradaTotal(formatMoedaBR(Math.ceil(vv * (entradaMinimaOficial / 100))));
  }
  if (!chavesValor && politicaVigente.chavesPct) {
  setChavesValor(formatMoedaBR(Math.round(vv * (politicaVigente.chavesPct / 100))));
@@ -1509,7 +1510,9 @@ export default function Vendas() {
  const vv = parseMoedaBR(valorVenda), et = parseMoedaBR(entradaTotal);
  if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {entradaMinimaOficial}% de entrada.</div>;
  const pct = (et / vv) * 100;
- return pct < entradaMinimaOficial
+ // MESMA tolerância dos bloqueios (0,01 p.p.): 7% de valores quebrados vira
+ // 6,9999…% por arredondamento de centavo e o aviso estrito assustava à toa.
+ return pct < entradaMinimaOficial - 0.01
  ? <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(1)}% — abaixo do mínimo de {entradaMinimaOficial}%. A venda NÃO pode ser registrada assim.</div>
  : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(1)}% — dentro da política ({entradaMinimaOficial}% mín.).</div>;
  })()}
