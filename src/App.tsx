@@ -71,6 +71,7 @@ const Gestores        = lazyRetry(() => import('./pages/Gestores'));
 const Templates       = lazyRetry(() => import('./pages/Templates'));
 const Roletas         = lazyRetry(() => import('./pages/Roletas'));
 const FilasAtendimento = lazyRetry(() => import('./pages/FilasAtendimento'));
+const Biblioteca      = lazyRetry(() => import('./pages/Biblioteca'));
 const Trafego         = lazyRetry(() => import('./pages/Trafego'));
 const Tarefas         = lazyRetry(() => import('./pages/Tarefas'));
 const Relatorios      = lazyRetry(() => import('./pages/Relatorios'));
@@ -173,6 +174,7 @@ export default function App() {
           <Route path="/roletas" element={<Roletas />} />
           <Route path="/filas-atendimento" element={<FilasAtendimento />} />
           <Route path="/filas-disparo" element={<FilasAtendimento tipo="DISPARO" />} />
+          <Route path="/biblioteca" element={<Biblioteca />} />
           <Route path="/trafego" element={<Trafego />} />
           <Route path="/tarefas" element={<Tarefas />} />
           <Route path="/relatorios" element={<Relatorios />} />

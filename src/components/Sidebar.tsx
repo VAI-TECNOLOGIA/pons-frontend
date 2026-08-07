@@ -72,6 +72,7 @@ const GROUPS: NavGroup[] = [
       { to: '/telefone-formularios', label: 'Telefone por formulário', icon: 'phone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/transferencias', label: 'Transferências', icon: 'arrow_right', roles: ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE'] },
       { to: '/tarefas', label: 'Tarefas', icon: 'tasks', roles: ['CEO', 'DIRETOR_JURIDICO', 'MARKETING', 'GESTOR_MARKETING', 'ASSESSORA', 'ADMINISTRATIVO', 'CORRETOR', 'GERENTE_EQUIPE'] },
+      { to: '/biblioteca', label: 'Biblioteca (gestores)', icon: 'scroll', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'ADMINISTRATIVO', 'MARKETING', 'GESTOR_MARKETING', 'GESTOR_TRAFEGO', 'ASSESSORA_MARKETING', 'ASSESSORA'] },
     ],
   },
   {

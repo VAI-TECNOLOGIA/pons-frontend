@@ -648,6 +648,11 @@ export const Api = {
   iaStatus: () => request<any>('/ia/status'),
   iaAssistente: (pergunta: string) => request<any>('/ia/assistente', { method: 'POST', body: { pergunta } }),
 
+  // Biblioteca dos gestores
+  bibliotecaItens: () => request<any[]>('/biblioteca'),
+  bibliotecaCriar: (data: any) => request<any>('/biblioteca', { method: 'POST', body: data }),
+  bibliotecaRemover: (id: number) => request<{ ok: boolean }>(`/biblioteca/${id}`, { method: 'DELETE' }),
+
   // Users
   users: () => request<any[]>('/users'),
   meProfile: () => request<import('./auth').User & { aniversarioHoje?: boolean }>('/users/me'),
