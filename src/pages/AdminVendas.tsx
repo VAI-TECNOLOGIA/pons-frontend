@@ -11,6 +11,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { formatCurrencyShort } from '../lib/format';
+import { Auth } from '../lib/auth';
 import { STATUS_MAP, FormularioGpi, VendaDocumentos } from './Vendas';
 
 // Fases na ordem do processo — a fila mostra por fase.
@@ -108,14 +109,34 @@ export default function AdminVendas() {
                 <td className="text-xs text-secondary">{new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
                 <td>
                   {v.aguardandoAprovacao ? (
-                    <button
-                      className="btn btn--secondary btn--sm"
-                      disabled
-                      title="Parcelamento acima de 4x — aguardando aprovação do Paulo. O botão libera assim que ele aprovar."
-                      style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                    >
-                      <Icon name="lock" size={13} /> Aguardando Paulo
-                    </button>
+                    Auth.user?.role === 'CEO' ? (
+                      // O próprio Paulo aprova DAQUI — antes o CEO via o mesmo
+                      // cadeado inerte da adm e não tinha onde clicar (07/08).
+                      <button
+                        className="btn btn--primary btn--sm"
+                        title="Aprovar o parcelamento acima de 4x — libera a venda pra auditoria da adm"
+                        onClick={async () => {
+                          try {
+                            await Api.vendaAprovar(v.id);
+                            toast.success(`Parcelamento da ${v.codigo} aprovado — venda liberada pra auditoria.`);
+                            reload();
+                          } catch (e: any) {
+                            toast.error('Erro: ' + (e?.message || 'falha'));
+                          }
+                        }}
+                      >
+                        <Icon name="check" size={13} /> Aprovar (Paulo)
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn--secondary btn--sm"
+                        disabled
+                        title="Parcelamento acima de 4x — aguardando aprovação do Paulo. O botão libera assim que ele aprovar."
+                        style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                      >
+                        <Icon name="lock" size={13} /> Aguardando Paulo
+                      </button>
+                    )
                   ) : (
                     <button className="btn btn--secondary btn--sm" onClick={() => setSelId(v.id)}>
                       <Icon name="doc" size={13} /> Auditar
