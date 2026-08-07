@@ -40,7 +40,44 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
   const [transfs, setTransfs] = useState<any[]>([]);
   const [verTransfs, setVerTransfs] = useState(false);
   const [verIntegra, setVerIntegra] = useState(false);
+  // Edição do cadastro (pedido gestores 07/08): nome, telefone, e-mail e empreendimento
+  const [editando, setEditando] = useState(false);
+  const [salvandoEd, setSalvandoEd] = useState(false);
+  const [emps, setEmps] = useState<any[] | null>(null);
+  const [ed, setEd] = useState({ nome: '', telefone: '', email: '', empreendimentoInteresseId: '' });
   const toast = useToast();
+
+  const abrirEdicao = () => {
+    setEd({
+      nome: lead?.nome || '',
+      telefone: lead?.telefoneOculto ? '' : (lead?.telefone || ''),
+      email: lead?.email || '',
+      empreendimentoInteresseId: lead?.empreendimentoInteresseId ? String(lead.empreendimentoInteresseId) : '',
+    });
+    if (!emps) Api.empreendimentos().then(setEmps).catch(() => setEmps([]));
+    setEditando(true);
+  };
+
+  const salvarEdicao = async () => {
+    if (!ed.nome.trim()) { toast.error('Nome é obrigatório.'); return; }
+    setSalvandoEd(true);
+    try {
+      await Api.leadUpdate(leadId, {
+        nome: ed.nome.trim(),
+        ...(lead?.telefoneOculto ? {} : { telefone: ed.telefone.trim() || undefined }),
+        email: ed.email.trim() || undefined,
+        empreendimentoInteresseId: ed.empreendimentoInteresseId ? Number(ed.empreendimentoInteresseId) : null,
+      });
+      const l = await Api.lead(leadId);
+      setLead(l);
+      setEditando(false);
+      toast.success('Cadastro do lead atualizado');
+    } catch (e: any) {
+      toast.error('Erro: ' + (e?.message || 'falha'));
+    } finally {
+      setSalvandoEd(false);
+    }
+  };
 
   useEffect(() => {
     let vivo = true;
@@ -100,12 +137,37 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
               {lead.ultimaInteracao && <><br />Última interação: {dataExtensa(lead.ultimaInteracao)}</>}
             </div>
             {/* Conversa por DENTRO do sistema (aba Atendimento) — pedido 24/07 */}
-            <button
-              onClick={() => { onClose(); window.location.href = `/chat?lead=${leadId}`; }}
-              style={{ marginTop: 12, background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.35)', borderRadius: 10, padding: '9px 16px', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}
-            >
-              <Icon name="chat" size={15} /> Abrir conversa no Atendimento
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+              <button
+                onClick={() => { onClose(); window.location.href = `/chat?lead=${leadId}`; }}
+                style={{ background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.35)', borderRadius: 10, padding: '9px 16px', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}
+              >
+                <Icon name="chat" size={15} /> Abrir conversa no Atendimento
+              </button>
+              <button
+                onClick={abrirEdicao}
+                style={{ background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.35)', borderRadius: 10, padding: '9px 16px', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}
+              >
+                <Icon name="pencil" size={14} /> Editar cadastro
+              </button>
+            </div>
+            {editando && (
+              <div className="fade-in" style={{ marginTop: 12, background: 'rgba(255,255,255,.12)', borderRadius: 10, padding: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+                  <input className="field__input" placeholder="Nome" value={ed.nome} onChange={(e) => setEd((c) => ({ ...c, nome: e.target.value }))} />
+                  <input className="field__input" placeholder={lead.telefoneOculto ? 'Telefone (libere o contato pra editar)' : 'Telefone'} disabled={!!lead.telefoneOculto} value={ed.telefone} onChange={(e) => setEd((c) => ({ ...c, telefone: e.target.value }))} />
+                  <input className="field__input" placeholder="E-mail" value={ed.email} onChange={(e) => setEd((c) => ({ ...c, email: e.target.value }))} />
+                  <select className="field__select" value={ed.empreendimentoInteresseId} onChange={(e) => setEd((c) => ({ ...c, empreendimentoInteresseId: e.target.value }))}>
+                    <option value="">— Empreendimento de interesse —</option>
+                    {(emps || []).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button className="btn btn--primary btn--sm" disabled={salvandoEd} onClick={salvarEdicao}>{salvandoEd ? 'Salvando…' : 'Salvar'}</button>
+                  <button className="btn btn--ghost btn--sm" style={{ color: '#fff' }} onClick={() => setEditando(false)}>Cancelar</button>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'grid', gap: 6, marginTop: 12 }}>
               {lead.telefone && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
