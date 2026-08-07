@@ -40,6 +40,7 @@ export default function Leads() {
  // Painel de filtros (server-side — a busca roda no banco, não na página carregada)
  const [mostrarFiltros, setMostrarFiltros] = useState(false);
  const [filtroOrigem, setFiltroOrigem] = useState<string[]>([]);
+ const [filtroEtiqueta, setFiltroEtiqueta] = useState<string[]>([]);
  const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | id do corretor
  // ?base=ID na URL (vindo da tela Bases de Leads) já abre filtrado
  const [searchParams] = useSearchParams();
@@ -68,6 +69,7 @@ export default function Leads() {
  const params: any = { page, limit: PAGE_SIZE };
  if (filterStatus.length) params.status = filterStatus.join(',');
  if (filtroOrigem.length) params.origem = filtroOrigem.join(',');
+ if (filtroEtiqueta.length) params.classificacao = filtroEtiqueta.join(',');
  if (filtroCampanha.length) params.campanha = filtroCampanha.join(',');
  if (filtroFormulario.length) params.formulario = filtroFormulario.join(',');
  if (filtroEmp.length) params.empreendimentoId = filtroEmp.join(',');
@@ -244,12 +246,13 @@ export default function Leads() {
 
  {mostrarFiltros && (
  <LeadsFiltrosPanel
- v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus, campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe, baseId: filtroBase }}
+ v={{ dataInicial, dataFinal, origem: filtroOrigem, status: filterStatus, classificacao: filtroEtiqueta, campanha: filtroCampanha, formulario: filtroFormulario, empreendimentoId: filtroEmp, corretorId: filtroCorretor, equipeId: filtroEquipe, baseId: filtroBase }}
  onAplicar={(f) => {
  setDataInicial(f.dataInicial);
  setDataFinal(f.dataFinal);
  setFiltroOrigem(f.origem);
  setFilterStatus(f.status);
+ setFiltroEtiqueta(f.classificacao);
  setFiltroCampanha(f.campanha);
  setFiltroFormulario(f.formulario);
  setFiltroEmp(f.empreendimentoId);

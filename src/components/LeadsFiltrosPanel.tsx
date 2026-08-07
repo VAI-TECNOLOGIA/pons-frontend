@@ -13,6 +13,7 @@ export interface FiltrosLead {
  dataFinal: string;
  origem: string[];
  status: string[];
+ classificacao: string[]; // etiquetas: NOVO/QUENTE/MORNO/FRIO
  campanha: string[];
  formulario: string[]; // nomes do Lead Form (aparece como "Interesse" na ficha)
  empreendimentoId: string[];
@@ -22,7 +23,7 @@ export interface FiltrosLead {
 }
 
 export const FILTROS_LEAD_VAZIO: FiltrosLead = {
- dataInicial: '', dataFinal: '', origem: [], status: [], campanha: [], formulario: [], empreendimentoId: [], corretorId: '', equipeId: [], baseId: [],
+ dataInicial: '', dataFinal: '', origem: [], status: [], classificacao: [], campanha: [], formulario: [], empreendimentoId: [], corretorId: '', equipeId: [], baseId: [],
 };
 
 // Converte os filtros nos params do GET /leads (multi-valores viram CSV).
@@ -30,6 +31,7 @@ export function filtrosLeadParams(f: FiltrosLead): Record<string, string> {
  const p: Record<string, string> = {};
  if (f.status.length) p.status = f.status.join(',');
  if (f.origem.length) p.origem = f.origem.join(',');
+ if (f.classificacao.length) p.classificacao = f.classificacao.join(',');
  if (f.campanha.length) p.campanha = f.campanha.join(',');
  if (f.formulario.length) p.formulario = f.formulario.join(',');
  if (f.empreendimentoId.length) p.empreendimentoId = f.empreendimentoId.join(',');
@@ -79,6 +81,17 @@ export function LeadsFiltrosPanel({ v, onAplicar, statuses, opcoes, corretores, 
  <div className="leads-filtros__linha">
  <MultiFiltro label="Origem" opcoes={asOpts(opcoes?.origens)} values={draft.origem} onChange={(vals) => set({ origem: vals })} />
  <MultiFiltro label="Status" opcoes={statuses.map((s) => ({ value: s.key, label: s.label }))} values={draft.status} onChange={(vals) => set({ status: vals })} />
+ <MultiFiltro
+ label="Etiqueta"
+ opcoes={[
+ { value: 'NOVO', label: 'Novo' },
+ { value: 'QUENTE', label: 'Quente' },
+ { value: 'MORNO', label: 'Morno' },
+ { value: 'FRIO', label: 'Frio' },
+ ]}
+ values={draft.classificacao}
+ onChange={(vals) => set({ classificacao: vals })}
+ />
  </div>
  </div>
  <div className="leads-filtros__grupo leads-filtros__grupo--full">
