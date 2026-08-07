@@ -339,6 +339,27 @@ function UnidadesModal({
     }
   };
 
+  // Edição do VALOR de tabela da unidade (pedido 07/08 — antes só dava pra
+  // mudar status/remover, e valor errado ficava travado pra sempre).
+  const [editValorId, setEditValorId] = useState<number | null>(null);
+  const [editValor, setEditValor] = useState('');
+  const salvarValor = async (u: any) => {
+    const v = Number(String(editValor).replace(/\./g, '').replace(',', '.'));
+    if (!Number.isFinite(v) || v < 0) { toast.error('Valor inválido.'); return; }
+    setBusy(true);
+    try {
+      await Api.empreendimentoUnidadeUpdate(empreendimento.id, u.id, { valor: v });
+      setEditValorId(null);
+      await refetch();
+      onChanged();
+      toast.success(`Valor da ${u.identificacao} atualizado`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao atualizar o valor');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const remover = async (u: any) => {
     const ok = await confirm({ title: 'Remover unidade', message: `Remover "${u.identificacao}"?`, confirmText: 'Remover', tone: 'danger' });
     if (!ok) return;
@@ -481,7 +502,31 @@ function UnidadesModal({
                 <td className="text-sm">{u.torre || '—'}</td>
                 <td className="text-sm">{u.andar ?? '—'}</td>
                 <td className="text-sm">{u.tipologia || '—'}</td>
-                <td className="text-right money">{u.valor ? formatCurrencyShort(u.valor) : '—'}</td>
+                <td className="text-right money">
+                  {editValorId === u.id ? (
+                    <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                      <input
+                        className="field__input"
+                        style={{ width: 120, height: 30, fontSize: 13, textAlign: 'right' }}
+                        autoFocus
+                        inputMode="decimal"
+                        value={editValor}
+                        onChange={(ev) => setEditValor(ev.target.value)}
+                        onKeyDown={(ev) => { if (ev.key === 'Enter') salvarValor(u); if (ev.key === 'Escape') setEditValorId(null); }}
+                      />
+                      <button className="btn btn--primary btn--sm" style={{ padding: '4px 8px' }} disabled={busy} onClick={() => salvarValor(u)}><Icon name="check" size={12} /></button>
+                      <button className="btn btn--ghost btn--sm" style={{ padding: '4px 8px' }} onClick={() => setEditValorId(null)}><Icon name="x" size={12} /></button>
+                    </span>
+                  ) : (
+                    <span
+                      title={canEdit ? 'Clique pra editar o valor de tabela' : undefined}
+                      style={canEdit ? { cursor: 'pointer', borderBottom: '1px dashed var(--border-light)' } : undefined}
+                      onClick={() => { if (canEdit) { setEditValorId(u.id); setEditValor(u.valor ? String(u.valor) : ''); } }}
+                    >
+                      {u.valor ? formatCurrencyShort(u.valor) : (canEdit ? 'definir' : '—')}
+                    </span>
+                  )}
+                </td>
                 <td>
                   {canEdit ? (
                     <select className="field__select field__select--sm" value={u.status} disabled={busy} onChange={(ev) => mudarStatus(u, ev.target.value)}>
