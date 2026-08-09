@@ -22,6 +22,11 @@ const ehGestorAtendimento = () => Auth.user?.role !== 'CORRETOR';
 const PAPEIS_LIBERAM_DIRETO = ['GESTOR', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'CEO', 'DIRETOR_COMERCIAL', 'GESTOR_MARKETING'];
 const liberaDireto = () => PAPEIS_LIBERAM_DIRETO.includes(Auth.user?.role || '');
 
+// No celular a tecla de retorno do teclado dispara "Enter" — se enviar aqui, o
+// corretor que só quer pular linha manda a mensagem pela metade pro cliente.
+// Enter-envia fica restrito ao desktop (teclado físico); no touch envia só no ✈️.
+const teclaEnterEnvia = !(isNativeApp() || (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches));
+
 type Tab = 'pendente' | 'atendendo';
 
 // Respostas rápidas padrão do atendimento (corretor insere e revisa antes de enviar).
@@ -1314,7 +1319,7 @@ export default function Chat() {
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (teclaEnterEnvia && e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
                               enviar();
                             }
