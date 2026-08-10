@@ -52,6 +52,12 @@ function LeadsDoBolsao({ bolsaoId, onCaptured }: { bolsaoId: number; onCaptured:
           <div style={{ minWidth: 0 }}>
             <div style={{ fontWeight: 600, fontSize: 13 }}>{l.nome || 'Lead'}</div>
             <div className="text-xs text-secondary">{l.telefone || '—'}{l.origem ? ` · ${String(l.origem).replace(/_/g, ' ').toLowerCase()}` : ''}</div>
+            {l.tabulacao && (
+              <div style={{ marginTop: 4, fontSize: 11, lineHeight: 1.35, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, padding: '3px 7px', color: '#B45309' }}>
+                ↩ Tabulado: <strong>{l.tabulacao.label}</strong>
+                {l.tabulacao.observacao ? <span style={{ color: 'var(--text-secondary)' }}> — {l.tabulacao.observacao}</span> : null}
+              </div>
+            )}
           </div>
           <button className="btn btn--primary btn--sm" onClick={() => capturar(l.id)} disabled={capturandoId === l.id}>
             {capturandoId === l.id ? '...' : <><Icon name="check" size={12} /> Capturar</>}
