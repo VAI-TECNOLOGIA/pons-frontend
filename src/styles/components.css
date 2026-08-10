@@ -2610,11 +2610,12 @@
     white-space: nowrap;
   }
 
-  /* Modais ocupam tela inteira no mobile */
+  /* Modais no mobile: centralizados na vertical (antes `margin: 8px auto`
+     grudava 8px do topo, atrás do notch/barra de status no iPhone). */
   .modal, dialog.modal {
     width: 96vw !important;
     max-width: 96vw !important;
-    margin: 8px auto !important;
+    margin: auto !important;
   }
 }
 

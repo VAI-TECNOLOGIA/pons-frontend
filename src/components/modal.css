@@ -84,7 +84,15 @@
 
 @media (max-width: 600px) {
   /* 100dvh (altura dinâmica) desconta a barra do navegador; 100vh inclui a área
-     atrás dela e empurrava o rodapé (botão Enviar) pra fora da tela. */
-  .modal__content { max-width: 100vw; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
+     atrás dela e empurrava o rodapé (botão Enviar) pra fora da tela.
+     Desconta o notch em cima/embaixo pra o card nunca ficar sob a barra. */
+  .modal__content {
+    max-width: 100vw;
+    max-height: 100vh;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    border-radius: 12px;
+  }
+  /* Cabeçalho (título + X) sempre abaixo do notch/barra de status. */
+  .modal__header { padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
   .modal__footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 }
