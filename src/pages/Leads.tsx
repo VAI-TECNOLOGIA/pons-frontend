@@ -347,13 +347,18 @@ export default function Leads() {
  )}
  </div>
  <div className="text-xs text-secondary">{l.telefone || l.email || '—'}</div>
+ {l.campanha && (
+ <div className="text-xs" style={{ color: '#0E7C9B', marginTop: 2 }} title={l.campanha}>
+ 📣 {l.campanha}
+ </div>
+ )}
  </div>
  </div>
  </td>
  <td>
  <span className="badge badge--neutral">{l.origem}</span>
  </td>
- <td className="text-xs">{l.interesse || '—'}</td>
+ <td className="text-xs">{l.interesse || l.campanha || '—'}</td>
  <td>
  {l.corretor ? (
  <div className="flex gap-2" style={{ alignItems: 'center' }}>
