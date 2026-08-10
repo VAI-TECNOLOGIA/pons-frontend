@@ -51,7 +51,9 @@ export default function Executivo() {
     tipo: ev.tipo,
     local: ev.local,
     executivo: typeof ev.executivo === 'string' ? ev.executivo : ev.executivo?.name || ev.executivo?.nome,
-    notas: ev.notas,
+    // Backend guarda a nota em `descricao`; o front chamava de `notas` e nunca
+    // batia — a nota nem salvava nem reaparecia (Namita 10/08). Lê os dois.
+    notas: ev.descricao ?? ev.notas,
     concluido: ev.concluido === true,
   }));
 
@@ -167,7 +169,8 @@ export default function Executivo() {
       local: fd.get('local') ? String(fd.get('local')) : undefined,
       // Assessoria lança sempre pro Paulo (verAgendaDe); os demais, pra si mesmos.
       paraUserId: verAgendaDe || undefined,
-      notas: fd.get('notas') ? String(fd.get('notas')) : undefined,
+      // Campo real no backend é `descricao` (antes ia como `notas` e era ignorado).
+      descricao: fd.get('notas') ? String(fd.get('notas')) : undefined,
     };
     try {
       if (editing) {
