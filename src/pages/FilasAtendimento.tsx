@@ -331,7 +331,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   const [iniHora, setIniHora] = useState<number>(fila?.expedienteInicioHora ?? 8);
   const [fimHora, setFimHora] = useState<number>(fila?.expedienteFimHora ?? 18);
   // Modo de pulo no SLA: PROXIMO (próximo corretor da fila) ou BOLSAO (bolsão de recaptura)
-  const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO'>((fila?.modoPulo as any) || 'PROXIMO');
+  const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO' | 'NAO_PULAR'>((fila?.modoPulo as any) || 'PROXIMO');
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
   const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
   const [autoTemplate, setAutoTemplate] = useState<string>(fila?.autoTemplate || ''); // template disparado ao lead cair na fila (CTWA)
@@ -622,14 +622,17 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
           {/* Modo de pulo: o que fazer quando o corretor não responde no SLA */}
           <div className="field">
             <label className="field__label">Modo de pulo — quando o corretor não responde</label>
-            <select className="field__select" value={modoPulo} onChange={(e) => setModoPulo(e.target.value as 'PROXIMO' | 'BOLSAO')}>
+            <select className="field__select" value={modoPulo} onChange={(e) => setModoPulo(e.target.value as 'PROXIMO' | 'BOLSAO' | 'NAO_PULAR')}>
               <option value="PROXIMO">Ir pro próximo corretor da fila</option>
               <option value="BOLSAO">Enviar pro bolsão de recaptura</option>
+              <option value="NAO_PULAR">Não pular — o lead fica com o corretor</option>
             </select>
             <div className="field__hint">
               {modoPulo === 'PROXIMO'
                 ? 'O lead roda entre os corretores da fila; ao atingir o máx. de transferências, cai no bolsão.'
-                : 'O lead vai direto pro bolsão escolhido abaixo, sem rodar a fila.'}
+                : modoPulo === 'BOLSAO'
+                ? 'O lead vai direto pro bolsão escolhido abaixo, sem rodar a fila.'
+                : 'O lead NÃO pula: fica com o corretor que recebeu, mesmo sem resposta. O "Tempo de pulo" acima é ignorado.'}
             </div>
           </div>
 
