@@ -70,6 +70,9 @@ export default function Empreendimentos() {
 
   const userRole = Auth.user?.role || '';
   const canEdit = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'ASSESSORA_MARKETING', 'GESTOR_TRAFEGO', 'GESTOR_MARKETING', 'SOCIO_UNIDADE'].includes(userRole);
+  // Só MATERIAL (fotos/documentos): gestor de equipe também pode — mas NÃO edita
+  // unidade/preço nem cria empreendimento (isso segue no canEdit). Pedido Leiken 10/08.
+  const canMaterial = canEdit || userRole === 'GERENTE_EQUIPE';
   // Salvar comissão/rateio exige papel que o backend aceita (senão o botão só frustra)
   const canCondicoes = ['CEO', 'DIRETOR_FINANCEIRO', 'SOCIO_UNIDADE'].includes(userRole);
 
@@ -135,15 +138,15 @@ export default function Empreendimentos() {
               <div className="property-card" key={e.id}>
                 <div
                   className="property-card__cover"
-                  style={{ ...coverStyle, cursor: canEdit ? 'pointer' : 'default', position: 'relative' }}
-                  onClick={() => canEdit && setGallery(e)}
-                  title={canEdit ? 'Clique pra gerenciar fotos' : undefined}
+                  style={{ ...coverStyle, cursor: canMaterial ? 'pointer' : 'default', position: 'relative' }}
+                  onClick={() => canMaterial && setGallery(e)}
+                  title={canMaterial ? 'Clique pra gerenciar fotos' : undefined}
                 >
                   {!cover && e.nome.toUpperCase()}
                   <span className="badge badge--launch property-card__tag">
                     {STATUS_LABEL[e.status] || e.status}
                   </span>
-                  {canEdit && (
+                  {canMaterial && (
                     <div
                       style={{
                         position: 'absolute',
@@ -251,7 +254,7 @@ export default function Empreendimentos() {
       {docsEmp && (
         <DocsEmpreendimentoModal
           empreendimento={docsEmp}
-          canEdit={canEdit}
+          canEdit={canMaterial}
           onClose={() => setDocsEmp(null)}
           onChanged={reload}
         />
