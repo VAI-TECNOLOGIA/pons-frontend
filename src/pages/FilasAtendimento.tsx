@@ -336,6 +336,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
   const [autoTemplate, setAutoTemplate] = useState<string>(fila?.autoTemplate || ''); // template disparado ao lead cair na fila (CTWA)
   const [direcionarAtendendo, setDirecionarAtendendo] = useState<boolean>(fila?.direcionarAtendendo ?? false); // vai direto pro Atendendo (sem IA)
+  const [liberarContatoImediato, setLiberarContatoImediato] = useState<boolean>(fila?.liberarContatoImediato ?? false); // telefone do lead sem máscara pro corretor
   const { data: templatesResp } = useApi<{ items: any[] }>(() => Api.whatsappTemplates());
   const templatesAprovados = (templatesResp?.items || []).filter((t: any) => t.status === 'APPROVED');
   const { data: bolsoes } = useApi<any[]>(() => Api.bolsoes());
@@ -370,6 +371,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
       ocultarPosicao,
       autoTemplate: autoTemplate.trim() || null,
       direcionarAtendendo,
+      liberarContatoImediato,
     };
     try {
       if (editando) {
@@ -560,6 +562,13 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={ocultarPosicao} onChange={(e) => setOcultarPosicao(e.target.checked)} />
             <span style={{ fontWeight: 600 }}>Ocultar posição do corretor</span>
+          </label>
+          <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
+            <input type="checkbox" checked={liberarContatoImediato} onChange={(e) => setLiberarContatoImediato(e.target.checked)} style={{ marginTop: 3 }} />
+            <span>
+              <span style={{ fontWeight: 600 }}>Liberar contato imediato do lead</span>
+              <span className="field__hint" style={{ display: 'block' }}>O corretor recebe o <strong>telefone do lead sem máscara</strong> assim que o lead cai nesta fila — pra campanhas particulares/pagas do próprio corretor. Desmarcado = telefone oculto até liberação manual.</span>
+            </span>
           </label>
         </div>
       )}
