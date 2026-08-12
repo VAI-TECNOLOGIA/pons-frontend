@@ -2215,12 +2215,15 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const rateios = parcelas.map((p) => { try { return p.rateioPlanilha ? JSON.parse(p.rateioPlanilha) : null; } catch { return null; } });
  const temPlanilha = rateios.some(Boolean);
  const colunas = Object.keys(RATEIO_LABELS).filter((c) => c === 'sitComissoes' || rateios.some((r) => r && r[c] !== undefined && r[c] !== null && r[c] !== ''));
+ // Plano de recebimento mostra o valor CHEIO com centavos (R$ 14.000,00) — não
+ // a versão "14K" abreviada, que esconde os centavos e parece arredondamento.
+ const moeda = (v: any) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
  return (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'var(--bg-card-hover)', borderRadius: 10 }}>
  <div className="flex-between" style={{ alignItems: 'baseline', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
  <div className="uppercase-tag">Parcelas / plano de recebimento</div>
  <div className="text-xs text-secondary">
- {pagas.length}/{parcelas.length} pagas · {formatCurrencyShort(totalPago)} de {formatCurrencyShort(totalEntrada)}
+ {pagas.length}/{parcelas.length} pagas · {moeda(totalPago)} de {moeda(totalEntrada)}
  </div>
  </div>
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
@@ -2230,7 +2233,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  return (
  <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
  <div style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
- <strong>{p.numero}/{p.total}</strong> · {formatCurrencyShort(p.valor)} · {venc}
+ <strong>{p.numero}/{p.total}</strong> · {moeda(p.valor)} · {venc}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
  {(!podeConfirmar || p.status === 'PAGO') && <span className={`badge badge--${k}`} style={{ fontSize: 10 }}>{lbl}</span>}
