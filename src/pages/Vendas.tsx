@@ -368,7 +368,7 @@ export default function Vendas() {
  const saldo = vgv - soma; // > 0 = a financiar; < 0 = excede o VGV
  const nParc = Math.max(1, Number(entradaParcelas) || 1);
  const parcela = Math.max(0, (entrada - arras)) / nParc;
- return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -1, fecha: vgv > 0 && Math.abs(saldo) <= 1 };
+ return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -0.01, fecha: vgv > 0 && Math.abs(saldo) <= 0.01 };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
@@ -603,8 +603,10 @@ export default function Vendas() {
  if (step === 2 && politicaVigente?.entradaMinimaPct != null) {
  const vvNum = parseMoedaBR(valorVenda);
  const etNum = parseMoedaBR(entradaTotal);
- if (vvNum > 0 && (etNum / vvNum) * 100 < politicaVigente.entradaMinimaPct - 0.01) {
- toast.error(`Entrada de ${((etNum / vvNum) * 100).toFixed(1)}% — o mínimo do empreendimento é ${politicaVigente.entradaMinimaPct}%. Aumente a entrada pra avançar.`);
+ // Compara por VALOR (não por % arredondado): entrada tem que ser >= mínimo exato.
+ const minEntrada = vvNum * (politicaVigente.entradaMinimaPct / 100);
+ if (vvNum > 0 && etNum < minEntrada - 0.005) {
+ toast.error(`Entrada ${formatMoedaBR(etNum)} (${((etNum / vvNum) * 100).toFixed(2)}%) está abaixo do mínimo de ${politicaVigente.entradaMinimaPct}% = ${formatMoedaBR(minEntrada)}. Ajuste pra avançar.`);
  return;
  }
  }
@@ -612,7 +614,7 @@ export default function Vendas() {
  if (step === 2 && parcelasEntrada.length > 0) {
  const somaP = parcelasEntrada.reduce((a, p) => a + parseMoedaBR(p.valor), 0);
  const alvoP = parseMoedaBR(entradaTotal) - parseMoedaBR(arrasValor);
- if (Math.abs(somaP - alvoP) > 1) { toast.error('A soma das parcelas da entrada precisa fechar com (entrada − arras). Ajuste antes de avançar.'); return; }
+ if (Math.abs(somaP - alvoP) > 0.01) { toast.error('A soma das parcelas da entrada precisa fechar com (entrada − arras). Ajuste antes de avançar.'); return; }
  }
  const prox = Math.min(step + 1, stepConfirma);
  // Entrando na confirmação: tira o snapshot dos campos pro resumo
@@ -652,9 +654,9 @@ export default function Vendas() {
  const vvNum = num(valorVenda);
  const etNum = num(fd.get('entradaTotal'));
  if (vvNum > 0) {
- const pctEntrada = (etNum / vvNum) * 100;
- if (pctEntrada < politicaVigente.entradaMinimaPct - 0.01) {
- toast.error(`Entrada de ${pctEntrada.toFixed(1)}% — o mínimo do empreendimento é ${politicaVigente.entradaMinimaPct}%. Aumente a entrada pra registrar a venda.`);
+ const minEntrada = vvNum * (politicaVigente.entradaMinimaPct / 100);
+ if (etNum < minEntrada - 0.005) {
+ toast.error(`Entrada ${formatMoedaBR(etNum)} (${((etNum / vvNum) * 100).toFixed(2)}%) está abaixo do mínimo de ${politicaVigente.entradaMinimaPct}% = ${formatMoedaBR(minEntrada)}. Ajuste pra registrar a venda.`);
  return;
  }
  }
@@ -1515,11 +1517,12 @@ export default function Vendas() {
  const vv = parseMoedaBR(valorVenda), et = parseMoedaBR(entradaTotal);
  if (!vv || !et) return <div className="field__hint">Mínimo do empreendimento: {entradaMinimaOficial}% de entrada.</div>;
  const pct = (et / vv) * 100;
- // MESMA tolerância dos bloqueios (0,01 p.p.): 7% de valores quebrados vira
- // 6,9999…% por arredondamento de centavo e o aviso estrito assustava à toa.
- return pct < entradaMinimaOficial - 0.01
- ? <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(1)}% — abaixo do mínimo de {entradaMinimaOficial}%. A venda NÃO pode ser registrada assim.</div>
- : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(1)}% — dentro da política ({entradaMinimaOficial}% mín.).</div>;
+ // Compara por VALOR exato (tolera só meio centavo de float): entrada 40.387,00
+ // é abaixo dos 40.387,15 (7% real) — não pode passar como "dentro da política".
+ const minEntrada = vv * (entradaMinimaOficial / 100);
+ return et < minEntrada - 0.005
+ ? <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(2)}% ({formatMoedaBR(et)}) — abaixo do mínimo de {entradaMinimaOficial}% ({formatMoedaBR(minEntrada)}). A venda NÃO pode ser registrada assim.</div>
+ : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(2)}% — dentro da política ({entradaMinimaOficial}% mín. = {formatMoedaBR(minEntrada)}).</div>;
  })()}
  </div>
  <div className="field">
