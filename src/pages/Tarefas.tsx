@@ -7,6 +7,7 @@ import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
+import { CalendarView, type CalendarEvent } from '../components/CalendarView';
 
 const COLS: Record<string, { titulo: string; klass: string }> = {
   A_FAZER: { titulo: 'A Fazer', klass: '' },
@@ -22,6 +23,34 @@ const dataBr = (s?: string | null) => {
   if (!s) return '';
   const [y, m, d] = String(s).slice(0, 10).split('-');
   return d && m && y ? `${d}/${m}/${y}` : new Date(s).toLocaleDateString('pt-BR');
+};
+
+// Data + hora "DD/MM/AAAA HH:MM" lendo a string direto (wall-clock, sem conversão
+// de fuso — mesma razão do dataBr). A hora só aparece se não for 00:00 (tarefas
+// antigas eram "dia cheio" à meia-noite e seguem mostrando só a data).
+const dataBrHora = (s?: string | null) => {
+  if (!s) return '';
+  const iso = String(s);
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  const hm = iso.slice(11, 16);
+  const dataStr = d && m && y ? `${d}/${m}/${y}` : new Date(s).toLocaleDateString('pt-BR');
+  return hm && hm !== '00:00' ? `${dataStr} ${hm}` : dataStr;
+};
+
+// Prazo (wall-clock) → Date LOCAL no dia/hora certos, pra o calendário posicionar
+// no dia correto (evita a data "voltar um dia" por fuso).
+const prazoParaData = (s?: string | null): Date | null => {
+  if (!s) return null;
+  const iso = String(s);
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  const hh = Number(iso.slice(11, 13)) || 0;
+  const mi = Number(iso.slice(14, 16)) || 0;
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d, hh, mi);
+};
+
+const COR_PRIORIDADE: Record<string, string> = {
+  URGENTE: '#E5484D', ALTA: '#F2B544', NORMAL: '#3FB6D4', BAIXA: '#88C559',
 };
 
 export default function Tarefas() {
@@ -42,6 +71,7 @@ export default function Tarefas() {
       ? (MEMBROS_QUADRO_MKT.includes(u.role) || u.id === Auth.user?.id)
       : (ehGestor || u.role !== 'CORRETOR');
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<'kanban' | 'calendario'>('kanban');
   const [waOn, setWaOn] = useState(false); // "Enviar pelo WhatsApp" no criar tarefa
   const { data, loading, error, reload } = useApi<any[]>(() => Api.tarefas());
   const { data: users } = useApi<any[]>(() => Api.users());
@@ -156,6 +186,18 @@ export default function Tarefas() {
       <span className="badge badge--analysis" style={{ fontSize: 9, padding: '2px 6px' }}>ALTA</span>
     ) : null;
 
+  // Tarefas com prazo viram eventos do calendário (posicionadas pelo dia do prazo).
+  const calEvents: CalendarEvent[] = tarefas
+    .filter((t) => t.prazo)
+    .map((t) => ({
+      id: t.id,
+      titulo: t.titulo,
+      inicio: prazoParaData(t.prazo) || new Date(),
+      tipo: t.prioridade,
+      cor: COR_PRIORIDADE[t.prioridade] || '#3FB6D4',
+      concluido: t.status === 'CONCLUIDO',
+    }));
+
   return (
     <>
       <Topbar
@@ -169,6 +211,12 @@ export default function Tarefas() {
           subtitle="Distribua trabalho · acompanhe progresso · clique no status para mover"
         />
 
+        <div className="flex gap-2" style={{ marginBottom: 16 }}>
+          <button className={`btn btn--sm ${view === 'kanban' ? 'btn--primary' : 'btn--secondary'}`} onClick={() => setView('kanban')}>Kanban</button>
+          <button className={`btn btn--sm ${view === 'calendario' ? 'btn--primary' : 'btn--secondary'}`} onClick={() => setView('calendario')}>Calendário</button>
+        </div>
+
+        {view === 'kanban' && (
         <div className="kanban">
           {Object.entries(COLS).map(([key, col]) => {
             const items = tarefas.filter((t) => t.status === key);
@@ -208,7 +256,7 @@ export default function Tarefas() {
                           <div className="kanban-card__meta">
                             {t.area}
                             {(t.solicitadoEm || t.createdAt) && ' · solicitada ' + dataBr(t.solicitadoEm || t.createdAt)}
-                            {t.prazo && ' · até ' + dataBr(t.prazo)}
+                            {t.prazo && ' · até ' + dataBrHora(t.prazo)}
                           </div>
                         </div>
                         <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
@@ -270,6 +318,17 @@ export default function Tarefas() {
             );
           })}
         </div>
+        )}
+
+        {view === 'calendario' && (
+          <CalendarView
+            events={calEvents}
+            initialView="mes"
+            onEventClick={(ev) => setEditId(Number(ev.id))}
+            onNew={() => setOpen(true)}
+            onToggleDone={(ev, concluido) => moveStatus(Number(ev.id), concluido ? 'CONCLUIDO' : 'A_FAZER')}
+          />
+        )}
       </div>
 
       <Modal open={open} onClose={() => { setOpen(false); setWaOn(false); }} title="Nova Tarefa" subtitle="Atribua a um responsável e defina prazo">
@@ -324,7 +383,7 @@ export default function Tarefas() {
             </div>
             <div className="field">
               <label className="field__label">Prazo</label>
-              <input name="prazo" type="date" className="field__input" />
+              <input name="prazo" type="datetime-local" className="field__input" />
             </div>
             <div className="field field--span-2">
               <label className="field__label">Link (opcional)</label>
@@ -412,7 +471,7 @@ export default function Tarefas() {
               </div>
               <div className="field">
                 <label className="field__label">Prazo</label>
-                <input name="prazo" type="date" className="field__input" defaultValue={editTarefa.prazo ? String(editTarefa.prazo).slice(0, 10) : ''} />
+                <input name="prazo" type="datetime-local" className="field__input" defaultValue={editTarefa.prazo ? String(editTarefa.prazo).slice(0, 16) : ''} />
               </div>
             </div>
             <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
