@@ -3,6 +3,8 @@ import { Api } from '../lib/api';
 import { NovoTemplateModal } from '../components/NovoTemplateModal';
 import './campanhas.css';
 import { useWhatsappNumeros } from '../lib/whatsappNumeros';
+import { Icon } from '../components/Icon';
+import { Modal } from '../components/Modal';
 const STATUS_LEAD = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'PAROU_RESPONDER', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
 const STATUS_LABEL: Record<string, string> = {
   RASCUNHO: 'Rascunho', AGENDADA: 'Agendada', ENVIANDO: 'Enviando', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada',
@@ -40,6 +42,7 @@ export default function Campanhas() {
   const [wizard, setWizard] = useState(false);
   const [templateModal, setTemplateModal] = useState(false);
   const [disparandoId, setDisparandoId] = useState<number | null>(null);
+  const [confirmAcao, setConfirmAcao] = useState<{ id: number; nome: string; tipo: 'disparar' | 'excluir' } | null>(null);
 
   function load() {
     setLoading(true);
@@ -51,16 +54,14 @@ export default function Campanhas() {
   useEffect(load, []);
 
   async function excluir(id: number) {
-    if (!confirm('Excluir esta campanha? Os destinatários e o histórico serão removidos.')) return;
     await Api.campanhaDelete(id).catch(() => {});
     load();
   }
 
-  // Dispara um RASCUNHO salvo direto da lista. O "Disparar agora" só existia no
-  // wizard de criação — rascunho salvo ficava sem como disparar. Loop em lote até
-  // concluir (a rota /enviar materializa a audiência no 1º disparo).
-  async function dispararRascunho(id: number, nome: string) {
-    if (!confirm(`Disparar a campanha "${nome}" AGORA? Vai enviar o template para toda a audiência. Não dá pra desfazer.`)) return;
+  // Dispara um RASCUNHO salvo direto da lista (o "Disparar agora" só existia no
+  // wizard de criação). Loop em lote até concluir — a rota /enviar materializa a
+  // audiência no 1º disparo.
+  async function dispararRascunho(id: number) {
     setDisparandoId(id);
     try {
       let guard = 0;
@@ -75,6 +76,15 @@ export default function Campanhas() {
     } finally {
       setDisparandoId(null);
     }
+  }
+
+  // Confirma a ação escolhida (aviãozinho = disparar, lixeira = excluir).
+  async function confirmarAcao() {
+    if (!confirmAcao) return;
+    const { id, tipo } = confirmAcao;
+    setConfirmAcao(null);
+    if (tipo === 'excluir') await excluir(id);
+    else await dispararRascunho(id);
   }
 
   return (
@@ -119,8 +129,14 @@ export default function Campanhas() {
                 const total = c.totalDestinatarios || 0;
                 const feito = (c.enviados || 0) + (c.falhas || 0);
                 const pct = total ? Math.round((feito / total) * 100) : 0;
+                const ehRascunho = c.status === 'RASCUNHO' || c.status === 'AGENDADA';
                 return (
-                  <tr key={c.id}>
+                  <tr
+                    key={c.id}
+                    onClick={() => ehRascunho && setConfirmAcao({ id: c.id, nome: c.nome, tipo: 'disparar' })}
+                    style={ehRascunho ? { cursor: 'pointer' } : undefined}
+                    title={ehRascunho ? 'Clique para revisar e disparar' : undefined}
+                  >
                     <td><strong>{c.nome}</strong>{c.templateName && <div className="camp-muted">{c.templateName}</div>}</td>
                     <td><span className={`camp-badge camp-badge--${(c.status || '').toLowerCase()}`}>{STATUS_LABEL[c.status] || c.status}</span></td>
                     <td>
@@ -136,12 +152,27 @@ export default function Campanhas() {
                     <td>{total}</td>
                     <td className="camp-muted">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
                     <td>
-                      {(c.status === 'RASCUNHO' || c.status === 'AGENDADA') && (
-                        <button className="btn btn--primary btn--sm" style={{ marginRight: 6 }} disabled={disparandoId === c.id} onClick={() => dispararRascunho(c.id, c.nome)}>
-                          {disparandoId === c.id ? 'Disparando…' : 'Disparar'}
+                      <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {(c.status === 'RASCUNHO' || c.status === 'AGENDADA') && (
+                          <button
+                            className="btn btn--ghost btn--sm"
+                            title="Disparar campanha"
+                            disabled={disparandoId === c.id}
+                            onClick={(e) => { e.stopPropagation(); setConfirmAcao({ id: c.id, nome: c.nome, tipo: 'disparar' }); }}
+                            style={{ padding: 6, display: 'inline-flex', color: 'var(--blue-500, #2563eb)' }}
+                          >
+                            <Icon name="send" size={16} />
+                          </button>
+                        )}
+                        <button
+                          className="btn btn--ghost btn--sm"
+                          title="Excluir campanha"
+                          onClick={(e) => { e.stopPropagation(); setConfirmAcao({ id: c.id, nome: c.nome, tipo: 'excluir' }); }}
+                          style={{ padding: 6, display: 'inline-flex', color: 'var(--color-danger, #dc2626)' }}
+                        >
+                          <Icon name="trash" size={16} />
                         </button>
-                      )}
-                      <button className="btn btn--ghost btn--sm" onClick={() => excluir(c.id)}>Excluir</button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -153,6 +184,40 @@ export default function Campanhas() {
 
       {wizard && <Wizard onClose={() => { setWizard(false); load(); }} />}
       {templateModal && <NovoTemplateModal onClose={() => setTemplateModal(false)} />}
+
+      {confirmAcao && (() => {
+        const camp = campanhas.find((x) => x.id === confirmAcao.id);
+        const isDisp = confirmAcao.tipo === 'disparar';
+        return (
+          <Modal open onClose={() => setConfirmAcao(null)} title={isDisp ? 'Disparar campanha' : 'Excluir campanha'} subtitle={confirmAcao.nome}>
+            <div style={{ fontSize: 14, lineHeight: 1.55 }}>
+              {isDisp ? (
+                <>
+                  <p style={{ marginTop: 0 }}>Confira antes de disparar:</p>
+                  <ul style={{ paddingLeft: 18, margin: '8px 0' }}>
+                    <li>Template: <strong>{camp?.templateName || '—'}</strong></li>
+                    <li>Envia para <strong>toda a audiência</strong> da campanha.</li>
+                    <li>Quem responder cai na fila <strong>sem IA</strong> (vai direto pro corretor).</li>
+                  </ul>
+                  <p style={{ color: 'var(--color-danger, #dc2626)', fontWeight: 600, margin: '8px 0 0' }}>Não dá pra desfazer.</p>
+                </>
+              ) : (
+                <p style={{ marginTop: 0 }}>Os destinatários e o histórico serão removidos. <strong>Não dá pra desfazer.</strong></p>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+              <button className="btn btn--secondary" onClick={() => setConfirmAcao(null)}>Cancelar</button>
+              <button
+                className="btn btn--primary"
+                style={!isDisp ? { background: 'var(--color-danger, #dc2626)', borderColor: 'var(--color-danger, #dc2626)' } : undefined}
+                onClick={confirmarAcao}
+              >
+                {isDisp ? 'Disparar agora' : 'Excluir'}
+              </button>
+            </div>
+          </Modal>
+        );
+      })()}
     </div>
   );
 }
