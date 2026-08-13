@@ -34,6 +34,25 @@ function parseListaNumeros(text: string): string[] {
   return out;
 }
 
+// Traduz o erro cru do Meta ("131026: Message undeliverable") num texto claro
+// pro corretor. Se o código não estiver mapeado, mostra o texto original.
+function motivoAmigavel(erro?: string | null): string {
+  if (!erro) return '';
+  const code = (String(erro).match(/^(\d+)/) || [])[1];
+  const MAP: Record<string, string> = {
+    '131026': '📵 Número sem WhatsApp (ou não recebe a mensagem)',
+    '131049': '🚦 Meta segurou — excesso de marketing pra esse número (tenta mais tarde)',
+    '130472': '🧪 Número em teste interno do Meta (bloqueia marketing)',
+    '131000': '❌ Número inválido / não é WhatsApp',
+    '131047': '⏰ Janela de 24h fechada — precisa de template pra reabrir',
+    '131051': '⚠️ Tipo de mensagem não suportado',
+    '132000': '⚠️ Problema no template (parâmetros)',
+    '132001': '⚠️ Template não existe ou foi reprovado',
+    '470': '⏰ Janela de 24h fechada',
+  };
+  return (code && MAP[code]) || String(erro);
+}
+
 export default function Campanhas() {
   const [campanhas, setCampanhas] = useState<any[]>([]);
   const [kpis, setKpis] = useState<any>({});
@@ -270,7 +289,7 @@ export default function Campanhas() {
                   <tr key={i} style={{ borderTop: '1px solid var(--border-light)' }}>
                     <td style={{ padding: '5px 10px' }}>{d.telefone}</td>
                     <td style={{ padding: '5px 10px', fontWeight: 600, color: d.status === 'FALHOU' ? '#dc2626' : d.status === 'RESPONDIDO' ? '#8B5CF6' : 'var(--text-secondary)' }}>{d.status}</td>
-                    <td style={{ padding: '5px 10px', color: '#dc2626' }}>{d.status === 'FALHOU' ? (d.erro || 'motivo não registrado (falha antes do ajuste)') : '—'}</td>
+                    <td style={{ padding: '5px 10px', color: '#dc2626' }} title={d.erro || undefined}>{d.status === 'FALHOU' ? (motivoAmigavel(d.erro) || 'motivo não registrado') : '—'}</td>
                   </tr>
                 ))}
               </tbody>
