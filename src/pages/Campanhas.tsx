@@ -192,10 +192,10 @@ export default function Campanhas() {
                     <td className="camp-muted">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'center' }}>
-                        {(c.status === 'RASCUNHO' || c.status === 'AGENDADA') && (
+                        {(c.status === 'RASCUNHO' || c.status === 'AGENDADA' || c.status === 'ENVIANDO') && (
                           <button
                             className="btn btn--ghost btn--sm"
-                            title="Disparar campanha"
+                            title={c.status === 'ENVIANDO' ? 'Retomar envio (mandar as pendentes que faltaram)' : 'Disparar campanha'}
                             disabled={disparandoId === c.id}
                             onClick={(e) => { e.stopPropagation(); setConfirmAcao({ id: c.id, nome: c.nome, tipo: 'disparar' }); }}
                             style={{ padding: 6, display: 'inline-flex', color: 'var(--blue-500, #2563eb)' }}
@@ -238,15 +238,16 @@ export default function Campanhas() {
       {confirmAcao && (() => {
         const camp = campanhas.find((x) => x.id === confirmAcao.id);
         const isDisp = confirmAcao.tipo === 'disparar';
+        const ehRetomar = camp?.status === 'ENVIANDO';
         return (
-          <Modal open onClose={() => setConfirmAcao(null)} title={isDisp ? 'Disparar campanha' : 'Excluir campanha'} subtitle={confirmAcao.nome}>
+          <Modal open onClose={() => setConfirmAcao(null)} title={isDisp ? (ehRetomar ? 'Retomar envio' : 'Disparar campanha') : 'Excluir campanha'} subtitle={confirmAcao.nome}>
             <div style={{ fontSize: 14, lineHeight: 1.55 }}>
               {isDisp ? (
                 <>
-                  <p style={{ marginTop: 0 }}>Confira antes de disparar:</p>
+                  <p style={{ marginTop: 0 }}>{ehRetomar ? 'Retomar o envio desta campanha:' : 'Confira antes de disparar:'}</p>
                   <ul style={{ paddingLeft: 18, margin: '8px 0' }}>
                     <li>Template: <strong>{camp?.templateName || '—'}</strong></li>
-                    <li>Envia para <strong>toda a audiência</strong> da campanha.</li>
+                    <li>{ehRetomar ? <>Manda só as <strong>pendentes que faltaram</strong> — as já enviadas não repetem.</> : <>Envia para <strong>toda a audiência</strong> da campanha.</>}</li>
                     <li>Quem responder cai na fila <strong>sem IA</strong> (vai direto pro corretor).</li>
                   </ul>
                   <p style={{ color: 'var(--color-danger, #dc2626)', fontWeight: 600, margin: '8px 0 0' }}>Não dá pra desfazer.</p>
@@ -262,7 +263,7 @@ export default function Campanhas() {
                 style={!isDisp ? { background: 'var(--color-danger, #dc2626)', borderColor: 'var(--color-danger, #dc2626)' } : undefined}
                 onClick={confirmarAcao}
               >
-                {isDisp ? 'Disparar agora' : 'Excluir'}
+                {isDisp ? (ehRetomar ? 'Retomar envio' : 'Disparar agora') : 'Excluir'}
               </button>
             </div>
           </Modal>
