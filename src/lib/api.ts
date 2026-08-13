@@ -1151,6 +1151,7 @@ export const Api = {
   campanhaCreate: (data: any) => request<any>('/campanhas', { method: 'POST', body: data }),
   campanhaEnviar: (id: number) => request<any>(`/campanhas/${id}/enviar`, { method: 'POST' }),
   campanhaDelete: (id: number) => request<{ ok: boolean }>(`/campanhas/${id}`, { method: 'DELETE' }),
+  campanhaRelatorio: (id: number) => request<any>(`/campanhas/${id}/relatorio`),
 };
 
 /**

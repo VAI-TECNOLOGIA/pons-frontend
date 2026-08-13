@@ -43,6 +43,8 @@ export default function Campanhas() {
   const [templateModal, setTemplateModal] = useState(false);
   const [disparandoId, setDisparandoId] = useState<number | null>(null);
   const [confirmAcao, setConfirmAcao] = useState<{ id: number; nome: string; tipo: 'disparar' | 'excluir' } | null>(null);
+  const [relatorio, setRelatorio] = useState<any | null>(null);
+  const [carregandoRel, setCarregandoRel] = useState(false);
 
   function load() {
     setLoading(true);
@@ -85,6 +87,17 @@ export default function Campanhas() {
     setConfirmAcao(null);
     if (tipo === 'excluir') await excluir(id);
     else await dispararRascunho(id);
+  }
+
+  async function abrirRelatorio(id: number) {
+    setCarregandoRel(true);
+    try {
+      setRelatorio(await Api.campanhaRelatorio(id));
+    } catch (e: any) {
+      alert('Falha ao abrir relatório: ' + (e?.message || 'erro'));
+    } finally {
+      setCarregandoRel(false);
+    }
   }
 
   return (
@@ -164,6 +177,17 @@ export default function Campanhas() {
                             <Icon name="send" size={16} />
                           </button>
                         )}
+                        {c.status !== 'RASCUNHO' && (
+                          <button
+                            className="btn btn--ghost btn--sm"
+                            title="Ver relatório (envios, entregas, erros)"
+                            disabled={carregandoRel}
+                            onClick={(e) => { e.stopPropagation(); abrirRelatorio(c.id); }}
+                            style={{ padding: 6, display: 'inline-flex', color: 'var(--text-secondary)' }}
+                          >
+                            <Icon name="chart" size={16} />
+                          </button>
+                        )}
                         <button
                           className="btn btn--ghost btn--sm"
                           title="Excluir campanha"
@@ -218,6 +242,42 @@ export default function Campanhas() {
           </Modal>
         );
       })()}
+
+      {relatorio && (
+        <Modal open onClose={() => setRelatorio(null)} title={`Relatório — ${relatorio.campanha?.nome || ''}`} subtitle={`Template: ${relatorio.campanha?.templateName || '—'}`} size="lg">
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            {([['Total', relatorio.campanha?.total, ''], ['Enviados', relatorio.campanha?.enviados, ''], ['Entregues', relatorio.campanha?.entregues, '#0E9F6E'], ['Lidos', relatorio.campanha?.lidos, '#3B82F6'], ['Respostas', relatorio.campanha?.respondidos, '#8B5CF6'], ['Falhas', relatorio.campanha?.falhas, '#dc2626']] as [string, number, string][]).map(([label, v, color]) => (
+              <div key={label} style={{ minWidth: 84, padding: '8px 12px', border: '1px solid var(--border-light)', borderRadius: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{label}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: color || undefined }}>{v ?? 0}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
+            {(relatorio.destinatarios || []).length} contatos · as <strong>falhas</strong> aparecem com o motivo (número sem WhatsApp, inválido, etc.).
+          </div>
+          <div style={{ maxHeight: 380, overflow: 'auto', border: '1px solid var(--border-light)', borderRadius: 8 }}>
+            <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', textAlign: 'left' }}>
+                  <th style={{ padding: '6px 10px' }}>Telefone</th>
+                  <th style={{ padding: '6px 10px' }}>Status</th>
+                  <th style={{ padding: '6px 10px' }}>Motivo da falha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(relatorio.destinatarios || []).map((d: any, i: number) => (
+                  <tr key={i} style={{ borderTop: '1px solid var(--border-light)' }}>
+                    <td style={{ padding: '5px 10px' }}>{d.telefone}</td>
+                    <td style={{ padding: '5px 10px', fontWeight: 600, color: d.status === 'FALHOU' ? '#dc2626' : d.status === 'RESPONDIDO' ? '#8B5CF6' : 'var(--text-secondary)' }}>{d.status}</td>
+                    <td style={{ padding: '5px 10px', color: '#dc2626' }}>{d.status === 'FALHOU' ? (d.erro || 'motivo não registrado (falha antes do ajuste)') : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
