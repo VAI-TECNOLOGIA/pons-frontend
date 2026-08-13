@@ -39,6 +39,7 @@ export default function Campanhas() {
   const [erro, setErro] = useState('');
   const [wizard, setWizard] = useState(false);
   const [templateModal, setTemplateModal] = useState(false);
+  const [disparandoId, setDisparandoId] = useState<number | null>(null);
 
   function load() {
     setLoading(true);
@@ -53,6 +54,27 @@ export default function Campanhas() {
     if (!confirm('Excluir esta campanha? Os destinatários e o histórico serão removidos.')) return;
     await Api.campanhaDelete(id).catch(() => {});
     load();
+  }
+
+  // Dispara um RASCUNHO salvo direto da lista. O "Disparar agora" só existia no
+  // wizard de criação — rascunho salvo ficava sem como disparar. Loop em lote até
+  // concluir (a rota /enviar materializa a audiência no 1º disparo).
+  async function dispararRascunho(id: number, nome: string) {
+    if (!confirm(`Disparar a campanha "${nome}" AGORA? Vai enviar o template para toda a audiência. Não dá pra desfazer.`)) return;
+    setDisparandoId(id);
+    try {
+      let guard = 0;
+      while (guard++ < 500) {
+        const r: any = await Api.campanhaEnviar(id);
+        if (r?.concluida) break;
+        await new Promise((res) => setTimeout(res, 400));
+      }
+      load();
+    } catch (e: any) {
+      alert('Falha ao disparar: ' + (e?.message || 'erro'));
+    } finally {
+      setDisparandoId(null);
+    }
   }
 
   return (
@@ -113,7 +135,14 @@ export default function Campanhas() {
                     </td>
                     <td>{total}</td>
                     <td className="camp-muted">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
-                    <td><button className="btn btn--ghost btn--sm" onClick={() => excluir(c.id)}>Excluir</button></td>
+                    <td>
+                      {(c.status === 'RASCUNHO' || c.status === 'AGENDADA') && (
+                        <button className="btn btn--primary btn--sm" style={{ marginRight: 6 }} disabled={disparandoId === c.id} onClick={() => dispararRascunho(c.id, c.nome)}>
+                          {disparandoId === c.id ? 'Disparando…' : 'Disparar'}
+                        </button>
+                      )}
+                      <button className="btn btn--ghost btn--sm" onClick={() => excluir(c.id)}>Excluir</button>
+                    </td>
                   </tr>
                 );
               })}
