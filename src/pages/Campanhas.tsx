@@ -64,6 +64,7 @@ export default function Campanhas() {
   const [confirmAcao, setConfirmAcao] = useState<{ id: number; nome: string; tipo: 'disparar' | 'excluir' } | null>(null);
   const [relatorio, setRelatorio] = useState<any | null>(null);
   const [carregandoRel, setCarregandoRel] = useState(false);
+  const [ajuda, setAjuda] = useState(false);
 
   function load() {
     setLoading(true);
@@ -126,7 +127,13 @@ export default function Campanhas() {
           <h1 className="page-title">Campanhas</h1>
           <p className="page-sub">Disparo em massa via WhatsApp oficial — audiência, template aprovado e acompanhamento.</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button
+            className="btn btn--ghost"
+            title="O que significa cada status e cada erro"
+            onClick={() => setAjuda(true)}
+            style={{ width: 34, height: 34, padding: 0, borderRadius: 999, fontWeight: 700 }}
+          >?</button>
           <button className="btn btn--ghost" onClick={() => setTemplateModal(true)}>+ Novo template</button>
           <button className="btn btn--primary" onClick={() => setWizard(true)}>+ Nova Campanha</button>
         </div>
@@ -294,6 +301,35 @@ export default function Campanhas() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </Modal>
+      )}
+
+      {ajuda && (
+        <Modal open onClose={() => setAjuda(false)} title="Entendendo a campanha" subtitle="O que cada status e cada erro significam" size="lg">
+          <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>
+            <h4 style={{ margin: '4px 0 6px' }}>Status de cada contato</h4>
+            <ul style={{ paddingLeft: 18, margin: '0 0 12px' }}>
+              <li><strong>Pendente</strong> — ainda na fila; a mensagem <em>ainda não saiu</em> (o disparo processa em lotes).</li>
+              <li><strong>Enviado</strong> — o WhatsApp aceitou a mensagem (saiu do sistema).</li>
+              <li><strong>Entregue</strong> — chegou no aparelho do cliente.</li>
+              <li><strong>Lido</strong> — o cliente abriu/leu a mensagem.</li>
+              <li><strong>Respondido</strong> — o cliente respondeu (levantou a mão) → foi distribuído pro corretor da fila.</li>
+              <li><strong>Falhou</strong> — o Meta não conseguiu entregar; o motivo aparece na coluna ao lado.</li>
+            </ul>
+            <div style={{ background: 'var(--bg-card-hover)', borderRadius: 8, padding: '8px 12px', margin: '0 0 14px', fontSize: 12.5 }}>
+              O funil é acumulativo: <strong>Enviado → Entregue → Lido → Respondido</strong>. Um "Entregue" já foi Enviado; um "Lido" já foi Entregue, e assim por diante.
+            </div>
+            <h4 style={{ margin: '4px 0 6px' }}>Motivos de falha</h4>
+            <ul style={{ paddingLeft: 18, margin: 0 }}>
+              <li><strong>Número sem WhatsApp</strong> — o número não tem WhatsApp ou não recebe. É o mais comum em lista fria — vale limpar a base.</li>
+              <li><strong>Meta segurou (excesso de marketing)</strong> — o WhatsApp limitou o envio de marketing pra esse número (proteção anti-spam). Tente mais tarde e evite repetir marketing pros mesmos.</li>
+              <li><strong>Número em teste do Meta</strong> — o Meta pôs o número num teste interno que bloqueia marketing. Fora do nosso controle.</li>
+              <li><strong>Número inválido</strong> — o número está malformado (formato errado).</li>
+            </ul>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <button className="btn btn--primary" onClick={() => setAjuda(false)}>Entendi</button>
           </div>
         </Modal>
       )}
