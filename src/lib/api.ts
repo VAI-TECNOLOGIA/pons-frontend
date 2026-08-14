@@ -544,7 +544,7 @@ export const Api = {
   leadsArquivar: (leadIds: number[]) =>
     request<{ ok: boolean; arquivados: number }>('/leads/arquivar', { method: 'POST', body: { leadIds } }),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
-  roletaFormularios: () => request<{ nome: string; leads: number }[]>('/roletas/formularios'),
+  roletaFormularios: (sincronizarPaginas = false) => request<{ nome: string; leads: number }[]>(`/roletas/formularios${sincronizarPaginas ? '?paginas=1' : ''}`),
   roletaCampanhas: () => request<{ nome: string; id: string | null; leads: number }[]>('/roletas/campanhas'),
   // Anúncios ATIVOS direto do Meta (pra configurar a fila antes de entrar lead).
   anunciosMeta: () => request<{ anuncios: { id: string; anuncio: string; campanha: string | null }[]; erro?: string }>('/roletas/anuncios-meta'),

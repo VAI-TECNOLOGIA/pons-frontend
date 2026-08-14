@@ -323,6 +323,28 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   const [ativa, setAtiva] = useState(fila?.ativa ?? true);
   const [formsSel, setFormsSel] = useState<string[]>(String(fila?.formularioFiltro || '').split(',').map((s) => s.trim()).filter(Boolean));
   const [buscaForm, setBuscaForm] = useState(''); // filtro por nome dos formulários
+  // "Sincronizar páginas": puxa TODOS os leadgen forms das páginas do Facebook (via Graph),
+  // inclusive os que ainda não geraram lead. Sob demanda pra não pesar a abertura do modal.
+  const [formsPaginas, setFormsPaginas] = useState<{ nome: string; leads: number }[]>([]);
+  const [sincForms, setSincForms] = useState(false);
+  const formulariosLista = (() => {
+    const m = new Map((formularios || []).map((f) => [f.nome, f]));
+    for (const f of formsPaginas) if (!m.has(f.nome)) m.set(f.nome, f);
+    return [...m.values()];
+  })();
+  const sincronizarPaginas = async () => {
+    setSincForms(true);
+    try {
+      const r = await Api.roletaFormularios(true);
+      setFormsPaginas(r);
+      const novos = r.filter((f) => !(formularios || []).some((x) => x.nome === f.nome)).length;
+      toast.success(`Sincronização concluída — ${r.length} formulários das páginas${novos ? ` (${novos} novos)` : ''}.`);
+    } catch {
+      toast.error('Falha ao sincronizar formulários das páginas.');
+    } finally {
+      setSincForms(false);
+    }
+  };
   const [naFila, setNaFila] = useState<number[]>((fila?.participantes || []).map((p: any) => p.corretorId));
   // transferência automática
   const [slaHoras, setSlaHoras] = useState<number>(fila?.slaHoras ?? 4);
@@ -411,11 +433,16 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
             <input className="field__input" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="ex.: Fila Chimarrão · Segunda Avenida" />
           </div>
           <div className="field">
-            <label className="field__label">Produtos (formulários do Facebook)</label>
-            {formularios.length === 0 ? (
-              <div className="field__hint">Nenhum formulário capturado ainda — aparecem aqui quando chegam leads do Meta.</div>
+            <label className="field__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span>Produtos (formulários do Facebook)</span>
+              <button type="button" className="btn btn--secondary btn--sm" onClick={sincronizarPaginas} disabled={sincForms}>
+                {sincForms ? 'Sincronizando…' : '↻ Sincronizar páginas'}
+              </button>
+            </label>
+            {formulariosLista.length === 0 ? (
+              <div className="field__hint">Nenhum formulário ainda. Clique em <strong>Sincronizar páginas</strong> pra puxar todos os formulários das páginas do Facebook conectadas (mesmo os sem lead).</div>
             ) : (() => {
-              const todos = [...formularios.map((f) => f.nome), ...formsSel.filter((s) => !formularios.some((f) => f.nome === s))];
+              const todos = [...formulariosLista.map((f) => f.nome), ...formsSel.filter((s) => !formulariosLista.some((f) => f.nome === s))];
               const q = buscaForm.trim().toLowerCase();
               const visiveis = q ? todos.filter((nm) => nm.toLowerCase().includes(q)) : todos;
               return (
@@ -429,7 +456,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
                   />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 150, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 8, padding: 10 }}>
                     {visiveis.map((nm) => {
-                      const cnt = formularios.find((f) => f.nome === nm)?.leads ?? 0;
+                      const cnt = formulariosLista.find((f) => f.nome === nm)?.leads ?? 0;
                       const on = formsSel.includes(nm);
                       return (
                         <button key={nm} type="button" onClick={() => toggleForm(nm)}
