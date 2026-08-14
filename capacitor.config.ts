@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'br.com.grupopons.vai',
+  appId: 'br.com.grupopons.sistema',
   appName: 'Grupo Pons',
   webDir: 'dist',
   server: {

@@ -1,4 +1,4 @@
-package br.com.grupopons.vai;
+package br.com.grupopons.sistema;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">VAI Sistema</string>
-    <string name="title_activity_main">VAI Sistema</string>
-    <string name="package_name">br.com.grupopons.vai</string>
-    <string name="custom_url_scheme">br.com.grupopons.vai</string>
+    <string name="app_name">Pons CRM</string>
+    <string name="title_activity_main">Pons CRM</string>
+    <string name="package_name">br.com.grupopons.sistema</string>
+    <string name="custom_url_scheme">br.com.grupopons.sistema</string>
 </resources>
