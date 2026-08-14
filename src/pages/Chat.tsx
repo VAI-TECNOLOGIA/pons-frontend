@@ -671,7 +671,11 @@ export default function Chat() {
       const mr = new MediaRecorder(stream, { mimeType: mime });
       mr.ondataavailable = (e) => { if (e.data.size > 0) recChunksRef.current.push(e.data); };
       mediaRecRef.current = mr;
-      mr.start();
+      // timeslice de 1s: o MediaRecorder faz flush do buffer a cada 1s em vez de
+      // segurar tudo pra entregar só no stop(). Em gravação longa (ou se a aba é
+      // suspensa no meio, comum no navegador do celular), sem timeslice o áudio
+      // chegava cortado/pela metade — com flush periódico não perde o que já gravou.
+      mr.start(1000);
       setRecSecs(0);
       setRecording(true);
       recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000);
