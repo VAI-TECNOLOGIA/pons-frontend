@@ -130,6 +130,14 @@ export default function Chat() {
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  // Regra (14/08): CORRETOR não dispara template — só gestor e marketing.
+  // Mesma allow-list do backend (POST /leads/:id/send-template).
+  const ROLES_TEMPLATE = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'DEV', 'GESTOR'];
+  const podeTemplate = ROLES_TEMPLATE.includes(Auth.user?.role || '');
+  const abrirTemplates = () => {
+    if (!podeTemplate) { toast.error('Só gestor e marketing podem enviar template.'); return; }
+    setTemplatePickerOpen(true);
+  };
   const [liberarOpen, setLiberarOpen] = useState(false);
   const [liberarJustif, setLiberarJustif] = useState('');
   const [liberarSending, setLiberarSending] = useState(false);
@@ -1175,13 +1183,13 @@ export default function Chat() {
               {!conv?.reservado ? (
                 <ComposerPendenteIA
                   onAceitar={aceitarLead}
-                  onAbrirTemplates={() => setTemplatePickerOpen(true)}
+                  onAbrirTemplates={abrirTemplates}
                   respostasUsadas={(conv as any).iaRespostasCount || 0}
                   limiteAtingido={!!(conv as any).iaLimiteAtingido}
                 />
               ) : !janelaAberta ? (
                 <ComposerJanelaFechada
-                  onAbrirTemplates={() => setTemplatePickerOpen(true)}
+                  onAbrirTemplates={abrirTemplates}
                 />
               ) : (
                 <>
@@ -1278,14 +1286,16 @@ export default function Chat() {
                             </>
                           )}
                         </div>
-                        <button
-                          className="btn btn--secondary btn--sm"
-                          title="Enviar template Meta aprovado"
-                          onClick={() => setTemplatePickerOpen(true)}
-                          disabled={sending}
-                        >
-                          <Icon name="doc" size={14} /> <span className="composer__rotulo">Template</span>
-                        </button>
+                        {podeTemplate && (
+                          <button
+                            className="btn btn--secondary btn--sm"
+                            title="Enviar template Meta aprovado"
+                            onClick={() => setTemplatePickerOpen(true)}
+                            disabled={sending}
+                          >
+                            <Icon name="doc" size={14} /> <span className="composer__rotulo">Template</span>
+                          </button>
+                        )}
                         <div className="quick-wrap">
                           <button
                             className="btn btn--secondary btn--sm"
