@@ -58,7 +58,7 @@ export default function Campanhas() {
   const [kpis, setKpis] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
-  const [wizard, setWizard] = useState(false);
+  const [wizard, setWizard] = useState<any>(false); // true = nova · objeto = editando rascunho
   const [templateModal, setTemplateModal] = useState(false);
   const [disparandoId, setDisparandoId] = useState<number | null>(null);
   const [confirmAcao, setConfirmAcao] = useState<{ id: number; nome: string; tipo: 'disparar' | 'excluir' } | null>(null);
@@ -192,6 +192,16 @@ export default function Campanhas() {
                     <td className="camp-muted">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {(c.status === 'RASCUNHO' || c.status === 'AGENDADA') && (
+                          <button
+                            className="btn btn--ghost btn--sm"
+                            title="Editar rascunho (reaproveitar sem refazer do zero)"
+                            onClick={(e) => { e.stopPropagation(); setWizard(c); }}
+                            style={{ padding: 6, display: 'inline-flex', color: 'var(--text-secondary)' }}
+                          >
+                            <Icon name="pencil" size={16} />
+                          </button>
+                        )}
                         {(c.status === 'RASCUNHO' || c.status === 'AGENDADA' || c.status === 'ENVIANDO') && (
                           <button
                             className="btn btn--ghost btn--sm"
@@ -232,7 +242,7 @@ export default function Campanhas() {
         )}
       </div>
 
-      {wizard && <Wizard onClose={() => { setWizard(false); load(); }} />}
+      {wizard && <Wizard editCampanha={typeof wizard === 'object' ? wizard : undefined} onClose={() => { setWizard(false); load(); }} />}
       {templateModal && <NovoTemplateModal onClose={() => setTemplateModal(false)} />}
 
       {confirmAcao && (() => {
@@ -346,27 +356,30 @@ export default function Campanhas() {
 // ════════════════════════════════════════════════════════════════════════════
 //  WIZARD — Config → Público → Mensagem → Envio
 // ════════════════════════════════════════════════════════════════════════════
-function Wizard({ onClose }: { onClose: () => void }) {
+function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?: any }) {
+  const ed = editCampanha || null; // rascunho sendo editado (reaproveitar em vez de refazer)
   const NUMEROS = useWhatsappNumeros();
   const [step, setStep] = useState(0); // 0=Config 1=Público 2=Mensagem 3=Envio
-  const [nome, setNome] = useState('');
-  const [phoneNumberId, setPhoneNumberId] = useState('');
+  const [nome, setNome] = useState(ed?.nome || '');
+  const [phoneNumberId, setPhoneNumberId] = useState(ed?.phoneNumberId || '');
   // audiência
-  const [audienciaTipo, setAudienciaTipo] = useState<'TODOS' | 'FILTRO' | 'LISTA'>('FILTRO');
-  const [listaRaw, setListaRaw] = useState(''); // números colados (LISTA)
-  const [fStatus, setFStatus] = useState('');
-  const [fOrigem, setFOrigem] = useState('');
-  const [fCorretorId, setFCorretorId] = useState('');
-  const [fSemResposta, setFSemResposta] = useState(false);
+  const [audienciaTipo, setAudienciaTipo] = useState<'TODOS' | 'FILTRO' | 'LISTA'>(
+    ed?.audienciaTipo === 'TODOS' || ed?.audienciaTipo === 'LISTA' ? ed.audienciaTipo : 'FILTRO',
+  );
+  const [listaRaw, setListaRaw] = useState<string>(ed?.audienciaTipo === 'LISTA' ? (ed?.audienciaFiltro?.numeros || []).join('\n') : ''); // números colados (LISTA)
+  const [fStatus, setFStatus] = useState<string>(ed?.audienciaFiltro?.status || '');
+  const [fOrigem, setFOrigem] = useState<string>(ed?.audienciaFiltro?.origem || '');
+  const [fCorretorId, setFCorretorId] = useState<string>(ed?.audienciaFiltro?.corretorId || '');
+  const [fSemResposta, setFSemResposta] = useState(!!ed?.audienciaFiltro?.semResposta);
   const [corretores, setCorretores] = useState<any[]>([]);
   const [audCount, setAudCount] = useState<number | null>(null);
   const [audAmostra, setAudAmostra] = useState<string[]>([]);
   // mensagem
   const [templates, setTemplates] = useState<any[]>([]);
-  const [templateName, setTemplateName] = useState('');
-  const [vars, setVars] = useState<string[]>([]);
+  const [templateName, setTemplateName] = useState(ed?.templateName || '');
+  const [vars, setVars] = useState<string[]>(ed?.templateVars || []);
   // fila de disparo (distribui quem responder)
-  const [roletaId, setRoletaId] = useState<number | ''>('');
+  const [roletaId, setRoletaId] = useState<number | ''>(ed?.roletaId || '');
   const [filasDisparo, setFilasDisparo] = useState<any[]>([]);
   // envio
   const [enviando, setEnviando] = useState(false);
@@ -429,7 +442,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
   async function dispararAgora() {
     setErro(''); setEnviando(true); setProg({ enviados: 0, falhas: 0, restantes: audCount || 0 });
     try {
-      const c = await Api.campanhaCreate({
+      const payload = {
         nome: nome.trim(),
         phoneNumberId: phoneNumberId || null,
         numeroExibicao: NUMEROS.find((n) => n.id === phoneNumberId)?.label || null,
@@ -440,7 +453,9 @@ function Wizard({ onClose }: { onClose: () => void }) {
         audienciaFiltro: filtro,
         audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
         roletaId: roletaId || null,
-      });
+      };
+      // Editando rascunho → PATCH na mesma campanha (não cria duplicada); senão cria nova.
+      const c = ed?.id ? await Api.campanhaEditar(ed.id, payload) : await Api.campanhaCreate(payload);
       // loop de disparo em lote até zerar
       let guard = 0;
       // eslint-disable-next-line no-constant-condition
@@ -461,13 +476,15 @@ function Wizard({ onClose }: { onClose: () => void }) {
   async function salvarRascunho() {
     setErro('');
     try {
-      await Api.campanhaCreate({
+      const payload = {
         nome: nome.trim(), phoneNumberId: phoneNumberId || null,
         numeroExibicao: NUMEROS.find((n) => n.id === phoneNumberId)?.label || null,
         templateName: templateName || null, templateLang: tpl?.language || 'pt_BR', templateVars: vars,
         audienciaTipo, audienciaFiltro: filtro, audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
         roletaId: roletaId || null,
-      });
+      };
+      if (ed?.id) await Api.campanhaEditar(ed.id, payload); // edita o rascunho existente
+      else await Api.campanhaCreate(payload);
       onClose();
     } catch (e: any) { setErro(e?.message || 'Falha ao salvar.'); }
   }
@@ -478,7 +495,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
     <div className="camp-modal__backdrop">
       <div className="camp-modal" onClick={(e) => e.stopPropagation()}>
         <div className="camp-modal__head">
-          <h2>Nova Campanha</h2>
+          <h2>{ed ? 'Editar Campanha' : 'Nova Campanha'}</h2>
           <button className="camp-modal__close" onClick={onClose} disabled={enviando}>✕</button>
         </div>
 

@@ -1149,6 +1149,7 @@ export const Api = {
   campanhaAudienciaPreview: (data: any) =>
     request<{ total: number; amostra: string[] }>('/campanhas/audiencia/preview', { method: 'POST', body: data }),
   campanhaCreate: (data: any) => request<any>('/campanhas', { method: 'POST', body: data }),
+  campanhaEditar: (id: number, data: any) => request<any>(`/campanhas/${id}`, { method: 'PATCH', body: data }),
   campanhaEnviar: (id: number) => request<any>(`/campanhas/${id}/enviar`, { method: 'POST' }),
   campanhaDelete: (id: number) => request<{ ok: boolean }>(`/campanhas/${id}`, { method: 'DELETE' }),
   campanhaRelatorio: (id: number) => request<any>(`/campanhas/${id}/relatorio`),
