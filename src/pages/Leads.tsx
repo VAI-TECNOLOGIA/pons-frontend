@@ -365,7 +365,7 @@ export default function Leads() {
  {configVisOpen && (
  <>
  <div style={{ position: 'fixed', inset: 0, zIndex: 19 }} onClick={() => setConfigVisOpen(false)} />
- <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 20, marginTop: 4, background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: 10, padding: 12, minWidth: 240, boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
+ <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 30, marginTop: 4, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, padding: 12, minWidth: 240, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
  <div className="font-semibold" style={{ marginBottom: 8, fontSize: 13 }}>Colunas na tela</div>
  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, opacity: 0.55, marginBottom: 6 }}><Icon name="lock" size={11} /> Nome (sempre visível)</div>
  <div style={{ maxHeight: 320, overflowY: 'auto' }}>
