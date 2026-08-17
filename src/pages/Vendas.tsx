@@ -4,7 +4,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Auth } from '../lib/auth';
 import { Icon } from '../components/Icon';
-import { formatCurrencyShort, initials } from '../lib/format';
+import { formatCurrencyShort, formatCurrencyExact, initials } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -854,11 +854,11 @@ export default function Vendas() {
  {corrNome.split(' ')[0]}
  </div>
  </td>
- <td className="numeric money">{formatCurrencyShort(valor)}</td>
+ <td className="numeric money">{formatCurrencyExact(valor)}</td>
  <td className="numeric">
  {pct ? (
  <>
- <div className="money">{formatCurrencyShort((valor * pct) / 100)}</div>
+ <div className="money">{formatCurrencyExact((valor * pct) / 100)}</div>
  <div className="text-xs text-secondary">{pct.toLocaleString('pt-BR')}%</div>
  </>
  ) : '—'}
@@ -889,8 +889,8 @@ export default function Vendas() {
  footer={
  <>
  <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
- <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyShort(sel.valorVenda ?? sel.valor)}</strong>
- <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyShort(sel.comissao ?? (sel.valorVenda ?? sel.valor) * 0.05)}</strong></span>
+ <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyExact(sel.valorVenda ?? sel.valor)}</strong>
+ <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyExact(sel.comissao ?? (sel.valorVenda ?? sel.valor) * 0.05)}</strong></span>
  </div>
  <button className="btn btn--secondary" onClick={() => setSelected(null)}>Fechar</button>
  </>

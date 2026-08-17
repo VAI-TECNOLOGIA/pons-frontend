@@ -458,6 +458,7 @@ export const Api = {
   vendaUpdateStatus: (id: number, status: string) =>
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
   vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
+  vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; motivo?: string } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
   vendaAprovarTrafego: (id: number) => request<any>(`/vendas/${id}/aprovar-trafego`, { method: 'POST' }),
   unidadeStatus: (empreendimentoId: number, unidade: string) =>
     request<{ ocupada: boolean; codigo: string | null }>(`/vendas/unidade-status${qs({ empreendimentoId, unidade })}`),

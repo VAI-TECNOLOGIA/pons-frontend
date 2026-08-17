@@ -61,6 +61,23 @@ export default function AdminVendas() {
     }
   };
 
+  // Confirmar venda: envia o protocolo no WhatsApp e MANTÉM em "Contrato em confecção"
+  // (não avança pra conferência). Pedido do cliente 17/08.
+  const confirmarVenda = async (v: any) => {
+    try {
+      const r = await Api.vendaConfirmar(v.id);
+      if (r?.whatsapp && r.whatsapp.enviado === false) {
+        toast.error('Venda confirmada, mas o protocolo NÃO foi pro WhatsApp: ' + (r.whatsapp.motivo || 'confira o número do protocolo em Configurações'));
+      } else {
+        toast.success(`Venda ${v.codigo} confirmada — protocolo enviado no WhatsApp. Mantida em "Contrato em confecção".`);
+      }
+      setSelId(null);
+      reload();
+    } catch (e: any) {
+      toast.error('Erro: ' + (e.message || 'falha'));
+    }
+  };
+
   const baixarProtocolo = async (v: any) => {
     try {
       await Api.vendaProtocoloAbrir(v.id);
@@ -210,11 +227,18 @@ export default function AdminVendas() {
                 Imprimir
               </button>
             </div>
-            {PROXIMA_FASE[sel.status] && (
-              <button className="btn btn--primary" onClick={() => avancar(sel)}>
-                <Icon name="check" size={14} /> {PROXIMA_FASE[sel.status].rotulo}
-              </button>
-            )}
+            <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+              {sel.status === 'PRE_ANALISE' && (
+                <button className="btn btn--primary" onClick={() => confirmarVenda(sel)} title="Envia o protocolo + documentos no WhatsApp do Adm e mantém em Contrato em confecção">
+                  <Icon name="check" size={14} /> Confirmar venda (envia protocolo)
+                </button>
+              )}
+              {PROXIMA_FASE[sel.status] && (
+                <button className={'btn ' + (sel.status === 'PRE_ANALISE' ? 'btn--secondary' : 'btn--primary')} onClick={() => avancar(sel)}>
+                  {sel.status !== 'PRE_ANALISE' && <Icon name="check" size={14} />} {sel.status === 'PRE_ANALISE' ? 'Enviar pra conferência →' : PROXIMA_FASE[sel.status].rotulo}
+                </button>
+              )}
+            </div>
           </div>
         </Modal>
       )}
