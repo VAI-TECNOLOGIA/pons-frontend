@@ -38,6 +38,7 @@ const STATUSES = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO'
 const COLUNAS_LEAD: { key: string; label: string }[] = [
   { key: 'telefone', label: 'Telefone' },
   { key: 'produto', label: 'Produto (formulário)' },
+  { key: 'interesse', label: 'Empreendimento' },
   { key: 'corretor', label: 'Corretor' },
   { key: 'convertido', label: 'Convertido' },
   { key: 'status', label: 'Status' },
@@ -47,10 +48,10 @@ const COLUNAS_LEAD: { key: string; label: string }[] = [
   { key: 'gestor', label: 'Gestor' },
   { key: 'dataCriacao', label: 'Data de criação' },
   { key: 'origem', label: 'Origem' },
-  { key: 'interesse', label: 'Interesse (empreendimento)' },
   { key: 'campanha', label: 'Campanha' },
 ];
-const COLS_LEAD_DEFAULT = ['telefone', 'produto', 'corretor', 'convertido', 'status', 'entrada', 'whatsapp'];
+const COLS_LEAD_DEFAULT = ['telefone', 'produto', 'interesse', 'corretor', 'convertido', 'status', 'entrada', 'whatsapp'];
+const COLS_LEAD_VERSAO = '2'; // subir quando mudar o default pra reaplicar pra quem já tem config salva
 
 function celulaLead(key: string, l: any) {
   switch (key) {
@@ -109,11 +110,11 @@ export default function Leads() {
  const [campoLead, setCampoLead] = useState<any>(null);
  // Colunas visíveis (config do usuário, salva no navegador) + dropdown "Configurar visualização".
  const [colsVis, setColsVis] = useState<Set<string>>(() => {
- try { const s = localStorage.getItem('leads.colunas'); if (s) return new Set(JSON.parse(s)); } catch { /* ignore */ }
+ try { if (localStorage.getItem('leads.colunas.v') === COLS_LEAD_VERSAO) { const s = localStorage.getItem('leads.colunas'); if (s) return new Set(JSON.parse(s)); } } catch { /* ignore */ }
  return new Set(COLS_LEAD_DEFAULT);
  });
  const [configVisOpen, setConfigVisOpen] = useState(false);
- useEffect(() => { try { localStorage.setItem('leads.colunas', JSON.stringify([...colsVis])); } catch { /* ignore */ } }, [colsVis]);
+ useEffect(() => { try { localStorage.setItem('leads.colunas', JSON.stringify([...colsVis])); localStorage.setItem('leads.colunas.v', COLS_LEAD_VERSAO); } catch { /* ignore */ } }, [colsVis]);
  const toggleCol = (k: string) => setColsVis((prev) => { const n = new Set(prev); if (n.has(k)) n.delete(k); else n.add(k); return n; });
  const colunasAtivas = COLUNAS_LEAD.filter((c) => colsVis.has(c.key));
 
