@@ -995,7 +995,18 @@ export default function Chat() {
                       {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#EAB308', verticalAlign: 'middle' }} />}
                     </div>
                     <div className="thread__hd-meta">
-                      {conv.telefone || 'Telefone protegido'} · {conv.origem} · {mensagens.length} msg{mensagens.length === 1 ? '' : 's'}
+                      {(conv as any).telefoneLiberado && conv.telefone ? (
+                        <a
+                          href={`https://wa.me/${conv.telefone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Abrir conversa no WhatsApp"
+                          style={{ color: 'var(--pons-cyan, #52f7fe)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                          <Icon name="whatsapp" size={13} /> {conv.telefone}
+                        </a>
+                      ) : (conv.telefone || 'Telefone protegido')}
+                      {' · '}{conv.origem} · {mensagens.length} msg{mensagens.length === 1 ? '' : 's'}
                       {conv.vaiConectado && ' · WhatsApp ativo'}
                     </div>
                   </div>
