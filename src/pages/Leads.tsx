@@ -33,6 +33,54 @@ const STATUS_MAP: Record<string, [string, string]> = {
 };
 const STATUSES = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'PAROU_RESPONDER', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO', 'FECHADO', 'PERDIDO'];
 
+// Colunas configuráveis da listagem (a coluna "Nome" é fixa/sempre). O usuário
+// liga/desliga cada uma no botão "Configurar visualização" (persiste no navegador).
+const COLUNAS_LEAD: { key: string; label: string }[] = [
+  { key: 'telefone', label: 'Telefone' },
+  { key: 'produto', label: 'Produto (formulário)' },
+  { key: 'corretor', label: 'Corretor' },
+  { key: 'convertido', label: 'Convertido' },
+  { key: 'status', label: 'Status' },
+  { key: 'entrada', label: 'Entrada' },
+  { key: 'whatsapp', label: 'WhatsApp' },
+  { key: 'email', label: 'E-mail' },
+  { key: 'gestor', label: 'Gestor' },
+  { key: 'dataCriacao', label: 'Data de criação' },
+  { key: 'origem', label: 'Origem' },
+  { key: 'interesse', label: 'Interesse (empreendimento)' },
+  { key: 'campanha', label: 'Campanha' },
+];
+const COLS_LEAD_DEFAULT = ['telefone', 'produto', 'corretor', 'convertido', 'status', 'entrada', 'whatsapp'];
+
+function celulaLead(key: string, l: any) {
+  switch (key) {
+    case 'telefone': return <span className="text-xs">{l.telefone || '—'}</span>;
+    case 'produto': return <span className="text-xs">{l.produto || '—'}</span>;
+    case 'corretor': return l.corretor
+      ? <div className="flex gap-2" style={{ alignItems: 'center' }}><div className="avatar avatar--sm">{l.corretor.initials}</div>{l.corretor.nome.split(' ')[0]}</div>
+      : <span className="text-xs text-secondary">—</span>;
+    case 'convertido': return l.status === 'FECHADO'
+      ? <span className="badge badge--success" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}><Icon name="check" size={11} /> Convertido</span>
+      : <span className="text-xs text-secondary">—</span>;
+    case 'status': { const [k, lab] = STATUS_MAP[l.status] || ['neutral', l.status]; return <span className={`badge badge--${k}`}>{lab}</span>; }
+    case 'entrada': return <span className="text-xs">{timeAgo(l.distribuidoEm || l.createdAt)}</span>;
+    case 'whatsapp': {
+      const digits = String(l.telefone || '').replace(/\D/g, '');
+      const podeAbrir = !l.telefoneOculto && digits.length >= 10;
+      return podeAbrir
+        ? <a className="wa-btn" href={`https://wa.me/${digits}`} target="_blank" rel="noopener noreferrer" title="Abrir conversa no WhatsApp" aria-label="WhatsApp"><Icon name="whatsapp" size={17} /></a>
+        : <span className="wa-lock" title="Libere o contato pra ver o número"><Icon name="lock" size={14} /></span>;
+    }
+    case 'email': return <span className="text-xs">{l.email || '—'}</span>;
+    case 'gestor': return <span className="text-xs">{l.gestor || l.equipe || '—'}</span>;
+    case 'dataCriacao': return <span className="text-xs">{l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '—'}</span>;
+    case 'origem': return <span className="badge badge--neutral">{l.origem}</span>;
+    case 'interesse': return <span className="text-xs">{l.interesse || '—'}</span>;
+    case 'campanha': return <span className="text-xs">{l.campanha || '—'}</span>;
+    default: return null;
+  }
+}
+
 const PAGE_SIZE = 100;
 
 export default function Leads() {
@@ -59,6 +107,15 @@ export default function Leads() {
  const [page, setPage] = useState(1);
  const [open, setOpen] = useState(false);
  const [campoLead, setCampoLead] = useState<any>(null);
+ // Colunas visíveis (config do usuário, salva no navegador) + dropdown "Configurar visualização".
+ const [colsVis, setColsVis] = useState<Set<string>>(() => {
+ try { const s = localStorage.getItem('leads.colunas'); if (s) return new Set(JSON.parse(s)); } catch { /* ignore */ }
+ return new Set(COLS_LEAD_DEFAULT);
+ });
+ const [configVisOpen, setConfigVisOpen] = useState(false);
+ useEffect(() => { try { localStorage.setItem('leads.colunas', JSON.stringify([...colsVis])); } catch { /* ignore */ } }, [colsVis]);
+ const toggleCol = (k: string) => setColsVis((prev) => { const n = new Set(prev); if (n.has(k)) n.delete(k); else n.add(k); return n; });
+ const colunasAtivas = COLUNAS_LEAD.filter((c) => colsVis.has(c.key));
 
  // Busca com debounce (não bater na API a cada tecla)
  useEffect(() => {
@@ -301,6 +358,28 @@ export default function Leads() {
  </div>
  )}
 
+ <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8, position: 'relative' }}>
+ <button className="btn btn--secondary btn--sm" onClick={() => setConfigVisOpen((o) => !o)} title="Escolher quais colunas aparecem na tela">
+ <Icon name="settings" size={14} /> Configurar visualização
+ </button>
+ {configVisOpen && (
+ <>
+ <div style={{ position: 'fixed', inset: 0, zIndex: 19 }} onClick={() => setConfigVisOpen(false)} />
+ <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 20, marginTop: 4, background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: 10, padding: 12, minWidth: 240, boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
+ <div className="font-semibold" style={{ marginBottom: 8, fontSize: 13 }}>Colunas na tela</div>
+ <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, opacity: 0.55, marginBottom: 6 }}><Icon name="lock" size={11} /> Nome (sempre visível)</div>
+ <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+ {COLUNAS_LEAD.map((c) => (
+ <label key={c.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer', fontSize: 13 }}>
+ <input type="checkbox" checked={colsVis.has(c.key)} onChange={() => toggleCol(c.key)} />
+ {c.label}
+ </label>
+ ))}
+ </div>
+ </div>
+ </>
+ )}
+ </div>
  <div className="card fade-in" style={{ padding: 0, overflowX: 'auto' }}>
  <table className="table row-hover">
  <thead>
@@ -310,25 +389,19 @@ export default function Leads() {
  <input type="checkbox" checked={sel.size >= filtered.length && filtered.length > 0} onChange={() => setSel((s) => s.size >= filtered.length ? new Set() : new Set(filtered.map((l: any) => l.id)))} title="Selecionar todos os da página" />
  </th>
  )}
- <th>Lead</th>
- <th>Origem</th>
- <th>Interesse</th>
- <th>Corretor</th>
- <th>Status</th>
- <th>Entrada</th>
- <th>WhatsApp</th>
+ <th>Nome</th>
+ {colunasAtivas.map((c) => <th key={c.key}>{c.label}</th>)}
  </tr>
  </thead>
  <tbody>
  {filtered.length === 0 ? (
  <tr>
- <td colSpan={podeTransferir ? 8 : 7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
+ <td colSpan={(podeTransferir ? 1 : 0) + 1 + colunasAtivas.length} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
  Nenhum lead
  </td>
  </tr>
  ) : (
  filtered.map((l) => {
- const [k, lab] = STATUS_MAP[l.status] || ['neutral', l.status];
  return (
  <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : undefined}>
  {podeTransferir && (
@@ -355,36 +428,7 @@ export default function Leads() {
  </div>
  </div>
  </td>
- <td>
- <span className="badge badge--neutral">{l.origem}</span>
- </td>
- <td className="text-xs">{l.interesse || l.campanha || '—'}</td>
- <td>
- {l.corretor ? (
- <div className="flex gap-2" style={{ alignItems: 'center' }}>
- <div className="avatar avatar--sm">{l.corretor.initials}</div>
- {l.corretor.nome.split(' ')[0]}
- </div>
- ) : (
- <span className="text-xs text-secondary">—</span>
- )}
- </td>
- <td>
- <span className={`badge badge--${k}`}>{lab}</span>
- </td>
- <td className="text-xs">{timeAgo(l.distribuidoEm || l.createdAt)}</td>
- <td>
- {(() => {
- const digits = String(l.telefone || '').replace(/\D/g, '');
- const podeAbrir = !l.telefoneOculto && digits.length >= 10;
- if (!podeAbrir) return <span className="wa-lock" title="Libere o contato pra ver o número"><Icon name="lock" size={14} /></span>;
- return (
- <a className="wa-btn" href={`https://wa.me/${digits}`} target="_blank" rel="noopener noreferrer" title="Abrir conversa no WhatsApp" aria-label="WhatsApp">
- <Icon name="whatsapp" size={17} />
- </a>
- );
- })()}
- </td>
+ {colunasAtivas.map((c) => <td key={c.key}>{celulaLead(c.key, l)}</td>)}
  </tr>
  );
  })
