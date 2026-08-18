@@ -371,7 +371,7 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={submit}>
           <div className="login-card__eyebrow">Novo por aqui?</div>
           <h2 className="login-card__title">Criar conta</h2>
-          <p className="login-card__sub">Preencha os dados e entre direto no sistema como corretor.</p>
+          <p className="login-card__sub">Crie sua conta e já acesse as aulas da Academia Pons. O acesso ao sistema é liberado por um analista.</p>
 
           {error && <div className="login-card__error">{error}</div>}
 
