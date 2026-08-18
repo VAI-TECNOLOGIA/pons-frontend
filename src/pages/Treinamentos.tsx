@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { Auth } from '../lib/auth';
 import { TREINAMENTOS, type Treino } from '../data/treinamentos';
@@ -33,7 +33,13 @@ function isShort(url?: string): boolean {
 
 export default function Treinamentos() {
   const [ativo, setAtivo] = useState<Treino | null>(null);
+  const navigate = useNavigate();
   const logado = !!Auth.token;
+  // Cadastro aberto ainda aguardando liberação de um Analista: aqui é o único
+  // lugar que ele acessa. Troca o CTA "voltar ao sistema" (que só o devolveria
+  // pra cá) por Sair, e mostra que o acesso está em análise.
+  const pendente = Auth.user?.statusCadastro === 'AGUARDANDO_APROVACAO';
+  const sair = () => { Auth.clear(); navigate('/login', { replace: true }); };
 
   const destaque = useMemo(() => TREINAMENTOS.find((t) => t.destaque) || TREINAMENTOS[0], []);
   const lista = useMemo(() => TREINAMENTOS.filter((t) => t.id !== destaque?.id), [destaque]);
@@ -65,11 +71,25 @@ export default function Treinamentos() {
 
         <div className="trn-top__bar">
           <img className="trn-top__logo" src="/assets/home/grupopons_logo.png" alt="Grupo Pons" />
-          <Link className="trn-top__cta" to={logado ? '/dashboard' : '/login'}>
-            {logado ? 'Voltar ao sistema' : 'Entrar no sistema'}
-            <Icon name="arrow_right" size={15} />
-          </Link>
+          {pendente ? (
+            <button className="trn-top__cta" onClick={sair}>
+              Sair
+              <Icon name="arrow_right" size={15} />
+            </button>
+          ) : (
+            <Link className="trn-top__cta" to={logado ? '/dashboard' : '/login'}>
+              {logado ? 'Voltar ao sistema' : 'Entrar no sistema'}
+              <Icon name="arrow_right" size={15} />
+            </Link>
+          )}
         </div>
+
+        {pendente && (
+          <div className="trn-pendente-aviso" role="status">
+            <Icon name="clock" size={15} />
+            <span>Seu cadastro foi recebido e está <b>em análise</b>. Enquanto isso, aproveite as aulas da Academia Pons.</span>
+          </div>
+        )}
 
         <div className="trn-hero">
           <div className="trn-hero__left">

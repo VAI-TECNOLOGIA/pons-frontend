@@ -266,3 +266,24 @@
   .trn-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
   .trn-card__title { font-size: 13px; }
 }
+
+/* Aviso de cadastro em análise (cadastro aberto pendente de liberação) */
+.trn-pendente-aviso {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 720px;
+  margin: 14px auto 0;
+  padding: 12px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(8px);
+  color: #eaf2ff;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.trn-pendente-aviso b { color: #fff; }
+.trn-pendente-aviso svg { flex-shrink: 0; color: #7fd7ff; }

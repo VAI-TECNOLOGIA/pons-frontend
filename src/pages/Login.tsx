@@ -8,9 +8,11 @@ import './login.css';
 // Colaborador em contratação (onboardingStatus != ATIVO) fica preso na esteira
 // /onboarding — e /api/users/me é bloqueado pelo gate, então nem dá pra validar
 // via Api.me(). Manda direto pra esteira nesses casos.
-function landingFor(user?: { role?: string | null; onboardingStatus?: string | null } | null): string {
+function landingFor(user?: { role?: string | null; onboardingStatus?: string | null; statusCadastro?: string | null } | null): string {
   const onb = user?.onboardingStatus;
   if (onb && onb !== 'ATIVO') return '/onboarding';
+  // Cadastro aberto pendente de liberação → só a Academia Pons (vídeo aulas).
+  if (user?.statusCadastro === 'AGUARDANDO_APROVACAO') return '/treinamentos';
   return user?.role === 'DEV' ? '/dev/mensagens' : '/dashboard';
 }
 

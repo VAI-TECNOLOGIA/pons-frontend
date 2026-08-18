@@ -18,6 +18,7 @@ export type Role =
   | 'SOCIO_UNIDADE'
   | 'GESTOR'
   | 'ADMINISTRATIVO'
+  | 'ANALISTA'
   | 'DEV';
 
 export interface User {
@@ -31,6 +32,7 @@ export interface User {
   avatarUrl?: string | null;
   creci?: string | null;
   onboardingStatus?: string | null; // null/ATIVO = sem gating; PENDENTE_DOCS, AGUARDANDO_* prendem em /onboarding
+  statusCadastro?: string | null; // AGUARDANDO_APROVACAO = cadastro aberto pendente → só vê Academia Pons até um Analista liberar
   modalidade?: string | null; // ESTAGIARIO | CORRETOR
   unidade?: { id: number; nome: string } | null;
   corretor?: {
@@ -122,6 +124,7 @@ export function formatRole(role: Role | string): string {
     SOCIO_UNIDADE: 'Sócio de Filial',
     GESTOR: 'Gestor',
     ADMINISTRATIVO: 'Administrativo de Vendas',
+    ANALISTA: 'Analista',
     DEV: 'Desenvolvedor',
   };
   return map[role] || role;

@@ -1037,6 +1037,11 @@ export const Api = {
   equipeUserDelete:    (id: number) => request<{ ok: boolean }>(`/equipe/users/${id}`, { method: 'DELETE' }),
   equipeUserToggleActive: (id: number) => request<{ ok: boolean; active: boolean }>(`/equipe/users/${id}/toggle-active`, { method: 'POST' }),
 
+  // Liberação de cadastro aberto (papel ANALISTA + diretoria).
+  acessoPendentes:     () => request<{ pendentes: any[]; atribuiveis: string[] }>('/acesso-pendente'),
+  acessoAprovar:       (id: number, role: string) => request<{ ok: boolean; user: any }>(`/acesso-pendente/${id}/aprovar`, { method: 'POST', body: { role } }),
+  acessoRecusar:       (id: number) => request<{ ok: boolean }>(`/acesso-pendente/${id}/recusar`, { method: 'POST' }),
+
   equipeDepartments:   () => request<any[]>('/equipe/departments'),
   equipeDepartmentCreate: (data: any) => request<any>('/equipe/departments', { method: 'POST', body: data }),
   equipeDepartmentUpdate: (id: number, data: any) => request<any>(`/equipe/departments/${id}`, { method: 'PATCH', body: data }),

@@ -107,8 +107,9 @@ const AgenteIA        = lazyRetry(() => import('./pages/AgenteIA'));
 const Reuniao         = lazyRetry(() => import('./pages/Reuniao'));
 const Equipe          = lazyRetry(() => import('./pages/Equipe'));
 const Pessoal         = lazyRetry(() => import('./pages/Pessoal'));
-// Academia Pons — pública, exclusiva do app nativo
+// Academia Pons — vídeo aulas públicas/abertas (app e web)
 const Treinamentos    = lazyRetry(() => import('./pages/Treinamentos'));
+const AcessoPendente  = lazyRetry(() => import('./pages/AcessoPendente'));
 // DEV panel
 const DevMensagens    = lazyRetry(() => import('./pages/DevMensagens'));
 const DevFeedback     = lazyRetry(() => import('./pages/DevFeedback'));
@@ -136,8 +137,10 @@ export default function App() {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-        {/* Academia Pons — só existe no app (não no site web) */}
-        {isNativeApp() && <Route path="/treinamentos" element={<Treinamentos />} />}
+        {/* Academia Pons (vídeo aulas) — pública/aberta: existe no app E no web.
+            É o destino do cadastro aberto pendente (só vê as aulas até um Analista
+            liberar) e o conteúdo aberto que qualquer pessoa acessa após cadastrar. */}
+        <Route path="/treinamentos" element={<Treinamentos />} />
         <Route path="/painel-tv" element={<PainelTV />} />
         <Route path="/lp/:slug" element={<LPPublica />} />
         <Route path="/atualizacao-cadastral" element={<CadastroColaborador />} />
@@ -183,6 +186,7 @@ export default function App() {
           <Route path="/executivo" element={<Executivo />} />
           <Route path="/avisos" element={<Avisos />} />
           <Route path="/videos" element={<Videos />} />
+          <Route path="/acesso-pendente" element={<AcessoPendente />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/perfil" element={<Perfil />} />

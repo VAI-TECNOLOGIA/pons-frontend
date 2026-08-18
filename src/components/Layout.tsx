@@ -47,6 +47,14 @@ export function AppLayout() {
   const onbStatus = Auth.user?.onboardingStatus;
   if (onbStatus && onbStatus !== 'ATIVO') return <Navigate to="/onboarding" replace />;
 
+  // Gate de acesso pendente: cadastro aberto (qualquer pessoa) fica preso na
+  // Academia Pons (vídeo aulas) até um Analista liberar o acesso. A segurança
+  // real está no backend (middleware acesso_pendente); aqui é só a navegação.
+  const statusCad = Auth.user?.statusCadastro;
+  if (statusCad === 'AGUARDANDO_APROVACAO' && loc.pathname !== '/treinamentos') {
+    return <Navigate to="/treinamentos" replace />;
+  }
+
   // Persona guard: DEV só vê /dev/*; demais NÃO vêem /dev/*.
   const role = Auth.user?.role;
   const onDev = loc.pathname.startsWith('/dev');
