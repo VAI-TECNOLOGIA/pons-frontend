@@ -2062,16 +2062,18 @@ function ComposerPendenteIA({
       </div>
       {/* Nota interna liberada mesmo com o lead pendente (não vai pro lead). */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input
-          className="composer__input--nota"
-          style={{ flex: 1 }}
-          value={nota}
-          onChange={(e) => setNota(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarNotaLocal(); } }}
-          placeholder="Nota interna — o lead NÃO recebe…"
-        />
-        <button className="btn btn--sm composer__nota-send" onClick={salvarNotaLocal} disabled={!nota.trim() || salvandoNota} title="Salvar nota interna (o lead não recebe)">
-          <Icon name="pencil" size={14} /> {salvandoNota ? 'Salvando…' : 'Salvar nota'}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(234, 179, 8, 0.06)' }}>
+          <Icon name="pencil" size={13} style={{ color: '#EAB308', flexShrink: 0 }} />
+          <input
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarNotaLocal(); } }}
+            placeholder="Nota interna — o lead não recebe…"
+          />
+        </div>
+        <button className="btn btn--secondary btn--sm" onClick={salvarNotaLocal} disabled={!nota.trim() || salvandoNota} title="Salvar nota interna (o lead não recebe)" style={{ borderRadius: 10, whiteSpace: 'nowrap' }}>
+          {salvandoNota ? 'Salvando…' : 'Salvar nota'}
         </button>
       </div>
     </div>
@@ -2108,16 +2110,18 @@ function ComposerJanelaFechada({
       </div>
       {/* Nota interna liberada mesmo com a janela fechada (não vai pro lead). */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input
-          className="composer__input--nota"
-          style={{ flex: 1 }}
-          value={nota}
-          onChange={(e) => setNota(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvar(); } }}
-          placeholder="Nota interna — o lead NÃO recebe…"
-        />
-        <button className="btn btn--sm composer__nota-send" onClick={salvar} disabled={!nota.trim() || salvando} title="Salvar nota interna (o lead não recebe)">
-          <Icon name="pencil" size={14} /> {salvando ? 'Salvando…' : 'Salvar nota'}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(234, 179, 8, 0.06)' }}>
+          <Icon name="pencil" size={13} style={{ color: '#EAB308', flexShrink: 0 }} />
+          <input
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvar(); } }}
+            placeholder="Nota interna — o lead não recebe…"
+          />
+        </div>
+        <button className="btn btn--secondary btn--sm" onClick={salvar} disabled={!nota.trim() || salvando} title="Salvar nota interna (o lead não recebe)" style={{ borderRadius: 10, whiteSpace: 'nowrap' }}>
+          {salvando ? 'Salvando…' : 'Salvar nota'}
         </button>
       </div>
     </div>
