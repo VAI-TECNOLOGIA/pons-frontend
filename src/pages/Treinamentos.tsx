@@ -171,6 +171,8 @@ export default function Treinamentos() {
         <footer className="trn-footer">
           <img src="/assets/home/grupopons_logo.png" alt="Grupo Pons" />
           <span>Academia Pons · Grupo Pons Imobiliário</span>
+          <span className="trn-footer__sep">·</span>
+          <Link className="trn-footer__link" to="/excluir-conta">Excluir minha conta</Link>
         </footer>
       </div>
 
