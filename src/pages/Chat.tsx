@@ -343,6 +343,24 @@ export default function Chat() {
     }
   };
 
+  // Salva uma nota interna (não vai pro lead) — usável em QUALQUER estado do
+  // composer, inclusive janela de 24h fechada / lead pendente. Pedido do cliente.
+  const salvarNota = async (texto: string) => {
+    const t = (texto || '').trim();
+    if (!activeId || !t || sending) return;
+    setSending(true);
+    setEnviandoBolha({ texto: t, nota: true });
+    try {
+      await Api.conversationNota(activeId, t);
+      reloadConv();
+    } catch (err: any) {
+      toast.error('Erro ao salvar nota: ' + (err?.message || 'falha'));
+    } finally {
+      setSending(false);
+      setEnviandoBolha(null);
+    }
+  };
+
   const enviar = async () => {
     if (!activeId || sending || uploadingAnexo) return;
     const texto = draft.trim();
@@ -1195,12 +1213,14 @@ export default function Chat() {
                 <ComposerPendenteIA
                   onAceitar={aceitarLead}
                   onAbrirTemplates={abrirTemplates}
+                  onSalvarNota={salvarNota}
                   respostasUsadas={(conv as any).iaRespostasCount || 0}
                   limiteAtingido={!!(conv as any).iaLimiteAtingido}
                 />
               ) : !janelaAberta ? (
                 <ComposerJanelaFechada
                   onAbrirTemplates={abrirTemplates}
+                  onSalvarNota={salvarNota}
                 />
               ) : (
                 <>
@@ -1989,14 +2009,24 @@ function StatusTicks({ m }: { m: Mensagem }) {
 function ComposerPendenteIA({
   onAceitar,
   onAbrirTemplates,
+  onSalvarNota,
   respostasUsadas,
   limiteAtingido,
 }: {
   onAceitar: () => void;
   onAbrirTemplates: () => void;
+  onSalvarNota: (texto: string) => Promise<void> | void;
   respostasUsadas: number;
   limiteAtingido: boolean;
 }) {
+  const [nota, setNota] = useState('');
+  const [salvandoNota, setSalvandoNota] = useState(false);
+  const salvarNotaLocal = async () => {
+    const t = nota.trim();
+    if (!t || salvandoNota) return;
+    setSalvandoNota(true);
+    try { await onSalvarNota(t); setNota(''); } finally { setSalvandoNota(false); }
+  };
   const cor = limiteAtingido ? '#B45309' : 'var(--blue-600)';
   const bg = limiteAtingido ? 'rgba(245, 158, 11, 0.10)' : 'rgba(96, 165, 250, 0.06)';
   const border = limiteAtingido ? 'rgba(245, 158, 11, 0.32)' : 'rgba(96, 165, 250, 0.20)';
@@ -2009,16 +2039,9 @@ function ComposerPendenteIA({
   return (
     <div
       className="composer"
-      style={{
-        background: bg,
-        borderTop: '1px solid ' + border,
-        padding: '14px 16px',
-        display: 'flex',
-        gap: 12,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
+      style={{ background: bg, borderTop: '1px solid ' + border, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}
     >
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: cor }}>
         <Icon name={limiteAtingido ? 'warn' : 'bot'} size={18} />
         <div style={{ fontSize: 13, lineHeight: 1.4 }}>
@@ -2036,33 +2059,67 @@ function ComposerPendenteIA({
           <Icon name="check" size={14} /> Aceitar lead
         </button>
       </div>
+      </div>
+      {/* Nota interna liberada mesmo com o lead pendente (não vai pro lead). */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          className="composer__input--nota"
+          style={{ flex: 1 }}
+          value={nota}
+          onChange={(e) => setNota(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarNotaLocal(); } }}
+          placeholder="Nota interna — o lead NÃO recebe…"
+        />
+        <button className="btn btn--sm composer__nota-send" onClick={salvarNotaLocal} disabled={!nota.trim() || salvandoNota} title="Salvar nota interna (o lead não recebe)">
+          <Icon name="pencil" size={14} /> {salvandoNota ? 'Salvando…' : 'Salvar nota'}
+        </button>
+      </div>
     </div>
   );
 }
 
 function ComposerJanelaFechada({
   onAbrirTemplates,
+  onSalvarNota,
 }: {
   onAbrirTemplates: () => void;
+  onSalvarNota: (texto: string) => Promise<void> | void;
 }) {
+  const [nota, setNota] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const salvar = async () => {
+    const t = nota.trim();
+    if (!t || salvando) return;
+    setSalvando(true);
+    try { await onSalvarNota(t); setNota(''); } finally { setSalvando(false); }
+  };
   return (
     <div
       className="composer"
-      style={{
-        borderTop: '1px solid var(--border-light)',
-        padding: '12px',
-        display: 'flex',
-        gap: 12,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
+      style={{ borderTop: '1px solid var(--border-light)', padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}
     >
-      <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-        Envie um template pra falar com este contato.
-      </span>
-      <button className="btn btn--primary btn--sm" onClick={onAbrirTemplates}>
-        <Icon name="doc" size={14} /> Enviar template
-      </button>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+          Janela de 24h fechada — envie um template pra falar com o contato.
+        </span>
+        <button className="btn btn--primary btn--sm" onClick={onAbrirTemplates}>
+          <Icon name="doc" size={14} /> Enviar template
+        </button>
+      </div>
+      {/* Nota interna liberada mesmo com a janela fechada (não vai pro lead). */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          className="composer__input--nota"
+          style={{ flex: 1 }}
+          value={nota}
+          onChange={(e) => setNota(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvar(); } }}
+          placeholder="Nota interna — o lead NÃO recebe…"
+        />
+        <button className="btn btn--sm composer__nota-send" onClick={salvar} disabled={!nota.trim() || salvando} title="Salvar nota interna (o lead não recebe)">
+          <Icon name="pencil" size={14} /> {salvando ? 'Salvando…' : 'Salvar nota'}
+        </button>
+      </div>
     </div>
   );
 }
