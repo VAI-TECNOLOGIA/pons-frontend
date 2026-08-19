@@ -353,6 +353,10 @@ export default function Vendas() {
  const [anuaisValor, setAnuaisValor] = useState('');
  const [anuaisQtd, setAnuaisQtd] = useState('');
  const [anuaisMes, setAnuaisMes] = useState('');
+ // Reforço parcelado (opcional, via botão): valor+vencimento por reforço, editável.
+ const [reforcoParcelado, setReforcoParcelado] = useState(false);
+ const [parcelasReforco, setParcelasReforco] = useState<{ valor: string; venc: string }[]>([]);
+ const [parcelasReforcoTocadas, setParcelasReforcoTocadas] = useState(false);
  // Parte paga FORA do parcelamento Pons (financiamento/direto com a construtora)
  const [saldoRem, setSaldoRem] = useState('');
  // ── Reconciliação com o VGV ──────────────────────────────────────────────
@@ -361,7 +365,9 @@ export default function Vendas() {
  const entrada = parseMoedaBR(entradaTotal);
  const arras = parseMoedaBR(arrasValor);
  const mensaisTot = parseMoedaBR(mensaisValor) * (Number(mensaisQtd) || 0);
- const anuaisTot = parseMoedaBR(anuaisValor) * (Number(anuaisQtd) || 0);
+ const anuaisTot = reforcoParcelado
+ ? parcelasReforco.reduce((a, p) => a + parseMoedaBR(p.valor), 0)
+ : parseMoedaBR(anuaisValor) * (Number(anuaisQtd) || 0);
  const chaves = parseMoedaBR(chavesValor);
  const saldoFora = parseMoedaBR(saldoRem);
  const soma = entrada + mensaisTot + anuaisTot + chaves + saldoFora;
@@ -406,6 +412,35 @@ export default function Vendas() {
  setParcelasEntrada(arr);
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [entradaTotal, arrasValor, entradaParcelas, entradaData, parcelasTocadas]);
+
+ // Pré-preenche as parcelas do reforço quando o botão "Parcelar reforço" liga.
+ // Base: anuaisValor por reforço, vencimentos ANUAIS (a partir do mês do reforço,
+ // ano que vem). Editável — depois de editar, só ajusta o nº de linhas.
+ useEffect(() => {
+ if (!reforcoParcelado) return;
+ const n = Math.max(1, Number(anuaisQtd) || 1);
+ if (parcelasReforcoTocadas) {
+ setParcelasReforco((cur) => {
+ if (cur.length === n) return cur;
+ const arr = cur.slice(0, n);
+ while (arr.length < n) arr.push({ valor: '', venc: '' });
+ return arr;
+ });
+ return;
+ }
+ const valorCada = parseMoedaBR(anuaisValor);
+ const base = new Date();
+ base.setFullYear(base.getFullYear() + 1);
+ const mesIdx = MESES.indexOf(anuaisMes);
+ if (mesIdx >= 0) base.setMonth(mesIdx);
+ base.setDate(1);
+ const arr = Array.from({ length: n }, (_, i) => {
+ const dd = new Date(base); dd.setFullYear(base.getFullYear() + i);
+ return { valor: valorCada > 0 ? formatMoedaBR(valorCada) : '', venc: dd.toISOString().slice(0, 10) };
+ });
+ setParcelasReforco(arr);
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [reforcoParcelado, anuaisValor, anuaisQtd, anuaisMes, parcelasReforcoTocadas]);
  // Editou uma parcela da entrada → as SEGUINTES se recorrigem sozinhas pra
  // soma fechar com (entrada − arras). Pedido do financeiro (24/07).
  const editarParcelaValor = (i: number, vMask: string) => {
@@ -494,7 +529,7 @@ export default function Vendas() {
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setClienteInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
- setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes('');
+ setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false);
  setResumo(null); setOrigemManualIdx(0);
  setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
  }, [openNew]);
@@ -737,7 +772,8 @@ export default function Vendas() {
  mensaisInicio: (() => { const m = str('mensaisInicioMes'); if (!m) return undefined; return `${m}/${str('mensaisInicioAno') || new Date().getFullYear()}`; })(),
  anuaisValor: optNum('anuaisValor'),
  anuaisInicio: str('anuaisInicio'),
- anuaisQtd: fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined,
+ anuaisQtd: reforcoParcelado ? parcelasReforco.length : (fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined),
+ ...(reforcoParcelado && parcelasReforco.length ? { anuaisParcelasDetalhe: parcelasReforco.map((p) => ({ valor: parseMoedaBR(p.valor), vencimento: p.venc })) } : {}),
  chavesValor: optNum('chavesValor'),
  saldoRemanescente: parseMoedaBR(saldoRem) || undefined,
  });
@@ -1604,6 +1640,34 @@ export default function Vendas() {
  {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
  </select>
  </div>
+ {/* Botão: parcelar o reforço (valores/datas individuais) — só às vezes. */}
+ <div className="field field--span-2">
+ <button
+ type="button"
+ className={reforcoParcelado ? 'btn btn--secondary btn--sm' : 'btn btn--ghost btn--sm'}
+ style={{ alignSelf: 'flex-start' }}
+ onClick={() => { setReforcoParcelado((v) => !v); setParcelasReforcoTocadas(false); }}
+ >
+ {reforcoParcelado ? '✕ Voltar ao reforço simples' : '＋ Parcelar o reforço (valores e datas por parcela)'}
+ </button>
+ <div className="field__hint">Ligue quando os reforços têm valores ou vencimentos diferentes entre si. No modo simples, é Valor × Qtd.</div>
+ </div>
+ {reforcoParcelado && parcelasReforco.length > 0 && (
+ <div className="field field--span-2">
+ <label className="field__label">Valores e vencimentos dos reforços <span className="text-secondary" style={{ fontWeight: 400 }}>— pré-preenchido, editável</span></label>
+ <div style={{ display: 'grid', gap: 6 }}>
+ {parcelasReforco.map((p, i) => (
+ <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+ <span style={{ width: 30, fontSize: 12, color: 'var(--text-secondary)' }}>{i + 1}º</span>
+ <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" value={p.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setParcelasReforco((cur) => cur.map((x, j) => j === i ? { ...x, valor: v } : x)); setParcelasReforcoTocadas(true); }} />
+ <input type="date" className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e.target.value; setParcelasReforco((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasReforcoTocadas(true); }} />
+ </div>
+ ))}
+ </div>
+ <div className="field__hint" style={{ fontWeight: 600 }}>Total dos reforços: {formatMoedaBR(parcelasReforco.reduce((a, p) => a + parseMoedaBR(p.valor), 0))} · {parcelasReforco.length}x</div>
+ {parcelasReforcoTocadas && <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 4 }} onClick={() => setParcelasReforcoTocadas(false)}>Recalcular automático</button>}
+ </div>
+ )}
  <div className="field">
  <label className="field__label">Chaves (R$)</label>
  <input name="chavesValor" className="field__input" inputMode="numeric" placeholder="R$ 150.000,00" value={chavesValor} onChange={(e) => setChavesValor(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
@@ -1881,7 +1945,9 @@ export function FormularioGpi({ f }: { f: any }) {
  ['Construtora (form)', f.construtora],
  ['Arras', f.arrasValor ? `${brl(f.arrasValor)} · venc. ${f.arrasVencimento || '—'}` : null],
  ['Mensais', f.mensaisValor ? `${brl(f.mensaisValor)} · dia ${f.mensaisMelhorDia || '—'}${f.mensaisInicio ? ` · início ${f.mensaisInicio}` : ''}` : null],
- ['Anuais', f.anuaisValor ? `${brl(f.anuaisValor)} · início ${f.anuaisInicio || '—'}` : null],
+ ['Anuais', (Array.isArray(f.anuaisDetalhe) && f.anuaisDetalhe.length)
+ ? `${f.anuaisDetalhe.length}x parcelado · total ${brl(f.anuaisDetalhe.reduce((a: number, p: any) => a + (p?.valor || 0), 0))} (${f.anuaisDetalhe.map((p: any) => brl(p?.valor || 0)).join(' + ')})`
+ : (f.anuaisValor ? `${brl(f.anuaisValor)} · início ${f.anuaisInicio || '—'}` : null)],
  ['Chaves', brl(f.chavesValor)],
  ] as [string, any][]).filter(([, v]) => v !== null && v !== undefined && v !== '');
  // Só o tipo preenchido (venda antiga) não justifica o bloco
