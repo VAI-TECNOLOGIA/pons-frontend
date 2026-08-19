@@ -933,7 +933,7 @@ export default function Chat() {
                         style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: tempInfo(c.classificacao).cor, marginRight: 6, verticalAlign: 'middle', flexShrink: 0 }}
                       />
                       {c.nome}
-                      {c.vip && <Icon name="star" size={11} style={{ marginLeft: 4, color: '#EAB308', verticalAlign: 'middle' }} />}
+                      {c.vip && <Icon name="star" size={11} style={{ marginLeft: 4, color: '#7c3aed', verticalAlign: 'middle' }} />}
                       {c.vaiConectado && (
                         <span title="WhatsApp ativo" style={{ marginLeft: 4, color: 'var(--color-success-border)', display: 'inline-flex', alignItems: 'center' }}>
                           <Icon name="circle" size={8} />
@@ -1010,7 +1010,7 @@ export default function Chat() {
                   <div className="avatar">{initials(conv.nome)}</div>
                   <div className="thread__hd-id">
                     <div className="thread__hd-name">
-                      {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#EAB308', verticalAlign: 'middle' }} />}
+                      {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#7c3aed', verticalAlign: 'middle' }} />}
                     </div>
                     <div className="thread__hd-meta">
                       {(conv as any).telefoneLiberado && conv.telefone ? (
@@ -2062,8 +2062,8 @@ function ComposerPendenteIA({
       </div>
       {/* Nota interna liberada mesmo com o lead pendente (não vai pro lead). */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(234, 179, 8, 0.06)' }}>
-          <Icon name="pencil" size={13} style={{ color: '#EAB308', flexShrink: 0 }} />
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
+          <Icon name="pencil" size={13} style={{ color: '#7c3aed', flexShrink: 0 }} />
           <input
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
             value={nota}
@@ -2110,8 +2110,8 @@ function ComposerJanelaFechada({
       </div>
       {/* Nota interna liberada mesmo com a janela fechada (não vai pro lead). */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(234, 179, 8, 0.06)' }}>
-          <Icon name="pencil" size={13} style={{ color: '#EAB308', flexShrink: 0 }} />
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
+          <Icon name="pencil" size={13} style={{ color: '#7c3aed', flexShrink: 0 }} />
           <input
             style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
             value={nota}
