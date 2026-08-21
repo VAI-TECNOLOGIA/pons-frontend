@@ -544,6 +544,8 @@ export const Api = {
   // Arquivar leads em massa (somem das telas/distribuição, preservados no banco)
   leadsArquivar: (leadIds: number[]) =>
     request<{ ok: boolean; arquivados: number }>('/leads/arquivar', { method: 'POST', body: { leadIds } }),
+  leadsLiberarTelefone: (leadIds: number[]) =>
+    request<{ ok: boolean; liberados: number }>('/leads/liberar-telefone', { method: 'POST', body: { leadIds } }),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
   roletaFormularios: (sincronizarPaginas = false) => request<{ nome: string; leads: number }[]>(`/roletas/formularios${sincronizarPaginas ? '?paginas=1' : ''}`),
   roletaCampanhas: () => request<{ nome: string; id: string | null; leads: number }[]>('/roletas/campanhas'),
