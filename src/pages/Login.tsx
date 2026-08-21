@@ -186,14 +186,12 @@ export default function Login() {
   );
 }
 
-// Modal "Esqueci a senha" — via WHATSAPP: envia código de 6 dígitos pro
-// número cadastrado e troca a senha aqui mesmo. Resposta sempre genérica.
+// Modal "Esqueci a senha" — via WHATSAPP: confirma a conta pelo número e envia
+// um LINK de redefinição (template utilitário). A nova senha é criada na página
+// que o link abre (/redefinir-senha). Resposta sempre genérica.
 function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
-  const [passo, setPasso] = useState<1 | 2 | 3>(1);
+  const [passo, setPasso] = useState<1 | 2>(1);
   const [telefone, setTelefone] = useState('');
-  const [codigo, setCodigo] = useState('');
-  const [senha, setSenha] = useState('');
-  const [confirma, setConfirma] = useState('');
   const [erro, setErro] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -219,7 +217,7 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const pedirCodigo = async () => {
+  const enviarLink = async () => {
     setErro('');
     setBusy(true);
     try {
@@ -227,23 +225,6 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
       setPasso(2);
     } catch {
       setPasso(2); // resposta é genérica de qualquer forma
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const trocarSenha = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErro('');
-    if (!/^\d{6}$/.test(codigo.trim())) { setErro('O código tem 6 números.'); return; }
-    if (senha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return; }
-    if (senha !== confirma) { setErro('As senhas não conferem.'); return; }
-    setBusy(true);
-    try {
-      await Api.redefinirSenhaCodigo(telefone, codigo.trim(), senha);
-      setPasso(3);
-    } catch (err: any) {
-      setErro(err?.message || 'Código inválido ou expirado — peça um novo.');
     } finally {
       setBusy(false);
     }
@@ -257,7 +238,7 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
         <h2 className="login-card__title">Esqueci a senha</h2>
         {passo === 1 && !conta && (
           <form onSubmit={buscarConta}>
-            <p className="login-card__sub">Informe o WhatsApp cadastrado na sua conta — enviamos um código de 6 dígitos.</p>
+            <p className="login-card__sub">Informe o WhatsApp cadastrado na sua conta — enviamos um link pra você criar uma nova senha.</p>
             {erro && <div className="login-card__error">{erro}</div>}
             <label className="login-field">
               <span className="login-field__label">WhatsApp (com DDD)</span>
@@ -275,7 +256,7 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
               {conta.email && <><br /><span style={{ opacity: 0.8 }}>{conta.email}</span></>}
             </p>
             {erro && <div className="login-card__error">{erro}</div>}
-            <button type="button" className="login-btn" disabled={busy} onClick={pedirCodigo}>{busy ? 'Enviando…' : 'É minha — enviar código'}</button>
+            <button type="button" className="login-btn" disabled={busy} onClick={enviarLink}>{busy ? 'Enviando…' : 'É minha — enviar link'}</button>
             <button type="button" className="login-request-link" onClick={() => setNaoEhMinha(true)}>Não é minha conta</button>
           </>
         )}
@@ -289,36 +270,21 @@ function EsqueciSenhaModal({ onClose }: { onClose: () => void }) {
               <li>você trocou de número e o cadastro ficou desatualizado.</li>
             </ul>
             <p className="login-card__sub" style={{ fontSize: 13 }}>
-              <strong>Como resolver:</strong> fale com o seu gestor ou com o administrativo do Grupo Pons pra corrigirem o telefone do cadastro — depois é só voltar aqui e pedir o código de novo.
+              <strong>Como resolver:</strong> fale com o seu gestor ou com o administrativo do Grupo Pons pra corrigirem o telefone do cadastro — depois é só voltar aqui e pedir o link de novo.
             </p>
             <button type="button" className="login-btn" onClick={() => { setNaoEhMinha(false); setConta(null); setTelefone(''); }}>Tentar com outro número</button>
             <button type="button" className="login-request-link" onClick={onClose}>Voltar pro login</button>
           </>
         )}
         {passo === 2 && (
-          <form onSubmit={trocarSenha}>
-            <p className="login-card__sub">Se o número estiver cadastrado, o código chega no WhatsApp em instantes (vale 10 minutos).</p>
-            {erro && <div className="login-card__error">{erro}</div>}
-            <label className="login-field">
-              <span className="login-field__label">Código (6 dígitos)</span>
-              <input className="login-field__input" inputMode="numeric" maxLength={6} required autoFocus placeholder="000000" value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))} />
-            </label>
-            <label className="login-field">
-              <span className="login-field__label">Nova senha</span>
-              <input className="login-field__input" type="password" autoComplete="new-password" required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} />
-            </label>
-            <label className="login-field">
-              <span className="login-field__label">Confirmar nova senha</span>
-              <input className="login-field__input" type="password" autoComplete="new-password" required minLength={6} value={confirma} onChange={(e) => setConfirma(e.target.value)} />
-            </label>
-            <button type="submit" className="login-btn" disabled={busy}>{busy ? 'Salvando…' : 'Trocar senha'}</button>
-            <button type="button" className="login-request-link" onClick={() => setPasso(1)}>Não recebi o código</button>
-          </form>
-        )}
-        {passo === 3 && (
           <>
-            <p className="login-card__sub">Senha redefinida com sucesso. Já dá pra entrar com a nova.</p>
-            <button type="button" className="login-btn" onClick={onClose}>Fazer login</button>
+            <p className="login-card__sub">
+              Enviamos um link no seu WhatsApp. Toque no botão <strong>“Criar nova senha”</strong> da mensagem pra definir a senha nova — o link vale <strong>30 minutos</strong>.
+            </p>
+            <p className="login-card__sub" style={{ fontSize: 13, opacity: 0.85 }}>
+              Não chegou? Confira se o número está certo ou aguarde alguns instantes e tente de novo.
+            </p>
+            <button type="button" className="login-btn" onClick={onClose}>Entendi</button>
           </>
         )}
       </div>
