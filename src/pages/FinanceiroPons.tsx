@@ -8,7 +8,7 @@ import { useConfirm } from '../lib/confirm';
 import { Icon } from '../components/Icon';
 import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 
-type Tab = 'POLITICA' | 'SOCIOS' | 'FECHAMENTO' | 'SICREDI';
+type Tab = 'POLITICA' | 'SOCIOS' | 'FECHAMENTO' | 'IMPOSTOS' | 'SICREDI';
 
 const fmt = (v: number) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
 
@@ -29,6 +29,7 @@ export default function FinanceiroPons() {
             <button className={`btn btn--sm ${tab === 'POLITICA' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('POLITICA')}>Política de Rateio</button>
             <button className={`btn btn--sm ${tab === 'SOCIOS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('SOCIOS')}>Sócios</button>
             <button className={`btn btn--sm ${tab === 'FECHAMENTO' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('FECHAMENTO')}>Fechamento Mensal</button>
+            <button className={`btn btn--sm ${tab === 'IMPOSTOS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('IMPOSTOS')}>Impostos</button>
             {/* Aba "Lotes Sicredi" removida — integração não vai existir. */}
           </div>
         </div>
@@ -36,6 +37,7 @@ export default function FinanceiroPons() {
         {tab === 'POLITICA' && <PoliticaTab />}
         {tab === 'SOCIOS' && <SociosTab />}
         {tab === 'FECHAMENTO' && <FechamentoTab />}
+        {tab === 'IMPOSTOS' && <ImpostosTab />}
       </div>
     </>
   );
@@ -384,6 +386,83 @@ function FechamentoTab() {
             </div>
           )}
         </div>
+      )}
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Impostos — Lucro Presumido (apuração mensal + trimestral)
+// ════════════════════════════════════════════════════════════════════════
+const MES_ABR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+function ImpostosTab() {
+  const [ano, setAno] = useState(new Date().getFullYear());
+  const { data, loading, error } = useApi<any>(() => Api.impostosAno(ano), [ano]);
+  const anos = [new Date().getFullYear(), new Date().getFullYear() - 1];
+
+  return (
+    <>
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span className="text-sm text-secondary">Lucro Presumido · ano</span>
+          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="field__select" style={{ width: 110 }}>
+            {anos.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+          {data && <button className="btn btn--primary btn--sm" onClick={() => Api.finPdf(`/impostos/${ano}/pdf`)}>Baixar PDF</button>}
+          <span className="text-xs text-secondary" style={{ marginLeft: 'auto' }}>Base = receita (entradas) do período. Confira com a contabilidade.</span>
+        </div>
+      </div>
+
+      {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
+
+      {data && (
+        <>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Apuração mensal — PIS / COFINS / ISS</h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table">
+                <thead><tr><th>Mês</th><th className="text-right">Receita</th><th className="text-right">PIS</th><th className="text-right">COFINS</th><th className="text-right">ISS</th><th className="text-right">Total</th></tr></thead>
+                <tbody>
+                  {data.meses.map((m: any) => (
+                    <tr key={m.mes}><td>{MES_ABR[m.mes - 1]}</td><td className="text-right money">{fmt(m.receita)}</td><td className="text-right money">{fmt(m.pis)}</td><td className="text-right money">{fmt(m.cofins)}</td><td className="text-right money">{fmt(m.iss)}</td><td className="text-right money">{fmt(m.totalMes)}</td></tr>
+                  ))}
+                  <tr style={{ fontWeight: 700 }}><td>Total</td><td /><td /><td /><td /><td className="text-right money">{fmt(data.totalMensais)}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Apuração trimestral — CSLL / IRPJ</h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table">
+                <thead><tr><th>Trim.</th><th className="text-right">Receita</th><th className="text-right">CSLL</th><th className="text-right">IRPJ bruto</th><th className="text-right">(-) IR fonte</th><th className="text-right">IRPJ líq.</th></tr></thead>
+                <tbody>
+                  {data.trimestres.map((t: any) => (
+                    <tr key={t.trimestre}><td>{t.trimestre}º</td><td className="text-right money">{fmt(t.receita)}</td><td className="text-right money">{fmt(t.csll)}</td><td className="text-right money">{fmt(t.irpj)}</td><td className="text-right money">{fmt(t.irRetidoFonteRef)}</td><td className="text-right money">{fmt(t.irpjLiquidoSeRetido)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-secondary" style={{ marginTop: 8 }}>IRPJ líquido = bruto − IR retido na fonte (1,5%), quando o tomador retém. Ajuste conforme as retenções reais.</p>
+          </div>
+
+          <div className="card">
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Provisão sugerida (reter no rateio dos sócios)</h3>
+            <p className="text-sm text-secondary" style={{ marginBottom: 10 }}>Quanto separar por mês antes de dividir o lucro, para cobrir os impostos.</p>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table">
+                <thead><tr><th>Mês</th><th className="text-right">Mensal</th><th className="text-right">Fatia trimestral</th><th className="text-right">Provisão</th></tr></thead>
+                <tbody>
+                  {data.provisaoPorMes.map((p: any) => (
+                    <tr key={p.mes}><td>{MES_ABR[p.mes - 1]}</td><td className="text-right money">{fmt(p.mensal)}</td><td className="text-right money">{fmt(p.fatiaTrimestral)}</td><td className="text-right money">{fmt(p.provisao)}</td></tr>
+                  ))}
+                  <tr style={{ fontWeight: 700 }}><td>Total do ano</td><td /><td /><td className="text-right money">{fmt(data.totalAno)}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </>
   );

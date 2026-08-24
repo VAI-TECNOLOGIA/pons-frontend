@@ -998,6 +998,11 @@ export const Api = {
   fechamentoFechar: (id: number) => request<any>(`/fechamento/${id}/fechar`, { method: 'POST' }),
   fechamentoPagarRateio: (rateioId: number) => request<any>(`/fechamento/rateio/${rateioId}/pagar`, { method: 'POST' }),
 
+  // Impostos (Lucro Presumido)
+  impostosAno: (ano: number) => request<any>(`/impostos/${ano}`),
+  impostosAliquotas: () => request<any>('/impostos/aliquotas'),
+  impostosSetAliquotas: (parcial: any) => request<any>('/impostos/aliquotas', { method: 'PUT', body: parcial }),
+
   loteSicrediList: () => request<any[]>('/sicredi-lote'),
   loteSicrediProxima: () => request<{ dataExecucao: string; total: number; valor: number; lancamentos: any[] }>('/sicredi-lote/proxima'),
   loteSicrediPreparar: () => request<any>('/sicredi-lote/preparar', { method: 'POST' }),
