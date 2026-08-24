@@ -1325,6 +1325,21 @@ function PanelFiliais() {
  }
  };
 
+ const [novoNome, setNovoNome] = useState('');
+ const [novaCidade, setNovaCidade] = useState('');
+ const [novaEmpresa, setNovaEmpresa] = useState('');
+ const [criando, setCriando] = useState(false);
+ const criar = async () => {
+ if (novoNome.trim().length < 2) { toast.error('Informe o nome da filial'); return; }
+ setCriando(true);
+ try {
+ await Api.unidadeCreate({ nome: novoNome.trim(), cidade: novaCidade.trim() || null, empresaKey: novaEmpresa || null });
+ toast.success('Filial criada');
+ setNovoNome(''); setNovaCidade(''); setNovaEmpresa(''); reload();
+ } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+ finally { setCriando(false); }
+ };
+
  if (loading) return <LoadingBlock />;
  if (error) return <ErrorBlock error={error} />;
  const unidades = data || [];
@@ -1333,6 +1348,20 @@ function PanelFiliais() {
 
  return (
  <>
+ <div className="card" style={{ marginBottom: 12 }}>
+ <h3 className="card__title mb-4">Nova filial</h3>
+ <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+ <label className="field" style={{ flex: '2 1 180px' }}><span className="field__label">Nome da filial</span><input className="field__input" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Ex.: GPI Itajaí Rafael" /></label>
+ <label className="field" style={{ flex: '1 1 130px' }}><span className="field__label">Cidade</span><input className="field__input" value={novaCidade} onChange={(e) => setNovaCidade(e.target.value)} /></label>
+ <label className="field" style={{ flex: '2 1 200px' }}><span className="field__label">CNPJ (empresa)</span>
+ <select className="field__input" value={novaEmpresa} onChange={(e) => setNovaEmpresa(e.target.value)}>
+ <option value="">— definir depois —</option>
+ {opts.map((emp) => <option key={emp.key} value={emp.key}>{emp.razaoSocial} · {emp.cnpj}</option>)}
+ </select>
+ </label>
+ <button className="btn btn--primary btn--sm" disabled={criando} onClick={criar} style={{ marginBottom: 2 }}>{criando ? 'Criando…' : 'Adicionar filial'}</button>
+ </div>
+ </div>
  <div className="card" style={{ marginBottom: 12 }}>
  <p className="text-sm text-secondary" style={{ margin: 0 }}>
  Conecte cada sala/filial ao CNPJ que assina os contratos. É esse vínculo
@@ -1381,7 +1410,63 @@ function PanelFiliais() {
  </tbody>
  </table>
  </div>
+
+ <EmpresasEditor empresas={opts} onSalvo={reload} />
  </>
+ );
+}
+
+// Editor dos dados jurídicos de cada empresa (razão social, CNPJ, CRECI,
+// endereço) — o que sai no cabeçalho dos contratos. Parametriza as pendências
+// (ex.: preencher o CRECI da empresa de Capão que faltava).
+function EmpresasEditor({ empresas, onSalvo }: { empresas: any[]; onSalvo: () => void }) {
+ const [editando, setEditando] = useState<string | null>(null);
+ const [form, setForm] = useState<any>({});
+ const [saving, setSaving] = useState(false);
+ const toast = useToast();
+
+ const abrir = (e: any) => { setForm({ razaoSocial: e.razaoSocial || '', cnpj: e.cnpj || '', creci: e.creci || '', endereco: e.endereco || '' }); setEditando(e.key); };
+ const salvar = async () => {
+ setSaving(true);
+ try { await Api.empresaUpdate(editando!, form); toast.success('Dados da empresa salvos'); setEditando(null); onSalvo(); }
+ catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+ finally { setSaving(false); }
+ };
+
+ return (
+ <div className="card" style={{ marginTop: 16 }}>
+ <h3 className="card__title mb-4">Dados jurídicos das empresas (cabeçalho dos contratos)</h3>
+ <p className="text-sm text-secondary" style={{ marginTop: -6, marginBottom: 12 }}>Editável — o que você preencher aqui vale no contrato gerado. Ex.: o CRECI da empresa de Capão.</p>
+ <div className="list">
+ {(empresas || []).map((e: any) => (
+ <div key={e.key} style={{ borderBottom: '1px solid var(--border-light)', padding: '10px 0' }}>
+ {editando === e.key ? (
+ <div style={{ display: 'grid', gap: 8 }}>
+ {[['razaoSocial', 'Razão social'], ['cnpj', 'CNPJ'], ['creci', 'CRECI'], ['endereco', 'Endereço']].map(([k, label]) => (
+ <label key={k} className="field">
+ <span className="field__label">{label}</span>
+ <input className="field__input" value={form[k] ?? ''} onChange={(ev) => setForm((s: any) => ({ ...s, [k]: ev.target.value }))} />
+ </label>
+ ))}
+ <div className="flex gap-2">
+ <button className="btn btn--ghost btn--sm" onClick={() => setEditando(null)}>Cancelar</button>
+ <button className="btn btn--primary btn--sm" disabled={saving} onClick={salvar}>{saving ? 'Salvando…' : 'Salvar'}</button>
+ </div>
+ </div>
+ ) : (
+ <div className="flex-between" style={{ alignItems: 'center', gap: 12 }}>
+ <div>
+ <div className="font-semibold">{e.razaoSocial}</div>
+ <div className="text-sm text-secondary">CNPJ {e.cnpj || '—'} · CRECI {e.creci || <span style={{ color: 'var(--color-danger)' }}>não preenchido</span>}</div>
+ <div className="text-xs text-secondary">{e.endereco || '—'}</div>
+ </div>
+ <button className="btn btn--secondary btn--sm" onClick={() => abrir(e)}>Editar</button>
+ </div>
+ )}
+ </div>
+ ))}
+ </div>
+ </div>
  );
 }
 

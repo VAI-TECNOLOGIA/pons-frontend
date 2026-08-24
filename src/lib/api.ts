@@ -987,7 +987,8 @@ export const Api = {
   socioDelete: (id: number) => request<{ ok: boolean }>(`/socios/${id}`, { method: 'DELETE' }),
 
   unidadesList: () => request<any[]>('/unidades'),
-  unidadeEmpresas: () => request<{ key: string; razaoSocial: string; cnpj: string }[]>('/unidades/empresas'),
+  unidadeEmpresas: () => request<{ key: string; razaoSocial: string; cnpj: string; creci: string; endereco: string }[]>('/unidades/empresas'),
+  empresaUpdate: (key: string, data: any) => request<any>(`/unidades/empresas/${key}`, { method: 'PATCH', body: data }),
   unidadeCreate: (data: any) => request<any>('/unidades', { method: 'POST', body: data }),
   unidadeUpdate: (id: number, data: any) => request<any>(`/unidades/${id}`, { method: 'PATCH', body: data }),
   unidadeDelete: (id: number) => request<{ ok: boolean }>(`/unidades/${id}`, { method: 'DELETE' }),

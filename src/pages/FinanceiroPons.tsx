@@ -397,7 +397,7 @@ function FechamentoTab() {
 const MES_ABR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 function ImpostosTab() {
   const [ano, setAno] = useState(new Date().getFullYear());
-  const { data, loading, error } = useApi<any>(() => Api.impostosAno(ano), [ano]);
+  const { data, loading, error, reload } = useApi<any>(() => Api.impostosAno(ano), [ano]);
   const anos = [new Date().getFullYear(), new Date().getFullYear() - 1];
 
   return (
@@ -412,6 +412,8 @@ function ImpostosTab() {
           <span className="text-xs text-secondary" style={{ marginLeft: 'auto' }}>Base = receita (entradas) do período. Confira com a contabilidade.</span>
         </div>
       </div>
+
+      <AliquotasEditor onSalvo={reload} />
 
       {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : null}
 
@@ -465,6 +467,81 @@ function ImpostosTab() {
         </>
       )}
     </>
+  );
+}
+
+// Editor das alíquotas de imposto (parâmetros configuráveis — o Financeiro
+// preenche/ajusta os percentuais e o limite do adicional de IRPJ).
+const ALIQUOTA_CAMPOS: { chave: string; label: string; tipo: 'pct' | 'reais' }[] = [
+  { chave: 'imposto.pis', label: 'PIS (mensal)', tipo: 'pct' },
+  { chave: 'imposto.cofins', label: 'COFINS (mensal)', tipo: 'pct' },
+  { chave: 'imposto.iss', label: 'ISS (mensal)', tipo: 'pct' },
+  { chave: 'imposto.presuncaoCsll', label: 'Presunção CSLL', tipo: 'pct' },
+  { chave: 'imposto.aliquotaCsll', label: 'Alíquota CSLL', tipo: 'pct' },
+  { chave: 'imposto.presuncaoIrpj', label: 'Presunção IRPJ', tipo: 'pct' },
+  { chave: 'imposto.aliquotaIrpj', label: 'Alíquota IRPJ', tipo: 'pct' },
+  { chave: 'imposto.adicionalIrpj', label: 'Adicional IRPJ', tipo: 'pct' },
+  { chave: 'imposto.limiteAdicionalTrimestre', label: 'Limite adicional/trimestre (R$)', tipo: 'reais' },
+  { chave: 'imposto.retIr', label: 'Retenção IR fonte', tipo: 'pct' },
+  { chave: 'imposto.retCsll', label: 'Retenção CSLL fonte', tipo: 'pct' },
+  { chave: 'imposto.retCofins', label: 'Retenção COFINS fonte', tipo: 'pct' },
+  { chave: 'imposto.retPis', label: 'Retenção PIS fonte', tipo: 'pct' },
+];
+function AliquotasEditor({ onSalvo }: { onSalvo: () => void }) {
+  const [aberto, setAberto] = useState(false);
+  const { data, reload } = useApi<any>(() => Api.impostosAliquotas());
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const [salvando, setSalvando] = useState(false);
+  const toast = useToast();
+
+  const editar = () => {
+    if (!data) return;
+    const v: Record<string, string> = {};
+    for (const c of ALIQUOTA_CAMPOS) {
+      v[c.chave] = c.tipo === 'pct' ? String(+(Number(data[c.chave]) * 100).toFixed(4)) : String(Number(data[c.chave]));
+    }
+    setVals(v); setAberto(true);
+  };
+  const salvar = async () => {
+    setSalvando(true);
+    try {
+      const parcial: Record<string, number> = {};
+      for (const c of ALIQUOTA_CAMPOS) {
+        const n = Number(String(vals[c.chave]).replace(',', '.'));
+        if (Number.isNaN(n)) continue;
+        parcial[c.chave] = c.tipo === 'pct' ? n / 100 : n;
+      }
+      await Api.impostosSetAliquotas(parcial);
+      toast.success('Alíquotas salvas');
+      setAberto(false); reload(); onSalvo();
+    } catch (e: any) { toast.error(e?.message || 'Falha ao salvar'); }
+    finally { setSalvando(false); }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div className="flex-between" style={{ alignItems: 'center' }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Alíquotas (parâmetros)</h3>
+        {!aberto
+          ? <button className="btn btn--secondary btn--sm" onClick={editar} disabled={!data}>Editar alíquotas</button>
+          : <div className="flex gap-2"><button className="btn btn--ghost btn--sm" onClick={() => setAberto(false)}>Cancelar</button><button className="btn btn--primary btn--sm" onClick={salvar} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button></div>}
+      </div>
+      {aberto && (
+        <div className="form-grid" style={{ marginTop: 12 }}>
+          {ALIQUOTA_CAMPOS.map((c) => (
+            <div className="field" key={c.chave}>
+              <label className="field__label">{c.label} {c.tipo === 'pct' ? '(%)' : ''}</label>
+              <input className="field__input" inputMode="decimal" value={vals[c.chave] ?? ''} onChange={(e) => setVals((s) => ({ ...s, [c.chave]: e.target.value }))} />
+            </div>
+          ))}
+        </div>
+      )}
+      {!aberto && data && (
+        <p className="text-xs text-secondary" style={{ marginTop: 8 }}>
+          PIS {(+data['imposto.pis'] * 100).toFixed(2)}% · COFINS {(+data['imposto.cofins'] * 100).toFixed(2)}% · ISS {(+data['imposto.iss'] * 100).toFixed(2)}% · CSLL {(+data['imposto.aliquotaCsll'] * 100).toFixed(0)}% · IRPJ {(+data['imposto.aliquotaIrpj'] * 100).toFixed(0)}% + adic. {(+data['imposto.adicionalIrpj'] * 100).toFixed(0)}% · limite R$ {Number(data['imposto.limiteAdicionalTrimestre']).toLocaleString('pt-BR')}
+        </p>
+      )}
+    </div>
   );
 }
 
