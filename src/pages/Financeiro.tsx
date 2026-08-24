@@ -925,6 +925,7 @@ function SemanaTab() {
   const [semana, setSemana] = useState(0);
   const { data, loading, error } = useApi<any>(() => Api.finPagamentosSemana(semana), [semana]);
   const [baixando, setBaixando] = useState(false);
+  const [baixandoCompleto, setBaixandoCompleto] = useState(false);
   const toast = useToast();
   const baixarPdf = async () => {
     setBaixando(true);
@@ -936,12 +937,25 @@ function SemanaTab() {
       setBaixando(false);
     }
   };
+  // Relatório completo (modelo Marcelo): por unidade + comissões a repassar +
+  // consolidado por recebedor com PIX. Endpoint separado do PDF por dia acima.
+  const baixarCompleto = async () => {
+    setBaixandoCompleto(true);
+    try {
+      await Api.finPdf('/financeiro/relatorio-semanal.pdf', { semana });
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível gerar o relatório');
+    } finally {
+      setBaixandoCompleto(false);
+    }
+  };
   return (
     <div className="card">
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <h3 className="card__title" style={{ margin: 0 }}>Pagamentos a realizar na semana</h3>
         <div className="flex gap-2" style={{ alignItems: 'center' }}>
-          <button className="btn btn--secondary btn--sm" disabled={baixando} onClick={baixarPdf}>{baixando ? 'Gerando...' : 'Baixar PDF'}</button>
+          <button className="btn btn--secondary btn--sm" disabled={baixando} onClick={baixarPdf}>{baixando ? 'Gerando...' : 'PDF por dia'}</button>
+          <button className="btn btn--primary btn--sm" disabled={baixandoCompleto} onClick={baixarCompleto}>{baixandoCompleto ? 'Gerando...' : 'Relatório completo'}</button>
           <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s - 1)}>‹ Anterior</button>
           {semana !== 0 && <button className="btn btn--secondary btn--sm" onClick={() => setSemana(0)}>Hoje</button>}
           <button className="btn btn--secondary btn--sm" onClick={() => setSemana((s) => s + 1)}>Próxima ›</button>
