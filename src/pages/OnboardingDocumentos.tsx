@@ -201,11 +201,17 @@ export default function OnboardingDocumentos() {
                 </div>
                 <div style={{ color: C.muted, marginTop: 4 }}>{st.contrato.empresa.razaoSocial}</div>
                 <div style={{ color: C.muted, fontSize: 13 }}>CNPJ {st.contrato.empresa.cnpj} · {st.contrato.empresa.creci}</div>
+                <button
+                  onClick={() => Api.finPdf('/onboarding-colaborador/me/contrato.pdf')}
+                  style={{ marginTop: 12, background: C.blue, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Baixar contrato preenchido
+                </button>
               </div>
             ) : (
               <p style={pMuted}>O Financeiro vai te enviar o contrato correto. Assine e faça o upload do PDF assinado abaixo.</p>
             )}
-            <p style={pMuted}>Baixe o contrato enviado pelo Financeiro, assine e suba o PDF assinado aqui.</p>
+            <p style={pMuted}>Baixe o contrato preenchido acima, assine e suba o PDF assinado aqui.</p>
             {contratoAssinado && <DocList docs={[contratoAssinado]} onRemove={() => {}} busy />}
             <UploadBtn label="Enviar contrato assinado (PDF)" busy={busy} onFile={enviarContrato} />
           </div>

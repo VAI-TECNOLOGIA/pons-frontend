@@ -108,6 +108,13 @@ export default function OnboardingAprovacoes() {
                 </div>
               )) : <p className="muted">Sem documentos anexados.</p>}
 
+              {sel.contrato?.empresaDefinida && (
+                <button className="btn btn--secondary btn--sm" style={{ marginTop: 12 }}
+                  onClick={() => Api.finPdf(`/onboarding-colaborador/${selId}/contrato.pdf`)}>
+                  Baixar contrato preenchido ({sel.contrato.modelo === 'ESTAGIO' ? 'Estágio' : 'Corretor'})
+                </button>
+              )}
+
               {(sel.onboardingStatus === 'AGUARDANDO_APROV_DOCS' || sel.onboardingStatus === 'AGUARDANDO_APROV_CONTRATO') && (
                 <div style={{ marginTop: 16 }}>
                   <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observação (obrigatória ao reprovar)"

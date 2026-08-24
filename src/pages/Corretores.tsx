@@ -303,6 +303,15 @@ export default function Corretores() {
  Reativar
  </button>
  )}
+ {!isAtivo && (
+ <button
+ className="btn btn--ghost btn--sm"
+ onClick={() => Api.finPdf(`/corretores/${c.id}/termo-desligamento.pdf`)}
+ title="Baixar termo de desligamento preenchido"
+ >
+ Termo
+ </button>
+ )}
  </td>
  </tr>
  );
