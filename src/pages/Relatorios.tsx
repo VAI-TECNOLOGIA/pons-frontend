@@ -3,6 +3,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { formatCurrency, formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { RankingMensalPanel } from './relatorios/RankingMensalPanel';
 import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -211,6 +212,8 @@ export default function Relatorios() {
  </table>
  </div>
  </div>
+
+ <RankingMensalPanel />
  </>
  );
 }

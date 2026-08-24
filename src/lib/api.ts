@@ -636,6 +636,12 @@ export const Api = {
   relRanking: (params: any = {}) => request<any>(`/relatorios/ranking${qs(params)}`),
   relEmpreendimentos: () => request<any[]>('/relatorios/empreendimentos'),
 
+  // Ranking mensal (fechamento dia 30/31 + confirmação 5º dia útil)
+  rankMensalLista: () => request<any[]>('/ranking-mensal'),
+  rankMensalGet: (ano: number, mes: number) => request<any>(`/ranking-mensal/${ano}/${mes}`),
+  rankMensalFechar: (ano: number, mes: number) => request<any>(`/ranking-mensal/${ano}/${mes}/fechar`, { method: 'POST' }),
+  rankMensalConfirmar: (ano: number, mes: number) => request<any>(`/ranking-mensal/${ano}/${mes}/confirmar`, { method: 'POST' }),
+
   // Acessos
   acessosResumo: () => request<any>('/acessos/resumo'),
 
