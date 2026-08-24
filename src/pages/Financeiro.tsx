@@ -289,6 +289,11 @@ export default function Financeiro() {
  <select name="categoria" className="field__select" defaultValue="OUTRO">
  <option>COMISSAO</option>
  <option>ALUGUEL</option>
+ <option>CONDOMINIO</option>
+ <option>ENERGIA</option>
+ <option>INTERNET</option>
+ <option>LIMPEZA</option>
+ <option>HONORARIOS</option>
  <option>FOLHA</option>
  <option>MARKETING</option>
  <option>IMPOSTO</option>
@@ -1071,7 +1076,7 @@ function FluxoTab() {
 
 // ───────────────────────── Contas a Pagar/Receber (aging) ─────────────────────────
 const FAIXA_LABEL: Record<string, string> = { aVencer: 'A vencer', d1_30: '1–30 dias', d31_60: '31–60 dias', d60: '60+ dias' };
-const CATEGORIAS_SAIDA = ['COMISSAO', 'ALUGUEL', 'FOLHA', 'MARKETING', 'IMPOSTO', 'VENDA', 'REPASSE', 'OUTRO'];
+const CATEGORIAS_SAIDA = ['COMISSAO', 'ALUGUEL', 'CONDOMINIO', 'ENERGIA', 'INTERNET', 'LIMPEZA', 'HONORARIOS', 'FOLHA', 'MARKETING', 'IMPOSTO', 'VENDA', 'REPASSE', 'OUTRO'];
 
 function ContasTab() {
   const [tipo, setTipo] = useState<'PAGAR' | 'RECEBER'>('PAGAR');

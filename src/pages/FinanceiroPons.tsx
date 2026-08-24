@@ -335,6 +335,7 @@ function FechamentoTab() {
           </select>
           <input type="number" value={ano} onChange={(e) => setAno(Number(e.target.value))} className="field__input" style={{ width: 100 }} />
           <button className="btn btn--secondary btn--sm" onClick={gerar}>Gerar/atualizar</button>
+          <button className="btn btn--primary btn--sm" onClick={() => Api.finPdf(`/fechamento/${ano}/${mes}/por-unidade/pdf`)}>Relatório por unidade (PDF)</button>
         </div>
       </div>
 
