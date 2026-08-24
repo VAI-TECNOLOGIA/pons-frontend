@@ -199,6 +199,21 @@ export default function Leads() {
  setArquivando(false);
  }
  };
+ const [liberandoTel, setLiberandoTel] = useState(false);
+ const liberarTelefoneSelecionados = async () => {
+ if (!sel.size) return;
+ setLiberandoTel(true);
+ try {
+ const r = await Api.leadsLiberarTelefone([...sel]);
+ toast.success(`Telefone liberado em ${r.liberados} lead(s).`);
+ setSel(new Set());
+ reload();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ } finally {
+ setLiberandoTel(false);
+ }
+ };
 
  if (lLoad && !resp) return <LeadsShell onNew={() => setOpen(true)}><LoadingBlock /></LeadsShell>;
  if (lErr && !resp) return <LeadsShell onNew={() => setOpen(true)}><ErrorBlock error={lErr} label="Erro ao carregar leads" /></LeadsShell>;
@@ -347,6 +362,7 @@ export default function Leads() {
  {podeArquivar && (
  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>
  )}
+ <button className="btn btn--ghost btn--sm" onClick={liberarTelefoneSelecionados} disabled={liberandoTel} title="Libera o número dos leads selecionados pros corretores — sem precisar transferir de novo.">{liberandoTel ? 'Liberando…' : '📱 Liberar telefone'}</button>
  <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} title="Por padrão o telefone fica oculto (corretor fala pelo template). Marque pra liberar o número.">
  <input type="checkbox" checked={telefoneVisivel} onChange={(e) => setTelefoneVisivel(e.target.checked)} />
  <span className="text-xs text-secondary">Mostrar telefone</span>
