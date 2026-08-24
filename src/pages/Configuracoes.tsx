@@ -1412,7 +1412,79 @@ function PanelFiliais() {
  </div>
 
  <EmpresasEditor empresas={opts} onSalvo={reload} />
+ <ParticipacaoUnidades unidades={unidades} />
  </>
+ );
+}
+
+// Participação dos sócios POR UNIDADE — a sociedade varia por filial (RS tem
+// Gutierri, Itajaí Delas tem Ana Carolina, Itajaí Rafael tem Rafael 51/49...).
+// Cada filial tem sua lista de sócios (nome + % + PIX). Vazio = usa o rateio
+// global. O fechamento por unidade usa esta config.
+function ParticipacaoUnidades({ unidades }: { unidades: any[] }) {
+ const [abertaId, setAbertaId] = useState<number | null>(null);
+ return (
+ <div className="card" style={{ marginTop: 16 }}>
+ <h3 className="card__title mb-4">Participação dos sócios por unidade</h3>
+ <p className="text-sm text-secondary" style={{ marginTop: -6, marginBottom: 12 }}>
+ A sociedade pode variar por filial (pessoas e percentuais diferentes). Preencha a de cada unidade — se deixar vazio, aquela filial usa o rateio global dos sócios. O fechamento por unidade usa o que estiver aqui.
+ </p>
+ <div className="list">
+ {(unidades || []).map((u: any) => (
+ <div key={u.id} style={{ borderBottom: '1px solid var(--border-light)', padding: '8px 0' }}>
+ <div className="flex-between" style={{ alignItems: 'center' }}>
+ <span className="font-semibold">{u.nome}{!u.ativo && <span className="text-secondary"> (inativa)</span>}</span>
+ <button className="btn btn--secondary btn--sm" onClick={() => setAbertaId(abertaId === u.id ? null : u.id)}>{abertaId === u.id ? 'Fechar' : 'Editar sócios'}</button>
+ </div>
+ {abertaId === u.id && <ParticipacaoEditor unidadeId={u.id} onFechar={() => setAbertaId(null)} />}
+ </div>
+ ))}
+ {unidades.length === 0 && <div className="text-secondary" style={{ padding: 12 }}>Cadastre as filiais primeiro.</div>}
+ </div>
+ </div>
+ );
+}
+
+function ParticipacaoEditor({ unidadeId, onFechar }: { unidadeId: number; onFechar: () => void }) {
+ const { data, loading } = useApi<{ itens: any[] }>(() => Api.participacaoGet(unidadeId));
+ const [itens, setItens] = useState<any[] | null>(null);
+ const [saving, setSaving] = useState(false);
+ const toast = useToast();
+ const lista = itens ?? data?.itens ?? [];
+ const soma = lista.reduce((s: number, i: any) => s + (Number(i.participacao) || 0), 0);
+
+ const set = (idx: number, campo: string, valor: any) => setItens(lista.map((it: any, i: number) => i === idx ? { ...it, [campo]: valor } : it));
+ const add = () => setItens([...lista, { nome: '', participacao: 0, pixKey: '' }]);
+ const del = (idx: number) => setItens(lista.filter((_: any, i: number) => i !== idx));
+ const salvar = async () => {
+ if (lista.length && Math.abs(soma - 100) >= 0.5) { toast.error(`A soma precisa ser 100% (está em ${soma.toFixed(2)}%)`); return; }
+ setSaving(true);
+ try {
+ await Api.participacaoSet(unidadeId, lista.map((i: any) => ({ nome: String(i.nome).trim(), participacao: Number(i.participacao) || 0, pixKey: i.pixKey || null })));
+ toast.success('Participação salva'); onFechar();
+ } catch (e: any) { toast.error(e?.message || 'Falha ao salvar'); }
+ finally { setSaving(false); }
+ };
+
+ if (loading) return <div className="text-secondary" style={{ padding: 8 }}>Carregando…</div>;
+ return (
+ <div style={{ padding: '10px 0 4px', display: 'grid', gap: 8 }}>
+ {lista.map((it: any, idx: number) => (
+ <div key={idx} className="flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap' }}>
+ <label className="field" style={{ flex: '2 1 160px' }}><span className="field__label">Sócio</span><input className="field__input" value={it.nome ?? ''} onChange={(e) => set(idx, 'nome', e.target.value)} placeholder="Nome" /></label>
+ <label className="field" style={{ flex: '0 1 90px' }}><span className="field__label">%</span><input className="field__input" type="number" step="0.01" value={it.participacao ?? 0} onChange={(e) => set(idx, 'participacao', Number(e.target.value))} /></label>
+ <label className="field" style={{ flex: '2 1 160px' }}><span className="field__label">Chave PIX (opcional)</span><input className="field__input" value={it.pixKey ?? ''} onChange={(e) => set(idx, 'pixKey', e.target.value)} /></label>
+ <button className="btn btn--ghost btn--sm" onClick={() => del(idx)} style={{ marginBottom: 2 }}>Remover</button>
+ </div>
+ ))}
+ <div className="flex-between" style={{ alignItems: 'center' }}>
+ <div className="flex gap-2">
+ <button className="btn btn--ghost btn--sm" onClick={add}>+ Sócio</button>
+ <span className="text-sm" style={{ color: lista.length && Math.abs(soma - 100) >= 0.5 ? 'var(--color-danger)' : 'var(--text-secondary)', alignSelf: 'center' }}>Soma: {soma.toFixed(2)}%{lista.length === 0 && ' (vazio = usa rateio global)'}</span>
+ </div>
+ <button className="btn btn--primary btn--sm" disabled={saving} onClick={salvar}>{saving ? 'Salvando…' : 'Salvar'}</button>
+ </div>
+ </div>
  );
 }
 
