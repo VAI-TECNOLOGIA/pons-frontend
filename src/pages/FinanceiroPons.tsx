@@ -7,8 +7,9 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Icon } from '../components/Icon';
 import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
+import { GestaoFiliais } from '../components/GestaoFiliais';
 
-type Tab = 'POLITICA' | 'SOCIOS' | 'FECHAMENTO' | 'IMPOSTOS' | 'SICREDI';
+type Tab = 'POLITICA' | 'SOCIOS' | 'FILIAIS' | 'FECHAMENTO' | 'IMPOSTOS' | 'SICREDI';
 
 const fmt = (v: number) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
 
@@ -28,6 +29,7 @@ export default function FinanceiroPons() {
           <div className="flex" style={{ gap: 8 }}>
             <button className={`btn btn--sm ${tab === 'POLITICA' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('POLITICA')}>Política de Rateio</button>
             <button className={`btn btn--sm ${tab === 'SOCIOS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('SOCIOS')}>Sócios</button>
+            <button className={`btn btn--sm ${tab === 'FILIAIS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('FILIAIS')}>Filiais & Empresas</button>
             <button className={`btn btn--sm ${tab === 'FECHAMENTO' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('FECHAMENTO')}>Fechamento Mensal</button>
             <button className={`btn btn--sm ${tab === 'IMPOSTOS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('IMPOSTOS')}>Impostos</button>
             {/* Aba "Lotes Sicredi" removida — integração não vai existir. */}
@@ -36,6 +38,7 @@ export default function FinanceiroPons() {
 
         {tab === 'POLITICA' && <PoliticaTab />}
         {tab === 'SOCIOS' && <SociosTab />}
+        {tab === 'FILIAIS' && <GestaoFiliais />}
         {tab === 'FECHAMENTO' && <FechamentoTab />}
         {tab === 'IMPOSTOS' && <ImpostosTab />}
       </div>
