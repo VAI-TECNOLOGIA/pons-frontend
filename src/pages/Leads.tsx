@@ -148,7 +148,7 @@ export default function Leads() {
  const paramsKey = JSON.stringify(params);
 
  const { data: resp, loading: lLoad, error: lErr, reload } = useApi<{ total: number; leads: any[] }>(() => Api.leadsPaginado(params), [paramsKey]);
- const { data: stats, reload: reloadStats } = useApi<any>(() => Api.leadStats());
+ const { data: stats, reload: reloadStats } = useApi<any>(() => Api.leadStats(filtroBase.length ? { baseId: filtroBase.join(',') } : {}), [filtroBase.join(',')]);
  const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
  const { data: equipesFiltro } = useApi<any[]>(() => Api.equipes());

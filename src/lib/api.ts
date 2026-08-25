@@ -279,7 +279,7 @@ export const Api = {
   leadFiltrosOpcoes: () => request<{ origens: string[]; campanhas: string[] }>('/leads/filtros-opcoes'),
   leadsBuscar: (q: string) => request<any[]>(`/leads/buscar${qs({ q })}`),
   lead: (id: number) => request<any>(`/leads/${id}`), // ficha completa (form + anúncio + corretor)
-  leadStats: () => request<any>('/leads/stats'),
+  leadStats: (params: any = {}) => request<any>(`/leads/stats${qs(params)}`),
   leadCreate: (data: any) => request<any>('/leads', { method: 'POST', body: data }),
   leadUpdate: (id: number, data: any) => request<any>(`/leads/${id}`, { method: 'PATCH', body: data }),
   leadConversas: (id: number) => request<any>(`/leads/${id}/conversas`),
