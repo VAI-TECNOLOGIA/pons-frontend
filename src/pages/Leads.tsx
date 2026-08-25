@@ -95,6 +95,11 @@ export default function Leads() {
  const [searchParams] = useSearchParams();
  const [filtroEquipe, setFiltroEquipe] = useState<string[]>([]); // ids das equipes
  const [filtroBase, setFiltroBase] = useState<string[]>(() => (searchParams.get('base') ? [String(searchParams.get('base'))] : []));
+ // Aplica o ?base=ID sempre que mudar na URL (ex.: atalho "Base Imobiliária" na
+ // sidebar clicado com a tela de Leads já aberta — senão o filtro não pegava e
+ // mostrava TODOS os leads). Bug 25/08.
+ const baseParam = searchParams.get('base');
+ useEffect(() => { if (baseParam) setFiltroBase([String(baseParam)]); }, [baseParam]);
  const [filtroCampanha, setFiltroCampanha] = useState<string[]>([]);
  const [filtroFormulario, setFiltroFormulario] = useState<string[]>([]);
  const [filtroEmp, setFiltroEmp] = useState<string[]>([]); // empreendimentos de interesse (Produto)
