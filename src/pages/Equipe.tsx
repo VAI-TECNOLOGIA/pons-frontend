@@ -265,6 +265,7 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
   const [form, setForm] = useState({
     name: user.name || '',
     email: user.email || '',
+    role: user.role || '',
     phone: user.phone || '',
     cpf: user.cpf || '',
     dataNascimento: user.dataNascimento ? String(user.dataNascimento).slice(0, 10) : '',
@@ -309,6 +310,7 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
       await Api.equipeUserUpdate(user.id, {
         name: form.name.trim(),
         email: form.email.trim() || undefined,
+        ...(form.role && form.role !== user.role ? { role: form.role } : {}),
         phone: form.phone || null,
         cpf: form.cpf || null,
         dataNascimento: form.dataNascimento || null,
@@ -346,6 +348,34 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
         </header>
 
         <div className="user-drawer__body">
+          <section>
+            <p className="user-drawer__sec">FUNÇÃO &amp; ACESSO</p>
+            <label className="user-drawer__field">
+              <span>Função (papel de acesso)</span>
+              <select value={form.role} onChange={(e) => set('role', e.target.value)}>
+                {[
+                  ['CEO', 'CEO'],
+                  ['DIRETOR_FINANCEIRO', 'Diretor Financeiro'],
+                  ['DIRETOR_COMERCIAL', 'Diretor Comercial'],
+                  ['DIRETOR_JURIDICO', 'Diretor Jurídico'],
+                  ['FINANCEIRO', 'Financeiro'],
+                  ['ADMINISTRATIVO', 'Administrativo'],
+                  ['MARKETING', 'Marketing'],
+                  ['GESTOR_MARKETING', 'Gestor de Marketing'],
+                  ['GESTOR_TRAFEGO', 'Gestor de Tráfego'],
+                  ['GERENTE_EQUIPE', 'Gerente de Equipe'],
+                  ['SOCIO_UNIDADE', 'Sócio de Unidade'],
+                  ['ASSESSORA', 'Assessora'],
+                  ['ASSESSORA_MARKETING', 'Assessora de Marketing'],
+                  ['ANALISTA', 'Analista'],
+                  ['CORRETOR', 'Corretor'],
+                  ['GESTOR', 'Gestor (acesso amplo)'],
+                ].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              <span className="user-drawer__hint">Define o que a pessoa enxerga e pode fazer. Só CEO/Diretor altera. Ex.: o Financeiro que controla pagamentos e contratos = Diretor Financeiro.</span>
+            </label>
+          </section>
+
           <section>
             <p className="user-drawer__sec">UNIDADE &amp; GESTÃO</p>
             <div className="user-drawer__row-2">
