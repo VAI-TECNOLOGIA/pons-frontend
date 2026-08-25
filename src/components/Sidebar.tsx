@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Auth, formatRole, type Role } from '../lib/auth';
 import { useUser } from '../lib/userContext';
 import { useTheme } from '../lib/theme';
@@ -420,12 +420,23 @@ function NavItemLink({
     (collapsed ? ' sidebar__item--icon' : '') +
     (active ? ' sidebar__item--active' : '');
 
+  // Ativo considerando a query (?base=3). Sem isso, /leads e /leads?base=3
+  // ficam os dois "ativos" ao mesmo tempo (NavLink casa só pelo pathname).
+  const location = useLocation();
+  const [itemPath, itemQuery] = item.to.split('?');
+  const curParams = new URLSearchParams(location.search);
+  const active =
+    location.pathname === itemPath &&
+    (itemQuery
+      ? [...new URLSearchParams(itemQuery)].every(([k, v]) => curParams.get(k) === v)
+      : !curParams.get('base'));
+
   const link = item.blank ? (
     <a className={cls()} href={item.to} target="_blank" rel="noopener" title={item.label}>
       {inner}
     </a>
   ) : (
-    <NavLink to={item.to} className={({ isActive }) => cls(isActive)} title={item.label}>
+    <NavLink to={item.to} className={cls(active)} title={item.label}>
       {inner}
     </NavLink>
   );

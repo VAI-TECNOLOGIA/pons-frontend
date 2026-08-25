@@ -296,7 +296,7 @@ export default function Leads() {
  <KpiSimple color="blue" label="Novos hoje" value={stats?.novosHoje ?? 0} onClick={() => aplicarKpi('novos')} active={kpiAtivo === 'novos'} />
  <KpiSimple color="green" label="Em negociação" value={stats?.qualificados ?? 0} onClick={() => aplicarKpi('negociacao')} active={kpiAtivo === 'negociacao'} />
  <KpiSimple color="amber" label="Sem follow-up" value={stats?.semFollowup ?? 0} onClick={() => aplicarKpi('semfollowup')} active={kpiAtivo === 'semfollowup'} />
- <KpiSimple color="navy" label={temFiltro ? 'Total no filtro' : 'Total no funil'} value={temFiltro ? total : (stats?.total ?? leads.length)} onClick={limparFiltros} />
+ <KpiSimple color="navy" label={temFiltro ? 'Total no filtro' : 'Total no funil'} value={temFiltro ? total : (stats?.total ?? leads.length)} onClick={() => { setKpiAtivo(''); setFilterStatus([]); setSemFollowup(false); setNovosHoje(false); setDataInicial(''); setDataFinal(''); setPage(1); }} />
  </div>
 
  <div className="filter-bar">
