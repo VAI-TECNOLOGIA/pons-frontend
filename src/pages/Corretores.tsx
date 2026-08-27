@@ -21,7 +21,10 @@ export default function Corretores() {
  const [painelId, setPainelId] = useState<number | null>(null);
  const [leadsDe, setLeadsDe] = useState<any | null>(null);
  const [scoreDe, setScoreDe] = useState<any | null>(null);
+ const [senhaDe, setSenhaDe] = useState<any | null>(null); // corretor cuja senha o gestor/admin vai trocar
  const [ordenar, setOrdenar] = useState('leads_desc');
+ // Gestor troca senha só da equipe que comanda; CEO/Diretor de qualquer um (backend escopa).
+ const podeTrocarSenha = ['CEO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE'].includes(Auth.user?.role || '');
  const { data: corretores, loading, error, reload } = useApi<any[]>(() => Api.corretores());
  const { data: equipes } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
@@ -286,6 +289,15 @@ export default function Corretores() {
  </span>
  </td>
  <td>
+ {podeTrocarSenha && isAtivo && (
+ <button
+ className="btn btn--ghost btn--sm"
+ onClick={() => setSenhaDe(c)}
+ title="Trocar a senha deste corretor"
+ >
+ <Icon name="lock" size={12} /> Senha
+ </button>
+ )}
  {isAtivo ? (
  <button
  className="btn btn--ghost btn--sm"
@@ -394,6 +406,7 @@ export default function Corretores() {
  {painelId && <CorretorPainelDrawer id={painelId} onClose={() => setPainelId(null)} onSaved={reload} />}
  {leadsDe && <LeadsCorretorModal corretor={leadsDe} onClose={() => setLeadsDe(null)} />}
  {scoreDe && <ScoreCorretorModal corretor={scoreDe} onClose={() => setScoreDe(null)} />}
+ {senhaDe && <TrocarSenhaModal corretor={senhaDe} onClose={() => setSenhaDe(null)} />}
  </>
  );
 }
@@ -408,6 +421,52 @@ const SCORE_TIPO_LABEL: Record<string, string> = {
  AJUSTE_MANUAL: 'Ajuste manual (gestor)',
 };
 const scoreTipoLabel = (t: string) => SCORE_TIPO_LABEL[t] || t;
+
+// Gestor/admin troca a senha de um corretor. Backend escopa (gestor só da equipe que comanda).
+function TrocarSenhaModal({ corretor, onClose }: { corretor: any; onClose: () => void }) {
+ const toast = useToast();
+ const [senha, setSenha] = useState('');
+ const [confirma, setConfirma] = useState('');
+ const [mostrar, setMostrar] = useState(false);
+ const [saving, setSaving] = useState(false);
+ const submit = async (e: any) => {
+ e.preventDefault();
+ if (senha.length < 6) return toast.error('A senha precisa ter no mínimo 6 caracteres.');
+ if (senha !== confirma) return toast.error('As senhas não conferem.');
+ setSaving(true);
+ try {
+ await Api.corretorTrocarSenha(corretor.id, senha);
+ toast.success(`Senha de ${corretor.nome} atualizada. Avise o corretor.`);
+ onClose();
+ } catch (err: any) {
+ toast.error(err?.message || 'Não foi possível trocar a senha.');
+ } finally {
+ setSaving(false);
+ }
+ };
+ return (
+ <Modal open onClose={onClose} title={`Trocar senha — ${corretor.nome}`} subtitle={corretor.equipe?.nome || corretor.email || 'sem equipe'} size="sm">
+ <form onSubmit={submit}>
+ <div className="field">
+ <label className="field__label">Nova senha</label>
+ <input className="field__input" type={mostrar ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)} minLength={6} required autoFocus placeholder="mínimo 6 caracteres" autoComplete="new-password" />
+ </div>
+ <div className="field">
+ <label className="field__label">Confirmar senha</label>
+ <input className="field__input" type={mostrar ? 'text' : 'password'} value={confirma} onChange={(e) => setConfirma(e.target.value)} minLength={6} required placeholder="repita a senha" autoComplete="new-password" />
+ </div>
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, marginTop: 4, cursor: 'pointer' }}>
+ <input type="checkbox" checked={mostrar} onChange={(e) => setMostrar(e.target.checked)} /> Mostrar senha
+ </label>
+ <div className="field__hint" style={{ marginTop: 8 }}>O corretor passa a entrar com essa senha na hora — a senha antiga deixa de valer.</div>
+ <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+ <button type="button" className="btn btn--ghost" onClick={onClose} disabled={saving}>Cancelar</button>
+ <button type="submit" className="btn btn--primary" disabled={saving}>{saving ? 'Salvando…' : 'Trocar senha'}</button>
+ </div>
+ </form>
+ </Modal>
+ );
+}
 
 function ScoreCorretorModal({ corretor, onClose }: { corretor: any; onClose: () => void }) {
  const { data, loading, error } = useApi<{ eventos: any[]; porTipo: Record<string, number> }>(() => Api.corretorScoreEventos(corretor.id), [corretor.id]);

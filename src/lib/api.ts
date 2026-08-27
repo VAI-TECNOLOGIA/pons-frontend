@@ -264,6 +264,9 @@ export const Api = {
   corretorCreate: (data: any) => request<any>('/corretores', { method: 'POST', body: data }),
   corretorUpdate: (id: number, data: any) => request<any>(`/corretores/${id}`, { method: 'PATCH', body: data }),
   corretorDesativar: (id: number) => request<any>(`/corretores/${id}/desativar`, { method: 'POST' }),
+  // Gestor troca a senha de corretor da(s) equipe(s) que comanda (backend escopa).
+  corretorTrocarSenha: (id: number, password: string) =>
+    request<{ ok: boolean; nome: string }>(`/corretores/${id}/senha`, { method: 'PATCH', body: { password } }),
   // Exclui DO BANCO todos os corretores inativos (CEO). Quem tem venda fica.
   corretoresExcluirInativos: () =>
     request<{ excluidos: any[]; mantidos: any[]; leadsDevolvidos: number }>('/corretores/inativos', { method: 'DELETE' }),
