@@ -1012,6 +1012,41 @@ export const Api = {
   loteSicrediEnviar: (id: number) => request<any>(`/sicredi-lote/${id}/enviar`, { method: 'POST' }),
   loteSicrediCancelar: (id: number) => request<{ ok: boolean }>(`/sicredi-lote/${id}/cancelar`, { method: 'POST' }),
 
+  // ─── Cobrança — emissão de boletos + remessa (Sicredi) ───────────
+  boletosList: (status?: string) => request<any[]>(`/boletos${status ? `?status=${status}` : ''}`),
+  boletosPendentes: () => request<{ total: number; valorCentavos: number; ids: number[] }>('/boletos/remessa/pendentes'),
+  boletoEmitir: (data: any) => request<any>('/boletos', { method: 'POST', body: data }),
+  boletoStatus: (id: number, status: string) => request<any>(`/boletos/${id}`, { method: 'PATCH', body: { status } }),
+  boletoCobrancaConfig: () => request<any>('/boletos/config'),
+  boletoCobrancaConfigSet: (data: any) => request<any>('/boletos/config', { method: 'PUT', body: data }),
+  // Abre o PDF do boleto numa nova aba (precisa do header de auth → via blob).
+  boletoPdf: async (id: number) => {
+    const r = await fetch(`${BASE}/boletos/${id}/pdf`, { headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined });
+    if (!r.ok) throw new Error('pdf_failed');
+    const url = URL.createObjectURL(await r.blob());
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  },
+  // Gera e baixa o arquivo de remessa (.rem) dos boletos pendentes.
+  boletoRemessaBaixar: async (ids?: number[]) => {
+    const r = await fetch(`${BASE}/boletos/remessa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(Auth.token ? { Authorization: `Bearer ${Auth.token}` } : {}) },
+      body: JSON.stringify({ ids }),
+    });
+    if (r.status === 409) throw new Error('sem_boletos_pendentes');
+    if (!r.ok) throw new Error('remessa_failed');
+    const nome = r.headers.get('X-Remessa-Arquivo') || 'remessa.rem';
+    const total = r.headers.get('X-Remessa-Total') || '0';
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+    return { nome, total: Number(total) };
+  },
+
   // ─── Fase G — Insights IA do Corretor ────────────────────────────
   insightsMe:        () => request<any[]>('/insights/me'),
   insightsCorretor:  (id: number) => request<any[]>(`/insights/corretor/${id}`),
