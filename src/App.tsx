@@ -100,6 +100,7 @@ const Auditoria       = lazyRetry(() => import('./pages/Auditoria'));
 const Bolsoes         = lazyRetry(() => import('./pages/Bolsoes'));
 const BaseEquipe      = lazyRetry(() => import('./pages/BaseEquipe'));
 const FinanceiroPons  = lazyRetry(() => import('./pages/FinanceiroPons'));
+const Boletos         = lazyRetry(() => import('./pages/Boletos'));
 const PainelFinanceiro = lazyRetry(() => import('./pages/PainelFinanceiro'));
 const ContasBancarias = lazyRetry(() => import('./pages/ContasBancarias'));
 const AdminVendas     = lazyRetry(() => import('./pages/AdminVendas'));
@@ -205,6 +206,7 @@ export default function App() {
           <Route path="/bolsoes" element={<Bolsoes />} />
           <Route path="/base-equipe" element={<BaseEquipe />} />
           <Route path="/financeiro-pons" element={<FinanceiroPons />} />
+          <Route path="/boletos" element={<Boletos />} />
           <Route path="/painel-financeiro" element={<PainelFinanceiro />} />
           <Route path="/contas-bancarias" element={<ContasBancarias />} />
           <Route path="/admin-vendas" element={<AdminVendas />} />
