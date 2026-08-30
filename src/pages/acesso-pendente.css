@@ -1,0 +1,104 @@
+/* Liberações de acesso — cards responsivos + botões polidos */
+
+.acesso-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--card, rgba(255, 255, 255, 0.03));
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.acesso-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.acesso-card__info {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.acesso-card__select {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.18));
+  background: var(--input, #0f1526);
+  color: inherit;
+  font-size: 13.5px;
+  min-width: 190px;
+  flex: 0 1 auto;
+  cursor: pointer;
+}
+
+.acesso-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.acesso-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+.acesso-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.acesso-btn:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.acesso-btn--liberar {
+  background: #16a34a;
+  color: #fff;
+}
+.acesso-btn--liberar:not(:disabled):hover {
+  background: #15803d;
+}
+
+.acesso-btn--recusar {
+  background: transparent;
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.35);
+  font-weight: 600;
+}
+.acesso-btn--recusar:not(:disabled):hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.6);
+}
+
+/* Mobile / telas estreitas: empilha tudo e os botões ocupam a largura */
+@media (max-width: 640px) {
+  .acesso-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .acesso-card__select {
+    min-width: 0;
+    width: 100%;
+  }
+  .acesso-actions {
+    width: 100%;
+  }
+  .acesso-btn {
+    flex: 1;
+    padding: 11px 16px; /* alvo de toque maior no mobile */
+  }
+  .acesso-btn--liberar {
+    flex: 2; /* Liberar acesso maior que Recusar */
+  }
+}
