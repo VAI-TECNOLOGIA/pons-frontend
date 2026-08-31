@@ -245,7 +245,7 @@ export default function Corretores() {
  filtered.map((c: any) => {
  const eqNome = c.equipe?.nome || c.equipe;
  const eqColor = c.equipe?.cor || eqs.find((e: any) => e.nome === eqNome)?.cor || '#0E7C9B';
- const isAtivo = c.status === 'ATIVO' || c.ativo;
+ const isAtivo = (c.status === 'ATIVO' || c.ativo) && c.userActive !== false;
  return (
  <tr key={c.id}>
  <td>
