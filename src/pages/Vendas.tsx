@@ -1893,6 +1893,15 @@ export default function Vendas() {
  </div>
  </div>
 
+ {/* Aviso destacado: corretor precisa anexar doc pra liberar o botão salvar.
+     Sem isso o botão fica cinza e a pessoa clica sem entender por quê. */}
+ {step === stepConfirma && isCorretor && docsAnexar.length === 0 && (
+ <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.45)', color: '#eab308', borderRadius: 10, padding: '11px 14px', fontSize: 13.5, fontWeight: 600 }}>
+ <Icon name="warn" size={18} />
+ <span>Anexe os documentos acima para liberar o botão <strong>Salvar venda</strong>. Sem os documentos a venda não pode ser registrada.</span>
+ </div>
+ )}
+
  <div className="flex" style={{ justifyContent: 'space-between', marginTop: 20, gap: 8 }}>
  <button type="button" className="btn btn--secondary" onClick={() => setOpenNew(false)}>Cancelar</button>
  <div className="flex gap-2">
