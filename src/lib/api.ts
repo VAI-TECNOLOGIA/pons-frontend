@@ -1015,6 +1015,10 @@ export const Api = {
   loteSicrediEnviar: (id: number) => request<any>(`/sicredi-lote/${id}/enviar`, { method: 'POST' }),
   loteSicrediCancelar: (id: number) => request<{ ok: boolean }>(`/sicredi-lote/${id}/cancelar`, { method: 'POST' }),
 
+  // ─── Sem Fila — vitrine de leads sem distribuição ────────────────
+  semFilaList: () => request<any[]>('/sem-fila'),
+  semFilaPegar: (id: number) => request<{ ok: boolean }>(`/sem-fila/${id}/pegar`, { method: 'POST' }),
+
   // ─── Cobrança — emissão de boletos + remessa (Sicredi) ───────────
   boletosList: (status?: string) => request<any[]>(`/boletos${status ? `?status=${status}` : ''}`),
   boletosPendentes: () => request<{ total: number; valorCentavos: number; ids: number[] }>('/boletos/remessa/pendentes'),
