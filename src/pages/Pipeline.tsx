@@ -10,7 +10,20 @@ import { parseFunil, faseDoStatus } from '../lib/funil';
 
 export default function Pipeline() {
   // Hooks DEVEM vir antes de qualquer return condicional (Rules of Hooks).
-  const { data, loading, error } = useApi<any[]>(() => Api.leads());
+  // Busca PAGINADA: GET /leads sem ?page corta em 100 — corretor com 100+ leads
+  // via cards "sumindo" do funil (caso Luiz Bier, 02/09). Teto de 1000 cards
+  // pra não travar o navegador de CEO/gestor (que enxergam a base inteira).
+  const { data, loading, error } = useApi<any[]>(async () => {
+    const out: any[] = [];
+    for (let page = 1; page <= 5; page++) {
+      const r: any = await Api.leads({ page, limit: 200 });
+      const lote = Array.isArray(r) ? r : (r.leads || []);
+      out.push(...lote);
+      const total = Array.isArray(r) ? lote.length : (r.total ?? lote.length);
+      if (lote.length === 0 || out.length >= total) break;
+    }
+    return out;
+  });
   const { data: settings } = useApi<Record<string, string>>(() => Api.settings());
   const [leads, setLeads] = useState<any[]>([]);
   const [showPerdidos, setShowPerdidos] = useState(false);
