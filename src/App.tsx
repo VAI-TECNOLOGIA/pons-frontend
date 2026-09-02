@@ -101,7 +101,6 @@ const Bolsoes         = lazyRetry(() => import('./pages/Bolsoes'));
 const BaseEquipe      = lazyRetry(() => import('./pages/BaseEquipe'));
 const FinanceiroPons  = lazyRetry(() => import('./pages/FinanceiroPons'));
 const Boletos         = lazyRetry(() => import('./pages/Boletos'));
-const SemFila         = lazyRetry(() => import('./pages/SemFila'));
 const PainelFinanceiro = lazyRetry(() => import('./pages/PainelFinanceiro'));
 const ContasBancarias = lazyRetry(() => import('./pages/ContasBancarias'));
 const AdminVendas     = lazyRetry(() => import('./pages/AdminVendas'));
@@ -208,7 +207,8 @@ export default function App() {
           <Route path="/base-equipe" element={<BaseEquipe />} />
           <Route path="/financeiro-pons" element={<FinanceiroPons />} />
           <Route path="/boletos" element={<Boletos />} />
-          <Route path="/sem-fila" element={<SemFila />} />
+          {/* Aba "Sem Fila" removida — Base Imobiliária cumpre o papel. Rota redireciona pra base. */}
+          <Route path="/sem-fila" element={<Navigate to="/leads?base=3" replace />} />
           <Route path="/painel-financeiro" element={<PainelFinanceiro />} />
           <Route path="/contas-bancarias" element={<ContasBancarias />} />
           <Route path="/admin-vendas" element={<AdminVendas />} />
