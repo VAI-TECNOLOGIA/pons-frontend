@@ -150,6 +150,26 @@ export default function Vendas() {
  const { data: vendas, loading, error, reload } = useApi<any[]>(() => Api.vendas());
  const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+
+ // ── Filtros da lista (pedido Jú Beal 02/09): período, filial, status,
+ // corretor e empreendimento. Client-side: a lista inteira já vem carregada.
+ const [filtro, setFiltro] = useState({ de: '', ate: '', filial: '', status: '', corretorId: '', emp: '' });
+ const setF = (k: string, v: string) => setFiltro((f) => ({ ...f, [k]: v }));
+ const temFiltro = !!(filtro.de || filtro.ate || filtro.filial || filtro.status || filtro.corretorId || filtro.emp);
+ const corretoresDaFilial = new Set((corretores || []).filter((c: any) => String(c.equipe?.id || '') === filtro.filial).map((c: any) => c.id));
+ const empNomeDe = (v: any) => (typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '');
+ const vendasFiltradas = (vendas || []).filter((v: any) => {
+   if (filtro.de && new Date(v.createdAt) < new Date(filtro.de + 'T00:00:00')) return false;
+   if (filtro.ate && new Date(v.createdAt) > new Date(filtro.ate + 'T23:59:59')) return false;
+   if (filtro.status && v.status !== filtro.status) return false;
+   if (filtro.corretorId && String(v.corretor?.id || '') !== filtro.corretorId) return false;
+   if (filtro.emp && empNomeDe(v) !== filtro.emp) return false;
+   if (filtro.filial && !corretoresDaFilial.has(v.corretor?.id)) return false;
+   return true;
+ });
+ const filiaisOpcoes = Array.from(new Map((corretores || []).filter((c: any) => c.equipe).map((c: any) => [String(c.equipe.id), c.equipe.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+ const empsOpcoes = Array.from(new Set((vendas || []).map(empNomeDe).filter(Boolean))).sort() as string[];
+ const corretoresOpcoes = Array.from(new Map((vendas || []).filter((v: any) => v.corretor?.id).map((v: any) => [String(v.corretor.id), v.corretor.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
  const toast = useToast();
  const role = Auth.user?.role;
  const isCorretor = role === 'CORRETOR';
@@ -820,8 +840,8 @@ export default function Vendas() {
  <div className="main__content">
  <PageHeader
  breadcrumb="Comercial · Vendas"
- title={`${vendas.length} vendas`}
- subtitle={`VGV total ${formatCurrencyShort(vendas.reduce((s: number, v: any) => s + (v.valorVenda ?? v.valor ?? 0), 0))} · Comissão ${formatCurrencyShort(vendas.reduce((s: number, v: any) => s + ((v.valorVenda ?? v.valor ?? 0) * (v.percentualComissao ?? 5)) / 100, 0))} · Clique numa venda para ver rateio e recebimento`}
+ title={temFiltro ? `${vendasFiltradas.length} de ${vendas.length} vendas` : `${vendas.length} vendas`}
+ subtitle={`VGV total ${formatCurrencyShort(vendasFiltradas.reduce((s: number, v: any) => s + (v.valorVenda ?? v.valor ?? 0), 0))} · Comissão ${formatCurrencyShort(vendasFiltradas.reduce((s: number, v: any) => s + ((v.valorVenda ?? v.valor ?? 0) * (v.percentualComissao ?? 5)) / 100, 0))} · Clique numa venda para ver rateio e recebimento`}
  />
 
  <ParcelasAtrasadas onSelect={setSelected} />
@@ -840,6 +860,56 @@ export default function Vendas() {
  Kanban
  </button>
  </div>
+
+ {/* Barra de filtros (Jú Beal 02/09). Vale pra Lista e pros totais do topo. */}
+ {view === 'lista' && (
+ <div className="card" style={{ padding: '10px 12px', marginBottom: 12 }}>
+ <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+ <div className="field" style={{ flex: '0 1 140px', marginBottom: 0 }}>
+ <label className="field__label">De</label>
+ <input className="field__input" type="date" value={filtro.de} onChange={(e) => setF('de', e.target.value)} />
+ </div>
+ <div className="field" style={{ flex: '0 1 140px', marginBottom: 0 }}>
+ <label className="field__label">Até</label>
+ <input className="field__input" type="date" value={filtro.ate} onChange={(e) => setF('ate', e.target.value)} />
+ </div>
+ <div className="field" style={{ flex: '1 1 150px', marginBottom: 0 }}>
+ <label className="field__label">Filial / equipe</label>
+ <select className="field__input" value={filtro.filial} onChange={(e) => setF('filial', e.target.value)}>
+ <option value="">Todas</option>
+ {filiaisOpcoes.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+ </select>
+ </div>
+ <div className="field" style={{ flex: '1 1 160px', marginBottom: 0 }}>
+ <label className="field__label">Status</label>
+ <select className="field__input" value={filtro.status} onChange={(e) => setF('status', e.target.value)}>
+ <option value="">Todos</option>
+ {Object.entries(STATUS_MAP).map(([k, [, lbl]]) => <option key={k} value={k}>{lbl}</option>)}
+ </select>
+ </div>
+ <div className="field" style={{ flex: '1 1 160px', marginBottom: 0 }}>
+ <label className="field__label">Corretor</label>
+ <select className="field__input" value={filtro.corretorId} onChange={(e) => setF('corretorId', e.target.value)}>
+ <option value="">Todos</option>
+ {corretoresOpcoes.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+ </select>
+ </div>
+ <div className="field" style={{ flex: '1 1 170px', marginBottom: 0 }}>
+ <label className="field__label">Empreendimento</label>
+ <select className="field__input" value={filtro.emp} onChange={(e) => setF('emp', e.target.value)}>
+ <option value="">Todos</option>
+ {empsOpcoes.map((n) => <option key={n} value={n}>{n}</option>)}
+ </select>
+ </div>
+ {temFiltro && (
+ <button className="btn btn--ghost btn--sm" style={{ marginBottom: 2 }}
+ onClick={() => setFiltro({ de: '', ate: '', filial: '', status: '', corretorId: '', emp: '' })}>
+ Limpar filtros
+ </button>
+ )}
+ </div>
+ </div>
+ )}
 
  {/* Enquanto o modal de Nova Venda está aberto (cobre a tela), não renderiza a
      lista/kanban — evita re-render de ~140 linhas a cada tecla digitada no form,
@@ -862,7 +932,10 @@ export default function Vendas() {
  </tr>
  </thead>
  <tbody>
- {vendas.map((v: any) => {
+ {vendasFiltradas.length === 0 && (
+ <tr><td colSpan={8} className="text-sm text-secondary" style={{ textAlign: 'center', padding: 24 }}>Nenhuma venda com esses filtros.</td></tr>
+ )}
+ {vendasFiltradas.map((v: any) => {
  const [k, lbl] = STATUS_MAP[v.status] || ['neutral', v.status];
  const cliente = v.clienteNome || v.cliente || '—';
  const empNome = typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '';
