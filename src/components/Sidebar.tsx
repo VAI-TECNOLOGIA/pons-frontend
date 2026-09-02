@@ -41,8 +41,8 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/chat', label: 'Atendimento', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO, 'GESTOR_MARKETING'] },
   { to: '/leads', label: 'Leads', icon: 'users', roles: [...COMERCIAL, 'CORRETOR', SOCIO, 'GESTOR_MARKETING'] },
   { to: '/meus-leads', label: 'Meus Leads', icon: 'whatsapp', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
-  // Sem roles = visível pra TODOS (pedido Elison 02/09): vitrine de lead sem fila.
-  { to: '/sem-fila', label: 'Sem Fila', icon: 'layers' },
+  // Só GESTÃO — corretor NÃO vê lead sem fila (senão pega lead de campanha alheia).
+  { to: '/sem-fila', label: 'Sem Fila', icon: 'layers', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GESTOR_MARKETING'] },
   { to: '/minhas-filas', label: 'Minhas Filas', icon: 'layers', roles: ['CORRETOR', 'GERENTE_EQUIPE', 'GESTOR_MARKETING'] },
   { to: '/liberacoes', label: 'Liberações', icon: 'phone', roles: ['GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'CEO', 'DIRETOR_COMERCIAL', 'GESTOR_MARKETING'] },
   { to: '/meu-bolsao', label: 'Bolsão', icon: 'database', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
