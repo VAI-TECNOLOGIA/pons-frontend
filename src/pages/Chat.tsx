@@ -263,13 +263,25 @@ export default function Chat() {
   }, [activeId, conv?.vaiConvId]);
 
   // Refetch inbox ao voltar pra aba (resolve banner fantasma "Configure
-  // WhatsApp" e estados stales depois de algum tempo fora). Sem polling
-  // periódico — o SSE (useSSE abaixo) já atualiza ao vivo via push do
-  // backend. Polling redundante causava flicker visual ruim.
+  // WhatsApp" e estados stales depois de algum tempo fora). O SSE atualiza ao
+  // vivo o que emite evento; mas transferências/distribuições feitas pelo
+  // gestor (ou ajustes diretos) NÃO emitem — e no app nativo o 'focus' não
+  // dispara de forma confiável (leads novos não apareciam pro Rafael, 02/09).
+  // Por isso: focus + visibilitychange (resume do app) + polling leve de 60s
+  // só com a aba visível (barato; a rota do inbox é otimizada).
   useEffect(() => {
     const onFocus = () => reloadInbox();
+    const onVis = () => { if (document.visibilityState === 'visible') reloadInbox(); };
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVis);
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') reloadInbox();
+    }, 60_000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
+      clearInterval(id);
+    };
   }, [reloadInbox]);
 
   // SSE — atualizações ao vivo
