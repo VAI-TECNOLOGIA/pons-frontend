@@ -105,18 +105,21 @@ export default function Pipeline() {
         />
 
         {/* Filtros do funil: busca por nome + campanha/filial/corretor (chips) + período */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end', marginBottom: 14 }}>
-          <input className="field__input" placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ minWidth: 200, flex: '1 1 220px' }} />
-          <MultiFiltro label="Campanha" opcoes={optCampanhas} values={fCampanha} onChange={setFCampanha} />
-          <MultiFiltro label="Filial" opcoes={optEquipes} values={fEquipe} onChange={setFEquipe} />
-          <MultiFiltro label="Corretor" opcoes={optCorretores} values={fCorretor} onChange={setFCorretor} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="date" className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} title="Data inicial" style={{ width: 145 }} />
-            <span className="text-xs text-secondary">até</span>
-            <input type="date" className="field__input" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} title="Data final" style={{ width: 145 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+          {/* Busca sozinha em cima — largura estável, não reflui ao digitar */}
+          <input className="field__input" placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ width: '100%' }} />
+          {/* Filtros embaixo — quebram bem no mobile */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            <MultiFiltro label="Campanha" opcoes={optCampanhas} values={fCampanha} onChange={setFCampanha} />
+            <MultiFiltro label="Filial" opcoes={optEquipes} values={fEquipe} onChange={setFEquipe} />
+            <MultiFiltro label="Corretor" opcoes={optCorretores} values={fCorretor} onChange={setFCorretor} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input type="date" className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} title="Data inicial" style={{ width: 145 }} />
+              <span className="text-xs text-secondary">até</span>
+              <input type="date" className="field__input" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} title="Data final" style={{ width: 145 }} />
+            </div>
+            {temFiltro && <button className="btn btn--ghost btn--sm" onClick={limparFiltros}>Limpar filtros</button>}
           </div>
-          {temFiltro && <button className="btn btn--ghost btn--sm" onClick={limparFiltros}>Limpar</button>}
-          {loading && <span className="text-xs text-secondary">carregando…</span>}
         </div>
 
         <div className="kanban">
