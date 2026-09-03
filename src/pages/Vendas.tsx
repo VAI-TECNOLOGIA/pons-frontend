@@ -382,8 +382,12 @@ export default function Vendas() {
  const [reforcoParcelado, setReforcoParcelado] = useState(false);
  const [parcelasReforco, setParcelasReforco] = useState<{ valor: string; venc: string }[]>([]);
  const [parcelasReforcoTocadas, setParcelasReforcoTocadas] = useState(false);
+ // Periodicidade do reforço: ANUAL (12 em 12 meses) ou SEMESTRAL (6 em 6). Ju Peixera 03/09.
+ const [reforcoPeriodicidade, setReforcoPeriodicidade] = useState<'ANUAL' | 'SEMESTRAL'>('ANUAL');
  // Parte paga FORA do parcelamento Pons (financiamento/direto com a construtora)
  const [saldoRem, setSaldoRem] = useState('');
+ // Permuta: parte do VGV paga com imóvel/bem dado como pagamento. Entra na reconciliação. Ju 03/09.
+ const [permuta, setPermuta] = useState('');
  // ── Reconciliação com o VGV ──────────────────────────────────────────────
  const recon = (() => {
  const vgv = parseMoedaBR(valorVenda);
@@ -394,12 +398,13 @@ export default function Vendas() {
  ? parcelasReforco.reduce((a, p) => a + parseMoedaBR(p.valor), 0)
  : parseMoedaBR(anuaisValor) * (Number(anuaisQtd) || 0);
  const chaves = parseMoedaBR(chavesValor);
+ const permutaTot = parseMoedaBR(permuta);
  const saldoFora = parseMoedaBR(saldoRem);
- const soma = entrada + mensaisTot + anuaisTot + chaves + saldoFora;
+ const soma = entrada + mensaisTot + anuaisTot + chaves + permutaTot + saldoFora;
  const saldo = vgv - soma; // > 0 = a financiar; < 0 = excede o VGV
  const nParc = Math.max(1, Number(entradaParcelas) || 1);
  const parcela = Math.max(0, (entrada - arras)) / nParc;
- return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, soma, saldo, parcela, nParc, excede: saldo < -0.01, fecha: vgv > 0 && Math.abs(saldo) <= 0.01 };
+ return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, permutaTot, soma, saldo, parcela, nParc, excede: saldo < -0.01, fecha: vgv > 0 && Math.abs(saldo) <= 0.01 };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
@@ -459,13 +464,15 @@ export default function Vendas() {
  const mesIdx = MESES.indexOf(anuaisMes);
  if (mesIdx >= 0) base.setMonth(mesIdx);
  base.setDate(1);
+ const baseMes = base.getMonth();
+ const passoMeses = reforcoPeriodicidade === 'SEMESTRAL' ? 6 : 12;
  const arr = Array.from({ length: n }, (_, i) => {
- const dd = new Date(base); dd.setFullYear(base.getFullYear() + i);
+ const dd = new Date(base); dd.setMonth(baseMes + i * passoMeses);
  return { valor: valorCada > 0 ? formatMoedaBR(valorCada) : '', venc: dd.toISOString().slice(0, 10) };
  });
  setParcelasReforco(arr);
  // eslint-disable-next-line react-hooks/exhaustive-deps
- }, [reforcoParcelado, anuaisValor, anuaisQtd, anuaisMes, parcelasReforcoTocadas]);
+ }, [reforcoParcelado, anuaisValor, anuaisQtd, anuaisMes, reforcoPeriodicidade, parcelasReforcoTocadas]);
  // Editou uma parcela da entrada → as SEGUINTES se recorrigem sozinhas pra
  // soma fechar com (entrada − arras). Pedido do financeiro (24/07).
  const editarParcelaValor = (i: number, vMask: string) => {
@@ -544,19 +551,103 @@ export default function Vendas() {
  // sem essa espera, um clique rápido criava a venda sem a pessoa ver a Confirmação.
  const [podeSalvar, setPodeSalvar] = useState(false);
 
+ // ── Rascunho da Nova Venda (Ju Peixera 03/09: atualizar/fechar perdia tudo) ──
+ // Autosave no navegador enquanto preenche + restaura ao reabrir + botão manual.
+ const rascunhoKey = `nova-venda-rascunho:${Auth.user?.id || 'anon'}`;
+ const [rascunhoAchado, setRascunhoAchado] = useState<{ at: number } | null>(null);
+ const acabouDeSalvarRef = useRef(false); // evita salvar rascunho após criar a venda
+ const snapshotRef = useRef<() => any>(() => null); // sempre aponta pro coletarRascunho atual
+
  // Reabrir o modal zera o fluxo inteiro
  useEffect(() => {
  if (!openNew) return;
+ acabouDeSalvarRef.current = false;
+ // Detecta rascunho salvo pra oferecer restauração (não sobrescreve sozinho).
+ try { const raw = localStorage.getItem(rascunhoKey); const d = raw ? JSON.parse(raw) : null; setRascunhoAchado(d?.at ? { at: d.at } : null); } catch { setRascunhoAchado(null); }
  setStep(0); setTipoComprador('PF');
  setLeadSel(null); setLeadBusca(''); setContestarOpen(false); setContestacao('');
  setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
- setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
+ setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setPermuta(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setClienteInternacional(false); setConjugeInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
- setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false);
+ setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false); setReforcoPeriodicidade('ANUAL');
  setResumo(null); setOrigemManualIdx(0);
  setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
+ }, [openNew]);
+
+ // Coleta o estado atual (controlados + inputs não-controlados via FormData).
+ const coletarRascunho = () => {
+ const form = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {};
+ const st: any = { step, tipoComprador, estadoCivil, cliente, telIntl, salaGpi, emancipado, clienteInternacional, conjugeInternacional, origemManualIdx, leadSel, leadNegadoId, leadSugDispensada, leadBusca, valorVenda, entradaTotal, chavesValor, permuta, saldoRem, entradaParcelas, entradaData, arrasValor, parcelasEntrada, parcelasTocadas, mensaisValor, mensaisQtd, mensaisDia, anuaisValor, anuaisQtd, anuaisMes, reforcoParcelado, parcelasReforco, parcelasReforcoTocadas, reforcoPeriodicidade, empSelId, unidadeSelId, unidadeLivre, comEspecial, temNf, nfAliquota, endPF };
+ return { v: 1, at: Date.now(), form, st };
+ };
+ snapshotRef.current = coletarRascunho;
+
+ const rascunhoTemConteudo = (d: any) => {
+ const s = d?.st || {};
+ if (s.cliente?.nome || s.valorVenda || s.entradaTotal || s.leadSel) return true;
+ return Object.entries(d?.form || {}).some(([k, v]) => v && String(v).trim() && !['tipoComprador', 'anuaisPeriodicidade'].includes(k) && String(v).trim() !== 'PF' && String(v).trim() !== 'ANUAL');
+ };
+
+ const salvarRascunho = (silent = false) => {
+ try {
+ const d = snapshotRef.current();
+ if (!rascunhoTemConteudo(d)) { if (!silent) toast.error('Nada preenchido pra salvar ainda'); return; }
+ localStorage.setItem(rascunhoKey, JSON.stringify(d));
+ if (!silent) { setRascunhoAchado({ at: d.at }); toast.success('Rascunho salvo'); }
+ } catch { if (!silent) toast.error('Não consegui salvar o rascunho'); }
+ };
+
+ const limparRascunho = () => { try { localStorage.removeItem(rascunhoKey); } catch { /* ignore */ } setRascunhoAchado(null); };
+
+ const restaurarRascunho = () => {
+ try {
+ const raw = localStorage.getItem(rascunhoKey); if (!raw) return;
+ const d = JSON.parse(raw); const s = d.st || {};
+ if (s.tipoComprador) setTipoComprador(s.tipoComprador);
+ setEstadoCivil(s.estadoCivil || '');
+ setCliente(s.cliente || { nome: '', email: '', telefone: '' });
+ setTelIntl(!!s.telIntl); setSalaGpi(s.salaGpi || ''); setEmancipado(!!s.emancipado);
+ setClienteInternacional(!!s.clienteInternacional); setConjugeInternacional(!!s.conjugeInternacional);
+ setOrigemManualIdx(s.origemManualIdx || 0); setLeadSel(s.leadSel || null); setLeadNegadoId(s.leadNegadoId ?? null); setLeadSugDispensada(!!s.leadSugDispensada); setLeadBusca(s.leadBusca || '');
+ setValorVenda(s.valorVenda || ''); setEntradaTotal(s.entradaTotal || ''); setChavesValor(s.chavesValor || ''); setPermuta(s.permuta || ''); setSaldoRem(s.saldoRem || '');
+ setEntradaParcelas(s.entradaParcelas || '1'); setEntradaData(s.entradaData || ''); setArrasValor(s.arrasValor || ''); setParcelasEntrada(s.parcelasEntrada || []); setParcelasTocadas(!!s.parcelasTocadas);
+ setMensaisValor(s.mensaisValor || ''); setMensaisQtd(s.mensaisQtd || ''); setMensaisDia(s.mensaisDia || '');
+ setAnuaisValor(s.anuaisValor || ''); setAnuaisQtd(s.anuaisQtd || ''); setAnuaisMes(s.anuaisMes || ''); setReforcoParcelado(!!s.reforcoParcelado); setParcelasReforco(s.parcelasReforco || []); setParcelasReforcoTocadas(!!s.parcelasReforcoTocadas); setReforcoPeriodicidade(s.reforcoPeriodicidade || 'ANUAL');
+ setEmpSelId(s.empSelId || ''); setUnidadeSelId(s.unidadeSelId || ''); setUnidadeLivre(s.unidadeLivre || '');
+ setComEspecial(!!s.comEspecial); setTemNf(s.temNf !== false); setNfAliquota(s.nfAliquota || String(nfAliquotaGlobal));
+ if (s.endPF) setEndPF(s.endPF);
+ setStep(typeof s.step === 'number' ? s.step : 0);
+ // inputs não-controlados: aplica no DOM depois que os campos condicionais renderizam
+ const form = d.form || {};
+ setTimeout(() => {
+ if (!formRef.current) return;
+ Object.entries(form).forEach(([name, val]) => {
+ try {
+ formRef.current!.querySelectorAll(`[name="${(window.CSS && CSS.escape) ? CSS.escape(name) : name}"]`).forEach((el: any) => {
+ if (el.type === 'checkbox' || el.type === 'radio') { if (el.value === val || val === 'on') el.checked = true; }
+ else if (el.value !== undefined) el.value = val as string;
+ });
+ } catch { /* ignore campo ausente */ }
+ });
+ }, 80);
+ setRascunhoAchado(null);
+ toast.success('Rascunho restaurado');
+ } catch { toast.error('Não consegui restaurar o rascunho'); }
+ };
+
+ // Autosave enquanto o modal está aberto + salva ao fechar (inclusive sem querer) e no refresh.
+ useEffect(() => {
+ if (!openNew) return;
+ const persist = () => {
+ if (acabouDeSalvarRef.current) return;
+ try { const d = snapshotRef.current(); if (rascunhoTemConteudo(d)) localStorage.setItem(rascunhoKey, JSON.stringify(d)); } catch { /* ignore */ }
+ };
+ const id = window.setInterval(persist, 4000);
+ window.addEventListener('beforeunload', persist);
+ return () => { window.clearInterval(id); window.removeEventListener('beforeunload', persist); persist(); };
+ // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [openNew]);
 
  // Sala GPI sugerida: a da última venda do corretor (dele mesmo quando é
@@ -799,7 +890,9 @@ export default function Vendas() {
  anuaisInicio: str('anuaisInicio'),
  anuaisQtd: reforcoParcelado ? parcelasReforco.length : (fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined),
  ...(reforcoParcelado && parcelasReforco.length ? { anuaisParcelasDetalhe: parcelasReforco.map((p) => ({ valor: parseMoedaBR(p.valor), vencimento: p.venc })) } : {}),
+ anuaisPeriodicidade: (parseMoedaBR(anuaisValor) > 0 || reforcoParcelado) ? reforcoPeriodicidade : undefined,
  chavesValor: optNum('chavesValor'),
+ permutaValor: parseMoedaBR(permuta) || undefined,
  saldoRemanescente: parseMoedaBR(saldoRem) || undefined,
  });
  // Anexa os documentos selecionados na criação à venda recém-criada.
@@ -809,6 +902,7 @@ export default function Vendas() {
  toast.success(r?.aguardandoAprovacao
  ? 'Venda registrada — parcelamento 4x+ enviado pro Paulo aprovar.'
  : 'Venda registrada');
+ acabouDeSalvarRef.current = true; limparRascunho(); // venda criada → descarta o rascunho
  setOpenNew(false);
  await reload();
  if (r?.id) setSelected(r.id);
@@ -1088,6 +1182,15 @@ export default function Vendas() {
 
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Formulário oficial GPI — preencha etapa por etapa" size="lg">
  <form ref={formRef} onSubmit={submit} noValidate>
+ {rascunhoAchado && (
+ <div className="card" style={{ marginBottom: 16, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', background: 'var(--color-warning-bg, #fff8e6)', border: '1px solid var(--color-warning, #e6b800)' }}>
+ <div className="text-xs">📝 Você tem um rascunho salvo às <strong>{new Date(rascunhoAchado.at).toLocaleString('pt-BR')}</strong>. Restaurar o que já tinha preenchido?</div>
+ <div className="flex gap-2">
+ <button type="button" className="btn btn--primary btn--sm" onClick={restaurarRascunho}>Restaurar</button>
+ <button type="button" className="btn btn--ghost btn--sm" onClick={limparRascunho}>Descartar</button>
+ </div>
+ </div>
+ )}
  <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
  {PASSOS.map((p, i) => {
  const ativo = i === step;
@@ -1680,7 +1783,7 @@ export default function Vendas() {
  </div>
  </div>
  <div className="field">
- <label className="field__label">Reforços anuais / balões (R$)</label>
+ <label className="field__label">Reforços / balões (R$)</label>
  <input name="anuaisValor" className="field__input" inputMode="numeric" placeholder="R$ 30.000,00" value={anuaisValor} onChange={(e) => setAnuaisValor(maskMoedaBR(e.target.value))} />
  </div>
  <div className="field">
@@ -1689,7 +1792,14 @@ export default function Vendas() {
  {recon.anuaisTot > 0 && <div className="field__hint">Total reforços: <strong>{formatMoedaBR(recon.anuaisTot)}</strong></div>}
  </div>
  <div className="field">
- <label className="field__label">Mês de vencimento dos reforços</label>
+ <label className="field__label">Periodicidade dos reforços</label>
+ <select name="anuaisPeriodicidade" className="field__select" value={reforcoPeriodicidade} onChange={(e) => { setReforcoPeriodicidade(e.target.value as 'ANUAL' | 'SEMESTRAL'); setParcelasReforcoTocadas(false); }}>
+ <option value="ANUAL">Anual — de 12 em 12 meses</option>
+ <option value="SEMESTRAL">Semestral — de 6 em 6 meses</option>
+ </select>
+ </div>
+ <div className="field">
+ <label className="field__label">Mês de vencimento {reforcoPeriodicidade === 'SEMESTRAL' ? 'do 1º reforço' : 'dos reforços'}</label>
  <select name="anuaisInicio" className="field__select" value={anuaisMes} onChange={(e) => setAnuaisMes(e.target.value)}>
  <option value="">— Mês —</option>
  {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -1728,6 +1838,11 @@ export default function Vendas() {
  <input name="chavesValor" className="field__input" inputMode="numeric" placeholder="R$ 150.000,00" value={chavesValor} onChange={(e) => setChavesValor(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
  </div>
  <div className="field">
+ <label className="field__label">Permuta (R$)</label>
+ <input className="field__input" inputMode="numeric" placeholder="R$ 0,00" value={permuta} onChange={(e) => setPermuta(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
+ {recon.permutaTot > 0 && <div className="field__hint">Parte do VGV paga com imóvel/bem em permuta — entra na conferência.</div>}
+ </div>
+ <div className="field">
  <label className="field__label">Saldo remanescente (R$)</label>
  <input className="field__input" inputMode="numeric" placeholder="R$ 0,00" value={saldoRem} onChange={(e) => setSaldoRem(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
  <div className="field__hint">Parte paga FORA do parcelamento (financiamento / direto com a construtora) — entra na conferência e sai no protocolo.</div>
@@ -1741,7 +1856,7 @@ export default function Vendas() {
  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6 }}>Conferência dos valores × VGV</div>
  <div className="text-xs" style={{ display: 'grid', gap: 3 }}>
  <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Valor da venda (VGV)</span><strong>{formatMoedaBR(recon.vgv)}</strong></div>
- <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Entrada + mensais + reforços + chaves + saldo remanescente</span><strong>{formatMoedaBR(recon.soma)}</strong></div>
+ <div className="flex" style={{ justifyContent: 'space-between' }}><span className="text-secondary">Entrada + mensais + reforços + chaves{recon.permutaTot > 0 ? ' + permuta' : ''} + saldo remanescente</span><strong>{formatMoedaBR(recon.soma)}</strong></div>
  {!recon.fecha && (
  <div className="flex" style={{ justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-light)' }}>
  <span className="text-secondary">Diferença</span>
@@ -1958,7 +2073,10 @@ export default function Vendas() {
  )}
 
  <div className="flex" style={{ justifyContent: 'space-between', marginTop: 20, gap: 8 }}>
+ <div className="flex gap-2">
  <button type="button" className="btn btn--secondary" onClick={() => setOpenNew(false)}>Cancelar</button>
+ <button type="button" className="btn btn--ghost" onClick={() => salvarRascunho(false)} title="Salva o que já preencheu — dá pra retomar depois">Salvar rascunho</button>
+ </div>
  <div className="flex gap-2">
  {step > 0 && (
  <button type="button" className="btn btn--secondary" onClick={() => setStep((s) => s - 1)}>
