@@ -11,6 +11,7 @@ import { useToast } from '../lib/toast';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { CampoCnpj } from '../components/CampoCnpj';
 import { BuscaSelect } from '../components/BuscaSelect';
+import { MultiFiltro } from '../components/MultiFiltro';
 import type { CnpjInfo } from '../lib/consultaCnpj';
 import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
@@ -153,18 +154,20 @@ export default function Vendas() {
 
  // ── Filtros da lista (pedido Jú Beal 02/09): período, filial, status,
  // corretor e empreendimento. Client-side: a lista inteira já vem carregada.
- const [filtro, setFiltro] = useState({ de: '', ate: '', filial: '', status: '', corretorId: '', emp: '' });
+ // Multi-seleção (filial/status/corretor/emp = arrays); período fica string.
+ const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; status: string[]; corretorId: string[]; emp: string[] }>({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [] });
  const setF = (k: string, v: string) => setFiltro((f) => ({ ...f, [k]: v }));
- const temFiltro = !!(filtro.de || filtro.ate || filtro.filial || filtro.status || filtro.corretorId || filtro.emp);
- const corretoresDaFilial = new Set((corretores || []).filter((c: any) => String(c.equipe?.id || '') === filtro.filial).map((c: any) => c.id));
+ const setFArr = (k: 'filial' | 'status' | 'corretorId' | 'emp', v: string[]) => setFiltro((f) => ({ ...f, [k]: v }));
+ const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length);
+ const corretoresDaFilial = new Set((corretores || []).filter((c: any) => filtro.filial.includes(String(c.equipe?.id || ''))).map((c: any) => c.id));
  const empNomeDe = (v: any) => (typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '');
  const vendasFiltradas = (vendas || []).filter((v: any) => {
    if (filtro.de && new Date(v.createdAt) < new Date(filtro.de + 'T00:00:00')) return false;
    if (filtro.ate && new Date(v.createdAt) > new Date(filtro.ate + 'T23:59:59')) return false;
-   if (filtro.status && v.status !== filtro.status) return false;
-   if (filtro.corretorId && String(v.corretor?.id || '') !== filtro.corretorId) return false;
-   if (filtro.emp && empNomeDe(v) !== filtro.emp) return false;
-   if (filtro.filial && !corretoresDaFilial.has(v.corretor?.id)) return false;
+   if (filtro.status.length && !filtro.status.includes(v.status)) return false;
+   if (filtro.corretorId.length && !filtro.corretorId.includes(String(v.corretor?.id || ''))) return false;
+   if (filtro.emp.length && !filtro.emp.includes(empNomeDe(v))) return false;
+   if (filtro.filial.length && !corretoresDaFilial.has(v.corretor?.id)) return false;
    return true;
  });
  const filiaisOpcoes = Array.from(new Map((corretores || []).filter((c: any) => c.equipe).map((c: any) => [String(c.equipe.id), c.equipe.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
@@ -864,46 +867,19 @@ export default function Vendas() {
  {/* Barra de filtros (Jú Beal 02/09). Vale pra Lista e pros totais do topo. */}
  {view === 'lista' && (
  <div className="card" style={{ padding: '10px 12px', marginBottom: 12 }}>
- <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
- <div className="field" style={{ flex: '0 1 140px', marginBottom: 0 }}>
- <label className="field__label">De</label>
- <input className="field__input" type="date" value={filtro.de} onChange={(e) => setF('de', e.target.value)} />
+ <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
+ <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+ <input className="field__input" type="date" title="De" value={filtro.de} onChange={(e) => setF('de', e.target.value)} style={{ width: 145 }} />
+ <span className="text-xs text-secondary">até</span>
+ <input className="field__input" type="date" title="Até" value={filtro.ate} onChange={(e) => setF('ate', e.target.value)} style={{ width: 145 }} />
  </div>
- <div className="field" style={{ flex: '0 1 140px', marginBottom: 0 }}>
- <label className="field__label">Até</label>
- <input className="field__input" type="date" value={filtro.ate} onChange={(e) => setF('ate', e.target.value)} />
- </div>
- <div className="field" style={{ flex: '1 1 150px', marginBottom: 0 }}>
- <label className="field__label">Filial / equipe</label>
- <select className="field__input" value={filtro.filial} onChange={(e) => setF('filial', e.target.value)}>
- <option value="">Todas</option>
- {filiaisOpcoes.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
- </select>
- </div>
- <div className="field" style={{ flex: '1 1 160px', marginBottom: 0 }}>
- <label className="field__label">Status</label>
- <select className="field__input" value={filtro.status} onChange={(e) => setF('status', e.target.value)}>
- <option value="">Todos</option>
- {Object.entries(STATUS_MAP).map(([k, [, lbl]]) => <option key={k} value={k}>{lbl}</option>)}
- </select>
- </div>
- <div className="field" style={{ flex: '1 1 160px', marginBottom: 0 }}>
- <label className="field__label">Corretor</label>
- <select className="field__input" value={filtro.corretorId} onChange={(e) => setF('corretorId', e.target.value)}>
- <option value="">Todos</option>
- {corretoresOpcoes.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
- </select>
- </div>
- <div className="field" style={{ flex: '1 1 170px', marginBottom: 0 }}>
- <label className="field__label">Empreendimento</label>
- <select className="field__input" value={filtro.emp} onChange={(e) => setF('emp', e.target.value)}>
- <option value="">Todos</option>
- {empsOpcoes.map((n) => <option key={n} value={n}>{n}</option>)}
- </select>
- </div>
+ <MultiFiltro label="Filial" opcoes={filiaisOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.filial} onChange={(v) => setFArr('filial', v)} />
+ <MultiFiltro label="Status" opcoes={Object.entries(STATUS_MAP).map(([k, [, lbl]]) => ({ value: k, label: String(lbl) }))} values={filtro.status} onChange={(v) => setFArr('status', v)} />
+ <MultiFiltro label="Corretor" opcoes={corretoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.corretorId} onChange={(v) => setFArr('corretorId', v)} />
+ <MultiFiltro label="Empreendimento" opcoes={empsOpcoes.map((n) => ({ value: n, label: n }))} values={filtro.emp} onChange={(v) => setFArr('emp', v)} />
  {temFiltro && (
- <button className="btn btn--ghost btn--sm" style={{ marginBottom: 2 }}
- onClick={() => setFiltro({ de: '', ate: '', filial: '', status: '', corretorId: '', emp: '' })}>
+ <button className="btn btn--ghost btn--sm"
+ onClick={() => setFiltro({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [] })}>
  Limpar filtros
  </button>
  )}
