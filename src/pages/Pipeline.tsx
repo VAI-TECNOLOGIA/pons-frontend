@@ -7,17 +7,21 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { useToast } from '../lib/toast';
 import { parseFunil, faseDoStatus } from '../lib/funil';
+import { MultiFiltro } from '../components/MultiFiltro';
 
 export default function Pipeline() {
-  // Filtros do funil (campanha, filial/equipe, corretor, período) — reusa os
-  // mesmos params do GET /leads.
-  const [fCampanha, setFCampanha] = useState('');
-  const [fEquipe, setFEquipe] = useState('');
-  const [fCorretor, setFCorretor] = useState('');
+  // Filtros do funil (campanha, filial/equipe, corretor, período, busca) — reusa
+  // os params do GET /leads. Multi-seleção via MultiFiltro (busca + chips).
+  const [fCampanha, setFCampanha] = useState<string[]>([]);
+  const [fEquipe, setFEquipe] = useState<string[]>([]);
+  const [fCorretor, setFCorretor] = useState<string[]>([]);
   const [fDataIni, setFDataIni] = useState('');
   const [fDataFim, setFDataFim] = useState('');
-  const temFiltro = !!(fCampanha || fEquipe || fCorretor || fDataIni || fDataFim);
-  const limparFiltros = () => { setFCampanha(''); setFEquipe(''); setFCorretor(''); setFDataIni(''); setFDataFim(''); };
+  const [busca, setBusca] = useState('');
+  const [buscaDeb, setBuscaDeb] = useState('');
+  useEffect(() => { const t = setTimeout(() => setBuscaDeb(busca.trim()), 400); return () => clearTimeout(t); }, [busca]);
+  const temFiltro = !!(fCampanha.length || fEquipe.length || fCorretor.length || fDataIni || fDataFim || buscaDeb);
+  const limparFiltros = () => { setFCampanha([]); setFEquipe([]); setFCorretor([]); setFDataIni(''); setFDataFim(''); setBusca(''); setBuscaDeb(''); };
 
   // Hooks DEVEM vir antes de qualquer return condicional (Rules of Hooks).
   // Busca PAGINADA: GET /leads sem ?page corta em 100 — corretor com 100+ leads
@@ -25,11 +29,12 @@ export default function Pipeline() {
   // pra não travar o navegador de CEO/gestor (que enxergam a base inteira).
   const { data, loading, error } = useApi<any[]>(async () => {
     const base: any = {};
-    if (fCampanha) base.campanha = fCampanha;
-    if (fEquipe) base.equipeId = fEquipe;
-    if (fCorretor) base.corretorId = fCorretor;
+    if (fCampanha.length) base.campanha = fCampanha.join(',');
+    if (fEquipe.length) base.equipeId = fEquipe.join(',');
+    if (fCorretor.length) base.corretorId = fCorretor.join(',');
     if (fDataIni) base.dataInicial = fDataIni;
     if (fDataFim) base.dataFinal = fDataFim;
+    if (buscaDeb) base.q = buscaDeb;
     const out: any[] = [];
     for (let page = 1; page <= 5; page++) {
       const r: any = await Api.leads({ ...base, page, limit: 200 });
@@ -39,11 +44,14 @@ export default function Pipeline() {
       if (lote.length === 0 || out.length >= total) break;
     }
     return out;
-  }, [fCampanha, fEquipe, fCorretor, fDataIni, fDataFim]);
+  }, [fCampanha.join(','), fEquipe.join(','), fCorretor.join(','), fDataIni, fDataFim, buscaDeb]);
   const { data: settings } = useApi<Record<string, string>>(() => Api.settings());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
   const { data: campanhas } = useApi<{ nome: string }[]>(() => Api.roletaCampanhas());
+  const optCampanhas = (campanhas || []).map((c) => ({ value: c.nome, label: c.nome }));
+  const optEquipes = (equipes || []).map((e: any) => ({ value: String(e.id), label: e.nome }));
+  const optCorretores = (corretores || []).map((c: any) => ({ value: String(c.id), label: c.nome }));
   const [leads, setLeads] = useState<any[]>([]);
   const [showPerdidos, setShowPerdidos] = useState(false);
   const toast = useToast();
@@ -96,26 +104,18 @@ export default function Pipeline() {
           subtitle={`${fechados} fechados · conversão ${conv}% · arraste ou mude o status no card`}
         />
 
-        {/* Filtros do funil: campanha, filial, corretor, período (reusa GET /leads) */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 14 }}>
-          <select className="field__select" value={fCampanha} onChange={(e) => setFCampanha(e.target.value)} title="Campanha" style={{ minWidth: 170 }}>
-            <option value="">Todas as campanhas</option>
-            {(campanhas || []).map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
-          </select>
-          <select className="field__select" value={fEquipe} onChange={(e) => setFEquipe(e.target.value)} title="Filial / equipe" style={{ minWidth: 150 }}>
-            <option value="">Todas as filiais</option>
-            {(equipes || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-          </select>
-          <select className="field__select" value={fCorretor} onChange={(e) => setFCorretor(e.target.value)} title="Corretor" style={{ minWidth: 150 }}>
-            <option value="">Todos os corretores</option>
-            {(corretores || []).map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
-          <input type="date" className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} title="Data inicial" style={{ width: 150 }} />
-          <span className="text-xs text-secondary">até</span>
-          <input type="date" className="field__input" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} title="Data final" style={{ width: 150 }} />
-          {temFiltro && (
-            <button className="btn btn--ghost btn--sm" onClick={limparFiltros}>Limpar filtros</button>
-          )}
+        {/* Filtros do funil: busca por nome + campanha/filial/corretor (chips) + período */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end', marginBottom: 14 }}>
+          <input className="field__input" placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ minWidth: 200, flex: '1 1 220px' }} />
+          <MultiFiltro label="Campanha" opcoes={optCampanhas} values={fCampanha} onChange={setFCampanha} />
+          <MultiFiltro label="Filial" opcoes={optEquipes} values={fEquipe} onChange={setFEquipe} />
+          <MultiFiltro label="Corretor" opcoes={optCorretores} values={fCorretor} onChange={setFCorretor} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="date" className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} title="Data inicial" style={{ width: 145 }} />
+            <span className="text-xs text-secondary">até</span>
+            <input type="date" className="field__input" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} title="Data final" style={{ width: 145 }} />
+          </div>
+          {temFiltro && <button className="btn btn--ghost btn--sm" onClick={limparFiltros}>Limpar</button>}
           {loading && <span className="text-xs text-secondary">carregando…</span>}
         </div>
 
