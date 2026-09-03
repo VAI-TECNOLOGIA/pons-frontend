@@ -68,6 +68,12 @@ const MOSTRA_CONJUGE = new Set([
   'Casado(a) — comunhão total de bens', 'Casado(a) — separação total de bens',
 ]);
 
+// Estados civis (reusado no select do 2º comprador/sociedade).
+const ESTADOS_CIVIS = ['Solteiro(a)', 'Casado(a)', 'Casado(a) — comunhão total de bens', 'Casado(a) — separação total de bens', 'União estável', 'Divorciado(a)', 'Viúvo(a)'];
+// Um titular adicional (comprador em sociedade) — mesmos dados de qualificação do contrato.
+type SocioCompra = { nome: string; cpf: string; rg: string; nascimento: string; profissao: string; estadoCivil: string; endereco: string; participacao: string };
+const socioCompraVazio = (): SocioCompra => ({ nome: '', cpf: '', rg: '', nascimento: '', profissao: '', estadoCivil: '', endereco: '', participacao: '' });
+
 // Origem gravada no lead → rótulo humano + classificação de comissão.
 // Tráfego pago/portais = LEAD (desconto campanha); campanha WhatsApp/base = BASE; resto = orgânica.
 const ORIGEM_LEAD_INFO: Record<string, { rotulo: string; comissao: 'LEAD' | 'BASE' | 'ORGANICA' }> = {
@@ -225,6 +231,12 @@ export default function Vendas() {
  // Cônjuge estrangeiro sem CPF (independente do cliente): tira a obrigatoriedade do CPF do cônjuge.
  const [conjugeInternacional, setConjugeInternacional] = useState(false);
  const nascimentoRef = useRef<HTMLInputElement>(null);
+ // Compra em sociedade (Ju 03/09): vários titulares (até 6) com % de cada — só contrato.
+ const [sociedadeAtiva, setSociedadeAtiva] = useState(false);
+ const [participacaoTitular, setParticipacaoTitular] = useState('');
+ const [sociosCompra, setSociosCompra] = useState<SocioCompra[]>([]);
+ const updSocio = (i: number, campo: keyof SocioCompra, valor: string) => setSociosCompra((cur) => cur.map((x, j) => (j === i ? { ...x, [campo]: valor } : x)));
+ const somaParticipacao = (Number(String(participacaoTitular).replace(',', '.')) || 0) + sociosCompra.reduce((a, s) => a + (Number(String(s.participacao).replace(',', '.')) || 0), 0);
 
  // Busca automática do lead na base enquanto o corretor preenche nome/telefone/email.
  // Se já vinculou ou dispensou a sugestão, não busca. Debounce de 400ms.
@@ -571,6 +583,7 @@ export default function Vendas() {
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setPermuta(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setClienteInternacional(false); setConjugeInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
+ setSociedadeAtiva(false); setParticipacaoTitular(''); setSociosCompra([]);
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false); setReforcoPeriodicidade('ANUAL');
  setResumo(null); setOrigemManualIdx(0);
  setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
@@ -579,7 +592,8 @@ export default function Vendas() {
  // Coleta o estado atual (controlados + inputs não-controlados via FormData).
  const coletarRascunho = () => {
  const form = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {};
- const st: any = { step, tipoComprador, estadoCivil, cliente, telIntl, salaGpi, emancipado, clienteInternacional, conjugeInternacional, origemManualIdx, leadSel, leadNegadoId, leadSugDispensada, leadBusca, valorVenda, entradaTotal, chavesValor, permuta, saldoRem, entradaParcelas, entradaData, arrasValor, parcelasEntrada, parcelasTocadas, mensaisValor, mensaisQtd, mensaisDia, anuaisValor, anuaisQtd, anuaisMes, reforcoParcelado, parcelasReforco, parcelasReforcoTocadas, reforcoPeriodicidade, empSelId, unidadeSelId, unidadeLivre, comEspecial, temNf, nfAliquota, endPF };
+ const st: any = { step, tipoComprador, estadoCivil, cliente, telIntl, salaGpi, emancipado, clienteInternacional, conjugeInternacional, origemManualIdx, leadSel, leadNegadoId, leadSugDispensada, leadBusca, valorVenda, entradaTotal, chavesValor, permuta, saldoRem, entradaParcelas, entradaData, arrasValor, parcelasEntrada, parcelasTocadas, mensaisValor, mensaisQtd, mensaisDia, anuaisValor, anuaisQtd, anuaisMes, reforcoParcelado, parcelasReforco, parcelasReforcoTocadas, reforcoPeriodicidade, empSelId, unidadeSelId, unidadeLivre, comEspecial, temNf, nfAliquota, endPF,
+ sociedadeAtiva, participacaoTitular, sociosCompra };
  return { v: 1, at: Date.now(), form, st };
  };
  snapshotRef.current = coletarRascunho;
@@ -618,6 +632,7 @@ export default function Vendas() {
  setEmpSelId(s.empSelId || ''); setUnidadeSelId(s.unidadeSelId || ''); setUnidadeLivre(s.unidadeLivre || '');
  setComEspecial(!!s.comEspecial); setTemNf(s.temNf !== false); setNfAliquota(s.nfAliquota || String(nfAliquotaGlobal));
  if (s.endPF) setEndPF(s.endPF);
+ setSociedadeAtiva(!!s.sociedadeAtiva); setParticipacaoTitular(s.participacaoTitular || ''); setSociosCompra(Array.isArray(s.sociosCompra) ? s.sociosCompra : []);
  setStep(typeof s.step === 'number' ? s.step : 0);
  // inputs não-controlados: aplica no DOM depois que os campos condicionais renderizam
  const form = d.form || {};
@@ -894,6 +909,15 @@ export default function Vendas() {
  chavesValor: optNum('chavesValor'),
  permutaValor: parseMoedaBR(permuta) || undefined,
  saldoRemanescente: parseMoedaBR(saldoRem) || undefined,
+ // Compra em sociedade (só quando ligada e há sócios com nome)
+ ...(sociedadeAtiva && participacaoTitular ? { participacaoTitular: Number(String(participacaoTitular).replace(',', '.')) || undefined } : {}),
+ ...(sociedadeAtiva && sociosCompra.some((s) => s.nome.trim()) ? {
+ compradoresSociedade: sociosCompra.filter((s) => s.nome.trim()).map((s) => ({
+ nome: s.nome, cpf: s.cpf, rg: s.rg, nascimento: s.nascimento, profissao: s.profissao,
+ estadoCivil: s.estadoCivil, endereco: s.endereco,
+ participacao: s.participacao ? Number(String(s.participacao).replace(',', '.')) : undefined,
+ })),
+ } : {}),
  });
  // Anexa os documentos selecionados na criação à venda recém-criada.
  if (r?.id && docsAnexar.length) {
@@ -1407,6 +1431,45 @@ export default function Vendas() {
  </div>
  </div>
  )}
+
+ {/* Compra em sociedade — múltiplos titulares (Ju 03/09), independente do estado civil */}
+ <div style={{ borderLeft: '3px solid var(--blue-500)', paddingLeft: 14, marginTop: 12 }}>
+ <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+ <input type="checkbox" checked={sociedadeAtiva} onChange={(e) => { const on = e.target.checked; setSociedadeAtiva(on); if (on && sociosCompra.length === 0) { setSociosCompra([socioCompraVazio()]); if (!participacaoTitular) setParticipacaoTitular('50'); } }} style={{ width: 'auto' }} />
+ Comprado em sociedade (mais de um titular)
+ </label>
+ {sociedadeAtiva && (
+ <div className="fade-in" style={{ marginTop: 10 }}>
+ <div className="field__hint" style={{ marginBottom: 10 }}>Adicione os demais titulares (irmãos, sócios) — sem precisar marcar como cônjuge. O % de cada sai no contrato/protocolo; não afeta comissão. Até 6 titulares no total.</div>
+ <div className="field" style={{ maxWidth: 260 }}>
+ <label className="field__label">Participação do titular principal (%)</label>
+ <input className="field__input" inputMode="numeric" placeholder="50" value={participacaoTitular} onChange={(e) => setParticipacaoTitular(e.target.value.replace(/[^0-9.,]/g, ''))} />
+ </div>
+ {sociosCompra.map((s, i) => (
+ <div key={i} style={{ borderLeft: '2px solid var(--border-light)', paddingLeft: 12, marginTop: 12 }}>
+ <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+ <div className="uppercase-tag">{i + 2}º titular (sócio)</div>
+ <button type="button" className="btn btn--ghost btn--sm" onClick={() => setSociosCompra((cur) => cur.filter((_, j) => j !== i))}>✕ remover</button>
+ </div>
+ <div className="form-grid" style={{ marginBottom: 4 }}>
+ <div className="field field--span-2"><label className="field__label">Nome completo</label><input className="field__input" value={s.nome} onChange={(e) => updSocio(i, 'nome', e.target.value)} /></div>
+ <div className="field"><label className="field__label">CPF</label><input className="field__input" inputMode="numeric" placeholder="000.000.000-00" value={s.cpf} onChange={(e) => updSocio(i, 'cpf', e.target.value)} /></div>
+ <div className="field"><label className="field__label">RG (c/ órgão expedidor)</label><input className="field__input" placeholder="1234567 SSP/SC" value={s.rg} onChange={(e) => updSocio(i, 'rg', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Data de nascimento</label><input type="date" className="field__input" value={s.nascimento} onChange={(e) => updSocio(i, 'nascimento', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Profissão</label><input className="field__input" value={s.profissao} onChange={(e) => updSocio(i, 'profissao', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Estado civil</label><select className="field__select" value={s.estadoCivil} onChange={(e) => updSocio(i, 'estadoCivil', e.target.value)}><option value="">— Selecionar —</option>{ESTADOS_CIVIS.map((ec) => <option key={ec} value={ec}>{ec}</option>)}</select></div>
+ <div className="field"><label className="field__label">Participação (%)</label><input className="field__input" inputMode="numeric" placeholder="50" value={s.participacao} onChange={(e) => updSocio(i, 'participacao', e.target.value.replace(/[^0-9.,]/g, ''))} /></div>
+ <div className="field field--span-2"><label className="field__label">Endereço completo (c/ CEP)</label><input className="field__input" value={s.endereco} onChange={(e) => updSocio(i, 'endereco', e.target.value)} /></div>
+ </div>
+ </div>
+ ))}
+ {sociosCompra.length < 5 && <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={() => setSociosCompra((cur) => [...cur, socioCompraVazio()])}>＋ Adicionar comprador</button>}
+ <div className="field__hint" style={{ marginTop: 10, fontWeight: 600, color: Math.abs(somaParticipacao - 100) > 0.01 ? 'var(--color-danger)' : 'var(--text-secondary)' }}>
+ Soma das participações: {somaParticipacao}% {Math.abs(somaParticipacao - 100) > 0.01 ? '— precisa somar 100%' : '✓'}
+ </div>
+ </div>
+ )}
+ </div>
 
  </>
  ) : (
