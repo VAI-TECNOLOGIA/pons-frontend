@@ -9,22 +9,41 @@ import { useToast } from '../lib/toast';
 import { parseFunil, faseDoStatus } from '../lib/funil';
 
 export default function Pipeline() {
+  // Filtros do funil (campanha, filial/equipe, corretor, período) — reusa os
+  // mesmos params do GET /leads.
+  const [fCampanha, setFCampanha] = useState('');
+  const [fEquipe, setFEquipe] = useState('');
+  const [fCorretor, setFCorretor] = useState('');
+  const [fDataIni, setFDataIni] = useState('');
+  const [fDataFim, setFDataFim] = useState('');
+  const temFiltro = !!(fCampanha || fEquipe || fCorretor || fDataIni || fDataFim);
+  const limparFiltros = () => { setFCampanha(''); setFEquipe(''); setFCorretor(''); setFDataIni(''); setFDataFim(''); };
+
   // Hooks DEVEM vir antes de qualquer return condicional (Rules of Hooks).
   // Busca PAGINADA: GET /leads sem ?page corta em 100 — corretor com 100+ leads
   // via cards "sumindo" do funil (caso Luiz Bier, 02/09). Teto de 1000 cards
   // pra não travar o navegador de CEO/gestor (que enxergam a base inteira).
   const { data, loading, error } = useApi<any[]>(async () => {
+    const base: any = {};
+    if (fCampanha) base.campanha = fCampanha;
+    if (fEquipe) base.equipeId = fEquipe;
+    if (fCorretor) base.corretorId = fCorretor;
+    if (fDataIni) base.dataInicial = fDataIni;
+    if (fDataFim) base.dataFinal = fDataFim;
     const out: any[] = [];
     for (let page = 1; page <= 5; page++) {
-      const r: any = await Api.leads({ page, limit: 200 });
+      const r: any = await Api.leads({ ...base, page, limit: 200 });
       const lote = Array.isArray(r) ? r : (r.leads || []);
       out.push(...lote);
       const total = Array.isArray(r) ? lote.length : (r.total ?? lote.length);
       if (lote.length === 0 || out.length >= total) break;
     }
     return out;
-  });
+  }, [fCampanha, fEquipe, fCorretor, fDataIni, fDataFim]);
   const { data: settings } = useApi<Record<string, string>>(() => Api.settings());
+  const { data: equipes } = useApi<any[]>(() => Api.equipes());
+  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+  const { data: campanhas } = useApi<{ nome: string }[]>(() => Api.roletaCampanhas());
   const [leads, setLeads] = useState<any[]>([]);
   const [showPerdidos, setShowPerdidos] = useState(false);
   const toast = useToast();
@@ -46,7 +65,7 @@ export default function Pipeline() {
 
   const dnd = useKanbanDnd(moveLead);
 
-  if (loading) return <Shell><LoadingBlock /></Shell>;
+  if (loading && !leads.length) return <Shell><LoadingBlock /></Shell>;
   if (error) return <Shell><ErrorBlock error={error} /></Shell>;
 
   const ativos = leads.filter((l: any) => l.status !== 'PERDIDO');
@@ -76,6 +95,29 @@ export default function Pipeline() {
           title={`${ativos.length} negócios no funil`}
           subtitle={`${fechados} fechados · conversão ${conv}% · arraste ou mude o status no card`}
         />
+
+        {/* Filtros do funil: campanha, filial, corretor, período (reusa GET /leads) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+          <select className="field__select" value={fCampanha} onChange={(e) => setFCampanha(e.target.value)} title="Campanha" style={{ minWidth: 170 }}>
+            <option value="">Todas as campanhas</option>
+            {(campanhas || []).map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
+          </select>
+          <select className="field__select" value={fEquipe} onChange={(e) => setFEquipe(e.target.value)} title="Filial / equipe" style={{ minWidth: 150 }}>
+            <option value="">Todas as filiais</option>
+            {(equipes || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+          </select>
+          <select className="field__select" value={fCorretor} onChange={(e) => setFCorretor(e.target.value)} title="Corretor" style={{ minWidth: 150 }}>
+            <option value="">Todos os corretores</option>
+            {(corretores || []).map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+          <input type="date" className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} title="Data inicial" style={{ width: 150 }} />
+          <span className="text-xs text-secondary">até</span>
+          <input type="date" className="field__input" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} title="Data final" style={{ width: 150 }} />
+          {temFiltro && (
+            <button className="btn btn--ghost btn--sm" onClick={limparFiltros}>Limpar filtros</button>
+          )}
+          {loading && <span className="text-xs text-secondary">carregando…</span>}
+        </div>
 
         <div className="kanban">
           {cols.map((col) => {
