@@ -9,6 +9,7 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { MultiFiltro } from '../components/MultiFiltro';
 import { Auth } from '../lib/auth';
+import { DestinoPicker, type DestinoTransf } from '../components/DestinoPicker';
 
 export default function Corretores() {
  // Gestor (líder de equipe) cadastra corretor SÓ nas equipes que lidera — a lista
@@ -518,20 +519,73 @@ function ScoreCorretorModal({ corretor, onClose }: { corretor: any; onClose: () 
  );
 }
 
+// Papéis que podem direcionar leads (mesma allow-list do backend transferir-massa).
+const ROLES_DIRECIONAR = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GERENTE_EQUIPE'];
+
 function LeadsCorretorModal({ corretor, onClose }: { corretor: any; onClose: () => void }) {
- const { data, loading, error } = useApi<any[]>(() => Api.corretorLeads(corretor.id), [corretor.id]);
+ const { data, loading, error, reload } = useApi<any[]>(() => Api.corretorLeads(corretor.id), [corretor.id]);
  const fmtData = (d: string) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
+ const toast = useToast();
+ const podeDirecionar = ROLES_DIRECIONAR.includes(Auth.user?.role || '');
+ // Destinos pra transferência — só carrega pra quem pode direcionar.
+ const { data: corretores } = useApi<any[]>(() => (podeDirecionar ? Api.corretores().catch(() => [] as any) : Promise.resolve([])), []);
+ const { data: equipes } = useApi<any[]>(() => (podeDirecionar ? Api.equipes().catch(() => [] as any) : Promise.resolve([])), []);
+ const { data: filas } = useApi<any[]>(() => (podeDirecionar ? Api.roletas().catch(() => [] as any) : Promise.resolve([])), []);
+ const { data: bases } = useApi<any[]>(() => (podeDirecionar ? Api.basesLead().catch(() => [] as any) : Promise.resolve([])), []);
+ const { data: bolsoes } = useApi<any[]>(() => (podeDirecionar ? Api.bolsoes().catch(() => [] as any) : Promise.resolve([])), []);
+ const [sel, setSel] = useState<Set<number>>(new Set());
+ const [alvo, setAlvo] = useState<DestinoTransf | null>(null);
+ const [telefoneVisivel, setTelefoneVisivel] = useState(false);
+ const [enviando, setEnviando] = useState(false);
+ const toggle = (id: number) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+ const todos = (data || []).map((l) => l.id);
+ const toggleTodos = () => setSel((s) => (s.size === todos.length ? new Set() : new Set(todos)));
+
+ const direcionar = async () => {
+   if (!sel.size || !alvo || enviando) return;
+   setEnviando(true);
+   try {
+     const r = await Api.leadsTransferirDestino([...sel], alvo, telefoneVisivel);
+     toast.success(`${r.transferidos} lead(s) direcionado(s) para ${r.corretor}.`);
+     setSel(new Set()); setAlvo(null); setTelefoneVisivel(false);
+     reload();
+   } catch (err: any) {
+     toast.error('Erro: ' + (err?.message || 'falha'));
+   } finally {
+     setEnviando(false);
+   }
+ };
+
  return (
  <Modal open onClose={onClose} title={`Leads — ${corretor.nome}`} subtitle={`${corretor.leadsCount ?? (data?.length || 0)} leads · ${corretor.equipe?.nome || 'sem equipe'}`} size="xl">
  {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : (
+ <>
+ {podeDirecionar && sel.size > 0 && (
+ <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, padding: 12, marginBottom: 12, background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)', borderRadius: 12 }}>
+ <strong style={{ fontSize: 14 }}>{sel.size} selecionado(s)</strong>
+ <span className="text-xs text-secondary">Direcionar para:</span>
+ <DestinoPicker corretores={corretores} equipes={equipes} filas={filas} bases={bases} bolsoes={bolsoes} value={alvo} onChange={setAlvo} />
+ <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+ <input type="checkbox" checked={telefoneVisivel} onChange={(e) => setTelefoneVisivel(e.target.checked)} />
+ Liberar telefone
+ </label>
+ <button className="btn btn--primary btn--sm" onClick={direcionar} disabled={!alvo || enviando}>
+ {enviando ? 'Direcionando…' : `Direcionar ${sel.size}`}
+ </button>
+ </div>
+ )}
  <table className="table">
- <thead><tr><th>Nome</th><th>Telefone</th><th>Produto</th><th>Data de entrada</th></tr></thead>
+ <thead><tr>
+ {podeDirecionar && <th style={{ width: 34 }}><input type="checkbox" checked={todos.length > 0 && sel.size === todos.length} onChange={toggleTodos} title="Selecionar todos" /></th>}
+ <th>Nome</th><th>Telefone</th><th>Produto</th><th>Data de entrada</th>
+ </tr></thead>
  <tbody>
  {(data || []).length === 0 ? (
- <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)' }}>Nenhum lead atribuído.</td></tr>
+ <tr><td colSpan={podeDirecionar ? 5 : 4} style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)' }}>Nenhum lead atribuído.</td></tr>
  ) : (
  (data || []).map((l) => (
  <tr key={l.id}>
+ {podeDirecionar && <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} /></td>}
  <td className="font-semibold">{l.nome}</td>
  <td className="text-sm">{l.telefone || '—'}</td>
  <td className="text-sm">{l.produto || '—'}</td>
@@ -541,6 +595,7 @@ function LeadsCorretorModal({ corretor, onClose }: { corretor: any; onClose: () 
  )}
  </tbody>
  </table>
+ </>
  )}
  </Modal>
  );
