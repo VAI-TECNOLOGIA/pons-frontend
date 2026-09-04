@@ -352,6 +352,8 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   const [dias, setDias] = useState<string[]>(String(fila?.expedienteDias || '1,2,3,4,5').split(',').map((s) => s.trim()).filter(Boolean));
   const [iniHora, setIniHora] = useState<number>(fila?.expedienteInicioHora ?? 8);
   const [fimHora, setFimHora] = useState<number>(fila?.expedienteFimHora ?? 18);
+  // Fila 24h: ignora expediente e atribui o lead em QUALQUER horário (campanha individual). Vini 03/09.
+  const [semExpediente, setSemExpediente] = useState<boolean>(fila?.semExpediente ?? false);
   // Modo de pulo no SLA: PROXIMO (próximo corretor da fila) ou BOLSAO (bolsão de recaptura)
   const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO' | 'NAO_PULAR'>((fila?.modoPulo as any) || 'PROXIMO');
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
@@ -388,6 +390,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
       expedienteDias: dias.join(',') || '1,2,3,4,5',
       expedienteInicioHora: Number(iniHora),
       expedienteFimHora: Number(fimHora),
+      semExpediente,
       modoPulo,
       bolsaoDestinoId: modoPulo === 'BOLSAO' && bolsaoDestinoId ? Number(bolsaoDestinoId) : null,
       ocultarPosicao,
@@ -619,6 +622,13 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
       {aba === 'transferencia' && (
         <div className="form-grid form-grid--single" style={{ maxWidth: 560 }}>
           <div className="field">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600 }}>
+              <input type="checkbox" checked={semExpediente} onChange={(e) => setSemExpediente(e.target.checked)} style={{ width: 'auto' }} />
+              Sem expediente — atribui o lead em qualquer horário (24h)
+            </label>
+            <div className="field__hint">Ideal pra campanha individual: o lead cai pro corretor na hora, não importa o horário. Ligado, os dias/horas abaixo são ignorados.</div>
+          </div>
+          <div className="field" style={{ opacity: semExpediente ? 0.4 : 1, pointerEvents: semExpediente ? 'none' : 'auto' }}>
             <label className="field__label">Expediente — dias da semana</label>
             <div className="flex" style={{ gap: 6, flexWrap: 'wrap' }}>
               {DIAS.map(([v, l]) => (
@@ -628,7 +638,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
               ))}
             </div>
           </div>
-          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 12, opacity: semExpediente ? 0.4 : 1, pointerEvents: semExpediente ? 'none' : 'auto' }}>
             <div className="field">
               <label className="field__label">Início do expediente</label>
               <select className="field__select" value={iniHora} onChange={(e) => setIniHora(Number(e.target.value))}>
