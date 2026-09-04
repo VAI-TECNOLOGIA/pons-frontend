@@ -4,6 +4,7 @@ import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { CorretorPicker } from '../components/CorretorPicker';
+import { DestinoPicker, type DestinoTransf } from '../components/DestinoPicker';
 import { initials, timeAgo } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
@@ -145,6 +146,14 @@ export default function Chat() {
   const [tabularMotivo, setTabularMotivo] = useState('');
   const [tabularObs, setTabularObs] = useState('');
   const [tabularSending, setTabularSending] = useState(false);
+  // Direcionar (transferir de dentro da conversa) — só gestão, NUNCA corretor.
+  // Mesma allow-list do backend POST /roletas/transferir-massa.
+  const ROLES_DIRECIONAR = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GERENTE_EQUIPE'];
+  const podeDirecionar = ROLES_DIRECIONAR.includes(Auth.user?.role || '');
+  const [direcionarOpen, setDirecionarOpen] = useState(false);
+  const [alvoDir, setAlvoDir] = useState<DestinoTransf | null>(null);
+  const [dirTelefoneVisivel, setDirTelefoneVisivel] = useState(false);
+  const [direcionando, setDirecionando] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [statusValor, setStatusValor] = useState('');
   const [statusSending, setStatusSending] = useState(false);
@@ -200,6 +209,10 @@ export default function Chat() {
   const { data: corretoresFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.corretores() : Promise.resolve([])), []);
   // Equipes no escopo do usuário (pro filtro por equipe). Só mostra o filtro se vê +1.
   const { data: equipesFiltro } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.equipes() : Promise.resolve([])), []);
+  // Destinos pro "Direcionar" — só carrega pra quem pode transferir (gestão).
+  const { data: filasDir } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.roletas().catch(() => [] as any) : Promise.resolve([])), []);
+  const { data: basesDir } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.basesLead().catch(() => [] as any) : Promise.resolve([])), []);
+  const { data: bolsoesDir } = useApi<any[]>(() => (ehGestorAtendimento() ? Api.bolsoes().catch(() => [] as any) : Promise.resolve([])), []);
   const { data: empreendimentos } = useApi<any[]>(() => Api.empreendimentos());
   const { data: tabMotivos } = useApi<Array<{ codigo: string; label: string; devolveBase?: boolean }>>(() => Api.tabulacaoMotivos());
   const { data: conv, reload: reloadConv } = useApi<ConversationDetail>(
@@ -516,6 +529,30 @@ export default function Chat() {
       toast.error('Erro: ' + (err?.message || 'falha'));
     } finally {
       setTabularSending(false);
+    }
+  };
+
+  const abrirDirecionar = () => {
+    if (!activeId || !podeDirecionar) return;
+    setAlvoDir(null);
+    setDirTelefoneVisivel(false);
+    setDirecionarOpen(true);
+  };
+
+  const confirmarDirecionar = async () => {
+    if (!activeId || !alvoDir || direcionando) return;
+    setDirecionando(true);
+    try {
+      const r = await Api.leadsTransferirDestino([activeId], alvoDir, dirTelefoneVisivel);
+      toast.success(`Lead direcionado para ${r.corretor}.`);
+      setDirecionarOpen(false);
+      setActiveId(null); // sai da conversa: o lead deixa de ser do usuário atual
+      reloadConv();
+      reloadInbox();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    } finally {
+      setDirecionando(false);
     }
   };
 
@@ -1172,6 +1209,12 @@ export default function Chat() {
                         </button>
                       </>
                     )}
+                    {/* Direcionar: SÓ gestão (nunca corretor), disponível mesmo com lead não-reservado. */}
+                    {podeDirecionar && (
+                      <button className="btn btn--ghost btn--sm" onClick={abrirDirecionar} title="Direcionar este lead pra outro corretor, equipe, fila ou base">
+                        <Icon name="send" size={12} /> Direcionar
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1596,6 +1639,40 @@ export default function Chat() {
                   onChange={(e) => setTabularObs(e.target.value)}
                   style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
                 />
+              </Modal>
+              <Modal
+                open={direcionarOpen}
+                onClose={() => !direcionando && setDirecionarOpen(false)}
+                title="Direcionar lead"
+                subtitle={`Repassar ${conv?.nome || 'este lead'} para outro corretor, equipe, fila ou base.`}
+                size="sm"
+                footer={
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button className="btn btn--ghost" onClick={() => setDirecionarOpen(false)} disabled={direcionando}>
+                      Cancelar
+                    </button>
+                    <button className="btn btn--primary" onClick={confirmarDirecionar} disabled={direcionando || !alvoDir}>
+                      {direcionando ? 'Direcionando…' : 'Direcionar'}
+                    </button>
+                  </div>
+                }
+              >
+                <label className="field__label" style={{ fontSize: 12, marginBottom: 6, display: 'block' }}>
+                  Destino
+                </label>
+                <DestinoPicker
+                  corretores={corretoresFiltro}
+                  equipes={equipesFiltro}
+                  filas={filasDir}
+                  bases={basesDir}
+                  bolsoes={bolsoesDir}
+                  value={alvoDir}
+                  onChange={setAlvoDir}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={dirTelefoneVisivel} onChange={(e) => setDirTelefoneVisivel(e.target.checked)} />
+                  Liberar o telefone do lead pro corretor que receber
+                </label>
               </Modal>
               <Modal
                 open={statusOpen}
