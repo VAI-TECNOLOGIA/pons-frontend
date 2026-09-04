@@ -1095,7 +1095,7 @@ export default function Vendas() {
  <>
  <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
  <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyExact(sel.valorVenda ?? sel.valor)}</strong>
- <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyExact(sel.comissao ?? (sel.valorVenda ?? sel.valor) * 0.05)}</strong></span>
+ <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyExact(sel.comissao ?? ((sel.valorVenda ?? sel.valor ?? 0) * (sel.percentualComissao ?? 6)) / 100)}</strong></span>
  </div>
  <button className="btn btn--secondary" onClick={() => setSelected(null)}>Fechar</button>
  </>
