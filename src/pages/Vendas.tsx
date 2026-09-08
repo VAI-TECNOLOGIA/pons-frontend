@@ -16,7 +16,8 @@ import type { CnpjInfo } from '../lib/consultaCnpj';
 import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
 export const STATUS_MAP: Record<string, [string, string]> = {
- PRE_ANALISE: ['analysis', 'Contrato em confecção'],
+ PRE_ANALISE: ['analysis', 'Aguardando envio à construtora'],
+ AGUARDANDO_APROVACAO_PAULO: ['analysis', 'Aguardando aprovação do Paulo'], // virtual (aguardandoAprovacao)
  ANALISE_JURIDICA: ['analysis', 'Análise jurídica'],
  AGUARDANDO_CONSTRUTORA: ['analysis', 'Aguardando construtora'],
  CONTRATO_EM_CONFECCAO: ['analysis', 'Contrato em confecção'],
@@ -37,6 +38,7 @@ export const STATUS_MAP: Record<string, [string, string]> = {
 // injeta a opção atual pra ela continuar visível/editável.
 export const STATUS_DROPDOWN = [
  'PRE_ANALISE',
+ 'CONTRATO_EM_CONFECCAO',
  'CONTRATO_EM_CONFERENCIA',
  'CONTRATO_EM_ALTERACAO',
  'ANALISE_JURIDICA',
@@ -1102,6 +1104,15 @@ export default function Vendas() {
  }
  >
  <div style={{ padding: '12px 16px', background: 'var(--bg-card-hover)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+ {/* Enquanto aguarda o Paulo, o status EFETIVO é "Aguardando aprovação do Paulo"
+     (não "Aguardando envio"/"em confecção") — e o dropdown fica travado. */}
+ {sel.aguardandoAprovacao ? (
+ <>
+ <div className="uppercase-tag">Status da venda</div>
+ <span className="badge badge--analysis">Aguardando aprovação do Paulo</span>
+ </>
+ ) : (
+ <>
  <span className={`badge badge--${(STATUS_MAP[sel.status] || ['neutral'])[0]}`}>{(STATUS_MAP[sel.status] || [, sel.status])[1]}</span>
  <div className="uppercase-tag">Status da venda</div>
  {podeMudarStatus ? (
@@ -1117,6 +1128,8 @@ export default function Vendas() {
  </select>
  ) : (
  <div className="text-xs text-secondary">Somente o Administrativo de Vendas altera o status (pelo Kanban).</div>
+ )}
+ </>
  )}
  </div>
 
@@ -2037,7 +2050,7 @@ export default function Vendas() {
 
  {/* ── CONFIRMAÇÃO: conferir tudo antes de enviar pro contrato ── */}
  <div data-step={stepConfirma} style={{ display: step === stepConfirma ? 'block' : 'none' }} className="fade-in">
- <div className="text-xs text-secondary" style={{ marginBottom: 12 }}>Confira os dados — ao confirmar, a venda entra como <strong>"Contrato em confecção"</strong>.</div>
+ <div className="text-xs text-secondary" style={{ marginBottom: 12 }}>Confira os dados antes de confirmar.</div>
 
  <div style={{ display: 'grid', gap: 12 }}>
  <div className="card" style={{ padding: '12px 16px' }}>
@@ -2290,7 +2303,11 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
  {visiveis.map((col) => {
  const cor = COR_FASE[col.fase] || '#0E7C9B';
- const isDropTarget = podeMover && dnd.hoverCol === col.fase;
+ // Coluna virtual "Aguardando aprovação do Paulo": não arrasta nem recebe drop
+ // (a venda só sai dali quando o Paulo aprova, pelo botão de aprovação).
+ const isVirtual = col.fase === 'AGUARDANDO_APROVACAO_PAULO';
+ const podeMoverCol = podeMover && !isVirtual;
+ const isDropTarget = podeMoverCol && dnd.hoverCol === col.fase;
  return (
  <div
  key={col.fase}
@@ -2305,9 +2322,9 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  outline: isDropTarget ? `2px dashed ${cor}` : '2px dashed transparent',
  transition: 'outline-color .12s, background .12s',
  }}
- onDragOver={podeMover ? dnd.onDragOver(col.fase) : undefined}
- onDragLeave={podeMover ? dnd.onDragLeave(col.fase) : undefined}
- onDrop={podeMover ? dnd.onDrop(col.fase) : undefined}
+ onDragOver={podeMoverCol ? dnd.onDragOver(col.fase) : undefined}
+ onDragLeave={podeMoverCol ? dnd.onDragLeave(col.fase) : undefined}
+ onDrop={podeMoverCol ? dnd.onDrop(col.fase) : undefined}
  >
  <div className="flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 6 }}>
  <span style={{ fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -2323,8 +2340,8 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  <div
  key={c.id}
  className="card kanban-card"
- draggable={podeMover}
- onDragStart={podeMover ? dnd.onDragStart(c.id) : undefined}
+ draggable={podeMoverCol}
+ onDragStart={podeMoverCol ? dnd.onDragStart(c.id) : undefined}
  onDragEnd={podeMover ? dnd.onDragEnd : undefined}
  onPointerDown={podeMover ? dnd.onPointerDown(c.id) : undefined}
  style={{
