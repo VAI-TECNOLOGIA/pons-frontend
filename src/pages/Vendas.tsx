@@ -28,9 +28,10 @@ export const STATUS_MAP: Record<string, [string, string]> = {
  EM_ASSINATURA: ['signature', 'Em assinatura'],
  ASSINADO: ['signed', 'Assinado'],
  ASSINADO_AGUARDANDO_PAGAMENTO: ['signature', 'Assinado — aguardando pagamento'],
- INADIMPLENTE: ['cancelled', 'Inadimplente'],
+ VENCIDO: ['cancelled', 'Vencido'], // automático: parcela vencida sem pagamento (Marcelo 08/09)
+ INADIMPLENTE: ['cancelled', 'Inadimplente'], // legado
  PAGO: ['signed', 'Pago'],
- AGUARDANDO_REPASSE: ['analysis', 'Aguardando repasse'],
+ AGUARDANDO_REPASSE: ['analysis', 'Aguardando repasse de comissão da construtora'],
  CANCELADO: ['cancelled', 'Cancelado'],
 };
 
@@ -43,11 +44,10 @@ export const STATUS_DROPDOWN = [
  'CONTRATO_EM_CONFECCAO',
  'CONTRATO_EM_CONFERENCIA',
  'CONTRATO_EM_ALTERACAO',
- 'ANALISE_JURIDICA',
  'EM_ASSINATURA',
  'ASSINADO',
  'ASSINADO_AGUARDANDO_PAGAMENTO',
- 'INADIMPLENTE',
+ 'VENCIDO',
  'PAGO',
  'AGUARDANDO_REPASSE',
  'CANCELADO',
@@ -167,10 +167,12 @@ export default function Vendas() {
  // ── Filtros da lista (pedido Jú Beal 02/09): período, filial, status,
  // corretor e empreendimento. Client-side: a lista inteira já vem carregada.
  // Multi-seleção (filial/status/corretor/emp = arrays); período fica string.
- const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; status: string[]; corretorId: string[]; emp: string[]; gestorId: string[] }>({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [] });
+ const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; status: string[]; corretorId: string[]; emp: string[]; gestorId: string[]; busca: string }>({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [], busca: '' });
  const setF = (k: string, v: string) => setFiltro((f) => ({ ...f, [k]: v }));
  const setFArr = (k: 'filial' | 'status' | 'corretorId' | 'emp' | 'gestorId', v: string[]) => setFiltro((f) => ({ ...f, [k]: v }));
- const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length || filtro.gestorId.length);
+ const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length || filtro.gestorId.length || filtro.busca.trim());
+ // Busca por contrato (Marcelo 08/09): código, cliente, unidade, empreendimento, construtora.
+ const buscaNorm = filtro.busca.trim().toLowerCase();
  // Gestor = líder da equipe. Corretores do gestor = membros das equipes que ele lidera (+ ele mesmo).
  const corretoresDoGestor = new Set<number>();
  for (const e of (equipes || [])) {
@@ -188,6 +190,10 @@ export default function Vendas() {
    if (filtro.emp.length && !filtro.emp.includes(empNomeDe(v))) return false;
    if (filtro.filial.length && !corretoresDaFilial.has(v.corretor?.id)) return false;
    if (filtro.gestorId.length && !corretoresDoGestor.has(v.corretor?.id)) return false;
+   if (buscaNorm) {
+     const alvo = [v.codigo, v.clienteNome || v.cliente, v.unidade, empNomeDe(v), typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome].filter(Boolean).join(' ').toLowerCase();
+     if (!alvo.includes(buscaNorm)) return false;
+   }
    return true;
  });
  const filiaisOpcoes = Array.from(new Map((corretores || []).filter((c: any) => c.equipe).map((c: any) => [String(c.equipe.id), c.equipe.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
@@ -218,7 +224,8 @@ export default function Vendas() {
  const podeEditarStatus = role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
  // Mudança de STATUS da venda (kanban/dropdown): Administrativo de Vendas (Glaucia)
  // e o CEO (Paulo) — pedido 29/07 reabriu pro CEO. Financeiro segue só lendo.
- const podeMudarStatus = role === 'ADMINISTRATIVO' || role === 'CEO';
+ // Diretor Financeiro (Marcelo) também audita/avança contratos (08/09).
+ const podeMudarStatus = role === 'ADMINISTRATIVO' || role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
  // Cancelar venda (o "excluir" da gestão): líder de equipe/gestor. Reversível.
  const podeCancelar = role === 'CEO' || role === 'DIRETOR_COMERCIAL' || role === 'GERENTE_EQUIPE' || role === 'SOCIO_UNIDADE';
  const confirm = useConfirm();
@@ -1037,6 +1044,7 @@ export default function Vendas() {
  <span className="text-xs text-secondary">até</span>
  <input className="field__input" type="date" title="Até" value={filtro.ate} onChange={(e) => setF('ate', e.target.value)} style={{ width: 145 }} />
  </div>
+ <input className="field__input" type="search" placeholder="Buscar contrato: código, cliente, unidade ou empreendimento" value={filtro.busca} onChange={(e) => setF('busca', e.target.value)} style={{ flex: '1 1 280px', minWidth: 220 }} />
  <MultiFiltro label="Filial" opcoes={filiaisOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.filial} onChange={(v) => setFArr('filial', v)} />
  <MultiFiltro label="Status" opcoes={Object.entries(STATUS_MAP).map(([k, [, lbl]]) => ({ value: k, label: String(lbl) }))} values={filtro.status} onChange={(v) => setFArr('status', v)} />
  <MultiFiltro label="Corretor" opcoes={corretoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.corretorId} onChange={(v) => setFArr('corretorId', v)} />
@@ -1047,7 +1055,7 @@ export default function Vendas() {
  </button>
  {temFiltro && (
  <button className="btn btn--ghost btn--sm"
- onClick={() => setFiltro({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [] })}>
+ onClick={() => setFiltro({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [], busca: '' })}>
  Limpar filtros
  </button>
  )}
@@ -1176,7 +1184,7 @@ export default function Vendas() {
  ))}
  </select>
  ) : (
- <div className="text-xs text-secondary">Somente o Administrativo de Vendas altera o status (pelo Kanban).</div>
+ <div className="text-xs text-secondary">Somente o Administrativo de Vendas, o Financeiro (diretoria) e o CEO alteram o status.</div>
  )}
  </>
  )}
