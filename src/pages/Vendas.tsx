@@ -10,6 +10,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
+import { exportarXlsx } from '../lib/xlsx-simple';
 import { CampoCnpj } from '../components/CampoCnpj';
 import { BuscaSelect } from '../components/BuscaSelect';
 import { MultiFiltro } from '../components/MultiFiltro';
@@ -160,14 +161,23 @@ export default function Vendas() {
  const { data: vendas, loading, error, reload } = useApi<any[]>(() => Api.vendas());
  const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
+ // Equipes trazem o líder (= gestor) e os membros — base do filtro por gestor (Marcelo 08/09).
+ const { data: equipes } = useApi<any[]>(() => Api.equipes());
 
  // ── Filtros da lista (pedido Jú Beal 02/09): período, filial, status,
  // corretor e empreendimento. Client-side: a lista inteira já vem carregada.
  // Multi-seleção (filial/status/corretor/emp = arrays); período fica string.
- const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; status: string[]; corretorId: string[]; emp: string[] }>({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [] });
+ const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; status: string[]; corretorId: string[]; emp: string[]; gestorId: string[] }>({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [] });
  const setF = (k: string, v: string) => setFiltro((f) => ({ ...f, [k]: v }));
- const setFArr = (k: 'filial' | 'status' | 'corretorId' | 'emp', v: string[]) => setFiltro((f) => ({ ...f, [k]: v }));
- const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length);
+ const setFArr = (k: 'filial' | 'status' | 'corretorId' | 'emp' | 'gestorId', v: string[]) => setFiltro((f) => ({ ...f, [k]: v }));
+ const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length || filtro.gestorId.length);
+ // Gestor = líder da equipe. Corretores do gestor = membros das equipes que ele lidera (+ ele mesmo).
+ const corretoresDoGestor = new Set<number>();
+ for (const e of (equipes || [])) {
+   if (!e.lider || !filtro.gestorId.includes(String(e.lider.id))) continue;
+   corretoresDoGestor.add(e.lider.id);
+   for (const m of (e.membros || [])) corretoresDoGestor.add(m.id);
+ }
  const corretoresDaFilial = new Set((corretores || []).filter((c: any) => filtro.filial.includes(String(c.equipe?.id || ''))).map((c: any) => c.id));
  const empNomeDe = (v: any) => (typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '');
  const vendasFiltradas = (vendas || []).filter((v: any) => {
@@ -177,10 +187,26 @@ export default function Vendas() {
    if (filtro.corretorId.length && !filtro.corretorId.includes(String(v.corretor?.id || ''))) return false;
    if (filtro.emp.length && !filtro.emp.includes(empNomeDe(v))) return false;
    if (filtro.filial.length && !corretoresDaFilial.has(v.corretor?.id)) return false;
+   if (filtro.gestorId.length && !corretoresDoGestor.has(v.corretor?.id)) return false;
    return true;
  });
  const filiaisOpcoes = Array.from(new Map((corretores || []).filter((c: any) => c.equipe).map((c: any) => [String(c.equipe.id), c.equipe.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
  const empsOpcoes = Array.from(new Set((vendas || []).map(empNomeDe).filter(Boolean))).sort() as string[];
+ const gestoresOpcoes = Array.from(new Map((equipes || []).filter((e: any) => e.lider).map((e: any) => [String(e.lider.id), e.lider.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+ const equipeDoCorretor = new Map<number, string>(); const gestorDoCorretor = new Map<number, string>();
+ for (const e of (equipes || [])) for (const m of [...(e.membros || []), ...(e.lider ? [e.lider] : [])]) { equipeDoCorretor.set(m.id, e.nome); if (e.lider) gestorDoCorretor.set(m.id, e.lider.nome); }
+ // Exporta a lista FILTRADA em .xlsx (gerador próprio, sem dependência) — pedido Marcelo 08/09.
+ const exportarExcel = () => {
+   const dt = (d: any) => (d ? new Date(d).toLocaleDateString('pt-BR') : '');
+   const linhas = vendasFiltradas.map((v: any) => {
+     const valor = Number(v.valorVenda ?? v.valor ?? 0); const pct = Number(v.percentualComissao ?? 0);
+     return [v.codigo || v.id, dt(v.createdAt), v.clienteNome || v.cliente || '', empNomeDe(v), v.unidade || '', typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome || '',
+       v.corretor?.nome || '', equipeDoCorretor.get(v.corretor?.id) || '', gestorDoCorretor.get(v.corretor?.id) || '', valor, pct, Math.round(valor * pct) / 100,
+       (STATUS_MAP[v.status] || [null, v.status])[1], v.origemLead || '', v.salaGpi || '', dt(v.assinadoEm)];
+   });
+   const hoje = new Date().toISOString().slice(0, 10);
+   exportarXlsx(`vendas-${hoje}.xlsx`, ['Código', 'Data', 'Cliente', 'Empreendimento', 'Unidade', 'Construtora', 'Corretor', 'Filial/Equipe', 'Gestor', 'VGV', '% Comissão', 'Comissão', 'Status', 'Origem do lead', 'Sala GPI', 'Assinado em'], linhas, 'Vendas');
+ };
  const corretoresOpcoes = Array.from(new Map((vendas || []).filter((v: any) => v.corretor?.id).map((v: any) => [String(v.corretor.id), v.corretor.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
  const toast = useToast();
  const role = Auth.user?.role;
@@ -1014,10 +1040,14 @@ export default function Vendas() {
  <MultiFiltro label="Filial" opcoes={filiaisOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.filial} onChange={(v) => setFArr('filial', v)} />
  <MultiFiltro label="Status" opcoes={Object.entries(STATUS_MAP).map(([k, [, lbl]]) => ({ value: k, label: String(lbl) }))} values={filtro.status} onChange={(v) => setFArr('status', v)} />
  <MultiFiltro label="Corretor" opcoes={corretoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.corretorId} onChange={(v) => setFArr('corretorId', v)} />
+ <MultiFiltro label="Gestor" opcoes={gestoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.gestorId} onChange={(v) => setFArr('gestorId', v)} />
  <MultiFiltro label="Empreendimento" opcoes={empsOpcoes.map((n) => ({ value: n, label: n }))} values={filtro.emp} onChange={(v) => setFArr('emp', v)} />
+ <button className="btn btn--secondary btn--sm" onClick={exportarExcel} disabled={vendasFiltradas.length === 0} title="Baixa a lista filtrada em Excel (.xlsx)">
+ Exportar Excel ({vendasFiltradas.length})
+ </button>
  {temFiltro && (
  <button className="btn btn--ghost btn--sm"
- onClick={() => setFiltro({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [] })}>
+ onClick={() => setFiltro({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [] })}>
  Limpar filtros
  </button>
  )}
