@@ -1,0 +1,27 @@
+{
+  "versao": "2026.09.08",
+  "data": "08/09/2026",
+  "novidades": [
+    { "titulo": "Vendas", "itens": [
+      "Filtros combinados: período, filial, status, corretor, gestor e empreendimento.",
+      "Busca por contrato: código, cliente, unidade ou empreendimento.",
+      "Exportar Excel da lista filtrada.",
+      "Novos status: Vencido (automático quando há parcela vencida sem pagamento) e Aguardando repasse de comissão da construtora. 'Análise jurídica' passou a ser 'Contrato em conferência'."
+    ] },
+    { "titulo": "Administrativo de Vendas", "itens": [
+      "Busca por contrato dentro de cada fase.",
+      "Na auditoria, as parcelas da comissão aparecem com 'marcar pago' individual.",
+      "Diretor Financeiro também avança fases e confirma pagamentos."
+    ] },
+    { "titulo": "Atendimento e leads", "itens": [
+      "A lista de atendimento atualiza sozinha (a cada minuto e ao voltar pro app).",
+      "Lead de anúncio sem fila vai pra Base Imobiliária com o aviso SEM FILA.",
+      "Filas: formulário ou campanha casam a fila; lead que chega com a fila fechada espera e é distribuído quando ela abre."
+    ] },
+    { "titulo": "Sistema", "itens": [
+      "Aviso de nova versão com botão Atualizar (limpa o cache).",
+      "Botão Reportar erro em todas as telas, com print automático da tela.",
+      "Financeiro: Boletos (Cobrança) com emissão, PDF e arquivo de remessa."
+    ] }
+  ]
+}

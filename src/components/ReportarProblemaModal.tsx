@@ -20,7 +20,9 @@ const CAPTURE_TIMEOUT_MS = 6000;
 
 // Carrega html2canvas só no momento de capturar (não bloqueia o bundle inicial)
 async function loadHtml2Canvas(): Promise<any> {
-  const mod: any = await import(/* @vite-ignore */ 'html2canvas' as string);
+  // html2canvas-PRO: o original quebra com cores CSS modernas (color-mix/oklch),
+  // usadas no CSS da Pons — no Breakr os reportes chegavam sem print por isso.
+  const mod: any = await import(/* @vite-ignore */ 'html2canvas-pro' as string);
   return mod.default || mod;
 }
 
@@ -93,6 +95,7 @@ export function ReportarProblemaModal({ open, onClose }: Props) {
   const [capturing, setCapturing] = useState(false);
   const [captureFailed, setCaptureFailed] = useState(false);
   const [sending, setSending] = useState(false);
+  const [feito, setFeito] = useState(false); // confirmação fica na tela até fechar (padrão Breakr)
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Captura automática quando o modal abre
@@ -140,6 +143,7 @@ export function ReportarProblemaModal({ open, onClose }: Props) {
   function handleClose() {
     if (sending) return;
     reset();
+    setFeito(false);
     onClose();
   }
 
@@ -205,7 +209,7 @@ export function ReportarProblemaModal({ open, onClose }: Props) {
       const n = r.adminsNotified ?? 0;
       toast.success(n > 0 ? `Relatório enviado · ${n} ${n === 1 ? 'admin notificado' : 'admins notificados'}` : 'Relatório enviado');
       reset();
-      onClose();
+      setFeito(true); // não fecha sozinho — a pessoa lê que salvou e fecha quando quiser
     } catch (e: any) {
       toast.error('Erro ao enviar: ' + (e.message || 'falha'));
     } finally {
@@ -217,6 +221,16 @@ export function ReportarProblemaModal({ open, onClose }: Props) {
 
   return (
     <Modal open={open} onClose={handleClose} title="Reportar problema" subtitle={`Encontrou um bug? Nos ajude a melhorar. Enviando como ${senderName}.`} size="md">
+      {feito ? (
+        <div role="status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '18px 6px 8px', textAlign: 'center' }}>
+          <span style={{ width: 44, height: 44, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.4)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+          </span>
+          <div style={{ fontSize: 15.5, fontWeight: 700 }}>Relatório enviado</div>
+          <p style={{ margin: 0, fontSize: 12.5, opacity: 0.75, lineHeight: 1.55 }}>Salvo com o print da tela. O time de desenvolvimento revisa todos os relatórios diariamente.</p>
+          <button type="button" className="btn btn--primary btn--sm" style={{ marginTop: 8 }} onClick={handleClose}>Fechar</button>
+        </div>
+      ) : (
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div className="field">
           <label className="field__label">Tipo do problema</label>
@@ -363,6 +377,7 @@ export function ReportarProblemaModal({ open, onClose }: Props) {
           </button>
         </div>
       </form>
+      )}
     </Modal>
   );
 }
