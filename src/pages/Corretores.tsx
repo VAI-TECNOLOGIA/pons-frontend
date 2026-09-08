@@ -10,6 +10,7 @@ import { useConfirm } from '../lib/confirm';
 import { MultiFiltro } from '../components/MultiFiltro';
 import { Auth } from '../lib/auth';
 import { DestinoPicker, type DestinoTransf } from '../components/DestinoPicker';
+import { FichaLeadModal } from '../components/FichaLeadModal';
 
 export default function Corretores() {
  // Gestor (líder de equipe) cadastra corretor SÓ nas equipes que lidera — a lista
@@ -534,6 +535,7 @@ function LeadsCorretorModal({ corretor, onClose }: { corretor: any; onClose: () 
  const { data: bases } = useApi<any[]>(() => (podeDirecionar ? Api.basesLead().catch(() => [] as any) : Promise.resolve([])), []);
  const { data: bolsoes } = useApi<any[]>(() => (podeDirecionar ? Api.bolsoes().catch(() => [] as any) : Promise.resolve([])), []);
  const [sel, setSel] = useState<Set<number>>(new Set());
+ const [fichaLeadId, setFichaLeadId] = useState<number | null>(null); // ficha do lead ao clicar no nome
  const [alvo, setAlvo] = useState<DestinoTransf | null>(null);
  const [telefoneVisivel, setTelefoneVisivel] = useState(false);
  const [enviando, setEnviando] = useState(false);
@@ -586,7 +588,7 @@ function LeadsCorretorModal({ corretor, onClose }: { corretor: any; onClose: () 
  (data || []).map((l) => (
  <tr key={l.id}>
  {podeDirecionar && <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} /></td>}
- <td className="font-semibold">{l.nome}</td>
+ <td className="font-semibold" style={{ cursor: 'pointer', color: 'var(--color-info-fg)' }} onClick={() => setFichaLeadId(l.id)} title="Ver dados do lead">{l.nome}</td>
  <td className="text-sm">{l.telefone || '—'}</td>
  <td className="text-sm">{l.produto || '—'}</td>
  <td className="text-sm text-secondary">{fmtData(l.data)}</td>
@@ -597,6 +599,7 @@ function LeadsCorretorModal({ corretor, onClose }: { corretor: any; onClose: () 
  </table>
  </>
  )}
+ {fichaLeadId != null && <FichaLeadModal leadId={fichaLeadId} onClose={() => setFichaLeadId(null)} />}
  </Modal>
  );
 }
