@@ -12,7 +12,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { formatCurrencyExact } from '../lib/format';
 import { Auth } from '../lib/auth';
-import { STATUS_MAP, FormularioGpi, VendaDocumentos } from './Vendas';
+import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas } from './Vendas';
 
 // Fases na ordem do processo — a fila mostra por fase.
 // Fluxo novo (Glaucia 29/07): confecção → conferência → alteração → jurídica →
@@ -21,30 +21,37 @@ const FASES: { key: string; label: string; hint: string }[] = [
   { key: 'PRE_ANALISE', label: 'Contrato em confecção', hint: 'Venda registrada — conferir dados e documentos.' },
   { key: 'CONTRATO_EM_CONFERENCIA', label: 'Contrato em conferência', hint: 'Conferir minuta (Glaucia ↔ corretor ↔ cliente).' },
   { key: 'CONTRATO_EM_ALTERACAO', label: 'Contrato em alteração', hint: 'Ajustes solicitados na minuta.' },
-  { key: 'ANALISE_JURIDICA', label: 'Análise jurídica', hint: 'Revisão jurídica do contrato.' },
   { key: 'EM_ASSINATURA', label: 'Em assinatura', hint: 'Na plataforma de assinatura da construtora.' },
   { key: 'ASSINADO', label: 'Assinado', hint: 'Cadeia de assinaturas concluída.' },
+  { key: 'ASSINADO_AGUARDANDO_PAGAMENTO', label: 'Aguardando pagamento', hint: 'Assinado — parcelas da entrada em aberto. Marque cada parcela paga na auditoria.' },
+  { key: 'VENCIDO', label: 'Vencido', hint: 'Parcela vencida sem pagamento (automático). Ao quitar, volta ao fluxo.' },
+  { key: 'AGUARDANDO_REPASSE', label: 'Aguardando repasse da construtora', hint: 'Entrada paga — aguardando a construtora repassar a comissão.' },
   { key: 'PAGO', label: 'Pago', hint: 'Entrada paga — processo concluído.' },
 ];
 const PROXIMA_FASE: Record<string, { para: string; rotulo: string }> = {
   PRE_ANALISE: { para: 'CONTRATO_EM_CONFERENCIA', rotulo: 'Confirmar venda → conferência' },
-  CONTRATO_EM_CONFERENCIA: { para: 'ANALISE_JURIDICA', rotulo: 'Conferido → análise jurídica' },
-  CONTRATO_EM_ALTERACAO: { para: 'ANALISE_JURIDICA', rotulo: 'Alterações feitas → análise jurídica' },
-  ANALISE_JURIDICA: { para: 'EM_ASSINATURA', rotulo: 'Jurídico ok → enviar pra assinatura' },
+  CONTRATO_EM_CONFERENCIA: { para: 'EM_ASSINATURA', rotulo: 'Conferido → enviar pra assinatura' },
+  CONTRATO_EM_ALTERACAO: { para: 'EM_ASSINATURA', rotulo: 'Alterações feitas → enviar pra assinatura' },
   EM_ASSINATURA: { para: 'ASSINADO', rotulo: 'Marcar assinado (todas as partes)' },
-  ASSINADO: { para: 'PAGO', rotulo: 'Marcar pago' },
+  ASSINADO: { para: 'ASSINADO_AGUARDANDO_PAGAMENTO', rotulo: 'Assinado → aguardando pagamento' },
+  ASSINADO_AGUARDANDO_PAGAMENTO: { para: 'AGUARDANDO_REPASSE', rotulo: 'Entrada quitada → aguardando repasse' },
+  VENCIDO: { para: 'ASSINADO_AGUARDANDO_PAGAMENTO', rotulo: 'Cobrança resolvida → aguardando pagamento' },
+  AGUARDANDO_REPASSE: { para: 'PAGO', rotulo: 'Comissão recebida → marcar pago' },
 };
 
 export default function AdminVendas() {
   const { data: vendas, loading, error, reload } = useApi<any[]>(() => Api.vendas());
   const [fase, setFase] = useState('PRE_ANALISE');
+  // Busca por contrato (Marcelo 08/09): código, cliente, unidade ou empreendimento — dentro da fase.
+  const [busca, setBusca] = useState('');
   const [selId, setSelId] = useState<number | null>(null);
   const toast = useToast();
 
   if (loading) return <Shell><LoadingBlock /></Shell>;
   if (error) return <Shell><ErrorBlock error={error} /></Shell>;
 
-  const lista = (vendas || []).filter((v) => v.status === fase);
+  const bn = busca.trim().toLowerCase();
+  const lista = (vendas || []).filter((v) => v.status === fase && (!bn || [v.codigo, v.clienteNome, v.unidade, v.empreendimento, v.construtora].filter(Boolean).join(' ').toLowerCase().includes(bn)));
   const sel = selId ? (vendas || []).find((v) => v.id === selId) : null;
   const contagem = (k: string) => (vendas || []).filter((v) => v.status === k).length;
 
@@ -108,6 +115,9 @@ export default function AdminVendas() {
         {FASES.find((f) => f.key === fase)?.hint}
       </div>
 
+      <div style={{ marginBottom: 10 }}>
+        <input className="field__input" type="search" placeholder="Buscar contrato nesta fase: código, cliente, unidade ou empreendimento" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ maxWidth: 520 }} />
+      </div>
       <div className="card" style={{ padding: 0 }}>
         <table className="table row-hover">
           <thead>
@@ -217,6 +227,8 @@ export default function AdminVendas() {
 
           {/* Documentos anexados pelo corretor + anexar contrato da construtora */}
           <VendaDocumentos vendaId={sel.id} podeRemover />
+          {/* Comissão parcelada: auditar parcela a parcela — "marcar pago" por parcela (Marcelo 08/09). */}
+          <VendaParcelas vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role || '')} rateioCompleto={false} />
 
           <div className="flex" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
             <div className="flex gap-2">
