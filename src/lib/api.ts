@@ -460,6 +460,7 @@ export const Api = {
   contaBancariaResolver: (corretorId: number) => request<{ conta: any; empresaKey?: string; unidade?: string; motivo?: string }>(`/contas-bancarias/resolver/${corretorId}`),
   vendaUpdateStatus: (id: number, status: string) =>
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
+  vendaCancelar: (id: number, motivo?: string) => request<any>(`/vendas/${id}/cancelar`, { method: 'POST', body: { motivo } }),
   vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
   vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; motivo?: string } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
   vendaAprovarTrafego: (id: number) => request<any>(`/vendas/${id}/aprovar-trafego`, { method: 'POST' }),

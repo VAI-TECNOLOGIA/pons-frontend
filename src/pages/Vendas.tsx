@@ -8,6 +8,7 @@ import { formatCurrencyShort, formatCurrencyExact, initials } from '../lib/forma
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { useKanbanDnd } from '../lib/useKanbanDnd';
 import { CampoCnpj } from '../components/CampoCnpj';
 import { BuscaSelect } from '../components/BuscaSelect';
@@ -192,6 +193,21 @@ export default function Vendas() {
  // Mudança de STATUS da venda (kanban/dropdown): Administrativo de Vendas (Glaucia)
  // e o CEO (Paulo) — pedido 29/07 reabriu pro CEO. Financeiro segue só lendo.
  const podeMudarStatus = role === 'ADMINISTRATIVO' || role === 'CEO';
+ // Cancelar venda (o "excluir" da gestão): líder de equipe/gestor. Reversível.
+ const podeCancelar = role === 'CEO' || role === 'DIRETOR_COMERCIAL' || role === 'GERENTE_EQUIPE' || role === 'SOCIO_UNIDADE';
+ const confirm = useConfirm();
+ const cancelarVenda = async (v: any) => {
+   const ok = await confirm({ title: `Cancelar a venda de ${v.clienteNome || v.cliente || 'cliente'}?`, message: 'A venda vai pra "Cancelado" e sai do fluxo. Pode ser reaberta depois.', tone: 'danger', confirmText: 'Cancelar venda' });
+   if (!ok) return;
+   try {
+     await Api.vendaCancelar(v.id);
+     toast.success('Venda cancelada.');
+     setSelected(null);
+     reload();
+   } catch (err: any) {
+     toast.error('Erro: ' + (err?.message || 'falha'));
+   }
+ };
 
  // ── Lead vinculado: origem vem do banco (corretor não escolhe; pode contestar) ──
  const { data: leadsDisponiveis } = useApi<any[]>(() => Api.leads());
@@ -1099,6 +1115,9 @@ export default function Vendas() {
  <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyExact(sel.valorVenda ?? sel.valor)}</strong>
  <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyExact(sel.comissao ?? ((sel.valorVenda ?? sel.valor ?? 0) * (sel.percentualComissao ?? 6)) / 100)}</strong></span>
  </div>
+ {podeCancelar && sel.status !== 'CANCELADO' && (
+ <button className="btn btn--ghost" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => cancelarVenda(sel)}>Cancelar venda</button>
+ )}
  <button className="btn btn--secondary" onClick={() => setSelected(null)}>Fechar</button>
  </>
  }
