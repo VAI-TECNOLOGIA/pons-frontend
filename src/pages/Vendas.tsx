@@ -1136,7 +1136,7 @@ export default function Vendas() {
  {sel.aguardandoAprovacao && (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10 }}>
  <div style={{ fontWeight: 700, fontSize: 13, color: '#B45309', marginBottom: 4 }}>
- Parcelamento {sel.entradaParcelas}x aguardando aprovação do Paulo
+ {sel.aprovacaoMotivo || `Parcelamento ${sel.entradaParcelas}x`} — aguardando aprovação do Paulo
  </div>
  {role === 'CEO' ? (
  <button
