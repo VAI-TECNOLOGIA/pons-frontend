@@ -36,8 +36,15 @@ export function DestinoPicker({
   const [busca, setBusca] = useState('');
   const btnRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number; acima: boolean } | null>(null);
+  // Onde o dropdown é montado. Dentro de um <dialog> modal, o navegador coloca o
+  // dialog na TOP LAYER (acima de TUDO, até de z-index 9999) — se portássemos pro
+  // body, o dropdown abriria ATRÁS do modal (parecia "não abrir"). Então portamos
+  // pro dialog quando há um; senão, pro body (ex.: /leads, sem modal).
+  const [portalEl, setPortalEl] = useState<Element | null>(null);
 
   const abrir = () => {
+    // monta o dropdown DENTRO do <dialog> pai (mesma top layer) se houver; senão no body.
+    setPortalEl(btnRef.current?.closest('dialog') || document.body);
     const r = btnRef.current?.getBoundingClientRect();
     if (r && r.width) {
       const abaixo = window.innerHeight - r.bottom;
@@ -181,7 +188,7 @@ export function DestinoPicker({
             </div>
           </div>
         </>,
-        document.body,
+        portalEl || document.body,
       )}
     </>
   );
