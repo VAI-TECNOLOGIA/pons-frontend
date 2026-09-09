@@ -492,10 +492,14 @@ export default function Vendas() {
  // Conta em CENTAVOS — em reais inteiros as parcelas arredondavam e a soma
  // não fechava com a entrada (R$ 62.073,91 em 5x saía R$ 62.074, Glaucia 07/08).
  const cents = (x: number) => Math.round(x * 100);
- const base = Math.round(cents(entradaV) / n);
+ // As parcelas somam (entrada − arras) — o arras é o ato, pago à parte. Distribui
+ // igual entre as n parcelas (todas >= 0) e a última absorve o arredondamento.
+ // Antes tirava o arras só da 1ª parcela: se o arras fosse MAIOR que uma parcela,
+ // a 1ª ficava negativa, era cortada pra 0 no display e a soma não fechava → o
+ // "Avançar" travava sem motivo aparente (bug reportado pelo Márcio 09/09).
+ const alvo = Math.max(0, cents(entradaV) - cents(arrasV));
+ const base = Math.floor(alvo / n);
  const vals = Array.from({ length: n }, () => base);
- vals[0] = base - cents(arrasV);
- const alvo = cents(entradaV) - cents(arrasV);
  vals[n - 1] += alvo - vals.reduce((a, b) => a + b, 0);
  const baseDate = entradaData ? new Date(entradaData + 'T00:00:00') : (() => { const dd = new Date(); dd.setMonth(dd.getMonth() + 1); return dd; })();
  const arr = vals.map((v, i) => {
