@@ -621,15 +621,16 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
       {/* ─── ABA 3: TRANSFERÊNCIA AUTOMÁTICA ─── */}
       {aba === 'transferencia' && (
         <div className="form-grid form-grid--single" style={{ maxWidth: 560 }}>
+          <div className="field__hint" style={{ marginBottom: 4 }}>O lead sempre entra 24h. Este horário controla só o <strong>pulo</strong>: quando o corretor não abre o contato, o lead passa pro próximo — mas só dentro da janela abaixo (fora dela, segura com o corretor).</div>
           <div className="field">
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600 }}>
               <input type="checkbox" checked={semExpediente} onChange={(e) => setSemExpediente(e.target.checked)} style={{ width: 'auto' }} />
-              Sem expediente — atribui o lead em qualquer horário (24h)
+              Pular a qualquer hora (24h)
             </label>
-            <div className="field__hint">Ideal pra campanha individual: o lead cai pro corretor na hora, não importa o horário. Ligado, os dias/horas abaixo são ignorados.</div>
+            <div className="field__hint">Ligado, pula a qualquer horário. Desligado, pula só nos dias/horas abaixo.</div>
           </div>
           <div className="field" style={{ opacity: semExpediente ? 0.4 : 1, pointerEvents: semExpediente ? 'none' : 'auto' }}>
-            <label className="field__label">Expediente — dias da semana</label>
+            <label className="field__label">Horário de pulo — dias da semana</label>
             <div className="flex" style={{ gap: 6, flexWrap: 'wrap' }}>
               {DIAS.map(([v, l]) => (
                 <button key={v} type="button" onClick={() => toggleDia(v)}
@@ -640,13 +641,13 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
           </div>
           <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 12, opacity: semExpediente ? 0.4 : 1, pointerEvents: semExpediente ? 'none' : 'auto' }}>
             <div className="field">
-              <label className="field__label">Início do expediente</label>
+              <label className="field__label">Início do pulo</label>
               <select className="field__select" value={iniHora} onChange={(e) => setIniHora(Number(e.target.value))}>
                 {HORAS.map((h) => <option key={h} value={h}>{h}h</option>)}
               </select>
             </div>
             <div className="field">
-              <label className="field__label">Fim do expediente</label>
+              <label className="field__label">Fim do pulo</label>
               <select className="field__select" value={fimHora} onChange={(e) => setFimHora(Number(e.target.value))}>
                 {HORAS.map((h) => <option key={h} value={h}>{h}h</option>)}
               </select>
