@@ -39,11 +39,17 @@ export function DestinoPicker({
 
   const abrir = () => {
     const r = btnRef.current?.getBoundingClientRect();
-    if (r) {
+    if (r && r.width) {
       const abaixo = window.innerHeight - r.bottom;
       const acima = abaixo < 360 && r.top > abaixo;
       // Painel confortável: até 480px, sempre com 12px de respiro das bordas da janela
       setPos({ top: acima ? r.top - 6 : r.bottom + 6, left: r.left, width: Math.min(Math.max(r.width, 480), window.innerWidth - 24), acima });
+    } else {
+      // Blindagem: se o botão não tiver rect (ref ausente/zero em certos navegadores),
+      // NÃO deixa o dropdown "não abrir" — centraliza na tela. Antes: pos ficava null
+      // e `open && pos` não renderizava nada (clique parecia não fazer nada).
+      const w = Math.min(480, window.innerWidth - 24);
+      setPos({ top: Math.max(60, window.innerHeight / 2 - 220), left: Math.max(12, (window.innerWidth - w) / 2), width: w, acima: false });
     }
     setBusca('');
     setOpen(true);
