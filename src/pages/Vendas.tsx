@@ -835,7 +835,9 @@ export default function Vendas() {
  if (step === 2 && parcelasEntrada.length > 0) {
  const somaP = parcelasEntrada.reduce((a, p) => a + parseMoedaBR(p.valor), 0);
  const alvoP = parseMoedaBR(entradaTotal) - parseMoedaBR(arrasValor);
- if (Math.abs(somaP - alvoP) > 0.01) { toast.error('A soma das parcelas da entrada precisa fechar com (entrada − arras). Ajuste antes de avançar.'); return; }
+ // Tolera até R$1 de arredondamento (protocolo real tem centavos: 4x + 120 mensais
+ // + 10 reforços nunca fecham no centavo exato). Mesmo limite que o backend usa pro saldo.
+ if (Math.abs(somaP - alvoP) > 1) { toast.error('A soma das parcelas da entrada precisa fechar com (entrada − arras). Ajuste antes de avançar.'); return; }
  }
  const prox = Math.min(step + 1, stepConfirma);
  // Entrando na confirmação: tira o snapshot dos campos pro resumo
