@@ -5,7 +5,6 @@ import { LoadingBlock } from './lib/useApi';
 import { isNativeApp } from './lib/platform';
 import { Auth } from './lib/auth';
 import { AvisoAtualizacao } from './components/AvisoAtualizacao';
-import { BotaoReportarErro } from './components/BotaoReportarErro';
 
 // Login fica eager — é o primeiro hit do usuário, evitamos qualquer flicker.
 import Login from './pages/Login';
@@ -129,7 +128,6 @@ export default function App() {
   return (
     <>
     <AvisoAtualizacao />
-    <BotaoReportarErro />
     <Suspense fallback={<LoadingBlock />}>
       <Routes>
         {/* No app nativo a entrada é a Academia (pública); no site web, o login. */}

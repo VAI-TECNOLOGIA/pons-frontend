@@ -1,15 +1,15 @@
-# VAI Sistema — Play Store Listing (pt-BR)
+# Pons CRM — Play Store Listing (pt-BR)
 
 ## Nome do app (<=30 chars)
-VAI Sistema — Grupo Pons
-(29 chars)
+Pons CRM
+(8 chars)
 
 ## Descricao curta (<=80 chars)
 CRM e gestao imobiliaria do Grupo Pons: leads, vendas, comissoes e equipe.
 (73 chars)
 
 ## Descricao completa (<=4000 chars)
-O VAI Sistema e a plataforma de gestao comercial e financeira do Grupo Pons Imobiliario. Reune CRM, pipeline de vendas, controle de comissoes e gestao de equipe em um unico aplicativo, pensado para a rotina veloz do mercado imobiliario do litoral de Santa Catarina.
+O Pons CRM e a plataforma de gestao comercial e financeira do Grupo Pons Imobiliario. Reune CRM, pipeline de vendas, controle de comissoes e gestao de equipe em um unico aplicativo, pensado para a rotina veloz do mercado imobiliario do litoral de Santa Catarina.
 
 PARA CORRETORES
 - Acompanhe seus leads e oportunidades em tempo real
@@ -33,7 +33,7 @@ SEGURANCA E PRIVACIDADE
 - Dados trafegados com criptografia (HTTPS)
 - Conformidade com a LGPD: o usuario pode solicitar exclusao de conta e de dados
 
-O VAI Sistema e uma ferramenta corporativa de uso interno do Grupo Pons e seus corretores parceiros. Nao realiza pagamentos ao usuario final nem oferece credito.
+O Pons CRM e uma ferramenta corporativa de uso interno do Grupo Pons e seus corretores parceiros. Nao realiza pagamentos ao usuario final nem oferece credito.
 
 Duvidas? contato@grupopons.com.br
 
@@ -59,4 +59,10 @@ https://app.grupopons.com.br/excluir-dados
 URL: https://app.grupopons.com.br
 E-mail: appteste@grupopons.com.br
 Senha: appteste123
-Observacao: conta CEO com acesso total a todas as funcionalidades para revisao.
+Observacao: conta CEO com acesso total a todas as funcionalidades para revisao. Conta validada e ativa em 09/08/2026.
+
+## Pacote / assinatura
+- applicationId: br.com.grupopons.sistema
+- versionName: 1.0.0  | versionCode: 1
+- Upload key (Play App Signing): keystore br.com.grupopons.vai.jks, alias vai-grupopons
+- Firebase (push/FCM): projeto pons-75376, app android:br.com.grupopons.sistema
