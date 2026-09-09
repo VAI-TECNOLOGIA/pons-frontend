@@ -35,7 +35,7 @@ export function DestinoPicker({
   const [aba, setAba] = useState<'CORRETOR' | 'EQUIPE' | 'FILA' | 'BASE' | 'BOLSAO'>('CORRETOR');
   const [busca, setBusca] = useState('');
   const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; acima: boolean } | null>(null);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null);
   // Onde o dropdown é montado. Dentro de um <dialog> modal, o navegador coloca o
   // dialog na TOP LAYER (acima de TUDO, até de z-index 9999) — se portássemos pro
   // body, o dropdown abriria ATRÁS do modal (parecia "não abrir"). Então portamos
@@ -44,19 +44,30 @@ export function DestinoPicker({
 
   const abrir = () => {
     // monta o dropdown DENTRO do <dialog> pai (mesma top layer) se houver; senão no body.
-    setPortalEl(btnRef.current?.closest('dialog') || document.body);
+    const container = (btnRef.current?.closest('dialog') as HTMLElement) || null;
+    setPortalEl(container || document.body);
+    // Um <dialog> com transform vira o "containing block" do position:fixed — então as
+    // coordenadas do painel precisam ser RELATIVAS ao dialog (senão o dropdown fica torto,
+    // deslocado pro lado). Sem dialog (ex.: /leads), é relativo à viewport (offset 0).
+    const o = container ? container.getBoundingClientRect() : null;
+    const offTop = o ? o.top : 0, offLeft = o ? o.left : 0;
+    const areaW = o ? o.width : window.innerWidth, areaH = o ? o.height : window.innerHeight;
     const r = btnRef.current?.getBoundingClientRect();
     if (r && r.width) {
       const abaixo = window.innerHeight - r.bottom;
       const acima = abaixo < 360 && r.top > abaixo;
-      // Painel confortável: até 480px, sempre com 12px de respiro das bordas da janela
-      setPos({ top: acima ? r.top - 6 : r.bottom + 6, left: r.left, width: Math.min(Math.max(r.width, 480), window.innerWidth - 24), acima });
+      const w = Math.min(Math.max(r.width, 480), window.innerWidth - 24);
+      const left = Math.max(12, Math.min(r.left - offLeft, areaW - w - 12));
+      setPos({
+        top: acima ? undefined : (r.bottom + 6 - offTop),
+        bottom: acima ? (areaH - (r.top - 6 - offTop)) : undefined,
+        left, width: w,
+      });
     } else {
-      // Blindagem: se o botão não tiver rect (ref ausente/zero em certos navegadores),
-      // NÃO deixa o dropdown "não abrir" — centraliza na tela. Antes: pos ficava null
-      // e `open && pos` não renderizava nada (clique parecia não fazer nada).
-      const w = Math.min(480, window.innerWidth - 24);
-      setPos({ top: Math.max(60, window.innerHeight / 2 - 220), left: Math.max(12, (window.innerWidth - w) / 2), width: w, acima: false });
+      // Blindagem: sem rect (ref ausente/zero em certos navegadores), centraliza na área —
+      // nunca deixa o dropdown "não abrir".
+      const w = Math.min(480, areaW - 24);
+      setPos({ top: Math.max(24, areaH / 2 - 220), left: Math.max(12, (areaW - w) / 2), width: w });
     }
     setBusca('');
     setOpen(true);
@@ -124,8 +135,9 @@ export function DestinoPicker({
           <div
             style={{
               position: 'fixed',
-              ...(pos.acima ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),
-              left: Math.max(12, Math.min(pos.left, window.innerWidth - pos.width - 12)),
+              ...(pos.top != null ? { top: pos.top } : {}),
+              ...(pos.bottom != null ? { bottom: pos.bottom } : {}),
+              left: pos.left,
               width: pos.width,
               zIndex: 9999,
               maxHeight: 440,
