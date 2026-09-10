@@ -5,6 +5,7 @@ import { LoadingBlock } from './lib/useApi';
 import { isNativeApp } from './lib/platform';
 import { Auth } from './lib/auth';
 import { AvisoAtualizacao } from './components/AvisoAtualizacao';
+import { TourGuiado } from './components/TourGuiado';
 import { BotaoReportarErro } from './components/BotaoReportarErro';
 
 // Login fica eager — é o primeiro hit do usuário, evitamos qualquer flicker.
@@ -129,6 +130,7 @@ export default function App() {
   return (
     <>
     <AvisoAtualizacao />
+    <TourGuiado />
     <BotaoReportarErro />
     <Suspense fallback={<LoadingBlock />}>
       <Routes>

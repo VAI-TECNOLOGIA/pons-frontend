@@ -471,6 +471,11 @@ export const Api = {
   parcelasAtrasadas: () => request<any[]>('/vendas/parcelas/atrasadas'),
   vendaParcelaStatus: (vendaId: number, pagamentoId: number, status: string) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}`, { method: 'PATCH', body: { status } }),
+  // Tour guiado das novidades — registra cada "confirmei" e lê o progresso (gestão).
+  tourConfirmar: (passoId: string, versao?: string) =>
+    request<{ ok: boolean }>(`/tour/confirmar`, { method: 'POST', body: { passoId, versao } }),
+  tourProgresso: () =>
+    request<{ confirmacoes: { userId: number; nome: string; email: string; papel: string; passo: string; em: string }[] }>(`/tour/progresso`),
   vendaDocumentos: (id: number) => request<any[]>(`/vendas/${id}/documentos`),
   vendaDocumentoDelete: (id: number, docId: number) =>
     request<any>(`/vendas/${id}/documentos/${docId}`, { method: 'DELETE' }),

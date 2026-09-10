@@ -439,7 +439,7 @@ function NavItemLink({
       {inner}
     </a>
   ) : (
-    <NavLink to={item.to} className={cls(active)} title={item.label}>
+    <NavLink to={item.to} className={cls(active)} title={item.label} data-tour={`nav:${item.to}`}>
       {inner}
     </NavLink>
   );

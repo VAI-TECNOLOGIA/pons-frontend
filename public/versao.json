@@ -1,7 +1,12 @@
 {
-  "versao": "2026.09.08",
-  "data": "08/09/2026",
+  "versao": "2026.09.10",
+  "data": "10/09/2026",
   "novidades": [
+    { "titulo": "Tour guiado das novidades", "itens": [
+      "Ao entrar, aparece um convite para um tour rápido pelas atualizações.",
+      "O tour destaca cada item novo, abre a tela e mostra como usar — você confirma um a um.",
+      "Feito para quem cuida de Vendas e do Administrativo de Vendas."
+    ] },
     { "titulo": "Vendas", "itens": [
       "Filtros combinados: período, filial, status, corretor, gestor e empreendimento.",
       "Busca por contrato: código, cliente, unidade ou empreendimento.",
