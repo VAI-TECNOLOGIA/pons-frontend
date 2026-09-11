@@ -1073,7 +1073,7 @@ export default function Chat() {
                           <Icon name="whatsapp" size={13} /> {conv.telefone}
                         </a>
                       ) : (conv.telefone || 'Telefone protegido')}
-                      {' · '}{conv.origem} · {mensagens.length} msg{mensagens.length === 1 ? '' : 's'}
+                      {conv.origem ? ` · ${conv.origem}` : ''} · {mensagens.length} msg{mensagens.length === 1 ? '' : 's'}
                       {conv.vaiConectado && ' · WhatsApp ativo'}
                     </div>
                   </div>
