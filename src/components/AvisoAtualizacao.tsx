@@ -95,11 +95,9 @@ export function AvisoAtualizacao() {
     setAberto(false);
   };
 
-  // No /chat o rodapé é o compositor de mensagem — os avisos vão pro TOPO-direita
-  // pra não empilhar em cima dos botões. Nas outras telas ficam no canto inferior,
-  // acima dos FABs (IA em 24, bug em 80).
-  const isChat = loc.pathname.startsWith('/chat');
-  const posPill: CSSProperties = isChat ? { top: 72 } : { bottom: 136 };
+  // Avisos (nova versão / tour) ficam no canto SUPERIOR-direita — lugar de
+  // notificação, longe do conteúdo e dos FABs (IA/bug) que ficam no inferior.
+  const posPill: CSSProperties = { top: 72 };
 
   return (
     <>
