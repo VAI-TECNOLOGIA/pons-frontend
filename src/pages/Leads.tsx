@@ -249,6 +249,13 @@ export default function Leads() {
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
+ // Telefone: se preenchido, tem que ser número de verdade (>=8 dígitos).
+ // Evita digitar o nome no campo telefone (bug antigo do cadastro manual).
+ const telRaw = fd.get('telefone') ? String(fd.get('telefone')) : '';
+ if (telRaw && telRaw.replace(/\D/g, '').length < 8) {
+ toast.error('Telefone inválido — informe um número com DDD (ex.: 47 99999-9999).');
+ return;
+ }
  try {
  const r = await Api.leadCreate({
  nome: String(fd.get('nome') || ''),
@@ -478,7 +485,7 @@ export default function Leads() {
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="telefone" className="field__input" placeholder="(48) 99999-0000" />
+ <input name="telefone" type="tel" inputMode="tel" className="field__input" placeholder="(48) 99999-0000" />
  </div>
  <div className="field">
  <label className="field__label">Origem</label>
