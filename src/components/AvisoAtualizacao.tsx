@@ -6,6 +6,7 @@
 // publicado (deploy com a aba aberta), oferece "Atualizar agora": limpa caches
 // (CacheStorage + service worker) e recarrega. Login/dados NÃO são apagados.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { Auth } from '../lib/auth';
@@ -94,6 +95,12 @@ export function AvisoAtualizacao() {
     setAberto(false);
   };
 
+  // No /chat o rodapé é o compositor de mensagem — os avisos vão pro TOPO-direita
+  // pra não empilhar em cima dos botões. Nas outras telas ficam no canto inferior,
+  // acima dos FABs (IA em 24, bug em 80).
+  const isChat = loc.pathname.startsWith('/chat');
+  const posPill: CSSProperties = isChat ? { top: 72 } : { bottom: 136 };
+
   return (
     <>
       <button
@@ -101,7 +108,7 @@ export function AvisoAtualizacao() {
         onClick={() => setAberto(true)}
         title={`Ver o que mudou · versão ${info.versao}`}
         style={{
-          position: 'fixed', right: 24, bottom: 84, zIndex: 8000,
+          position: 'fixed', right: 24, ...posPill, zIndex: 8000,
           display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999,
           background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)',
           border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)',

@@ -10,7 +10,10 @@ const ROTAS_PUBLICAS = ['/', '/login', '/redefinir-senha', '/privacidade', '/ter
 export function BotaoReportarErro() {
   const loc = useLocation();
   const [open, setOpen] = useState(false);
-  if (!Auth.token || ROTAS_PUBLICAS.includes(loc.pathname) || loc.pathname.startsWith('/lp')) return null;
+  // No /chat some (igual o FAB da IA) — senão fica colado no rodapé do
+  // compositor (em cima de "Salvar nota"). Nas outras telas fica empilhado
+  // ACIMA do FAB da IA, não em cima dele.
+  if (!Auth.token || ROTAS_PUBLICAS.includes(loc.pathname) || loc.pathname.startsWith('/lp') || loc.pathname.startsWith('/chat')) return null;
   return (
     <>
       <button
@@ -19,7 +22,7 @@ export function BotaoReportarErro() {
         title="Reportar um erro desta tela (tira o print sozinho)"
         aria-label="Reportar erro"
         style={{
-          position: 'fixed', right: 24, bottom: 24, zIndex: 8000,
+          position: 'fixed', right: 24, bottom: 80, zIndex: 8000,
           width: 44, height: 44, borderRadius: 999, cursor: 'pointer',
           background: 'var(--bg-elevated, #111827)', color: '#f87171',
           border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)',

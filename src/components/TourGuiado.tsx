@@ -138,10 +138,12 @@ export function TourGuiado() {
   if (!Auth.token || rotasPublicas.includes(loc.pathname) || loc.pathname.startsWith('/lp')) return null;
   if (fase === 'oculto') return null;
 
+  const isChat = loc.pathname.startsWith('/chat');
+
   // ── Convite ────────────────────────────────────────────────────────────
   if (fase === 'convite') {
     return createPortal(
-      <div style={cardWrap}>
+      <div style={{ ...cardWrap, ...posFlutuante(isChat) }}>
         <div style={cardBox}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <span style={dot} />
@@ -164,7 +166,7 @@ export function TourGuiado() {
   // ── Pílula (reabrir) ──────────────────────────────────────────────────
   if (fase === 'pill') {
     return createPortal(
-      <button type="button" onClick={iniciar} title="Ver o tour das novidades" style={pill}>
+      <button type="button" onClick={iniciar} title="Ver o tour das novidades" style={{ ...pill, ...posFlutuante(isChat) }}>
         <span style={dot} /> Tour das novidades
       </button>,
       document.body,
@@ -223,8 +225,12 @@ function tooltipPos(rect: DOMRect | null): CSSProperties {
 }
 
 const dot: CSSProperties = { width: 8, height: 8, borderRadius: 999, background: '#52f7fe', boxShadow: '0 0 0 3px rgba(82,247,254,0.25)', flex: 'none' };
-const cardWrap: CSSProperties = { position: 'fixed', right: 24, bottom: 84, zIndex: 8200, maxWidth: 340 };
+// Posição do card/pílula: no /chat o rodapé é o compositor → vai pro TOPO-direita
+// (abaixo do banner "Nova versão"). Nas outras telas fica no canto inferior, ACIMA
+// dos FABs e do banner (IA 24 · bug 80 · banner 136 · tour 192).
+const posFlutuante = (isChat: boolean): CSSProperties => (isChat ? { top: 124, bottom: 'auto' } : { bottom: 192 });
+const cardWrap: CSSProperties = { position: 'fixed', right: 24, zIndex: 8200, maxWidth: 340 };
 const cardBox: CSSProperties = { background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.14))', borderRadius: 14, padding: 18, boxShadow: '0 18px 60px rgba(0,0,0,0.5)' };
-const pill: CSSProperties = { position: 'fixed', right: 24, bottom: 140, zIndex: 8200, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999, background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', cursor: 'pointer', fontSize: 12.5, fontWeight: 600 };
+const pill: CSSProperties = { position: 'fixed', right: 24, zIndex: 8200, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999, background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', cursor: 'pointer', fontSize: 12.5, fontWeight: 600 };
 const tipBase: CSSProperties = { position: 'fixed', width: 340, maxWidth: 'calc(100vw - 32px)', background: 'var(--bg-elevated, #0f172a)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.16))', borderRadius: 14, padding: 18, boxShadow: '0 18px 60px rgba(0,0,0,0.6)', zIndex: 9600 };
 const xBtn: CSSProperties = { background: 'transparent', border: 'none', color: 'inherit', opacity: 0.6, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 2 };
