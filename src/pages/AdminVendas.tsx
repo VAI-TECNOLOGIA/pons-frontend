@@ -51,7 +51,13 @@ export default function AdminVendas() {
   if (error) return <Shell><ErrorBlock error={error} /></Shell>;
 
   const bn = busca.trim().toLowerCase();
-  const lista = (vendas || []).filter((v) => v.status === fase && (!bn || [v.codigo, v.clienteNome, v.unidade, v.empreendimento, v.construtora].filter(Boolean).join(' ').toLowerCase().includes(bn)));
+  // Busca por contrato é INDEPENDENTE da fase (Marcelo 14/09): ao digitar na busca,
+  // procura em TODAS as fases (ignora a aba selecionada). Sem busca, mostra só a
+  // fase selecionada. Assim "1702" acha o contrato esteja ele em confecção ou pago.
+  const lista = (vendas || []).filter((v) => {
+    if (bn) return [v.codigo, v.clienteNome, v.unidade, v.empreendimento, v.construtora].filter(Boolean).join(' ').toLowerCase().includes(bn);
+    return v.status === fase;
+  });
   const sel = selId ? (vendas || []).find((v) => v.id === selId) : null;
   const contagem = (k: string) => (vendas || []).filter((v) => v.status === k).length;
 
@@ -116,7 +122,8 @@ export default function AdminVendas() {
       </div>
 
       <div style={{ marginBottom: 10 }}>
-        <input className="field__input" type="search" placeholder="Buscar contrato nesta fase: código, cliente, unidade ou empreendimento" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ maxWidth: 520 }} />
+        <input className="field__input" type="search" placeholder="Buscar contrato em qualquer fase: código, cliente, unidade ou empreendimento" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ maxWidth: 520 }} />
+        {bn && <div className="text-xs text-secondary" style={{ marginTop: 6 }}>Buscando em todas as fases · {lista.length} contrato(s) encontrado(s)</div>}
       </div>
       <div className="card" style={{ padding: 0 }}>
         <table className="table row-hover">
@@ -125,12 +132,12 @@ export default function AdminVendas() {
           </thead>
           <tbody>
             {lista.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 28, color: 'var(--text-secondary)' }}>Nenhuma venda nesta fase</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 28, color: 'var(--text-secondary)' }}>{bn ? 'Nenhum contrato encontrado com essa busca' : 'Nenhuma venda nesta fase'}</td></tr>
             ) : lista.map((v) => (
               <tr key={v.id}>
                 <td className="font-semibold">#{v.codigo}</td>
                 <td>{v.clienteNome}</td>
-                <td className="text-xs">{v.empreendimento} · {v.unidade}</td>
+                <td className="text-xs">{v.empreendimento} · {v.unidade}{bn ? ` · ${(STATUS_MAP[v.status]?.[1] || v.status)}` : ''}</td>
                 <td className="text-xs">{v.corretor?.nome || '—'}</td>
                 <td className="numeric money">{formatCurrencyExact(v.valorVenda)}</td>
                 <td className="text-xs text-secondary">{new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>

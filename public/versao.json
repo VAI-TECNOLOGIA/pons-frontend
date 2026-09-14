@@ -1,9 +1,10 @@
 {
-  "versao": "2026.09.14",
+  "versao": "2026.09.14b",
   "data": "14/09/2026",
   "novidades": [
-    { "titulo": "Vendas — busca por contrato", "itens": [
-      "A busca por contrato agora funciona independente dos filtros: digite o código, cliente, unidade ou empreendimento e ela procura em todas as vendas, mesmo com filtros aplicados."
+    { "titulo": "Busca por contrato em qualquer fase", "itens": [
+      "Na tela Vendas e no Administrativo de Vendas, a busca agora acha o contrato independente do filtro e da aba de fase: digite o número da unidade, código, cliente ou empreendimento e ele aparece, esteja em confecção, assinatura ou pago.",
+      "Ao buscar no Administrativo de Vendas, cada resultado mostra em que fase o contrato está."
     ] },
     { "titulo": "Tour guiado das novidades", "itens": [
       "Ao entrar, aparece um convite para um tour rápido pelas atualizações.",
