@@ -99,6 +99,7 @@ type ConversationDetail = {
   status: string;
   lastInboundAt?: string | null;
   windowOpen?: boolean;
+  assumido?: boolean;
   _redistribution?: {
     count: number;
     previousCorretorName: string | null;
@@ -1276,6 +1277,8 @@ export default function Chat() {
                 <ComposerJanelaFechada
                   onAbrirTemplates={abrirTemplates}
                   onSalvarNota={salvarNota}
+                  onAceitar={aceitarLead}
+                  mostrarAceitar={!(conv as any).assumido}
                 />
               ) : (
                 <>
@@ -2172,9 +2175,13 @@ function ComposerPendenteIA({
 function ComposerJanelaFechada({
   onAbrirTemplates,
   onSalvarNota,
+  onAceitar,
+  mostrarAceitar,
 }: {
   onAbrirTemplates: () => void;
   onSalvarNota: (texto: string) => Promise<void> | void;
+  onAceitar?: () => void;
+  mostrarAceitar?: boolean;
 }) {
   const [nota, setNota] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -2191,11 +2198,20 @@ function ComposerJanelaFechada({
     >
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-          Janela de 24h fechada — envie um template pra falar com o contato.
+          {mostrarAceitar
+            ? 'Aceite o lead pra assumir o atendimento — ou envie um template pra falar agora.'
+            : 'Janela de 24h fechada — envie um template pra falar com o contato.'}
         </span>
-        <button className="btn btn--primary btn--sm" onClick={onAbrirTemplates}>
-          <Icon name="doc" size={14} /> Enviar template
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          {mostrarAceitar && onAceitar && (
+            <button className="btn btn--primary btn--sm" onClick={onAceitar} title="Assumir o atendimento deste lead">
+              <Icon name="check" size={14} /> Aceitar lead
+            </button>
+          )}
+          <button className={`btn btn--sm ${mostrarAceitar ? 'btn--secondary' : 'btn--primary'}`} onClick={onAbrirTemplates}>
+            <Icon name="doc" size={14} /> Enviar template
+          </button>
+        </div>
       </div>
       {/* Nota interna liberada mesmo com a janela fechada (não vai pro lead). */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
