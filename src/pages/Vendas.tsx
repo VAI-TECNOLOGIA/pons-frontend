@@ -183,6 +183,13 @@ export default function Vendas() {
  const corretoresDaFilial = new Set((corretores || []).filter((c: any) => filtro.filial.includes(String(c.equipe?.id || ''))).map((c: any) => c.id));
  const empNomeDe = (v: any) => (typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '');
  const vendasFiltradas = (vendas || []).filter((v: any) => {
+   // Busca por contrato é INDEPENDENTE dos filtros (Marcelo 12/09): havendo texto
+   // na busca, procura no total de vendas e ignora período/filial/status/corretor/
+   // gestor/empreendimento — pra achar qualquer contrato sem ter que limpar filtro.
+   if (buscaNorm) {
+     const alvo = [v.codigo, v.clienteNome || v.cliente, v.unidade, empNomeDe(v), typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome].filter(Boolean).join(' ').toLowerCase();
+     return alvo.includes(buscaNorm);
+   }
    if (filtro.de && new Date(v.createdAt) < new Date(filtro.de + 'T00:00:00')) return false;
    if (filtro.ate && new Date(v.createdAt) > new Date(filtro.ate + 'T23:59:59')) return false;
    if (filtro.status.length && !filtro.status.includes(v.status)) return false;
@@ -190,10 +197,6 @@ export default function Vendas() {
    if (filtro.emp.length && !filtro.emp.includes(empNomeDe(v))) return false;
    if (filtro.filial.length && !corretoresDaFilial.has(v.corretor?.id)) return false;
    if (filtro.gestorId.length && !corretoresDoGestor.has(v.corretor?.id)) return false;
-   if (buscaNorm) {
-     const alvo = [v.codigo, v.clienteNome || v.cliente, v.unidade, empNomeDe(v), typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome].filter(Boolean).join(' ').toLowerCase();
-     if (!alvo.includes(buscaNorm)) return false;
-   }
    return true;
  });
  const filiaisOpcoes = Array.from(new Map((corretores || []).filter((c: any) => c.equipe).map((c: any) => [String(c.equipe.id), c.equipe.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));

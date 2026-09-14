@@ -1,7 +1,10 @@
 {
-  "versao": "2026.09.10",
-  "data": "10/09/2026",
+  "versao": "2026.09.14",
+  "data": "14/09/2026",
   "novidades": [
+    { "titulo": "Vendas — busca por contrato", "itens": [
+      "A busca por contrato agora funciona independente dos filtros: digite o código, cliente, unidade ou empreendimento e ela procura em todas as vendas, mesmo com filtros aplicados."
+    ] },
     { "titulo": "Tour guiado das novidades", "itens": [
       "Ao entrar, aparece um convite para um tour rápido pelas atualizações.",
       "O tour destaca cada item novo, abre a tela e mostra como usar — você confirma um a um.",
