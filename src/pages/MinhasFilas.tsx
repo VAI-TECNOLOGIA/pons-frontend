@@ -88,6 +88,13 @@ export default function MinhasFilas() {
                 <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>{f.nome}</div>
                 {f.pausado ? (
                   <div className="text-sm" style={{ color: '#B45309', fontWeight: 600 }}>Pausado</div>
+                ) : f.posicaoOcultaPorLimite ? (
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Você está na fila ✓</div>
+                    <div className="text-xs text-secondary" style={{ marginTop: 4 }}>
+                      Sua posição aparece quando você entrar no top {f.posicaoVisivelAte}. Você recebe um aviso quando estiver chegando a sua vez.
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>

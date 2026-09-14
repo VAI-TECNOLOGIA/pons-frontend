@@ -358,6 +358,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   const [modoPulo, setModoPulo] = useState<'PROXIMO' | 'BOLSAO' | 'NAO_PULAR'>((fila?.modoPulo as any) || 'PROXIMO');
   const [bolsaoDestinoId, setBolsaoDestinoId] = useState<string>(fila?.bolsaoDestinoId ? String(fila.bolsaoDestinoId) : '');
   const [ocultarPosicao, setOcultarPosicao] = useState<boolean>(fila?.ocultarPosicao ?? false);
+  const [posicaoVisivelAte, setPosicaoVisivelAte] = useState<number | null>(fila?.posicaoVisivelAte ?? null);
   const [autoTemplate, setAutoTemplate] = useState<string>(fila?.autoTemplate || ''); // template disparado ao lead cair na fila (CTWA)
   const [direcionarAtendendo, setDirecionarAtendendo] = useState<boolean>(fila?.direcionarAtendendo ?? false); // vai direto pro Atendendo (sem IA)
   const [liberarContatoImediato, setLiberarContatoImediato] = useState<boolean>(fila?.liberarContatoImediato ?? false); // telefone do lead sem máscara pro corretor
@@ -394,6 +395,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
       modoPulo,
       bolsaoDestinoId: modoPulo === 'BOLSAO' && bolsaoDestinoId ? Number(bolsaoDestinoId) : null,
       ocultarPosicao,
+      posicaoVisivelAte: ocultarPosicao ? null : posicaoVisivelAte,
       autoTemplate: autoTemplate.trim() || null,
       direcionarAtendendo,
       liberarContatoImediato,
@@ -593,6 +595,24 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
             <input type="checkbox" checked={ocultarPosicao} onChange={(e) => setOcultarPosicao(e.target.checked)} />
             <span style={{ fontWeight: 600 }}>Ocultar posição do corretor</span>
           </label>
+          {!ocultarPosicao && (
+            <>
+              <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
+                <input type="checkbox" checked={posicaoVisivelAte != null} onChange={(e) => setPosicaoVisivelAte(e.target.checked ? 10 : null)} style={{ marginTop: 3 }} />
+                <span>
+                  <span style={{ fontWeight: 600 }}>Mostrar posição só no top N</span>
+                  <span className="field__hint" style={{ display: 'block' }}>O corretor só vê a posição quando estiver entre os primeiros. Ao entrar no top N ele recebe "sua vez está chegando" e, ao chegar em 1º, "é a sua vez". Fora do top N a posição fica oculta.</span>
+                </span>
+              </label>
+              {posicaoVisivelAte != null && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 26, marginTop: 2 }}>
+                  <span className="field__hint">Mostrar a partir do</span>
+                  <input type="number" min={1} className="field__input" style={{ width: 80 }} value={posicaoVisivelAte} onChange={(e) => setPosicaoVisivelAte(Math.max(1, Number(e.target.value) || 1))} />
+                  <span className="field__hint">º lugar</span>
+                </div>
+              )}
+            </>
+          )}
           <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={liberarContatoImediato} onChange={(e) => setLiberarContatoImediato(e.target.checked)} style={{ marginTop: 3 }} />
             <span>
