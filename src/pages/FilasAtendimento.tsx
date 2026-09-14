@@ -596,8 +596,8 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
           <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={liberarContatoImediato} onChange={(e) => setLiberarContatoImediato(e.target.checked)} style={{ marginTop: 3 }} />
             <span>
-              <span style={{ fontWeight: 600 }}>Liberar contato imediato do lead</span>
-              <span className="field__hint" style={{ display: 'block' }}>O corretor recebe o <strong>telefone do lead sem máscara</strong> assim que o lead cai nesta fila — pra campanhas particulares/pagas do próprio corretor. Desmarcado = telefone oculto até liberação manual.</span>
+              <span style={{ fontWeight: 600 }}>Liberar contato ao aceitar o lead</span>
+              <span className="field__hint" style={{ display: 'block' }}>Quando o corretor <strong>aceitar</strong> o lead desta fila, o <strong>telefone vem sem máscara</strong>. Sem aceitar, o número fica oculto — assim um lead que pula pra outro corretor não expõe o contato pra quem não assumiu. Desmarcado = telefone oculto até liberação manual.</span>
             </span>
           </label>
         </div>
