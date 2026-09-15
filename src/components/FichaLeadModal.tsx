@@ -309,7 +309,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                             <div className="text-xs text-secondary">{MOTIVO_LABEL[t.motivo] || t.motivo}</div>
                             {/* Horário EXATO (pedido Vini 15/09): quando entrou/pulou, pra print — "entrou 5h00, pulou 5h05". Só gestão vê (corretor recebe trajeto vazio). */}
                             <div className="text-xs" style={{ fontWeight: 600 }}>
-                              {new Date(t.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {new Date(t.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                               <span className="text-secondary" style={{ fontWeight: 400 }}> · {timeAgo(t.createdAt)}</span>
                             </div>
                           </div>
