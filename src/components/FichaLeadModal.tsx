@@ -306,7 +306,12 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                             <div style={{ fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                               {t.deCorretorNome || 'Sistema'} <Icon name="arrow_right" size={11} /> {t.paraCorretorNome || '—'}
                             </div>
-                            <div className="text-xs text-secondary">{MOTIVO_LABEL[t.motivo] || t.motivo} · {timeAgo(t.createdAt)}</div>
+                            <div className="text-xs text-secondary">{MOTIVO_LABEL[t.motivo] || t.motivo}</div>
+                            {/* Horário EXATO (pedido Vini 15/09): quando entrou/pulou, pra print — "entrou 5h00, pulou 5h05". Só gestão vê (corretor recebe trajeto vazio). */}
+                            <div className="text-xs" style={{ fontWeight: 600 }}>
+                              {new Date(t.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              <span className="text-secondary" style={{ fontWeight: 400 }}> · {timeAgo(t.createdAt)}</span>
+                            </div>
                           </div>
                         ))}
                         {transfs.length > 10 && <div className="text-xs text-secondary">+ {transfs.length - 10} mais antigas</div>}
