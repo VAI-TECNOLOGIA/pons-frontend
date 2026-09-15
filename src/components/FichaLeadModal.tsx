@@ -290,9 +290,10 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
               </div>
 
               {/* Histórico de transferências — de quem veio, pra quem foi, por quê */}
+              {transfs.length > 0 && (
               <div style={{ marginTop: 14 }}>
                 <button className="btn btn--ghost btn--sm" onClick={() => setVerTransfs((v) => !v)}>
-                  <Icon name="history" size={13} /> {verTransfs ? 'Ocultar histórico de transferências' : `Histórico de transferências${transfs.length ? ` (${transfs.length})` : ''}`}
+                  <Icon name="history" size={13} /> {verTransfs ? 'Ocultar histórico de transferências' : `Histórico de transferências (${transfs.length})`}
                 </button>
                 {verTransfs && (
                   <div className="card" style={{ padding: '12px 16px', marginTop: 8 }}>
@@ -314,6 +315,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                   </div>
                 )}
               </div>
+              )}
             </div>
           </div>
         </>
