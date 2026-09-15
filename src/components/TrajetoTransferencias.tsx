@@ -14,8 +14,10 @@ type Transf = {
   leadNome?: string | null;
 };
 
-// Rótulo amigável + descrição por motivo.
-const MOTIVO_INFO: Record<string, { label: string; desc: string }> = {
+// Rótulo amigável + descrição por motivo. `solo` = evento de 1 ator só (não é
+// "de → para", ex.: o corretor pegou o lead). `cor` = cor da bolinha.
+const MOTIVO_INFO: Record<string, { label: string; desc: string; solo?: boolean; cor?: string }> = {
+  CORRETOR_ASSUMIU: { label: 'Corretor pegou o lead', desc: 'O corretor aceitou e assumiu o atendimento.', solo: true, cor: '#16A34A' },
   SEM_TEMPLATE_SLA: { label: 'Transferência por timer', desc: 'Corretor não atendeu no prazo — o lead passou para o próximo da fila.' },
   SLA_AUTOMATICO: { label: 'Redistribuição por SLA', desc: 'Redistribuído automaticamente por inatividade.' },
   SLA_AUTOMATICO_HISTORICO_LIMPO: { label: 'Redistribuição por SLA', desc: 'Redistribuído por inatividade (histórico anterior limpo — o lead nunca respondeu).' },
@@ -49,8 +51,8 @@ export function TrajetoTransferencias({ transfs, showLead = false }: { transfs: 
           <div key={t.id} style={{ position: 'relative', paddingLeft: 22, paddingBottom: ultimo ? 0 : 16 }}>
             {/* linha vertical */}
             {!ultimo && <span style={{ position: 'absolute', left: 4, top: 12, bottom: 0, width: 2, background: 'var(--border-light, rgba(148,163,184,0.35))' }} />}
-            {/* bolinha (a mais recente destacada) */}
-            <span style={{ position: 'absolute', left: 0, top: 4, width: 10, height: 10, borderRadius: 999, background: i === 0 ? 'var(--pons-blue, #2563EB)' : 'var(--border, #CBD5E1)', boxShadow: i === 0 ? '0 0 0 3px rgba(37,99,235,0.18)' : 'none' }} />
+            {/* bolinha (verde no aceite; a mais recente em azul; resto cinza) */}
+            <span style={{ position: 'absolute', left: 0, top: 4, width: 10, height: 10, borderRadius: 999, background: info.cor || (i === 0 ? 'var(--pons-blue, #2563EB)' : 'var(--border, #CBD5E1)'), boxShadow: (info.cor || i === 0) ? `0 0 0 3px ${info.cor ? 'rgba(22,163,74,0.18)' : 'rgba(37,99,235,0.18)'}` : 'none' }} />
             {/* linha 1: chip do tipo + data */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--bg-elevated, rgba(148,163,184,0.16))' }}>{info.label}</span>
@@ -60,12 +62,16 @@ export function TrajetoTransferencias({ transfs, showLead = false }: { transfs: 
             {showLead && (
               <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4 }}>{t.leadNome}</div>
             )}
-            {/* linha 2: de → para */}
-            <div style={{ fontSize: 12.5, marginTop: 3, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-              <span className="text-secondary">de:</span> {t.deCorretorNome || 'Sistema'}
-              <Icon name="arrow_right" size={11} />
-              <span className="text-secondary">para:</span> {t.paraCorretorNome || '—'}
-            </div>
+            {/* linha 2: "pegou o lead" (evento solo) ou "de → para" */}
+            {info.solo ? (
+              <div style={{ fontSize: 12.5, marginTop: 3, fontWeight: 600 }}>{t.paraCorretorNome || t.deCorretorNome || '—'}</div>
+            ) : (
+              <div style={{ fontSize: 12.5, marginTop: 3, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                <span className="text-secondary">de:</span> {t.deCorretorNome || 'Sistema'}
+                <Icon name="arrow_right" size={11} />
+                <span className="text-secondary">para:</span> {t.paraCorretorNome || '—'}
+              </div>
+            )}
             {/* descrição */}
             {desc && <div className="text-xs text-secondary" style={{ fontStyle: 'italic', marginTop: 2 }}>{desc}</div>}
           </div>
