@@ -8,19 +8,11 @@ import { Icon } from './Icon';
 import { Api } from '../lib/api';
 import { useToast } from '../lib/toast';
 import { timeAgo } from '../lib/format';
+import { TrajetoTransferencias } from './TrajetoTransferencias';
 
 const STATUS_LABEL: Record<string, string> = {
   NOVO: 'Novo', SDR: 'SDR', QUALIFICANDO: 'Qualificando', NEGOCIANDO: 'Negociando',
   VISITA: 'Visita', PROPOSTA: 'Proposta', FECHADO: 'Fechado', PERDIDO: 'Perdido',
-};
-
-const MOTIVO_LABEL: Record<string, string> = {
-  SLA_AUTOMATICO: 'Redistribuição por SLA',
-  SLA_AUTOMATICO_HISTORICO_LIMPO: 'Redistribuição por SLA (histórico limpo)',
-  MANUAL_GESTOR: 'Transferência do gestor',
-  MANUAL_CORRETOR: 'Transferência do corretor',
-  FALLBACK_ROLETA: 'Fallback da roleta',
-  DIRECIONAMENTO_GESTOR: 'Direcionado pelo gestor',
 };
 
 // Origem no modelo do cliente: leads captados pela integração aparecem como
@@ -296,27 +288,8 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                   <Icon name="history" size={13} /> {verTransfs ? 'Ocultar histórico de transferências' : `Histórico de transferências (${transfs.length})`}
                 </button>
                 {verTransfs && (
-                  <div className="card" style={{ padding: '12px 16px', marginTop: 8 }}>
-                    {transfs.length === 0 ? (
-                      <div className="text-xs text-secondary">Sem transferências registradas.</div>
-                    ) : (
-                      <div style={{ display: 'grid', gap: 10 }}>
-                        {transfs.slice(0, 10).map((t: any) => (
-                          <div key={t.id} style={{ borderLeft: '3px solid var(--border-light)', paddingLeft: 10 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                              {t.deCorretorNome || 'Sistema'} <Icon name="arrow_right" size={11} /> {t.paraCorretorNome || '—'}
-                            </div>
-                            <div className="text-xs text-secondary">{MOTIVO_LABEL[t.motivo] || t.motivo}</div>
-                            {/* Horário EXATO (pedido Vini 15/09): quando entrou/pulou, pra print — "entrou 5h00, pulou 5h05". Só gestão vê (corretor recebe trajeto vazio). */}
-                            <div className="text-xs" style={{ fontWeight: 600 }}>
-                              {new Date(t.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                              <span className="text-secondary" style={{ fontWeight: 400 }}> · {timeAgo(t.createdAt)}</span>
-                            </div>
-                          </div>
-                        ))}
-                        {transfs.length > 10 && <div className="text-xs text-secondary">+ {transfs.length - 10} mais antigas</div>}
-                      </div>
-                    )}
+                  <div className="card" style={{ padding: '14px 16px', marginTop: 8 }}>
+                    <TrajetoTransferencias transfs={transfs} />
                   </div>
                 )}
               </div>

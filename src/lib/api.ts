@@ -918,6 +918,7 @@ export const Api = {
   transferenciaReverterGrupo: (transferenciaId: number) =>
     request<{ ok: boolean; revertidos: number; pulados: number }>('/transferencias/reverter-grupo', { method: 'POST', body: { transferenciaId } }),
   transferenciasLead: (leadId: number) => request<any[]>(`/transferencias/lead/${leadId}`),
+  transferenciasCorretor: (corretorId: number) => request<any[]>(`/transferencias/corretor/${corretorId}`),
   transferir: (data: { leadId: number; paraCorretorId?: number | null; motivo?: string; observacao?: string | null }) =>
     request<any>('/transferencias', { method: 'POST', body: data }),
   // M16: KPIs Agendamento

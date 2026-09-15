@@ -11,6 +11,7 @@ import { MultiFiltro } from '../components/MultiFiltro';
 import { Auth } from '../lib/auth';
 import { DestinoPicker, type DestinoTransf } from '../components/DestinoPicker';
 import { FichaLeadModal } from '../components/FichaLeadModal';
+import { TrajetoTransferencias } from '../components/TrajetoTransferencias';
 
 export default function Corretores() {
  // Gestor (líder de equipe) cadastra corretor SÓ nas equipes que lidera — a lista
@@ -623,8 +624,10 @@ function Shell({ children, onNew }: { children: React.ReactNode; onNew?: () => v
 // tabela de vendas com o % TRAVADO de cada uma (snapshot do fechamento).
 function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: () => void; onSaved: () => void }) {
   const { data: c, loading, error, reload } = useApi<any>(() => Api.corretor(id), [id]);
+  const { data: transfs } = useApi<any[]>(() => Api.transferenciasCorretor(id), [id]);
   const toast = useToast();
   const [saving, setSaving] = useState(false);
+  const [verTransfs, setVerTransfs] = useState(false);
 
   const fmt = (v: number) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
   const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
@@ -701,6 +704,24 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
               ))}
             </tbody>
           </table>
+
+          {/* Histórico de transferências do corretor: todos os leads que passaram
+              por ele (entrada e pulo), com horário — igual a ficha do lead. Só gestão vê. */}
+          <h4 style={{ fontWeight: 700, fontSize: 13, margin: '18px 0 6px' }}>Histórico de transferências</h4>
+          {(transfs || []).length === 0 ? (
+            <div className="text-xs text-secondary">Nenhuma transferência registrada para este corretor.</div>
+          ) : (
+            <>
+              <button className="btn btn--ghost btn--sm" onClick={() => setVerTransfs((v) => !v)}>
+                <Icon name="history" size={13} /> {verTransfs ? 'Ocultar' : `Ver histórico (${transfs!.length})`}
+              </button>
+              {verTransfs && (
+                <div className="card" style={{ padding: '14px 16px', marginTop: 8 }}>
+                  <TrajetoTransferencias transfs={transfs!} showLead />
+                </div>
+              )}
+            </>
+          )}
         </>
       ) : null}
     </Modal>
