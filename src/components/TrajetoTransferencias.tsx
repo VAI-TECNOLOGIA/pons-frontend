@@ -12,7 +12,11 @@ type Transf = {
   deCorretorNome?: string | null;
   paraCorretorNome?: string | null;
   leadNome?: string | null;
+  notificadoEm?: string | null;
 };
+
+const horaBR = (s: string) =>
+  new Date(s).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
 // Rótulo amigável + descrição por motivo. `solo` = evento de 1 ator só (não é
 // "de → para", ex.: o corretor pegou o lead). `cor` = cor da bolinha.
@@ -74,6 +78,12 @@ export function TrajetoTransferencias({ transfs, showLead = false }: { transfs: 
             )}
             {/* descrição */}
             {desc && <div className="text-xs text-secondary" style={{ fontStyle: 'italic', marginTop: 2 }}>{desc}</div>}
+            {/* horário em que o push/notificação foi disparado pro corretor */}
+            {t.notificadoEm && (
+              <div className="text-xs" style={{ marginTop: 3, color: 'var(--color-success, #16A34A)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <Icon name="bell" size={12} /> Notificação enviada ao corretor às {horaBR(t.notificadoEm)}
+              </div>
+            )}
           </div>
         );
       })}
