@@ -592,26 +592,25 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
             <span style={{ fontWeight: 600 }}>Fila ativa</span>
           </label>
           <label className="flex" style={{ gap: 8, alignItems: 'center', cursor: 'pointer', marginTop: 4 }}>
-            <input type="checkbox" checked={ocultarPosicao} onChange={(e) => setOcultarPosicao(e.target.checked)} />
+            {/* Ocultar posição e "mostrar só no top N" se excluem: marcar um desmarca o outro. */}
+            <input type="checkbox" checked={ocultarPosicao} onChange={(e) => { setOcultarPosicao(e.target.checked); if (e.target.checked) setPosicaoVisivelAte(null); }} />
             <span style={{ fontWeight: 600 }}>Ocultar posição do corretor</span>
           </label>
-          {!ocultarPosicao && (
-            <>
-              <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
-                <input type="checkbox" checked={posicaoVisivelAte != null} onChange={(e) => setPosicaoVisivelAte(e.target.checked ? 10 : null)} style={{ marginTop: 3 }} />
-                <span>
-                  <span style={{ fontWeight: 600 }}>Mostrar posição só no top N</span>
-                  <span className="field__hint" style={{ display: 'block' }}>O corretor só vê a posição quando estiver entre os primeiros. Ao entrar no top N ele recebe "sua vez está chegando" e, ao chegar em 1º, "é a sua vez". Fora do top N a posição fica oculta.</span>
-                </span>
-              </label>
-              {posicaoVisivelAte != null && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 26, marginTop: 2 }}>
-                  <span className="field__hint">Mostrar a partir do</span>
-                  <input type="number" min={1} className="field__input" style={{ width: 80 }} value={posicaoVisivelAte} onChange={(e) => setPosicaoVisivelAte(Math.max(1, Number(e.target.value) || 1))} />
-                  <span className="field__hint">º lugar</span>
-                </div>
-              )}
-            </>
+          {/* Sempre visível (inclusive nas filas com "Ocultar posição" ligado) — senão o
+              corretor não conseguia trocar de "oculto" pra "top N" nas filas já criadas. */}
+          <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
+            <input type="checkbox" checked={posicaoVisivelAte != null} onChange={(e) => { setPosicaoVisivelAte(e.target.checked ? 10 : null); if (e.target.checked) setOcultarPosicao(false); }} style={{ marginTop: 3 }} />
+            <span>
+              <span style={{ fontWeight: 600 }}>Mostrar posição só no top N</span>
+              <span className="field__hint" style={{ display: 'block' }}>O corretor só vê a posição quando estiver entre os primeiros. Ao entrar no top N ele recebe "sua vez está chegando" e, ao chegar em 1º, "é a sua vez". Fora do top N a posição fica oculta. (Desliga o "Ocultar posição".)</span>
+            </span>
+          </label>
+          {posicaoVisivelAte != null && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 26, marginTop: 2 }}>
+              <span className="field__hint">Mostrar a partir do</span>
+              <input type="number" min={1} className="field__input" style={{ width: 80 }} value={posicaoVisivelAte} onChange={(e) => setPosicaoVisivelAte(Math.max(1, Number(e.target.value) || 1))} />
+              <span className="field__hint">º lugar</span>
+            </div>
           )}
           <label className="flex" style={{ gap: 8, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
             <input type="checkbox" checked={liberarContatoImediato} onChange={(e) => setLiberarContatoImediato(e.target.checked)} style={{ marginTop: 3 }} />
