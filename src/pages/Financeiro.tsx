@@ -62,6 +62,7 @@ export default function Financeiro() {
  const [metodoForm, setMetodoForm] = useState('PIX');
  const [boletoLido, setBoletoLido] = useState('');
  const [editando, setEditando] = useState<any>(null);
+ const [formSeq, setFormSeq] = useState(0); // muda a cada abertura → força o form a remontar/zerar
  const [filtroBenef, setFiltroBenef] = useState('');
  const [filtroStatus, setFiltroStatus] = useState('');
  const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => Api.finResumo());
@@ -71,8 +72,8 @@ export default function Financeiro() {
  const CONTAS_SUGERIDAS = ['Matriz', 'Segunda Avenida', 'DELAS', 'Capão'];
  const confirm = useConfirm();
 
- const abrirNovo = () => { setEditando(null); setMetodoForm('PIX'); setBoletoLido(''); setOpenNew(true); };
- const abrirEdicao = (l: any) => { setEditando(l); setMetodoForm(l.metodo || 'PIX'); setBoletoLido(''); setOpenNew(true); };
+ const abrirNovo = () => { setEditando(null); setMetodoForm('PIX'); setBoletoLido(''); setFormSeq((n) => n + 1); setOpenNew(true); };
+ const abrirEdicao = (l: any) => { setEditando(l); setMetodoForm(l.metodo || 'PIX'); setBoletoLido(''); setFormSeq((n) => n + 1); setOpenNew(true); };
 
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -116,6 +117,24 @@ export default function Financeiro() {
  try {
  await Api.finAprovar(id);
  toast.success('Lançamento aprovado');
+ reloadLanc();
+ reloadResumo();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ }
+ };
+
+ const cancelar = async (l: any) => {
+ const ok = await confirm({
+ title: 'Cancelar este lançamento?',
+ message: `"${l.descricao || l.beneficiario || 'Lançamento'}" · R$ ${(l.valor || 0).toLocaleString('pt-BR')} será marcado como CANCELADO e sai do total a pagar. Fica no histórico (auditoria), não é apagado.`,
+ confirmText: 'Cancelar lançamento',
+ tone: 'danger',
+ });
+ if (!ok) return;
+ try {
+ await Api.finLancamentoUpdate(l.id, { status: 'CANCELADO' });
+ toast.success('Lançamento cancelado');
  reloadLanc();
  reloadResumo();
  } catch (err: any) {
@@ -307,6 +326,9 @@ export default function Financeiro() {
  {l.status !== 'PAGO' && l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" onClick={() => marcarPago(l.id)}>Marcar pago</button>
  )}
+ {l.status !== 'CANCELADO' && (
+ <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger)' }} onClick={() => cancelar(l)}>Cancelar</button>
+ )}
  </div>
  </td>
  </tr>
@@ -332,7 +354,7 @@ export default function Financeiro() {
  {tab === 'sicredi' && <SicrediTab onEnviar={enviarSicredi} />}
  </div>
  <Modal open={openNew} onClose={() => { setOpenNew(false); setEditando(null); }} title={editando ? 'Corrigir lançamento' : 'Novo lançamento'} subtitle={editando ? 'Ajuste os dados lançados errado e salve' : 'Entrada ou saída a registrar no caixa'}>
- <form onSubmit={submit} key={editando?.id ?? 'novo'}>
+ <form onSubmit={submit} key={`${editando?.id ?? 'novo'}:${formSeq}`}>
  <div className="form-grid">
  <div className="field">
  <label className="field__label">Tipo</label>

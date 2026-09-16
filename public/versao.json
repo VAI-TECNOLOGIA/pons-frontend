@@ -1,7 +1,14 @@
 {
-  "versao": "2026.09.16i",
+  "versao": "2026.09.16j",
   "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Contas a pagar — correções no lançamento",
+      "itens": [
+        "Corrigido: ao abrir Novo Lançamento o formulário agora sempre começa em branco (antes vinha preenchido com o lançamento anterior, e por isso o campo Conta que paga não mostrava as outras opções sem atualizar a página).",
+        "Novo botão Cancelar em cada lançamento: marca como CANCELADO e tira do total a pagar. Fica no histórico (auditoria), não é apagado."
+      ]
+    },
     {
       "titulo": "Protocolo — cliente internacional",
       "itens": [
