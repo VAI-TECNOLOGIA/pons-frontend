@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.16h",
+  "versao": "2026.09.16i",
   "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Protocolo — cliente internacional",
+      "itens": [
+        "Ao marcar Cliente internacional (ou Cônjuge estrangeiro) no protocolo de venda: o documento passa a aceitar passaporte (sem exigir órgão expedidor), o CEP aceita código postal com letras (ex.: SW1A 1AA) e o campo UF vira Estado/Província com texto livre. O CPF já era dispensado."
+      ]
+    },
     {
       "titulo": "Contas a pagar — conta que paga (banco)",
       "itens": [

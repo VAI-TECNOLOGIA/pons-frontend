@@ -343,6 +343,9 @@ export default function Vendas() {
  };
  const onRg = (e: React.FormEvent<HTMLInputElement>) => {
  const el = e.currentTarget;
+ // Estrangeiro identifica-se por passaporte (sem órgão expedidor): aceita qualquer texto.
+ const intl = el.name === 'conjugeRg' ? conjugeInternacional : clienteInternacional;
+ if (intl) { el.setCustomValidity(''); return; }
  el.setCustomValidity(el.value && !/\d.*[A-Za-z]{2,}/.test(el.value) ? 'Inclua o órgão expedidor (ex.: 1234567 SSP/SC).' : '');
  };
  const onTelefoneCtrl = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1391,14 +1394,14 @@ export default function Vendas() {
  <label className="field__label">CPF {!clienteInternacional && <span className="field__required">*</span>}</label>
  <input name="clienteCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={!clienteInternacional} />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}>
- <input type="checkbox" checked={clienteInternacional} onChange={(e) => setClienteInternacional(e.target.checked)} style={{ width: 'auto' }} />
+ <input type="checkbox" checked={clienteInternacional} onChange={(e) => { setClienteInternacional(e.target.checked); const rg = document.querySelector('input[name="clienteRg"]') as HTMLInputElement | null; if (rg) rg.setCustomValidity(''); }} style={{ width: 'auto' }} />
  Cliente internacional (ainda sem CPF)
  </label>
- {clienteInternacional && <div className="field__hint">Imóvel sem incorporação — CPF dispensado no cadastro. Identificação sai pelo RG/passaporte.</div>}
+ {clienteInternacional && <div className="field__hint">Imóvel sem incorporação — CPF dispensado. Identificação pelo passaporte; CEP e Estado/Província aceitam formato internacional (com letras).</div>}
  </div>
  <div className="field">
- <label className="field__label">RG (c/ órgão expedidor) <span className="field__required">*</span></label>
- <input name="clienteRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required />
+ <label className="field__label">{clienteInternacional ? 'Passaporte / documento' : 'RG (c/ órgão expedidor)'} <span className="field__required">*</span></label>
+ <input name="clienteRg" className="field__input" placeholder={clienteInternacional ? 'Nº do passaporte ou documento de identificação' : '1234567 SSP/SC'} onInput={onRg} required />
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento <span className="field__required">*</span></label>
@@ -1433,12 +1436,12 @@ export default function Vendas() {
  <div className="field__hint">Define os documentos exigidos e os dados do cônjuge.</div>
  </div>
  <div className="field">
- <label className="field__label">CEP <span className="field__required">*</span></label>
+ <label className="field__label">{clienteInternacional ? 'Código postal (CEP internacional)' : 'CEP'} <span className="field__required">*</span></label>
  <div style={{ display: 'flex', gap: 6 }}>
- <input className="field__input" inputMode="numeric" placeholder="00000-000" required value={endPF.cep}
- onChange={(e) => setEndPF((c) => ({ ...c, cep: maskCEP(e.target.value) }))}
- onBlur={() => { if (endPF.cep.replace(/\D/g, '').length === 8 && !endPF.logradouro) onBuscarCep(); }} />
- <button type="button" className="btn btn--secondary btn--sm" onClick={onBuscarCep} disabled={buscandoCep}>{buscandoCep ? '...' : 'Buscar'}</button>
+ <input className="field__input" inputMode={clienteInternacional ? 'text' : 'numeric'} placeholder={clienteInternacional ? 'Ex.: SW1A 1AA' : '00000-000'} required value={endPF.cep}
+ onChange={(e) => setEndPF((c) => ({ ...c, cep: clienteInternacional ? e.target.value.toUpperCase() : maskCEP(e.target.value) }))}
+ onBlur={() => { if (!clienteInternacional && endPF.cep.replace(/\D/g, '').length === 8 && !endPF.logradouro) onBuscarCep(); }} />
+ {!clienteInternacional && <button type="button" className="btn btn--secondary btn--sm" onClick={onBuscarCep} disabled={buscandoCep}>{buscandoCep ? '...' : 'Buscar'}</button>}
  </div>
  </div>
  <div className="field">
@@ -1462,8 +1465,8 @@ export default function Vendas() {
  <input className="field__input" required value={endPF.cidade} onChange={(e) => setEndPF((c) => ({ ...c, cidade: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">UF <span className="field__required">*</span></label>
- <input className="field__input" maxLength={2} required value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: e.target.value.toUpperCase() }))} />
+ <label className="field__label">{clienteInternacional ? 'Estado / Província' : 'UF'} <span className="field__required">*</span></label>
+ <input className="field__input" maxLength={clienteInternacional ? 40 : 2} placeholder={clienteInternacional ? 'Ex.: Florida' : ''} required value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: clienteInternacional ? e.target.value : e.target.value.toUpperCase() }))} />
  </div>
  <input type="hidden" name="clienteEndereco" value={enderecoPFStr} />
  </div>
@@ -1483,13 +1486,13 @@ export default function Vendas() {
  <label className="field__label">CPF {temConjuge && !clienteInternacional && !conjugeInternacional && <span className="field__required">*</span>}</label>
  <input name="conjugeCpf" className="field__input" inputMode="numeric" placeholder="000.000.000-00" onInput={onCpf} required={temConjuge && !clienteInternacional && !conjugeInternacional} disabled={conjugeInternacional} />
  <label className="field__hint" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, cursor: 'pointer' }}>
- <input type="checkbox" checked={conjugeInternacional} onChange={(e) => setConjugeInternacional(e.target.checked)} style={{ width: 'auto' }} />
+ <input type="checkbox" checked={conjugeInternacional} onChange={(e) => { setConjugeInternacional(e.target.checked); const rg = document.querySelector('input[name="conjugeRg"]') as HTMLInputElement | null; if (rg) rg.setCustomValidity(''); }} style={{ width: 'auto' }} />
  Cônjuge estrangeiro (ainda sem CPF)
  </label>
  </div>
  <div className="field">
- <label className="field__label">RG (c/ órgão expedidor) {temConjuge && <span className="field__required">*</span>}</label>
- <input name="conjugeRg" className="field__input" placeholder="1234567 SSP/SC" onInput={onRg} required={temConjuge} />
+ <label className="field__label">{conjugeInternacional ? 'Passaporte / documento' : 'RG (c/ órgão expedidor)'} {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeRg" className="field__input" placeholder={conjugeInternacional ? 'Nº do passaporte ou documento' : '1234567 SSP/SC'} onInput={onRg} required={temConjuge} />
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento {temConjuge && <span className="field__required">*</span>}</label>
