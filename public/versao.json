@@ -1,12 +1,12 @@
 {
-  "versao": "2026.09.16c",
+  "versao": "2026.09.16d",
   "data": "16/09/2026",
   "novidades": [
     {
       "titulo": "Contas a pagar — boleto com leitor de código de barras",
       "itens": [
-        "No lançamento de saída com método Boleto, o campo já abre focado: é só escanear o boleto com o leitor. Aceita boleto bancário e de concessionária (luz, água, internet), ou colar/digitar a linha digitável.",
-        "Ao ler o código, o sistema preenche sozinho o valor e o vencimento — você confere e lança. O Enter do leitor não envia o formulário sem querer."
+        "No lançamento de saída com método Boleto, agora tem o botão Usar leitor: clique e passe o boleto no leitor. O campo também já abre focado. Aceita boleto bancário e de concessionária (luz, água, internet), ou colar/digitar a linha digitável.",
+        "Ao ler o código, aparece a confirmação (Boleto lido · valor · vencimento) e o sistema preenche sozinho o valor e o vencimento — você confere e lança. O Enter do leitor não envia o formulário sem querer."
       ]
     },
     {

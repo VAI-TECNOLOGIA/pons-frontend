@@ -60,6 +60,7 @@ export default function Financeiro() {
  const [tab, setTab] = useState<Tab>('extrato');
  const [openNew, setOpenNew] = useState(false);
  const [metodoForm, setMetodoForm] = useState('PIX');
+ const [boletoLido, setBoletoLido] = useState('');
  const [filtroBenef, setFiltroBenef] = useState('');
  const [filtroStatus, setFiltroStatus] = useState('');
  const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => Api.finResumo());
@@ -358,7 +359,7 @@ export default function Financeiro() {
  </div>
  <div className="field">
  <label className="field__label">Método</label>
- <select name="metodo" className="field__select" value={metodoForm} onChange={(e) => setMetodoForm(e.target.value)}>
+ <select name="metodo" className="field__select" value={metodoForm} onChange={(e) => { setMetodoForm(e.target.value); setBoletoLido(''); }}>
  <option>PIX</option>
  <option>TED</option>
  <option>DOC</option>
@@ -414,8 +415,12 @@ export default function Financeiro() {
  )}
  {metodoForm === 'BOLETO' && (
   <div className="field field--span-2">
-   <label className="field__label">Boleto — escaneie o código de barras (preenche valor e vencimento)</label>
-   <input name="linhaDigitavel" className="field__input" inputMode="numeric" autoComplete="off" autoFocus placeholder="Escaneie o boleto ou cole/digite os números" title="Leitor de código de barras: escaneie o boleto — preenche valor e vencimento sozinho. O Enter do leitor não envia o formulário." onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => { const r = lerBoleto(e.currentTarget.value); const f = e.currentTarget.form; if (f) { if (r.valor != null) { const vi = f.querySelector('input[name="valor"]') as HTMLInputElement | null; if (vi) vi.value = r.valor.toFixed(2).replace('.', ','); } if (r.vencimento) { const dt = f.querySelector('input[name="vencimento"]') as HTMLInputElement | null; if (dt) dt.value = r.vencimento; } } }} />
+   <label className="field__label">Boleto — código de barras / linha digitável</label>
+   <div className="flex gap-2" style={{ alignItems: 'stretch' }}>
+    <input name="linhaDigitavel" id="campoBoleto" className="field__input" style={{ flex: 1 }} inputMode="numeric" autoComplete="off" autoFocus placeholder="Clique em Usar leitor e passe o boleto — ou cole/digite os números" title="Leitor de código de barras: escaneie o boleto — preenche valor e vencimento sozinho. O Enter do leitor não envia o formulário." onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => { const raw = e.currentTarget.value; const r = lerBoleto(raw); const f = e.currentTarget.form; if (f) { if (r.valor != null) { const vi = f.querySelector('input[name="valor"]') as HTMLInputElement | null; if (vi) vi.value = r.valor.toFixed(2).replace('.', ','); } if (r.vencimento) { const dt = f.querySelector('input[name="vencimento"]') as HTMLInputElement | null; if (dt) dt.value = r.vencimento; } } if (String(raw).replace(/\D/g, '').length >= 44 && (r.valor != null || r.vencimento)) { setBoletoLido('Boleto lido' + (r.valor != null ? ` · R$ ${r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '') + (r.vencimento ? ` · vence ${r.vencimento.split('-').reverse().join('/')}` : '')); } else { setBoletoLido(''); } }} />
+    <button type="button" className="btn btn--secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => { const el = document.getElementById('campoBoleto') as HTMLInputElement | null; if (el) { el.value = ''; setBoletoLido('Aguardando leitura — passe o boleto no leitor…'); el.focus(); } }}>Usar leitor</button>
+   </div>
+   {boletoLido && (<div className="text-sm" style={{ marginTop: 6, color: boletoLido.startsWith('Boleto lido') ? 'var(--success, #16a34a)' : 'var(--muted, #64748b)' }}>{boletoLido}</div>)}
   </div>
  )}
  </div>
