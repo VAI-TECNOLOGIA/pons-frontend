@@ -61,6 +61,7 @@ export default function Financeiro() {
  const [openNew, setOpenNew] = useState(false);
  const [metodoForm, setMetodoForm] = useState('PIX');
  const [boletoLido, setBoletoLido] = useState('');
+ const [editando, setEditando] = useState<any>(null);
  const [filtroBenef, setFiltroBenef] = useState('');
  const [filtroStatus, setFiltroStatus] = useState('');
  const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => Api.finResumo());
@@ -69,11 +70,13 @@ export default function Financeiro() {
  const toast = useToast();
  const confirm = useConfirm();
 
+ const abrirNovo = () => { setEditando(null); setMetodoForm('PIX'); setBoletoLido(''); setOpenNew(true); };
+ const abrirEdicao = (l: any) => { setEditando(l); setMetodoForm(l.metodo || 'PIX'); setBoletoLido(''); setOpenNew(true); };
+
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
- try {
- await Api.finLancamentoCreate({
+ const payload = {
  tipo: String(fd.get('tipo') || 'SAIDA'),
  categoria: String(fd.get('categoria') || 'OUTRO'),
  descricao: String(fd.get('descricao') || ''),
@@ -88,10 +91,18 @@ export default function Financeiro() {
  favorecidoConta: fd.get('favorecidoConta') ? String(fd.get('favorecidoConta')) : undefined,
  favorecidoTipoConta: fd.get('favorecidoTipoConta') ? String(fd.get('favorecidoTipoConta')) : undefined,
  linhaDigitavel: fd.get('linhaDigitavel') ? String(fd.get('linhaDigitavel')).replace(/\D/g, '') : undefined,
- unidadeId: fd.get('unidadeId') ? Number(fd.get('unidadeId')) : undefined,
- });
+ unidadeId: fd.get('unidadeId') ? Number(fd.get('unidadeId')) : (editando ? null : undefined),
+ };
+ try {
+ if (editando) {
+ await Api.finLancamentoUpdate(editando.id, payload);
+ toast.success('Lançamento corrigido');
+ } else {
+ await Api.finLancamentoCreate(payload);
  toast.success('Lançamento criado');
+ }
  setOpenNew(false);
+ setEditando(null);
  reloadLanc();
  reloadResumo();
  } catch (err: any) {
@@ -149,8 +160,8 @@ export default function Financeiro() {
  }
  };
 
- if (loading) return <Shell tab={tab} setTab={setTab} onNew={() => setOpenNew(true)} onSicredi={enviarSicredi}><LoadingBlock /></Shell>;
- if (error) return <Shell tab={tab} setTab={setTab} onNew={() => setOpenNew(true)} onSicredi={enviarSicredi}><ErrorBlock error={error} /></Shell>;
+ if (loading) return <Shell tab={tab} setTab={setTab} onNew={abrirNovo} onSicredi={enviarSicredi}><LoadingBlock /></Shell>;
+ if (error) return <Shell tab={tab} setTab={setTab} onNew={abrirNovo} onSicredi={enviarSicredi}><ErrorBlock error={error} /></Shell>;
  if (!f) return null;
 
  return (
@@ -159,7 +170,7 @@ export default function Financeiro() {
  title="Financeiro"
  right={
  <>
- <button className="btn btn--secondary btn--sm" onClick={() => setOpenNew(true)}>+ Lançamento</button>
+ <button className="btn btn--secondary btn--sm" onClick={abrirNovo}>+ Lançamento</button>
  </>
  }
  />
@@ -285,6 +296,9 @@ export default function Financeiro() {
  </td>
  <td>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+ {l.status !== 'CANCELADO' && (
+ <button className="btn btn--ghost btn--sm" onClick={() => abrirEdicao(l)}>Editar</button>
+ )}
  {l.status === 'AGUARDANDO_APROVACAO' && (
  <button className="btn btn--secondary btn--sm" onClick={() => aprovar(l.id)}>Aprovar</button>
  )}
@@ -315,19 +329,19 @@ export default function Financeiro() {
 
  {tab === 'sicredi' && <SicrediTab onEnviar={enviarSicredi} />}
  </div>
- <Modal open={openNew} onClose={() => setOpenNew(false)} title="Novo lançamento" subtitle="Entrada ou saída a registrar no caixa">
- <form onSubmit={submit}>
+ <Modal open={openNew} onClose={() => { setOpenNew(false); setEditando(null); }} title={editando ? 'Corrigir lançamento' : 'Novo lançamento'} subtitle={editando ? 'Ajuste os dados lançados errado e salve' : 'Entrada ou saída a registrar no caixa'}>
+ <form onSubmit={submit} key={editando?.id ?? 'novo'}>
  <div className="form-grid">
  <div className="field">
  <label className="field__label">Tipo</label>
- <select name="tipo" className="field__select" defaultValue="SAIDA">
+ <select name="tipo" className="field__select" defaultValue={editando?.tipo || 'SAIDA'}>
  <option value="SAIDA">Saída</option>
  <option value="ENTRADA">Entrada</option>
  </select>
  </div>
  <div className="field">
  <label className="field__label">Categoria</label>
- <select name="categoria" className="field__select" defaultValue="OUTRO">
+ <select name="categoria" className="field__select" defaultValue={editando?.categoria || 'OUTRO'}>
  <option>COMISSAO</option>
  <option>ALUGUEL</option>
  <option>CONDOMINIO</option>
@@ -345,23 +359,23 @@ export default function Financeiro() {
  </div>
  <div className="field field--span-2">
  <label className="field__label">Descrição <span className="field__required">*</span></label>
- <input name="descricao" className="field__input" required />
+ <input name="descricao" className="field__input" required defaultValue={editando?.descricao || ''} />
  </div>
  <div className="field">
  <label className="field__label">Valor <span className="field__required">*</span></label>
- <input name="valor" className="field__input" required placeholder="15000" />
+ <input name="valor" className="field__input" required placeholder="15000" defaultValue={editando ? String(editando.valor).replace('.', ',') : ''} />
  </div>
  <div className="field">
  <label className="field__label">Vencimento</label>
- <input name="vencimento" type="date" className="field__input" />
+ <input name="vencimento" type="date" className="field__input" defaultValue={editando?.vencimento ? String(editando.vencimento).slice(0, 10) : ''} />
  </div>
  <div className="field">
  <label className="field__label">Beneficiário</label>
- <input name="beneficiario" className="field__input" />
+ <input name="beneficiario" className="field__input" defaultValue={editando?.beneficiario || ''} />
  </div>
  <div className="field">
  <label className="field__label">Filial</label>
- <select name="unidadeId" className="field__select" defaultValue="">
+ <select name="unidadeId" className="field__select" defaultValue={editando?.unidadeId != null ? String(editando.unidadeId) : ''}>
  <option value="">Geral (todas as filiais)</option>
  {(unidadesForm || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
  </select>
@@ -396,26 +410,26 @@ export default function Financeiro() {
  {metodoForm === 'PIX' && (
  <div className="field field--span-2">
  <label className="field__label">Chave Pix</label>
- <input name="favorecidoChavePix" className="field__input" placeholder="CPF/CNPJ, e-mail, telefone ou aleatória" />
+ <input name="favorecidoChavePix" className="field__input" placeholder="CPF/CNPJ, e-mail, telefone ou aleatória" defaultValue={editando?.favorecidoChavePix || ''} />
  </div>
  )}
  {(metodoForm === 'TED' || metodoForm === 'DOC') && (
  <>
  <div className="field">
  <label className="field__label">Banco (código/ISPB)</label>
- <input name="favorecidoBanco" className="field__input" placeholder="748" />
+ <input name="favorecidoBanco" className="field__input" placeholder="748" defaultValue={editando?.favorecidoBanco || ''} />
  </div>
  <div className="field">
  <label className="field__label">Agência</label>
- <input name="favorecidoAgencia" className="field__input" placeholder="0101" />
+ <input name="favorecidoAgencia" className="field__input" placeholder="0101" defaultValue={editando?.favorecidoAgencia || ''} />
  </div>
  <div className="field">
  <label className="field__label">Conta</label>
- <input name="favorecidoConta" className="field__input" placeholder="12345-6" />
+ <input name="favorecidoConta" className="field__input" placeholder="12345-6" defaultValue={editando?.favorecidoConta || ''} />
  </div>
  <div className="field">
  <label className="field__label">Tipo de conta</label>
- <select name="favorecidoTipoConta" className="field__select" defaultValue="CORRENTE">
+ <select name="favorecidoTipoConta" className="field__select" defaultValue={editando?.favorecidoTipoConta || 'CORRENTE'}>
  <option value="CORRENTE">Corrente</option>
  <option value="POUPANCA">Poupança</option>
  </select>
@@ -426,7 +440,7 @@ export default function Financeiro() {
   <div className="field field--span-2">
    <label className="field__label">Boleto — código de barras / linha digitável</label>
    <div className="flex gap-2" style={{ alignItems: 'stretch' }}>
-    <input name="linhaDigitavel" id="campoBoleto" className="field__input" style={{ flex: 1 }} inputMode="numeric" autoComplete="off" autoFocus placeholder="Clique em Usar leitor e passe o boleto — ou cole/digite os números" title="Leitor de código de barras: escaneie o boleto — preenche valor e vencimento sozinho. O Enter do leitor não envia o formulário." onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => { const raw = e.currentTarget.value; const r = lerBoleto(raw); const f = e.currentTarget.form; if (f) { if (r.valor != null) { const vi = f.querySelector('input[name="valor"]') as HTMLInputElement | null; if (vi) vi.value = r.valor.toFixed(2).replace('.', ','); } if (r.vencimento) { const dt = f.querySelector('input[name="vencimento"]') as HTMLInputElement | null; if (dt) dt.value = r.vencimento; } } if (String(raw).replace(/\D/g, '').length >= 44 && (r.valor != null || r.vencimento)) { setBoletoLido('Boleto lido' + (r.valor != null ? ` · R$ ${r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '') + (r.vencimento ? ` · vence ${r.vencimento.split('-').reverse().join('/')}` : '')); } else { setBoletoLido(''); } }} />
+    <input name="linhaDigitavel" id="campoBoleto" className="field__input" style={{ flex: 1 }} inputMode="numeric" autoComplete="off" autoFocus  defaultValue={editando?.linhaDigitavel || ""} placeholder="Clique em Usar leitor e passe o boleto — ou cole/digite os números" title="Leitor de código de barras: escaneie o boleto — preenche valor e vencimento sozinho. O Enter do leitor não envia o formulário." onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => { const raw = e.currentTarget.value; const r = lerBoleto(raw); const f = e.currentTarget.form; if (f) { if (r.valor != null) { const vi = f.querySelector('input[name="valor"]') as HTMLInputElement | null; if (vi) vi.value = r.valor.toFixed(2).replace('.', ','); } if (r.vencimento) { const dt = f.querySelector('input[name="vencimento"]') as HTMLInputElement | null; if (dt) dt.value = r.vencimento; } } if (String(raw).replace(/\D/g, '').length >= 44 && (r.valor != null || r.vencimento)) { setBoletoLido('Boleto lido' + (r.valor != null ? ` · R$ ${r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '') + (r.vencimento ? ` · vence ${r.vencimento.split('-').reverse().join('/')}` : '')); } else { setBoletoLido(''); } }} />
     <button type="button" className="btn btn--secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => { const el = document.getElementById('campoBoleto') as HTMLInputElement | null; if (el) { el.value = ''; setBoletoLido('Aguardando leitura — passe o boleto no leitor…'); el.focus(); } }}>Usar leitor</button>
    </div>
    {boletoLido && (<div className="text-sm" style={{ marginTop: 6, color: boletoLido.startsWith('Boleto lido') ? 'var(--success, #16a34a)' : 'var(--muted, #64748b)' }}>{boletoLido}</div>)}
@@ -435,7 +449,7 @@ export default function Financeiro() {
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
  <button type="button" className="btn btn--secondary" onClick={() => setOpenNew(false)}>Cancelar</button>
- <button type="submit" className="btn btn--primary">Lançar</button>
+ <button type="submit" className="btn btn--primary">{editando ? 'Salvar correção' : 'Lançar'}</button>
  </div>
  </form>
  </Modal>

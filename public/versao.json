@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.16e",
+  "versao": "2026.09.16f",
   "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Contas a pagar — corrigir lançamento",
+      "itens": [
+        "Cada lançamento tem agora o botão Editar: dá pra corrigir valor, vencimento, descrição, categoria, filial, método e o código do boleto de uma conta já lançada — inclusive passar o leitor depois, se lançou sem ler o código. É só salvar a correção."
+      ]
+    },
     {
       "titulo": "Contas a pagar — filial (unidade)",
       "itens": [
