@@ -1,7 +1,10 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'br.com.grupopons.sistema',
+  // Bundle nativo REAL do app publicado = br.com.grupopons.vai (App Store + Xcode +
+  // registro iOS no Firebase pons-75376). Precisa ser exatamente este, senão o APNs
+  // rejeita a entrega do push (topic errado). NÃO alterar sem re-registrar no Firebase.
+  appId: 'br.com.grupopons.vai',
   appName: 'Grupo Pons',
   webDir: 'dist',
   server: {

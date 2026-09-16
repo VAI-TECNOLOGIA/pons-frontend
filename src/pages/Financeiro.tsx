@@ -8,6 +8,43 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { CampoCnpj } from '../components/CampoCnpj';
 
+// Lê um boleto pelo código de barras (44), linha digitável bancária (47) ou de
+// concessionária (48) e extrai VALOR e VENCIMENTO pra preencher sozinho (Marcelo
+// confere antes de lançar). Só conveniência — nunca substitui a revisão.
+function lerBoleto(raw: string): { valor: number | null; vencimento: string | null } {
+  const d = String(raw || '').replace(/\D/g, '');
+  const out: { valor: number | null; vencimento: string | null } = { valor: null, vencimento: null };
+  // Concessionária / arrecadação (começa com 8): vencimento não é padronizado.
+  if (d[0] === '8') {
+    const barras = d.length === 48 ? d.slice(0, 11) + d.slice(12, 23) + d.slice(24, 35) + d.slice(36, 47)
+      : d.length === 44 ? d : '';
+    if (barras.length === 44) { const v = Number(barras.slice(4, 15)) / 100; if (v > 0) out.valor = v; }
+    return out;
+  }
+  // Boleto bancário: reconstrói o código de barras (44) quando vem a linha digitável (47).
+  const barras = d.length === 47
+    ? d.slice(0, 4) + d.slice(32, 33) + d.slice(33, 47) + d.slice(4, 9) + d.slice(10, 20) + d.slice(21, 31)
+    : d.length === 44 ? d : '';
+  if (barras.length === 44) {
+    const valor = Number(barras.slice(9, 19)) / 100; if (valor > 0) out.valor = valor;
+    const fator = Number(barras.slice(5, 9));
+    if (fator > 0) {
+      // Fator de vencimento com rollover (reset em 22/02/2025). Escolhe a base que
+      // dá a data mais plausível (de ~1 ano atrás a ~4 anos à frente).
+      const bases = [Date.UTC(2025, 1, 22), Date.UTC(2000, 6, 3)];
+      const hoje = Date.now(); let melhor: number | null = null;
+      for (const base of bases) {
+        const ms = base + (fator - 1000) * 86400000;
+        if (ms >= hoje - 400 * 86400000 && ms <= hoje + 1500 * 86400000
+          && (melhor === null || Math.abs(ms - hoje) < Math.abs(melhor - hoje))) melhor = ms;
+      }
+      if (melhor !== null) out.vencimento = new Date(melhor).toISOString().slice(0, 10);
+    }
+  }
+  return out;
+}
+
+
 const STATUS_BADGE: Record<string, [string, string]> = {
  PENDENTE: ['analysis', 'PENDENTE'],
  AGUARDANDO_APROVACAO: ['analysis', 'AGUARDANDO'],
@@ -377,8 +414,8 @@ export default function Financeiro() {
  )}
  {metodoForm === 'BOLETO' && (
   <div className="field field--span-2">
-   <label className="field__label">Código de barras / linha digitável do boleto</label>
-   <input name="linhaDigitavel" className="field__input" inputMode="numeric" autoComplete="off" placeholder="Leia com o leitor ou cole/digite os números" title="Pode usar leitor de código de barras (boleto físico) — o Enter do leitor não envia o formulário" onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} />
+   <label className="field__label">Boleto — escaneie o código de barras (preenche valor e vencimento)</label>
+   <input name="linhaDigitavel" className="field__input" inputMode="numeric" autoComplete="off" autoFocus placeholder="Escaneie o boleto ou cole/digite os números" title="Leitor de código de barras: escaneie o boleto — preenche valor e vencimento sozinho. O Enter do leitor não envia o formulário." onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => { const r = lerBoleto(e.currentTarget.value); const f = e.currentTarget.form; if (f) { if (r.valor != null) { const vi = f.querySelector('input[name="valor"]') as HTMLInputElement | null; if (vi) vi.value = r.valor.toFixed(2).replace('.', ','); } if (r.vencimento) { const dt = f.querySelector('input[name="vencimento"]') as HTMLInputElement | null; if (dt) dt.value = r.vencimento; } } }} />
   </div>
  )}
  </div>
