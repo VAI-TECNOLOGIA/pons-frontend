@@ -68,6 +68,7 @@ export default function Financeiro() {
  const { data: lancamentos, reload: reloadLanc } = useApi<any[]>(() => Api.finLancamentos());
  const { data: unidadesForm } = useApi<any[]>(() => Api.unidadesList());
  const toast = useToast();
+ const CONTAS_SUGERIDAS = ['Matriz', 'Segunda Avenida', 'DELAS', 'Capão'];
  const confirm = useConfirm();
 
  const abrirNovo = () => { setEditando(null); setMetodoForm('PIX'); setBoletoLido(''); setOpenNew(true); };
@@ -91,6 +92,7 @@ export default function Financeiro() {
  favorecidoConta: fd.get('favorecidoConta') ? String(fd.get('favorecidoConta')) : undefined,
  favorecidoTipoConta: fd.get('favorecidoTipoConta') ? String(fd.get('favorecidoTipoConta')) : undefined,
  linhaDigitavel: fd.get('linhaDigitavel') ? String(fd.get('linhaDigitavel')).replace(/\D/g, '') : undefined,
+ contaPagadora: fd.get('contaPagadora') ? String(fd.get('contaPagadora')).trim() : (editando ? null : undefined),
  unidadeId: fd.get('unidadeId') ? Number(fd.get('unidadeId')) : (editando ? null : undefined),
  };
  try {
@@ -285,7 +287,7 @@ export default function Financeiro() {
  <td>
  <span className="badge badge--neutral">{l.categoria}</span>
  </td>
- <td className="text-sm">{l.beneficiario}</td>
+ <td className="text-sm">{l.beneficiario}{l.contaPagadora ? <span className="text-secondary" style={{ display: 'block', fontSize: '0.78em' }}>paga: {l.contaPagadora}</span> : null}</td>
  <td className="numeric money" style={{ color: isOut ? 'var(--money-negative)' : 'var(--money-positive)' }}>
  {isOut ? '−' : '+'}
  {formatCurrency(l.valor)}
@@ -374,11 +376,18 @@ export default function Financeiro() {
  <input name="beneficiario" className="field__input" defaultValue={editando?.beneficiario || ''} />
  </div>
  <div className="field">
- <label className="field__label">Filial</label>
+ <label className="field__label">Filial (a quem pertence a conta)</label>
  <select name="unidadeId" className="field__select" defaultValue={editando?.unidadeId != null ? String(editando.unidadeId) : ''}>
  <option value="">Geral (todas as filiais)</option>
  {(unidadesForm || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
  </select>
+ </div>
+ <div className="field">
+ <label className="field__label">Conta que paga (banco)</label>
+ <input name="contaPagadora" className="field__input" list="contasPagadoras" autoComplete="off" placeholder="Ex.: Segunda Avenida" defaultValue={editando?.contaPagadora || ''} title="Conta bancária de onde sai o dinheiro. Pode ser de outra filial — não precisa ser a mesma da conta." />
+ <datalist id="contasPagadoras">
+ {Array.from(new Set([...CONTAS_SUGERIDAS, ...((lancamentos || []).map((l: any) => l.contaPagadora).filter(Boolean))])).map((c: any) => <option key={c} value={c} />)}
+ </datalist>
  </div>
  <div className="field">
  <label className="field__label">Método</label>

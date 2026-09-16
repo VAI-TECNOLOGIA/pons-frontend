@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.16g",
+  "versao": "2026.09.16h",
   "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Contas a pagar — conta que paga (banco)",
+      "itens": [
+        "No lançamento agora tem o campo Conta que paga: escolha de qual conta bancária sai o dinheiro. Pode ser de outra filial — não precisa ser a conta da filial dona da despesa. As opções sugerem as empresas (Matriz, Segunda Avenida, DELAS, Capão) e guardam o que você já usou. Aparece no extrato como paga: ..."
+      ]
+    },
     {
       "titulo": "Correção — data de vencimento no extrato",
       "itens": [
