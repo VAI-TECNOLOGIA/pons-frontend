@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.16f",
+  "versao": "2026.09.16g",
   "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Correção — data de vencimento no extrato",
+      "itens": [
+        "O vencimento agora mostra o dia certo no extrato e nas listas (antes, por fuso horário, aparecia um dia a menos — ex.: 16/09 aparecia como 15/09). Vale para todos os lançamentos já cadastrados."
+      ]
+    },
     {
       "titulo": "Contas a pagar — corrigir lançamento",
       "itens": [

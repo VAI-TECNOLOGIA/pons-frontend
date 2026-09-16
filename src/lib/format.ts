@@ -30,7 +30,15 @@ export function formatCurrencyShort(value: number | null | undefined): string {
 
 export function formatDate(iso: string | Date | null | undefined): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR');
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  // Campos "só data" (ex.: vencimento) são gravados como meia-noite UTC.
+  // Em fuso negativo (Brasil -03) isso renderizava o dia anterior (16/09 virava 15/09).
+  // Se o horário é exatamente meia-noite UTC, renderiza em UTC pra manter o dia certo.
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0) {
+    return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+  }
+  return d.toLocaleDateString('pt-BR');
 }
 
 export function timeAgo(iso: string | Date | null | undefined): string {
