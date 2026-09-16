@@ -1,11 +1,11 @@
 {
-  "versao": "2026.09.16",
+  "versao": "2026.09.16b",
   "data": "16/09/2026",
   "novidades": [
     {
-      "titulo": "Contas a pagar — boleto",
+      "titulo": "Contas a pagar — boleto (leitor de código de barras)",
       "itens": [
-        "No lançamento de uma saída com método Boleto, agora há o campo Linha digitável (código de barras) para colar o boleto a pagar."
+        "No lançamento de saída com método Boleto, o campo aceita leitor de código de barras (boletos físicos) ou colar/digitar a linha digitável. O Enter do leitor não envia o formulário sem querer."
       ]
     },
     {

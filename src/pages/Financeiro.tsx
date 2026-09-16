@@ -48,7 +48,7 @@ export default function Financeiro() {
  favorecidoAgencia: fd.get('favorecidoAgencia') ? String(fd.get('favorecidoAgencia')) : undefined,
  favorecidoConta: fd.get('favorecidoConta') ? String(fd.get('favorecidoConta')) : undefined,
  favorecidoTipoConta: fd.get('favorecidoTipoConta') ? String(fd.get('favorecidoTipoConta')) : undefined,
- linhaDigitavel: fd.get('linhaDigitavel') ? String(fd.get('linhaDigitavel')) : undefined,
+ linhaDigitavel: fd.get('linhaDigitavel') ? String(fd.get('linhaDigitavel')).replace(/\D/g, '') : undefined,
  });
  toast.success('Lançamento criado');
  setOpenNew(false);
@@ -377,8 +377,8 @@ export default function Financeiro() {
  )}
  {metodoForm === 'BOLETO' && (
   <div className="field field--span-2">
-   <label className="field__label">Linha digitável (código de barras do boleto)</label>
-   <input name="linhaDigitavel" className="field__input" inputMode="numeric" placeholder="Cole os números do boleto (linha digitável)" />
+   <label className="field__label">Código de barras / linha digitável do boleto</label>
+   <input name="linhaDigitavel" className="field__input" inputMode="numeric" autoComplete="off" placeholder="Leia com o leitor ou cole/digite os números" title="Pode usar leitor de código de barras (boleto físico) — o Enter do leitor não envia o formulário" onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} />
   </div>
  )}
  </div>
