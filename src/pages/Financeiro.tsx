@@ -65,6 +65,7 @@ export default function Financeiro() {
  const [filtroStatus, setFiltroStatus] = useState('');
  const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => Api.finResumo());
  const { data: lancamentos, reload: reloadLanc } = useApi<any[]>(() => Api.finLancamentos());
+ const { data: unidadesForm } = useApi<any[]>(() => Api.unidadesList());
  const toast = useToast();
  const confirm = useConfirm();
 
@@ -87,6 +88,7 @@ export default function Financeiro() {
  favorecidoConta: fd.get('favorecidoConta') ? String(fd.get('favorecidoConta')) : undefined,
  favorecidoTipoConta: fd.get('favorecidoTipoConta') ? String(fd.get('favorecidoTipoConta')) : undefined,
  linhaDigitavel: fd.get('linhaDigitavel') ? String(fd.get('linhaDigitavel')).replace(/\D/g, '') : undefined,
+ unidadeId: fd.get('unidadeId') ? Number(fd.get('unidadeId')) : undefined,
  });
  toast.success('Lançamento criado');
  setOpenNew(false);
@@ -356,6 +358,13 @@ export default function Financeiro() {
  <div className="field">
  <label className="field__label">Beneficiário</label>
  <input name="beneficiario" className="field__input" />
+ </div>
+ <div className="field">
+ <label className="field__label">Filial</label>
+ <select name="unidadeId" className="field__select" defaultValue="">
+ <option value="">Geral (todas as filiais)</option>
+ {(unidadesForm || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+ </select>
  </div>
  <div className="field">
  <label className="field__label">Método</label>

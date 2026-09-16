@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.16d",
+  "versao": "2026.09.16e",
   "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Contas a pagar — filial (unidade)",
+      "itens": [
+        "No lançamento agora tem o campo Filial: escolha a filial dona da conta ou deixe em Geral (todas as filiais). Isso alimenta o DRE por filial."
+      ]
+    },
     {
       "titulo": "Contas a pagar — boleto com leitor de código de barras",
       "itens": [
