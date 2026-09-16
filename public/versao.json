@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.15",
-  "data": "15/09/2026",
+  "versao": "2026.09.16",
+  "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Contas a pagar — boleto",
+      "itens": [
+        "No lançamento de uma saída com método Boleto, agora há o campo Linha digitável (código de barras) para colar o boleto a pagar."
+      ]
+    },
     {
       "titulo": "Equipes — transferência de sala",
       "itens": [
