@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.16j",
+  "versao": "2026.09.16k",
   "data": "16/09/2026",
   "novidades": [
+    {
+      "titulo": "Contas a pagar — aprovação do sócio",
+      "itens": [
+        "Toda conta a pagar nova entra como Aguardando aprovação e vai para o sócio (Paulo/CEO) aprovar. Só o CEO aprova. Depois de aprovada, a conta pode entrar no envio de lote ao banco (Sicredi). O botão Aprovar aparece só para o CEO."
+      ]
+    },
     {
       "titulo": "Contas a pagar — correções no lançamento",
       "itens": [

@@ -3,6 +3,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { formatCurrency, formatCurrencyShort, formatDate } from '../lib/format';
 import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
@@ -78,8 +79,12 @@ export default function Financeiro() {
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
  const fd = new FormData(e.currentTarget);
+ const tipoLanc = String(fd.get('tipo') || 'SAIDA');
  const payload = {
- tipo: String(fd.get('tipo') || 'SAIDA'),
+ tipo: tipoLanc,
+ // Conta a pagar (saída) nova entra aguardando aprovação do sócio (Paulo/CEO).
+ // Na edição não mexe no status. Entrada não precisa de aprovação.
+ ...((!editando && tipoLanc === 'SAIDA') ? { status: 'AGUARDANDO_APROVACAO' } : {}),
  categoria: String(fd.get('categoria') || 'OUTRO'),
  descricao: String(fd.get('descricao') || ''),
  valor: Number(String(fd.get('valor') || '').replace(/[^0-9.,]/g, '').replace(',', '.')) || 0,
@@ -320,7 +325,7 @@ export default function Financeiro() {
  {l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" onClick={() => abrirEdicao(l)}>Editar</button>
  )}
- {l.status === 'AGUARDANDO_APROVACAO' && (
+ {l.status === 'AGUARDANDO_APROVACAO' && Auth.user?.role === 'CEO' && (
  <button className="btn btn--secondary btn--sm" onClick={() => aprovar(l.id)}>Aprovar</button>
  )}
  {l.status !== 'PAGO' && l.status !== 'CANCELADO' && (
