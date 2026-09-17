@@ -257,6 +257,14 @@ export default function Vendas() {
  const role = Auth.user?.role;
  // Quem pode aprovar a origem de tráfego: o Gestor de Tráfego + supervisão (CEO / Diretor Comercial).
  const podeAprovarTrafego = ['GESTOR_TRAFEGO', 'CEO', 'DIRETOR_COMERCIAL'].includes(role || '');
+ // Define a origem: TRAFEGO (paga comissão do gestor) ou NETWORK (orgânica, sem comissão de tráfego).
+ const decidirTrafego = async (vid: number, decisao: 'TRAFEGO' | 'NETWORK') => {
+   try {
+     await Api.vendaDecidirTrafego(vid, decisao);
+     toast.success(decisao === 'TRAFEGO' ? 'Definida como Tráfego pago (Lead).' : 'Definida como Network (orgânica).');
+     reload();
+   } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+ };
  const isCorretor = role === 'CORRETOR';
  // Rateio/comissão (incl. % do gestor) só pode ser editado por Administrativo,
  // Financeiro e Paulo (CEO). Quem cadastra (corretor/gerente/diretor comercial)
@@ -1089,10 +1097,13 @@ export default function Vendas() {
  <div style={{ fontWeight: 600 }}>{v.clienteNome} <span className="text-secondary" style={{ fontWeight: 400 }}>· {v.empreendimento}{v.codigo ? ` · ${v.codigo}` : ''} · corretor {v.corretor?.nome || '—'}</span></div>
  <EvidenciaTrafego v={v} />
  </div>
- <div className="flex gap-2">
+ <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
  <button className="btn btn--secondary btn--sm" onClick={() => setSelected(v.id)}>Abrir</button>
  {ehGestorTrafego && (
- <button className="btn btn--primary btn--sm" onClick={async () => { try { await Api.vendaAprovarTrafego(v.id); toast.success('Venda liberada (tráfego).'); reload(); } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); } }}>Aprovar (tráfego)</button>
+ <>
+ <button className="btn btn--primary btn--sm" onClick={() => decidirTrafego(v.id, 'TRAFEGO')}>É tráfego pago (Lead)</button>
+ <button className="btn btn--secondary btn--sm" onClick={() => decidirTrafego(v.id, 'NETWORK')}>É Network</button>
+ </>
  )}
  </div>
  </div>
@@ -1306,23 +1317,12 @@ export default function Vendas() {
  </div>
  <EvidenciaTrafego v={sel} />
  {podeAprovarTrafego ? (
- <button
- className="btn btn--primary btn--sm"
- style={{ marginTop: 6 }}
- onClick={async () => {
- try {
- await Api.vendaAprovarTrafego(sel.id);
- toast.success('Venda liberada (tráfego).');
- reload();
- } catch (err: any) {
- toast.error('Erro: ' + (err.message || 'falha'));
- }
- }}
- >
- Aprovar (tráfego)
- </button>
+ <div className="flex gap-2" style={{ marginTop: 8, flexWrap: 'wrap' }}>
+ <button className="btn btn--primary btn--sm" onClick={() => decidirTrafego(sel.id, 'TRAFEGO')} title="É o mesmo lead de tráfego pago — aplica a comissão do Gestor de Tráfego.">É tráfego pago (Lead)</button>
+ <button className="btn btn--secondary btn--sm" onClick={() => decidirTrafego(sel.id, 'NETWORK')} title="Cliente novo / orgânico — sem comissão de tráfego.">É Network</button>
+ </div>
  ) : (
- <div className="text-xs text-secondary">Só o Gestor de Tráfego (ou a diretoria) libera essa venda.</div>
+ <div className="text-xs text-secondary">Só o Gestor de Tráfego (ou a diretoria) define essa venda.</div>
  )}
  </div>
  )}

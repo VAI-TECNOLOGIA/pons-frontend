@@ -1,7 +1,14 @@
 {
-  "versao": "2026.09.17d",
+  "versao": "2026.09.17e",
   "data": "17/09/2026",
   "novidades": [
+    {
+      "titulo": "Gestor de Tráfego — decidir Lead ou Network",
+      "itens": [
+        "Na análise, em vez de um único Aprovar, o Gestor de Tráfego agora escolhe: 'É tráfego pago (Lead)' — aplica a comissão do Gestor de Tráfego — ou 'É Network' — orgânica, sem comissão de tráfego. O rateio da venda é recalculado conforme a escolha.",
+        "Vale para o Gestor de Tráfego, o CEO e o Diretor Comercial. Só funciona enquanto a comissão da venda ainda não foi paga."
+      ]
+    },
     {
       "titulo": "Aprovação de tráfego — quem pode aprovar",
       "itens": [
