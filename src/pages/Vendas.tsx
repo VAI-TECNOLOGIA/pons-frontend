@@ -255,6 +255,8 @@ export default function Vendas() {
  const corretoresOpcoes = Array.from(new Map((vendas || []).filter((v: any) => v.corretor?.id).map((v: any) => [String(v.corretor.id), v.corretor.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
  const toast = useToast();
  const role = Auth.user?.role;
+ // Quem pode aprovar a origem de tráfego: o Gestor de Tráfego + supervisão (CEO / Diretor Comercial).
+ const podeAprovarTrafego = ['GESTOR_TRAFEGO', 'CEO', 'DIRETOR_COMERCIAL'].includes(role || '');
  const isCorretor = role === 'CORRETOR';
  // Rateio/comissão (incl. % do gestor) só pode ser editado por Administrativo,
  // Financeiro e Paulo (CEO). Quem cadastra (corretor/gerente/diretor comercial)
@@ -1074,7 +1076,7 @@ export default function Vendas() {
  {(() => {
  const pend = (vendas || []).filter((v: any) => v.aguardandoAprovacaoTrafego);
  if (!pend.length) return null;
- const ehGestorTrafego = role === 'GESTOR_TRAFEGO';
+ const ehGestorTrafego = podeAprovarTrafego;
  return (
  <div className="card" style={{ padding: '12px 14px', marginBottom: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.4)' }}>
  <div style={{ fontWeight: 700, color: '#B45309', marginBottom: 8 }}>
@@ -1303,7 +1305,7 @@ export default function Vendas() {
  Aguardando aprovação do Gestor de Tráfego — o corretor negou um lead da base
  </div>
  <EvidenciaTrafego v={sel} />
- {role === 'GESTOR_TRAFEGO' ? (
+ {podeAprovarTrafego ? (
  <button
  className="btn btn--primary btn--sm"
  style={{ marginTop: 6 }}
@@ -1320,7 +1322,7 @@ export default function Vendas() {
  Aprovar (tráfego)
  </button>
  ) : (
- <div className="text-xs text-secondary">Só o Gestor de Tráfego libera essa venda.</div>
+ <div className="text-xs text-secondary">Só o Gestor de Tráfego (ou a diretoria) libera essa venda.</div>
  )}
  </div>
  )}

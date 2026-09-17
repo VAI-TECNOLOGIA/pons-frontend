@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.17c",
+  "versao": "2026.09.17d",
   "data": "17/09/2026",
   "novidades": [
+    {
+      "titulo": "Aprovação de tráfego — quem pode aprovar",
+      "itens": [
+        "O botão Aprovar (tráfego) aparece para o Gestor de Tráfego e também para o CEO e o Diretor Comercial (supervisão). Quem estiver com outro papel vê a fila e a evidência, mas não o botão."
+      ]
+    },
     {
       "titulo": "Gestor de Tráfego — evidência para aprovar",
       "itens": [
