@@ -1,7 +1,14 @@
 {
-  "versao": "2026.09.16k",
-  "data": "16/09/2026",
+  "versao": "2026.09.17a",
+  "data": "17/09/2026",
   "novidades": [
+    {
+      "titulo": "Vendas — fila do Gestor de Tráfego",
+      "itens": [
+        "Quando o corretor indica que o cliente NÃO é lead da base, a venda agora aparece numa fila no topo da tela Vendas para o Gestor de Tráfego analisar e aprovar — com a origem indicada e a observação do corretor.",
+        "Ao negar o lead da base, o corretor escreve uma observação explicando por que é tráfego/cliente novo; essa observação vai direto para o Gestor de Tráfego."
+      ]
+    },
     {
       "titulo": "Contas a pagar — aprovação do sócio",
       "itens": [

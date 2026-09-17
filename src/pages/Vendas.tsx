@@ -1032,6 +1032,39 @@ export default function Vendas() {
 
  <ParcelasAtrasadas onSelect={setSelected} />
 
+ {/* Fila do Gestor de Tráfego: vendas em que o corretor indicou que o cliente
+     NÃO é lead da base. Aparece pro Gestor de Tráfego analisar/definir e pros
+     admins acompanharem — com o entendimento do sistema e a observação do corretor. */}
+ {(() => {
+ const pend = (vendas || []).filter((v: any) => v.aguardandoAprovacaoTrafego);
+ if (!pend.length) return null;
+ const ehGestorTrafego = role === 'GESTOR_TRAFEGO';
+ return (
+ <div className="card" style={{ padding: '12px 14px', marginBottom: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.4)' }}>
+ <div style={{ fontWeight: 700, color: '#B45309', marginBottom: 8 }}>
+ {ehGestorTrafego ? 'Aguardando sua análise — Tráfego pago' : 'Aguardando aprovação do Gestor de Tráfego'} · {pend.length}
+ </div>
+ <div style={{ display: 'grid', gap: 8 }}>
+ {pend.map((v: any) => (
+ <div key={v.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
+ <div style={{ minWidth: 0, flex: 1 }}>
+ <div style={{ fontWeight: 600 }}>{v.clienteNome} <span className="text-secondary" style={{ fontWeight: 400 }}>· {v.empreendimento}{v.codigo ? ` · ${v.codigo}` : ''}</span></div>
+ <div className="text-xs text-secondary">Corretor: {v.corretor?.nome || '—'} · Origem indicada: {v.origemLead || '—'} · o corretor indicou que NÃO é lead da base</div>
+ <div className="text-xs" style={{ marginTop: 2 }}><strong>Observação do corretor:</strong> {v.formulario?.origemLeadContestacao ? v.formulario.origemLeadContestacao : <span className="text-secondary">— (sem observação)</span>}</div>
+ </div>
+ <div className="flex gap-2">
+ <button className="btn btn--secondary btn--sm" onClick={() => setSelected(v.id)}>Abrir</button>
+ {ehGestorTrafego && (
+ <button className="btn btn--primary btn--sm" onClick={async () => { try { await Api.vendaAprovarTrafego(v.id); toast.success('Venda liberada (tráfego).'); reload(); } catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); } }}>Aprovar (tráfego)</button>
+ )}
+ </div>
+ </div>
+ ))}
+ </div>
+ </div>
+ );
+ })()}
+
  <div className="flex gap-2" style={{ marginBottom: 12 }}>
  <button
  className={`btn btn--sm ${view === 'lista' ? 'btn--primary' : 'btn--secondary'}`}
@@ -1360,6 +1393,10 @@ export default function Vendas() {
  ⚠️ Você indicou que o cliente <strong>não é</strong> um lead da base. A venda entra <strong>pendente</strong> até a aprovação do <strong>Gestor de Tráfego</strong>.
  <button type="button" className="btn btn--ghost btn--sm" style={{ marginLeft: 8 }} onClick={() => { setLeadNegadoId(null); setLeadSugDispensada(false); }}>Desfazer</button>
  </div>
+ <textarea className="field__input" style={{ marginTop: 8, width: '100%', minHeight: 58, resize: 'vertical' }} maxLength={600}
+ placeholder="Explique por que é um cliente novo / de tráfego pago — o Gestor de Tráfego vai ler isto para aprovar."
+ value={contestacao} onChange={(e) => setContestacao(e.target.value)} />
+ <div className="text-xs text-secondary" style={{ marginTop: 2 }}>{contestacao.length}/600 · essa observação vai para o Gestor de Tráfego analisar.</div>
  </div>
  )}
 
