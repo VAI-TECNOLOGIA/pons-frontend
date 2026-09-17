@@ -465,6 +465,7 @@ export const Api = {
   vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; motivo?: string } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
   vendaAprovarTrafego: (id: number) => request<any>(`/vendas/${id}/aprovar-trafego`, { method: 'POST' }),
   vendaDecidirTrafego: (id: number, decisao: 'TRAFEGO' | 'NETWORK') => request<any>(`/vendas/${id}/decidir-trafego`, { method: 'POST', body: { decisao } }),
+  vendaEditarNegociacao: (id: number, data: any) => request<any>(`/vendas/${id}/negociacao`, { method: 'PUT', body: data }),
   unidadeStatus: (empreendimentoId: number, unidade: string) =>
     request<{ ocupada: boolean; codigo: string | null }>(`/vendas/unidade-status${qs({ empreendimentoId, unidade })}`),
   vendaSalaSugerida: (corretorId?: number | string) =>

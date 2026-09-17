@@ -176,6 +176,106 @@ function EvidenciaTrafego({ v }: { v: any }) {
   );
 }
 
+// Edita a negociação de uma venda (valor, entrada/parcelas, mensais, reforços).
+// Recompõe parcelas da entrada e comissão no backend. Só antes de haver pagamento.
+function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClose: () => void; onSaved: () => void }) {
+  const toast = useToast();
+  const f = venda.formulario || {};
+  const m = (n: any) => (n != null && n !== '' ? maskMoedaBR(String(Math.round(Number(n) * 100))) : '');
+  const [salvando, setSalvando] = useState(false);
+  const [valorVenda, setValorVenda] = useState(m(venda.valorVenda));
+  const [entradaTotal, setEntradaTotal] = useState(m(venda.entradaTotal));
+  const [arras, setArras] = useState(m(f.arrasValor));
+  const [parcelas, setParcelas] = useState(String(venda.entradaParcelas ?? 1));
+  const [venc1, setVenc1] = useState('');
+  const [mensaisValor, setMensaisValor] = useState(m(f.mensaisValor));
+  const [mensaisQtd, setMensaisQtd] = useState(String(f.mensaisQtd ?? ''));
+  const [mensaisDia, setMensaisDia] = useState(String(f.mensaisMelhorDia ?? ''));
+  const [mensaisInicio, setMensaisInicio] = useState(String(f.mensaisInicio ?? ''));
+  const [anuaisValor, setAnuaisValor] = useState(m(f.anuaisValor));
+  const [anuaisQtd, setAnuaisQtd] = useState(String(f.anuaisQtd ?? ''));
+  const [anuaisInicio, setAnuaisInicio] = useState(String(f.anuaisInicio ?? ''));
+  const [anuaisPeriodicidade, setAnuaisPeriodicidade] = useState(String(f.anuaisPeriodicidade ?? 'ANUAL'));
+  const [chaves, setChaves] = useState(m(f.chavesValor));
+  const [permuta, setPermuta] = useState(m(f.permutaValor));
+
+  const salvar = async () => {
+    const vv = parseMoedaBR(valorVenda) || 0;
+    if (vv <= 0) { toast.error('Informe o valor da venda.'); return; }
+    const n = Math.max(1, Number(parcelas) || 1);
+    const ent = parseMoedaBR(entradaTotal) || 0;
+    const arr = parseMoedaBR(arras) || 0;
+    const alvo = Math.max(0, ent - arr);
+    const base = Math.round((alvo / n) * 100) / 100;
+    const detalhe = Array.from({ length: n }, (_, i) => {
+      let venc: string | null = null;
+      if (venc1) { const dt = new Date(venc1 + 'T00:00:00'); dt.setMonth(dt.getMonth() + i); venc = dt.toISOString().slice(0, 10); }
+      return { valor: base, vencimento: venc };
+    });
+    if (detalhe.length) detalhe[detalhe.length - 1].valor = Math.round((base + (alvo - base * n)) * 100) / 100;
+    const payload: any = {
+      valorVenda: vv,
+      entradaTotal: ent,
+      entradaParcelas: n,
+      entradaParcelasDetalhe: detalhe,
+      arrasValor: arr || null,
+      mensaisValor: parseMoedaBR(mensaisValor) || null,
+      mensaisQtd: Number(mensaisQtd) || null,
+      mensaisMelhorDia: Number(mensaisDia) || null,
+      mensaisInicio: mensaisInicio.trim() || null,
+      anuaisValor: parseMoedaBR(anuaisValor) || null,
+      anuaisQtd: Number(anuaisQtd) || null,
+      anuaisInicio: anuaisInicio.trim() || null,
+      anuaisPeriodicidade: anuaisPeriodicidade || null,
+      chavesValor: parseMoedaBR(chaves) || null,
+      permutaValor: parseMoedaBR(permuta) || 0,
+    };
+    setSalvando(true);
+    try {
+      const r: any = await Api.vendaEditarNegociacao(venda.id, payload);
+      toast.success(r?.aguardandoAprovacao ? 'Salvo — acima de 4x, foi para aprovação do Paulo.' : 'Negociação atualizada.');
+      onSaved();
+    } catch (err: any) {
+      const msg = err?.message || 'falha';
+      toast.error(msg.includes('ja_pago') || msg.includes('já') ? 'Venda já tem comissão/parcela paga — ajuste com o financeiro.' : 'Erro: ' + msg);
+    } finally { setSalvando(false); }
+  };
+
+  const campo = (label: string, node: React.ReactNode) => (
+    <div className="field"><label className="field__label">{label}</label>{node}</div>
+  );
+  const money = (v: string, set: (s: string) => void, ph = 'R$ 0,00') => (
+    <input className="field__input" inputMode="numeric" placeholder={ph} value={v} onChange={(e) => set(maskMoedaBR(e.target.value))} />
+  );
+
+  return (
+    <Modal open onClose={onClose} title="Editar negociação" subtitle={`${venda.clienteNome || 'Venda'} · recalcula parcelas e comissão`}>
+      <div className="form-grid">
+        {campo('Valor da venda *', money(valorVenda, setValorVenda, 'R$ 500.000,00'))}
+        {campo('Entrada (total, com arras)', money(entradaTotal, setEntradaTotal))}
+        {campo('Arras (sinal, no ato)', money(arras, setArras))}
+        {campo('Parcelas da entrada', <input type="number" min={1} className="field__input" value={parcelas} onChange={(e) => setParcelas(e.target.value)} />)}
+        {campo('1º vencimento da entrada', <input type="date" className="field__input" value={venc1} onChange={(e) => setVenc1(e.target.value)} />)}
+        <div className="field field--span-2"><div className="field__hint">As parcelas da entrada são divididas igualmente ({'(entrada − arras) ÷ nº de parcelas'}), vencendo mês a mês a partir do 1º vencimento. Acima de 4x vai para aprovação do Paulo.</div></div>
+        {campo('Mensais — valor', money(mensaisValor, setMensaisValor))}
+        {campo('Mensais — quantidade', <input type="number" min={0} className="field__input" value={mensaisQtd} onChange={(e) => setMensaisQtd(e.target.value)} />)}
+        {campo('Mensais — melhor dia', <input type="number" min={1} max={31} className="field__input" value={mensaisDia} onChange={(e) => setMensaisDia(e.target.value)} />)}
+        {campo('Mensais — início (ex.: Janeiro/2027)', <input className="field__input" value={mensaisInicio} onChange={(e) => setMensaisInicio(e.target.value)} />)}
+        {campo('Reforços — valor', money(anuaisValor, setAnuaisValor))}
+        {campo('Reforços — quantidade', <input type="number" min={0} className="field__input" value={anuaisQtd} onChange={(e) => setAnuaisQtd(e.target.value)} />)}
+        {campo('Reforços — início (mês)', <input className="field__input" value={anuaisInicio} onChange={(e) => setAnuaisInicio(e.target.value)} />)}
+        {campo('Reforços — periodicidade', <select className="field__select" value={anuaisPeriodicidade} onChange={(e) => setAnuaisPeriodicidade(e.target.value)}><option value="ANUAL">Anual</option><option value="SEMESTRAL">Semestral</option></select>)}
+        {campo('Chaves', money(chaves, setChaves))}
+        {campo('Permuta', money(permuta, setPermuta))}
+      </div>
+      <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 18 }}>
+        <button type="button" className="btn btn--secondary" onClick={onClose}>Cancelar</button>
+        <button type="button" className="btn btn--primary" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando…' : 'Salvar negociação'}</button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function Vendas() {
  const [selected, setSelected] = useState<number | null>(null);
  // Deep-link vindo da Análise de Vendas (?venda=<id>): abre a venda direto.
@@ -257,6 +357,9 @@ export default function Vendas() {
  const role = Auth.user?.role;
  // Quem pode aprovar a origem de tráfego: o Gestor de Tráfego + supervisão (CEO / Diretor Comercial).
  const podeAprovarTrafego = ['GESTOR_TRAFEGO', 'CEO', 'DIRETOR_COMERCIAL'].includes(role || '');
+ // Editar negociação da venda: gestor de equipe (só a própria equipe, travado no backend) + diretoria/adm.
+ const podeEditarNegociacao = ['GERENTE_EQUIPE', 'GESTOR', 'CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(role || '');
+ const [editNeg, setEditNeg] = useState<any>(null);
  // Define a origem: TRAFEGO (paga comissão do gestor) ou NETWORK (orgânica, sem comissão de tráfego).
  const decidirTrafego = async (vid: number, decisao: 'TRAFEGO' | 'NETWORK') => {
    try {
@@ -1246,6 +1349,9 @@ export default function Vendas() {
  <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyExact(sel.valorVenda ?? sel.valor)}</strong>
  <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyExact(sel.comissao ?? ((sel.valorVenda ?? sel.valor ?? 0) * (sel.percentualComissao ?? 6)) / 100)}</strong></span>
  </div>
+ {podeEditarNegociacao && sel.status !== 'CANCELADO' && (
+ <button className="btn btn--secondary" onClick={() => setEditNeg(sel)}>Editar negociação</button>
+ )}
  {podeCancelar && sel.status !== 'CANCELADO' && (
  <button className="btn btn--ghost" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => cancelarVenda(sel)}>Cancelar venda</button>
  )}
@@ -1355,6 +1461,10 @@ export default function Vendas() {
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
  </Modal>
+ )}
+
+ {editNeg && (
+ <EditarNegociacaoModal venda={editNeg} onClose={() => setEditNeg(null)} onSaved={() => { setEditNeg(null); reload(); }} />
  )}
 
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Formulário oficial GPI — preencha etapa por etapa" size="lg">
