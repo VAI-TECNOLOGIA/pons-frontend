@@ -358,7 +358,7 @@ export default function Vendas() {
  // Quem pode aprovar a origem de tráfego: o Gestor de Tráfego + supervisão (CEO / Diretor Comercial).
  const podeAprovarTrafego = ['GESTOR_TRAFEGO', 'CEO', 'DIRETOR_COMERCIAL'].includes(role || '');
  // Editar negociação da venda: gestor de equipe (só a própria equipe, travado no backend) + diretoria/adm.
- const podeEditarNegociacao = ['GERENTE_EQUIPE', 'GESTOR', 'CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(role || '');
+ const podeEditarNegociacao = ['GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'GESTOR', 'CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(role || '');
  const [editNeg, setEditNeg] = useState<any>(null);
  // Define a origem: TRAFEGO (paga comissão do gestor) ou NETWORK (orgânica, sem comissão de tráfego).
  const decidirTrafego = async (vid: number, decisao: 'TRAFEGO' | 'NETWORK') => {

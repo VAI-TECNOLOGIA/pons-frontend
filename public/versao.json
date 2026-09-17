@@ -1,12 +1,12 @@
 {
-  "versao": "2026.09.17f",
+  "versao": "2026.09.17g",
   "data": "17/09/2026",
   "novidades": [
     {
       "titulo": "Vendas — editar negociação",
       "itens": [
         "Na venda, botão Editar negociação: corrige valor da venda, entrada e nº de parcelas da entrada (agora aceita 4x), mensais, reforços, chaves e permuta. O sistema recalcula as parcelas e a comissão.",
-        "Disponível para o gestor de equipe (apenas nas vendas da própria equipe) e para a diretoria/administrativo. Bloqueado se a venda já tiver comissão ou parcela paga. Acima de 4x na entrada volta para aprovação do Paulo."
+        "Disponível para o gestor de equipe e o sócio de filial (apenas nas vendas da própria equipe/filial) e para a diretoria/administrativo. Bloqueado se a venda já tiver comissão ou parcela paga. Acima de 4x na entrada volta para aprovação do Paulo."
       ]
     },
     {
