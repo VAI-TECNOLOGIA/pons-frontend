@@ -101,21 +101,53 @@ export function AvisoAtualizacao() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        title={`Ver o que mudou · versão ${info.versao}`}
-        style={{
-          position: 'fixed', right: 24, ...posPill, zIndex: 8000,
-          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999,
-          background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)',
-          border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-          cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
-        }}
-      >
-        <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: '#52f7fe', boxShadow: '0 0 0 3px rgba(82,247,254,0.25)' }} />
-        {buildAtrasado ? 'Nova versão disponível' : 'Sistema atualizado'}
-      </button>
+      {/* Build atrasado = a tela do usuário está numa versão antiga. Alerta FORTE,
+          largura total no topo, pra ninguém ficar sem as novidades (pedido Elison 17/09). */}
+      {buildAtrasado ? (
+        <div
+          role="alert"
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9500,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap',
+            padding: '11px 16px', background: 'linear-gradient(90deg, #0ea5b7, #52f7fe)', color: '#04252b',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)', fontSize: 13.5, fontWeight: 700,
+          }}
+        >
+          <span aria-hidden="true" style={{ display: 'inline-flex', width: 10, height: 10, borderRadius: 999, background: '#04252b', boxShadow: '0 0 0 4px rgba(4,37,43,0.25)' }} />
+          <span>Sistema atualizado — sua tela está numa versão antiga. Atualize para usar as novidades.</span>
+          <button
+            type="button"
+            onClick={() => { marcarVisto(); atualizarSistema(); }}
+            title="Limpa o cache e recarrega com a versão nova (mantém seu login)"
+            style={{ padding: '7px 16px', borderRadius: 999, border: 'none', background: '#04252b', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            Atualizar agora
+          </button>
+          <button
+            type="button"
+            onClick={() => setAberto(true)}
+            style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid rgba(4,37,43,0.4)', background: 'transparent', color: '#04252b', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }}
+          >
+            Ver o que mudou
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          title={`Ver o que mudou · versão ${info.versao}`}
+          style={{
+            position: 'fixed', right: 24, ...posPill, zIndex: 8000,
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999,
+            background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)',
+            border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+            cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+          }}
+        >
+          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: '#52f7fe', boxShadow: '0 0 0 3px rgba(82,247,254,0.25)' }} />
+          Sistema atualizado
+        </button>
+      )}
       {aberto && createPortal(
         <div role="dialog" aria-label="Atualizações do sistema" onClick={(e) => { if (e.target === e.currentTarget) marcarVisto(); }}
           style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>

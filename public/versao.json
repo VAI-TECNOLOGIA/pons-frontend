@@ -1,5 +1,5 @@
 {
-  "versao": "2026.09.17a",
+  "versao": "2026.09.17b",
   "data": "17/09/2026",
   "novidades": [
     {
@@ -108,7 +108,7 @@
     {
       "titulo": "Sistema",
       "itens": [
-        "Aviso de nova versão com botão Atualizar (limpa o cache).",
+        "Aviso de nova versão agora é uma faixa em destaque no topo da tela (antes um balão pequeno), para ninguém ficar numa versão antiga sem as novidades.",
         "Botão Reportar erro em todas as telas, com print automático da tela.",
         "Financeiro: Boletos (Cobrança) com emissão, PDF e arquivo de remessa."
       ]
