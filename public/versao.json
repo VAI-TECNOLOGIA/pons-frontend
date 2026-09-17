@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.17b",
+  "versao": "2026.09.17c",
   "data": "17/09/2026",
   "novidades": [
+    {
+      "titulo": "Gestor de Tráfego — evidência para aprovar",
+      "itens": [
+        "Na análise da venda, o Gestor de Tráfego agora vê a EVIDÊNCIA: a origem que o corretor marcou (ex.: Network) versus o lead que já existia na base com origem de tráfego pago (Meta/Google Ads), com campanha, anúncio e a data em que o lead entrou — além da observação do corretor. Assim ele entende por que precisa aprovar e decide com base nos dados."
+      ]
+    },
     {
       "titulo": "Vendas — fila do Gestor de Tráfego",
       "itens": [

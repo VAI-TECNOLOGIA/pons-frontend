@@ -140,6 +140,42 @@ function docsNecessarios(tipo: 'PF' | 'PJ', estadoCivil: string): string[] {
  }
 }
 
+// Origem legível + marca as de tráfego pago (evidência p/ o Gestor de Tráfego).
+function fmtOrigemLead(o?: string): string {
+  if (!o) return '—';
+  const map: Record<string, string> = {
+    META_ADS: 'Meta Ads (tráfego pago)', GOOGLE: 'Google Ads (tráfego pago)', INSTAGRAM: 'Instagram',
+    SITE: 'Site', LANDING_PAGE: 'Landing page', ZAP: 'Zap Imóveis', SIMULADOR: 'Simulador', AVALIACAO: 'Avaliação',
+    WHATSAPP: 'WhatsApp', CAMPANHA: 'Campanha', IMPORTACAO: 'Importação', BASE: 'Base', INDICACAO: 'Indicação', MANUAL: 'Manual',
+  };
+  return map[o] || String(o).replace(/_/g, ' ');
+}
+
+// Bloco de evidência: por que a venda precisa da análise do Gestor de Tráfego —
+// mostra a origem que o corretor marcou vs. o lead de tráfego que o sistema achou.
+function EvidenciaTrafego({ v }: { v: any }) {
+  const ln = v.leadNegado;
+  return (
+    <div style={{ marginTop: 6, fontSize: 12, background: 'rgba(0,0,0,0.05)', border: '1px solid var(--border-subtle, rgba(0,0,0,0.10))', borderRadius: 8, padding: '8px 10px', lineHeight: 1.5 }}>
+      <div>
+        <strong>Por que precisa da sua análise:</strong> o corretor marcou a origem como <strong>{v.origemLead || '—'}</strong> (orgânica, sem comissão de tráfego),
+        {ln ? ' mas o sistema encontrou este cliente na base como um lead que já existia:' : ' mas o sistema entende que pode ser um lead da base.'}
+      </div>
+      {ln && (
+        <ul style={{ margin: '6px 0 0', paddingLeft: 16 }}>
+          <li>Origem do lead na base: <strong>{fmtOrigemLead(ln.origem)}</strong></li>
+          {ln.campanha && <li>Campanha: {ln.campanha}</li>}
+          {ln.conjuntoAnuncio && <li>Anúncio / conjunto: {ln.conjuntoAnuncio}</li>}
+          {ln.formularioNome && <li>Formulário / produto: {ln.formularioNome}</li>}
+          <li>Recebido em: {ln.createdAt ? new Date(ln.createdAt).toLocaleDateString('pt-BR') : '—'}{ln.nome ? ` · lead: ${ln.nome}` : ''}</li>
+        </ul>
+      )}
+      <div style={{ marginTop: 6 }}><strong>Observação do corretor:</strong> {v.formulario?.origemLeadContestacao ? v.formulario.origemLeadContestacao : '— (sem observação)'}</div>
+      <div style={{ marginTop: 4, opacity: 0.8 }}>Se for o mesmo cliente, a venda deve pagar comissão de tráfego pago. Compare os dados e decida.</div>
+    </div>
+  );
+}
+
 export default function Vendas() {
  const [selected, setSelected] = useState<number | null>(null);
  // Deep-link vindo da Análise de Vendas (?venda=<id>): abre a venda direto.
@@ -1047,10 +1083,9 @@ export default function Vendas() {
  <div style={{ display: 'grid', gap: 8 }}>
  {pend.map((v: any) => (
  <div key={v.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
- <div style={{ minWidth: 0, flex: 1 }}>
- <div style={{ fontWeight: 600 }}>{v.clienteNome} <span className="text-secondary" style={{ fontWeight: 400 }}>· {v.empreendimento}{v.codigo ? ` · ${v.codigo}` : ''}</span></div>
- <div className="text-xs text-secondary">Corretor: {v.corretor?.nome || '—'} · Origem indicada: {v.origemLead || '—'} · o corretor indicou que NÃO é lead da base</div>
- <div className="text-xs" style={{ marginTop: 2 }}><strong>Observação do corretor:</strong> {v.formulario?.origemLeadContestacao ? v.formulario.origemLeadContestacao : <span className="text-secondary">— (sem observação)</span>}</div>
+ <div style={{ minWidth: 0, flex: '1 1 320px' }}>
+ <div style={{ fontWeight: 600 }}>{v.clienteNome} <span className="text-secondary" style={{ fontWeight: 400 }}>· {v.empreendimento}{v.codigo ? ` · ${v.codigo}` : ''} · corretor {v.corretor?.nome || '—'}</span></div>
+ <EvidenciaTrafego v={v} />
  </div>
  <div className="flex gap-2">
  <button className="btn btn--secondary btn--sm" onClick={() => setSelected(v.id)}>Abrir</button>
@@ -1267,6 +1302,7 @@ export default function Vendas() {
  <div style={{ fontWeight: 700, fontSize: 13, color: '#B45309', marginBottom: 4 }}>
  Aguardando aprovação do Gestor de Tráfego — o corretor negou um lead da base
  </div>
+ <EvidenciaTrafego v={sel} />
  {role === 'GESTOR_TRAFEGO' ? (
  <button
  className="btn btn--primary btn--sm"
