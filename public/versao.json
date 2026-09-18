@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.17g",
-  "data": "17/09/2026",
+  "versao": "2026.09.18a",
+  "data": "18/09/2026",
   "novidades": [
+    {
+      "titulo": "Lead transferido chega zerado (com a hora que recebeu)",
+      "itens": [
+        "Na ficha do lead, quando o corretor recebe um lead transferido, o tempo agora conta a partir da hora em que ele recebeu (Recebido em / Recebido há...), sem arrastar o histórico antigo. Antes um lead recebido agora aparecia como 'há 10 dias'. A última interação só aparece se aconteceu depois do recebimento."
+      ]
+    },
     {
       "titulo": "Vendas — editar negociação",
       "itens": [

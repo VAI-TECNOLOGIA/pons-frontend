@@ -26,6 +26,16 @@ const dataExtensa = (s: string) =>
   new Date(s).toLocaleString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     .replace(',', ' às');
 
+// Quando um lead é transferido/distribuído, ele deve "chegar zerado" pro corretor:
+// com a hora que recebeu (distribuidoEm), sem arrastar o histórico antigo. A "última
+// interação" só conta se aconteceu DEPOIS de o corretor receber o lead (pedido
+// Andréia/Vini 18/09). Assim some o enganoso "há 10d" num lead recém-recebido.
+function recebidoEmDe(l: any): string | null { return (l && (l.distribuidoEm || l.createdAt)) || null; }
+function interacaoRealDe(l: any): string | null {
+  const r = recebidoEmDe(l);
+  return (l && l.ultimaInteracao && r && new Date(l.ultimaInteracao).getTime() > new Date(r).getTime() + 1000) ? l.ultimaInteracao : null;
+}
+
 export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: () => void }) {
   const [lead, setLead] = useState<any>(null);
   const [erro, setErro] = useState('');
@@ -125,8 +135,8 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
               {lead.vip && <span className="badge badge--launch" style={{ fontSize: 9, marginLeft: 8, verticalAlign: 'middle' }}>VIP</span>}
             </div>
             <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
-              Criado em: {dataExtensa(lead.createdAt)}
-              {lead.ultimaInteracao && <><br />Última interação: {dataExtensa(lead.ultimaInteracao)}</>}
+              {recebidoEmDe(lead) ? <>Recebido em: {dataExtensa(recebidoEmDe(lead)!)}</> : <>Criado em: {dataExtensa(lead.createdAt)}</>}
+              {interacaoRealDe(lead) && <><br />Última interação: {dataExtensa(interacaoRealDe(lead)!)}</>}
             </div>
             {/* Conversa por DENTRO do sistema (aba Atendimento) — pedido 24/07 */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
@@ -263,11 +273,13 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <strong>Etapa do funil:</strong>
                   <span className="badge badge--info">{STATUS_LABEL[lead.status] || lead.status}</span>
-                  {lead.ultimaInteracao && <span className="text-xs text-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon name="clock" size={12} /> {timeAgo(lead.ultimaInteracao)}</span>}
+                  {(interacaoRealDe(lead) || recebidoEmDe(lead)) && <span className="text-xs text-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon name="clock" size={12} /> {timeAgo(interacaoRealDe(lead) || recebidoEmDe(lead))}</span>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Icon name="clock" size={14} />
-                  <strong>Última interação:</strong> {lead.ultimaInteracao ? timeAgo(lead.ultimaInteracao) : 'sem interação registrada'}
+                  {interacaoRealDe(lead)
+                    ? <><strong>Última interação:</strong> {timeAgo(interacaoRealDe(lead))}</>
+                    : <><strong>Recebido:</strong> {recebidoEmDe(lead) ? timeAgo(recebidoEmDe(lead)) : 'sem interação registrada'}</>}
                 </div>
                 <div>
                   <strong>Responsável:</strong> {lead.corretor ? lead.corretor.nome : 'não distribuído'}
