@@ -199,6 +199,10 @@ export const Api = {
   registerDevice: (token: string, platform: 'ios' | 'android') =>
     request<{ id: number; platform: string }>('/notifications/device-token', { method: 'POST', body: { token, platform } }),
   pushTest: () => request<{ ok: boolean; devicesRegistrados: number }>('/notifications/test', { method: 'POST' }),
+  // Reporta ao backend o resultado do registro de push (sucesso/erro/permissão negada).
+  // Torna visível quem está SEM push, em vez de falhar em silêncio.
+  pushLog: (payload: { ok: boolean; platform?: 'ios' | 'android'; error?: string; appVersion?: string }) =>
+    request<{ ok: boolean }>('/notifications/push-log', { method: 'POST', body: payload }),
 
   // ─── Onboarding de contratação (gating Documentos/Contrato) ──────────────
   onbMe: () => request<any>('/onboarding-colaborador/me'),

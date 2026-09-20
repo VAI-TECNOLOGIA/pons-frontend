@@ -32,22 +32,61 @@ export async function initPush(navigate?: (path: string) => void) {
   const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android';
 
   try {
+    // Android 8+: toda notificação precisa de um CANAL. Sem um canal de importância
+    // ALTA, o aviso não aparece como pop-up (heads-up). Criamos 'leads_high' aqui;
+    // o backend manda o push nesse canal. Idempotente (recriar não duplica).
+    if (platform === 'android') {
+      try {
+        await PushNotifications.createChannel({
+          id: 'leads_high',
+          name: 'Leads e avisos importantes',
+          description: 'Novos leads, transferências e avisos urgentes.',
+          importance: 5, // IMPORTANCE_HIGH -> heads-up (pop-up) + som + vibração
+          visibility: 1, // PUBLIC (aparece na tela de bloqueio)
+          // SEM `sound`: no @capacitor/push-notifications o campo `sound` é o nome de
+          // um arquivo em res/raw (NÃO a palavra "default"). Passar 'default' apontaria
+          // pra res/raw/default (inexistente) e o canal ficaria MUDO — e canal é
+          // imutável após criado. Sem o campo, o canal usa o som padrão do sistema.
+          vibration: true,
+          lights: true,
+        });
+      } catch { /* canal já existe ou sem suporte: ignora */ }
+    }
+
     let perm = await PushNotifications.checkPermissions();
     if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
       perm = await PushNotifications.requestPermissions();
     }
-    if (perm.receive !== 'granted') return; // usuário recusou
+    if (perm.receive !== 'granted') {
+      // Visibilidade: antes isso era um `return` silencioso. Agora o backend registra
+      // que este corretor está SEM push por permissão negada.
+      Api.pushLog({ ok: false, platform, error: `permissao negada (${perm.receive})` }).catch(() => {});
+      return;
+    }
 
     // Token do aparelho -> backend. Android: o `registration` já é o FCM token.
     // iOS: é o APNs token; o que o backend precisa (FCM) vem do bridge nativo.
     await PushNotifications.addListener('registration', async (token) => {
       try {
         const fcm = platform === 'ios' ? await aguardarFcmToken() : token.value;
-        if (fcm) await Api.registerDevice(fcm, platform);
-      } catch { /* backend indisponível: tenta de novo no próximo boot */ }
+        if (fcm) {
+          await Api.registerDevice(fcm, platform);
+          Api.pushLog({ ok: true, platform }).catch(() => {});
+        } else {
+          Api.pushLog({ ok: false, platform, error: 'registrou mas nao veio o fcm token' }).catch(() => {});
+        }
+      } catch { /* backend indisponível: tenta de novo no próximo boot */
+        Api.pushLog({ ok: false, platform, error: 'falha ao enviar token ao backend' }).catch(() => {});
+      }
     });
 
-    await PushNotifications.addListener('registrationError', () => { /* silencioso */ });
+    // Antes era silencioso — por isso ninguém via quando o registro falhava.
+    await PushNotifications.addListener('registrationError', (err: unknown) => {
+      const msg = (err as { error?: string; message?: string })?.error
+        || (err as { message?: string })?.message
+        || 'registrationError';
+      Api.pushLog({ ok: false, platform, error: String(msg) }).catch(() => {});
+    });
 
     // Toque na notificação -> navega pro destino
     await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {

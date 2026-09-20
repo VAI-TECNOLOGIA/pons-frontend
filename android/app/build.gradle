@@ -14,8 +14,8 @@ android {
         applicationId "br.com.grupopons.sistema"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.0.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -73,11 +73,28 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
+// google-services.json é a "identidade" do app no Firebase (projeto pons-75376,
+// app Android br.com.grupopons.sistema). Sem ele o build sai SEM Firebase e o push
+// nunca funciona no Android. Antes o build só logava e seguia — saía release quebrado
+// sem ninguém perceber. Agora: debug segue sem push (ok pra dev), mas RELEASE FALHA
+// com mensagem clara, pra nunca mais publicar um AAB sem push.
+def googleServicesFile = file('google-services.json')
+if (googleServicesFile.exists() && googleServicesFile.length() > 0) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    // Pega tasks de release e também as agregadas de empacotamento (bundle/bundleRelease
+    // — o AAB da Play). Debug puro (assembleDebug/installDebug/run) segue sem push.
+    def isRelease = gradle.startParameter.taskNames.any {
+        def t = it.toLowerCase()
+        t.contains('release') || t.contains('bundle')
     }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    if (isRelease) {
+        throw new GradleException(
+            "google-services.json AUSENTE em android/app/. O push NAO funciona no Android sem ele.\n" +
+            "Baixe o arquivo do app 'br.com.grupopons.sistema' no Firebase (projeto pons-75376) e\n" +
+            "coloque em android/app/google-services.json ANTES de gerar o AAB de release."
+        )
+    } else {
+        logger.warn("google-services.json ausente — build de debug segue SEM push (ok pra dev/emulador).")
+    }
 }
