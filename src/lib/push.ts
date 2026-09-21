@@ -86,9 +86,10 @@ function tocarSomAlerta(intenso: boolean) {
   try {
     const a = new Audio(SOM_ALERTA);
     a.volume = 1;
+    // Lead: toca duas vezes — é o aviso que não pode passar batido. A segunda só
+    // começa quando a primeira TERMINA (o som do cliente tem ~3 s; não sobrepõe).
+    if (intenso) a.addEventListener('ended', () => { new Audio(SOM_ALERTA).play().catch(() => {}); }, { once: true });
     a.play().catch(() => { /* WebView sem áudio liberado: fica a vibração */ });
-    // Lead: toca duas vezes — é o aviso que não pode passar batido.
-    if (intenso) setTimeout(() => { new Audio(SOM_ALERTA).play().catch(() => {}); }, 1400);
   } catch { /* sem áudio */ }
   try { navigator.vibrate?.(intenso ? [350, 150, 350, 150, 500] : [200]); } catch { /* sem vibração */ }
 }
