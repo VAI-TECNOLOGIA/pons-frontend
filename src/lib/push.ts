@@ -24,6 +24,37 @@ async function aguardarFcmToken(): Promise<string | null> {
   return null;
 }
 
+// Token obtido no aparelho mas ainda NÃO aceito pelo backend (ex.: cadastro
+// pendente na hora, sem rede, servidor fora). Fica guardado e é reenviado ao
+// voltar pro primeiro plano e a cada 60s. Sem isso, quem se cadastrou pelo app
+// só entrava na lista de destinatários se fechasse e reabrisse o app — e a
+// aprovação do acesso saía pra "ninguém".
+let tokenPendente: { fcm: string; platform: 'ios' | 'android' } | null = null;
+let reenvioArmado = false;
+
+async function enviarTokenAoBackend(fcm: string, platform: 'ios' | 'android') {
+  try {
+    await Api.registerDevice(fcm, platform);
+    tokenPendente = null;
+    Api.pushLog({ ok: true, platform }).catch(() => {});
+  } catch {
+    tokenPendente = { fcm, platform };
+    Api.pushLog({ ok: false, platform, error: 'falha ao enviar token ao backend (vai reenviar)' }).catch(() => {});
+    armarReenvio();
+  }
+}
+
+function armarReenvio() {
+  if (reenvioArmado) return;
+  reenvioArmado = true;
+  const tentar = () => { if (tokenPendente) enviarTokenAoBackend(tokenPendente.fcm, tokenPendente.platform); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tentar(); });
+  import('@capacitor/app')
+    .then(({ App }) => App.addListener('appStateChange', ({ isActive }) => { if (isActive) tentar(); }))
+    .catch(() => { /* sem plugin: fica o visibilitychange + timer */ });
+  setInterval(tentar, 60_000);
+}
+
 export async function initPush(navigate?: (path: string) => void) {
   if (jaIniciado) return;
   if (!Capacitor.isNativePlatform()) return; // web: não há push nativo
@@ -67,17 +98,13 @@ export async function initPush(navigate?: (path: string) => void) {
     // Token do aparelho -> backend. Android: o `registration` já é o FCM token.
     // iOS: é o APNs token; o que o backend precisa (FCM) vem do bridge nativo.
     await PushNotifications.addListener('registration', async (token) => {
-      try {
-        const fcm = platform === 'ios' ? await aguardarFcmToken() : token.value;
-        if (fcm) {
-          await Api.registerDevice(fcm, platform);
-          Api.pushLog({ ok: true, platform }).catch(() => {});
-        } else {
-          Api.pushLog({ ok: false, platform, error: 'registrou mas nao veio o fcm token' }).catch(() => {});
-        }
-      } catch { /* backend indisponível: tenta de novo no próximo boot */
-        Api.pushLog({ ok: false, platform, error: 'falha ao enviar token ao backend' }).catch(() => {});
+      const fcm = platform === 'ios' ? await aguardarFcmToken() : token.value;
+      if (!fcm) {
+        Api.pushLog({ ok: false, platform, error: 'registrou mas nao veio o fcm token' }).catch(() => {});
+        return;
       }
+      // Falhou (pendente/sem rede/servidor)? Guarda e reenvia sozinho — ver acima.
+      await enviarTokenAoBackend(fcm, platform);
     });
 
     // Antes era silencioso — por isso ninguém via quando o registro falhava.
