@@ -34,9 +34,11 @@ export function DashboardKpisExtra() {
           <MiniCard label="ROI tráfego" value={meta.roi ? `${meta.roi}x` : '—'} cor="var(--color-success)" link="/meta-custos" />
         </>
       )}
+      {/* "Minha posição" (colocação no ranking) foi REMOVIDA do dash do corretor:
+          os corretores confundiam com posição na FILA de atendimento e gerava
+          ruído (pedido Bello 21/09). O ranking continua acessível em /ranking. */}
       {isCorretor && rankingMe && (
         <>
-          <MiniCard label="Minha posição" value={`${rankingMe.posicao}º`} cor="var(--color-warning)" link="/ranking" />
           <MiniCard label="Meu score (mês)" value={rankingMe.score} cor="var(--color-info, #0E7C9B)" link="/perfil" />
         </>
       )}
