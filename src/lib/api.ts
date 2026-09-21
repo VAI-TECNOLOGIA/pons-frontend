@@ -142,6 +142,14 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
     throw new ApiError(ERROS.network_error, 0, err);
   }
 
+  // Sessão deslizante: o servidor manda um token novo (X-Renew-Token) quando o
+  // atual tem mais de 1 dia. Gravamos e seguimos — a pessoa nunca é deslogada
+  // enquanto usa o app (antes: 7 dias fixos e cair no login toda semana).
+  const renovado = res.headers.get('x-renew-token');
+  if (renovado && auth && Auth.user) {
+    try { Auth.set(renovado, Auth.user); } catch { /* storage indisponível: fica o token atual */ }
+  }
+
   if (res.status === 401) {
     // Na tela de login um 401 é credencial errada — repassa o código cru pro
     // Login.tsx traduzir, sem derrubar/redirecionar. Fora dela, 401 = sessão expirada.
