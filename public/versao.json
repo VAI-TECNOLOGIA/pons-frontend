@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.21d",
+  "versao": "2026.09.21e",
   "data": "21/09/2026",
   "novidades": [
+    {
+      "titulo": "Contas a pagar — lote vai pro sócio pagar no banco",
+      "itens": [
+        "O sistema não paga nada sozinho: o financeiro entrega o lote, o sócio recebe o aviso no celular, abre a lista (Rateio & Sócios, aba Sicredi), copia a chave PIX ou a linha digitável de cada conta, paga pelo Internet Banking e marca como pago."
+      ]
+    },
     {
       "titulo": "Sino de notificações no topo de toda tela",
       "itens": [
