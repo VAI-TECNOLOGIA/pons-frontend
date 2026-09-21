@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Auth, type User } from './auth';
 import { Api } from './api';
+import { isNativeApp } from './platform';
 
 interface UserCtx {
   user: User | null;
@@ -45,6 +46,34 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Recarrega o perfil quando o app VOLTA pro primeiro plano (aba visível no
+  // navegador; app nativo reativado) — liberação de acesso, troca de papel etc.
+  // feita pelo gestor passa a aparecer sem deslogar/logar. Enquanto o cadastro
+  // está AGUARDANDO_APROVACAO, também consulta a cada 30s: a pessoa fica na
+  // Academia e o app "acorda" sozinho no instante em que o Analista libera.
+  useEffect(() => {
+    if (!Auth.token) return;
+    const onVisible = () => { if (document.visibilityState === 'visible') reload(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    let nativeSub: { remove: () => void } | null = null;
+    if (isNativeApp()) {
+      import('@capacitor/app')
+        .then(({ App }) => App.addListener('appStateChange', ({ isActive }) => { if (isActive) reload(); }))
+        .then((h) => { nativeSub = h; })
+        .catch(() => { /* sem plugin: fica só o visibilitychange */ });
+    }
+
+    const pendente = user?.statusCadastro === 'AGUARDANDO_APROVACAO';
+    const timer = pendente ? window.setInterval(() => { reload(); }, 30_000) : null;
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      nativeSub?.remove();
+      if (timer) window.clearInterval(timer);
+    };
+  }, [reload, user?.statusCadastro]);
 
   return <Ctx.Provider value={{ user, setUser, reload }}>{children}</Ctx.Provider>;
 }
