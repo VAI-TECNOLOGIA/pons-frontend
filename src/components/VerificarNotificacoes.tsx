@@ -4,6 +4,19 @@ import { Api } from '../lib/api';
 import { Icon } from './Icon';
 import './verificar-notificacoes.css';
 
+// Abre a tela certa das Configurações do Android (plugin capacitor-native-settings,
+// presente no binário a partir da 1.0.4 / versionCode 5). Em builds anteriores o
+// plugin nativo não existe: a chamada falha e mostramos como fazer à mão.
+async function abrirConfiguracao(tipo: 'notificacoes' | 'som'): Promise<boolean> {
+  try {
+    const { NativeSettings, AndroidSettings } = await import('capacitor-native-settings');
+    await NativeSettings.openAndroid({ option: tipo === 'som' ? AndroidSettings.Sound : AndroidSettings.AppNotification });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Diagnóstico de notificações NO APARELHO (Android, app nativo). Pedido do Elison
 // 21/09: "pop-up e vibrou, mas sem som". O plugin lê a permissão e o estado real
 // dos canais (importância / som). Mostra o que está errado, o caminho pra ajustar
@@ -154,7 +167,27 @@ export function VerificarNotificacoes() {
       </div>
 
       <div className="vnotif__acoes">
-        <button type="button" className="vnotif__btn vnotif__btn--primario" onClick={testar} disabled={testando}>
+        <button
+          type="button"
+          className="vnotif__btn vnotif__btn--primario"
+          onClick={async () => {
+            const ok = await abrirConfiguracao('notificacoes');
+            if (!ok) setMsgTeste('Para abrir as configurações com um toque, atualize o app pela Play Store (versão 1.0.4). Enquanto isso, siga os passos acima.');
+          }}
+        >
+          Abrir notificações do app
+        </button>
+        <button
+          type="button"
+          className="vnotif__btn"
+          onClick={async () => {
+            const ok = await abrirConfiguracao('som');
+            if (!ok) setMsgTeste('Para abrir Sons e vibração com um toque, atualize o app pela Play Store (versão 1.0.4). Enquanto isso: Configurações → Sons e vibração → Modo de som → Som.');
+          }}
+        >
+          Sons e vibração
+        </button>
+        <button type="button" className="vnotif__btn" onClick={testar} disabled={testando}>
           {testando ? 'Enviando…' : 'Testar agora'}
         </button>
         <button type="button" className="vnotif__btn" onClick={() => rodar(true)}>Já ajustei, verificar de novo</button>

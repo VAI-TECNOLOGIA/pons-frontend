@@ -24,6 +24,7 @@
     "@capacitor/push-notifications": "^8.1.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "capacitor-native-settings": "^8.2.0",
     "chart.js": "^4.4.1",
     "html2canvas": "^1.4.1",
     "html2canvas-pro": "^2.4.2",
