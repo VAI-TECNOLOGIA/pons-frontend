@@ -1052,6 +1052,7 @@ export const Api = {
   loteSicrediProxima: () => request<{ dataExecucao: string; total: number; valor: number; lancamentos: any[] }>('/sicredi-lote/proxima'),
   loteSicrediPreparar: () => request<any>('/sicredi-lote/preparar', { method: 'POST' }),
   loteSicrediEnviar: (id: number) => request<any>(`/sicredi-lote/${id}/enviar`, { method: 'POST' }),
+  loteSicrediLancamentos: (id: number) => request<any[]>(`/sicredi-lote/${id}/lancamentos`),
   loteSicrediCancelar: (id: number) => request<{ ok: boolean }>(`/sicredi-lote/${id}/cancelar`, { method: 'POST' }),
 
   // ─── Sem Fila — vitrine de leads sem distribuição ────────────────

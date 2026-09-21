@@ -281,6 +281,7 @@ function destinoPorTipo(data: Record<string, any>): string | null {
     case 'tarefa': return '/tarefas';
     case 'aviso': return '/avisos';
     case 'venda': return '/vendas';
+    case 'financeiro': return '/financeiro-pons';
     case 'cadastro': return '/acesso-pendente';
     case 'reuniao': return '/reuniao';
     default: return '/dashboard';

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Api } from '../lib/api';
@@ -556,6 +556,10 @@ function SicrediTab() {
   const { data: lotes, reload: reloadLotes } = useApi<any[]>(() => Api.loteSicrediList());
   const toast = useToast();
   const confirm = useConfirm();
+  // Lote expandido: a LISTA DE PAGAMENTO que o sócio usa no Internet Banking
+  // (chave PIX / linha digitável copiáveis + marcar pago item a item).
+  const [aberto, setAberto] = useState<number | null>(null);
+  const [itens, setItens] = useState<any[]>([]);
 
   const preparar = async () => {
     try { await Api.loteSicrediPreparar(); toast.success('Lote preparado'); reloadProx(); reloadLotes(); }
@@ -563,10 +567,36 @@ function SicrediTab() {
   };
 
   const enviar = async (id: number) => {
-    const ok = await confirm({ title: 'Enviar pro Sicredi?', message: 'Vai enviar todos os lançamentos do lote pra Sicredi pagar. Irreversível.', tone: 'danger' });
+    const ok = await confirm({
+      title: 'Entregar o lote pro sócio pagar?',
+      message: 'O sistema NÃO paga nada: o sócio recebe o aviso no celular, confere a lista e paga pelo Internet Banking do Sicredi.',
+      confirmText: 'Entregar pro sócio',
+      tone: 'primary',
+    });
     if (!ok) return;
-    try { await Api.loteSicrediEnviar(id); toast.success('Enviado'); reloadLotes(); }
+    try { await Api.loteSicrediEnviar(id); toast.success('Lote entregue — sócio avisado no celular'); reloadLotes(); abrirLote(id); }
     catch (err: any) { toast.error(err.message); }
+  };
+
+  const abrirLote = async (id: number) => {
+    if (aberto === id) { setAberto(null); return; }
+    try { setItens(await Api.loteSicrediLancamentos(id)); setAberto(id); }
+    catch (err: any) { toast.error(err.message); }
+  };
+
+  const copiar = async (texto: string, rotulo: string) => {
+    try { await navigator.clipboard.writeText(texto); toast.success(`${rotulo} copiado`); }
+    catch { toast.error('Não foi possível copiar'); }
+  };
+
+  const marcarPago = async (l: any) => {
+    const ok = await confirm({ title: 'Marcar como pago?', message: `${l.beneficiario || l.descricao} · ${fmt(l.valor)} — confirme que o pagamento foi feito no banco.` });
+    if (!ok) return;
+    try {
+      await Api.finLancamentoUpdate(l.id, { status: 'PAGO' });
+      toast.success('Marcado como pago');
+      if (aberto) setItens(await Api.loteSicrediLancamentos(aberto));
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const cancelar = async (id: number) => {
@@ -595,19 +625,68 @@ function SicrediTab() {
           <thead><tr><th>Data</th><th>Status</th><th>Lançamentos</th><th>Valor</th><th>Enviado em</th><th></th></tr></thead>
           <tbody>
             {(lotes || []).map((l: any) => (
-              <tr key={l.id}>
+              <Fragment key={l.id}>
+              <tr>
                 <td>{new Date(l.dataExecucao).toLocaleDateString('pt-BR')}</td>
-                <td><span className={`badge ${l.status === 'CONFIRMADO' ? 'badge--launch' : l.status === 'FALHOU' ? 'badge--cancelled' : 'badge--info'}`}>{l.status}</span></td>
+                <td><span className={`badge ${l.status === 'CONFIRMADO' ? 'badge--launch' : l.status === 'FALHOU' ? 'badge--cancelled' : 'badge--info'}`}>{l.status === 'ENVIADO' && l.referenciaBanco === 'PAGAMENTO_MANUAL_SOCIO' ? 'COM O SÓCIO' : l.status}</span></td>
                 <td>{l.totalLancamentos}</td>
                 <td>{fmt(l.totalValor)}</td>
                 <td className="text-xs">{l.enviadoEm ? new Date(l.enviadoEm).toLocaleString('pt-BR') : '—'}</td>
                 <td className="flex" style={{ gap: 6 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={() => abrirLote(l.id)}>{aberto === l.id ? 'Fechar' : 'Ver contas'}</button>
                   {l.status === 'RASCUNHO' && <>
-                    <button className="btn btn--primary btn--sm" onClick={() => enviar(l.id)}>Enviar</button>
+                    <button className="btn btn--primary btn--sm" onClick={() => enviar(l.id)}>Entregar pro sócio</button>
                     <button className="btn btn--ghost btn--sm" onClick={() => cancelar(l.id)}>Cancelar</button>
                   </>}
                 </td>
               </tr>
+              {aberto === l.id && (
+                <tr>
+                  <td colSpan={6} style={{ background: 'var(--bg-elevated)', padding: 12 }}>
+                    <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
+                      Lista de pagamento — pague pelo Internet Banking do Sicredi e marque cada conta como paga.
+                    </div>
+                    <table className="table">
+                      <thead><tr><th>Beneficiário</th><th>Valor</th><th>Vencimento</th><th>Como pagar</th><th>Status</th><th></th></tr></thead>
+                      <tbody>
+                        {itens.map((it: any) => (
+                          <tr key={it.id}>
+                            <td>
+                              <div style={{ fontWeight: 600 }}>{it.beneficiario || it.descricao}</div>
+                              <div className="text-xs text-secondary">{it.descricao}{it.contaPagadora ? ` · paga: ${it.contaPagadora}` : ''}</div>
+                            </td>
+                            <td style={{ fontWeight: 700 }}>{fmt(it.valor)}</td>
+                            <td className="text-xs">{it.vencimento ? new Date(it.vencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}</td>
+                            <td className="text-xs">
+                              {it.favorecidoChavePix ? (
+                                <button className="btn btn--ghost btn--sm" onClick={() => copiar(it.favorecidoChavePix, 'Chave PIX')} title={it.favorecidoChavePix}>
+                                  Copiar chave PIX
+                                </button>
+                              ) : it.linhaDigitavel ? (
+                                <button className="btn btn--ghost btn--sm" onClick={() => copiar(it.linhaDigitavel, 'Linha digitável')} title={it.linhaDigitavel}>
+                                  Copiar linha digitável
+                                </button>
+                              ) : it.favorecidoConta ? (
+                                <span>{it.favorecidoBanco || '?'} · ag {it.favorecidoAgencia || '?'} · cc {it.favorecidoConta}</span>
+                              ) : (
+                                <span className="text-secondary">sem dados — ver lançamento</span>
+                              )}
+                            </td>
+                            <td><span className={`badge ${it.status === 'PAGO' ? 'badge--paid' : 'badge--info'}`}>{it.status}</span></td>
+                            <td>
+                              {it.status !== 'PAGO' && (
+                                <button className="btn btn--primary btn--sm" onClick={() => marcarPago(it)}>Marcar pago</button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {itens.length === 0 && <tr><td colSpan={6} className="text-secondary" style={{ textAlign: 'center' }}>Nenhuma conta neste lote</td></tr>}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
             {lotes?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhum lote criado</td></tr>}
           </tbody>

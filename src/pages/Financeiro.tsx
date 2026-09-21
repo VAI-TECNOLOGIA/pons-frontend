@@ -167,9 +167,9 @@ export default function Financeiro() {
 
  const enviarSicredi = async () => {
  const ok = await confirm({
- title: 'Enviar ao Sicredi?',
- message: 'Todos os lançamentos APROVADOS serão enviados em lote PIX ao banco Sicredi para pagamento. Confirme apenas se os valores e beneficiários foram revisados.',
- confirmText: 'Enviar lote',
+ title: 'Entregar o lote pro sócio pagar?',
+ message: 'Todos os lançamentos APROVADOS entram num lote e o sócio é avisado no celular pra conferir e pagar pelo Internet Banking do Sicredi. O sistema não paga nada sozinho.',
+ confirmText: 'Entregar pro sócio',
  tone: 'primary',
  });
  if (!ok) return;
@@ -954,9 +954,9 @@ function SicrediTab({ onEnviar }: { onEnviar: () => void }) {
           {configurado ? (
             <>
               <p className="text-secondary text-sm" style={{ marginBottom: 14 }}>
-                As credenciais Sicredi estão presentes. Os lançamentos de saída <strong>APROVADOS</strong> são enviados em lote PIX para pagamento. Revise valores e beneficiários antes de enviar.
+                Os lançamentos de saída <strong>APROVADOS</strong> entram num lote e o <strong>sócio paga pelo Internet Banking</strong> (o sistema não paga sozinho). A lista de pagamento fica em Rateio &amp; Sócios, aba Sicredi.
               </p>
-              <button className="btn btn--primary" onClick={onEnviar}>Enviar lote ao Sicredi</button>
+              <button className="btn btn--primary" onClick={onEnviar}>Entregar lote pro sócio</button>
             </>
           ) : (
             <p className="text-secondary">
