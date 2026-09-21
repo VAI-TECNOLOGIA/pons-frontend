@@ -7,6 +7,7 @@ import { Icon } from './Icon';
 import { BirthdayGreeter } from './BirthdayGreeter';
 import { WelcomeSplash } from './WelcomeSplash';
 import { AssistantChat } from './AssistantChat';
+import { VerificarNotificacoes } from './VerificarNotificacoes';
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -96,6 +97,8 @@ export function AppLayout() {
       <WelcomeSplash />
       <BirthdayGreeter />
       <AssistantChat />
+      {/* Android nativo: diagnóstico de permissão/canal de notificação no aparelho */}
+      <VerificarNotificacoes />
     </>
   );
 }

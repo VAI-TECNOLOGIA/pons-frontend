@@ -1,0 +1,49 @@
+/* Diagnóstico de notificações no aparelho (Android nativo). */
+.vnotif {
+  position: fixed;
+  left: 10px; right: 10px;
+  top: calc(64px + env(safe-area-inset-top, 0px)); /* abaixo do botão do menu */
+  z-index: 9000;
+  background: #0B0F1A;
+  color: #fff;
+  border: 1px solid rgba(245, 158, 11, .55);
+  border-left: 5px solid #f59e0b;
+  border-radius: 14px;
+  padding: 12px 14px 10px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .55);
+  font-size: 13.5px;
+  max-height: calc(100vh - 90px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
+.vnotif__head { display: flex; align-items: center; gap: 8px; color: #fbbf24; }
+.vnotif__head b { font-size: 14.5px; }
+.vnotif__x { margin-left: auto; background: transparent; border: none; color: rgba(255,255,255,.6); font-size: 22px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.vnotif__lista { margin: 8px 0 6px; padding-left: 18px; }
+.vnotif__lista li { margin: 3px 0; }
+.vnotif__ok { margin: 8px 0 6px; color: #86efac; }
+.vnotif__passos { margin: 8px 0; padding: 10px 12px; background: rgba(255,255,255,.05); border-radius: 10px; }
+.vnotif__passos ol { margin: 6px 0 0; padding-left: 18px; }
+.vnotif__passos li { margin: 4px 0; }
+.vnotif__acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.vnotif__btn {
+  border: 1px solid rgba(255,255,255,.18); background: transparent; color: #fff;
+  padding: 9px 12px; border-radius: 10px; font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.vnotif__btn--primario { background: #52f7fe; color: #0B0F1A; border-color: #52f7fe; font-weight: 700; }
+.vnotif__btn--primario:disabled { opacity: .6; }
+.vnotif__btn--link { border-color: transparent; color: rgba(255,255,255,.65); }
+.vnotif__msg { margin: 10px 0 0; color: #86efac; }
+.vnotif__detalhe { margin: 8px 0 0; font-size: 11px; color: rgba(255,255,255,.5); user-select: text; }
+
+/* Pílula discreta quando o aviso foi adiado mas o problema continua */
+.vnotif-pill {
+  position: fixed;
+  left: 10px;
+  top: calc(64px + env(safe-area-inset-top, 0px));
+  z-index: 8999;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #0B0F1A; color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, .55);
+  border-radius: 999px; padding: 6px 10px; font-size: 12px; cursor: pointer; font-family: inherit;
+  box-shadow: 0 6px 18px rgba(0,0,0,.4);
+}
