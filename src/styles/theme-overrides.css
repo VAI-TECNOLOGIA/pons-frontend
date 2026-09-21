@@ -168,8 +168,17 @@
 }
 .notif-bell--flutuante .notif-bell__btn:active { transform: scale(0.96); }
 .notif-bell--flutuante .notif-bell__dropdown { z-index: 1001; }
-/* Onde a página já tem barra de topo com o sino (PageHeader), esconde o flutuante */
-body:has(.topbar .notif-bell) .notif-bell--flutuante { display: none; }
+/* Desktop: onde a página já tem barra de topo com o sino (PageHeader), esconde o
+   flutuante — o da barra fica. */
+@media (min-width: 1024px) {
+  body:has(.topbar .notif-bell) .notif-bell--flutuante { display: none; }
+}
+/* Celular/tablet: o FLUTUANTE é o único sino em toda tela — o da barra de topo some
+   (no mobile ele já não aparecia, e a regra antiga escondia os dois: ficava sem sino
+   no Dashboard e nas demais telas com barra — print do Elison 21/09). */
+@media (max-width: 1023px) {
+  .topbar .notif-bell { display: none !important; }
+}
 .notif-bell__badge {
   position: absolute;
   top: -5px;
