@@ -274,8 +274,15 @@ export async function initPush(navigate?: (path: string) => void) {
 function destinoPorTipo(data: Record<string, any>): string | null {
   switch (data?.tipo) {
     case 'lead': return '/meus-leads';
+    case 'fila': return '/minhas-filas';
+    case 'followup': return '/chat?filtro=aguardando';
+    case 'liberacao': return '/liberacoes';
+    case 'transferencia_equipe': return '/equipes';
     case 'tarefa': return '/tarefas';
     case 'aviso': return '/avisos';
+    case 'venda': return '/vendas';
+    case 'cadastro': return '/acesso-pendente';
+    case 'reuniao': return '/reuniao';
     default: return '/dashboard';
   }
 }
