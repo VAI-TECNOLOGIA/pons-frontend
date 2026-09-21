@@ -40,7 +40,7 @@ export const EVENTO_ABRIR = 'pons:notificacoes:abrir';
 const CANAIS = ['leads_alerta', 'leads_high'];
 // versionCode mais novo publicado na Play. Quem está abaixo vê "Atualizar na Play
 // Store". Subir para 5 quando a 1.0.4 estiver "Disponível no Google Play".
-const BUILD_NA_PLAY = 4;
+const BUILD_NA_PLAY = 5;
 const PLAY_URL = 'https://play.google.com/store/apps/details?id=br.com.grupopons.sistema';
 
 async function diagnosticar(): Promise<Estado> {
