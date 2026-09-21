@@ -1,0 +1,92 @@
+/* Enviar notificação — diretoria/marketing manda sino + push na hora. */
+.env { padding: 20px 22px; max-width: 1060px; margin: 0 auto; }
+.env__head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.env__head h1 { font-size: 22px; font-weight: 800; margin: 0; }
+.env__sub { color: var(--muted, #94a3b8); margin: 0 0 18px; font-size: 14px; }
+.env__erro {
+  background: rgba(220, 38, 38, .12); border: 1px solid rgba(220, 38, 38, .4); color: #fca5a5;
+  padding: 10px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 13.5px;
+}
+.env__muted { color: var(--muted, #94a3b8); font-size: 13px; margin: 6px 0; }
+
+.env__grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .env__grid { grid-template-columns: 1fr; } }
+
+.env__card {
+  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 14px; padding: 16px;
+}
+.env__card h2 { font-size: 14px; font-weight: 700; margin: 0 0 12px; letter-spacing: .2px; }
+
+.env__alvos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.env__alvo {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
+  border: 1px solid var(--border-light); font-size: 13px; cursor: pointer; user-select: none;
+}
+.env__alvo.is-on { border-color: var(--pons-blue); color: var(--pons-blue); }
+.env__alvo input { accent-color: var(--pons-blue); }
+
+.env__busca {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-light);
+  border-radius: 10px; margin-bottom: 8px; color: var(--muted, #94a3b8);
+}
+.env__busca input { flex: 1; background: transparent; border: none; outline: none; color: var(--text-primary); font-size: 14px; }
+
+.env__lista { max-height: 420px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 10px; }
+.env__item {
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "cb nome chip" "cb meta chip";
+  column-gap: 10px; row-gap: 2px; align-items: center; padding: 9px 12px; cursor: pointer;
+  border-bottom: 1px solid var(--border-light); font-size: 14px;
+}
+.env__item:last-child { border-bottom: none; }
+.env__item.is-on { background: rgba(14, 124, 155, .08); }
+.env__item input { grid-area: cb; accent-color: var(--pons-blue); }
+.env__item-nome { grid-area: nome; font-weight: 600; }
+.env__item-meta { grid-area: meta; color: var(--muted, #94a3b8); font-size: 12px; }
+.env__chip {
+  grid-area: chip; font-size: 11px; padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--border-light); color: var(--muted, #94a3b8);
+}
+.env__chip--ok { border-color: rgba(34, 197, 94, .5); color: #4ade80; }
+.env__sel { margin-top: 8px; font-size: 12.5px; color: var(--muted, #94a3b8); }
+
+.env__papeis { display: flex; flex-wrap: wrap; gap: 8px; }
+.env__papel {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px;
+  border: 1px solid var(--border-light); font-size: 13px; cursor: pointer; user-select: none;
+}
+.env__papel.is-on { border-color: var(--pons-blue); }
+.env__papel input { accent-color: var(--pons-blue); }
+
+.env__campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.env__campo > span { font-size: 12.5px; font-weight: 600; display: flex; justify-content: space-between; }
+.env__campo small { color: var(--muted, #94a3b8); font-weight: 400; }
+.env__campo input, .env__campo textarea {
+  background: var(--bg-app); border: 1px solid var(--border-light); border-radius: 10px; padding: 10px 12px;
+  color: var(--text-primary); font-size: 14px; font-family: inherit; resize: vertical;
+}
+.env__campo input:focus, .env__campo textarea:focus { outline: 2px solid var(--pons-blue); outline-offset: 0; }
+
+.env__preview {
+  border: 1px solid var(--border-light); border-left: 3px solid var(--pons-blue); border-radius: 10px;
+  padding: 10px 12px; margin: 4px 0 14px; background: var(--bg-app);
+}
+.env__preview-app { font-size: 11px; color: var(--muted, #94a3b8); margin-bottom: 4px; }
+.env__preview-titulo { font-weight: 700; font-size: 14px; }
+.env__preview-texto { font-size: 13.5px; color: var(--text-primary); opacity: .9; white-space: pre-wrap; }
+
+.env__enviar {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 16px; border-radius: 10px; border: none;
+  background: var(--pons-blue); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; width: 100%; justify-content: center;
+}
+.env__enviar:disabled { opacity: .45; cursor: not-allowed; }
+
+.env__resultado {
+  display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+  border: 1px solid rgba(34, 197, 94, .45); background: rgba(34, 197, 94, .08); font-size: 13.5px; color: #86efac;
+}
+.env__resultado b { color: #4ade80; }
+/* Push NÃO saiu (simulado / sem aparelho / desligado / erro): tom de alerta, não de sucesso. */
+.env__resultado--alerta {
+  border-color: rgba(245, 158, 11, .5); background: rgba(245, 158, 11, .08); color: #fcd34d;
+}
+.env__resultado--alerta b { color: #fbbf24; }

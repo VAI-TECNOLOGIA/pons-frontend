@@ -48,6 +48,12 @@ const qs = (params: Record<string, unknown> = {}) => {
 const ERROS: Record<string, string> = {
   // Validação / entrada
   invalid_input: 'Confira os campos — há informação obrigatória faltando ou inválida.',
+  // Envio manual de notificação
+  push_desligado: 'O envio manual de notificação está desligado no catálogo de push — o CEO precisa ligar em Configurações de notificação.',
+  push_sem_catalogo: 'O evento de envio manual ainda não está no catálogo de push do servidor. Avise a VAI.',
+  sem_destinatarios: 'Nenhum destinatário elegível — confira a seleção.',
+  usuarios_vazio: 'Selecione pelo menos um usuário.',
+  papeis_vazio: 'Selecione pelo menos um papel.',
   invalid_id: 'Registro inválido.',
   id_invalido: 'Registro inválido.',
   nome_obrigatorio: 'Informe o nome.',
@@ -203,6 +209,15 @@ export const Api = {
   // Torna visível quem está SEM push, em vez de falhar em silêncio.
   pushLog: (payload: { ok: boolean; platform?: 'ios' | 'android'; error?: string; appVersion?: string }) =>
     request<{ ok: boolean }>('/notifications/push-log', { method: 'POST', body: payload }),
+  // Envio manual de notificação (diretoria/marketing): escolher destinatários e mandar.
+  notificacaoDestinatarios: () =>
+    request<Array<{ id: number; name: string; role: string; unidade: string | null; plataformas: string[] }>>('/notifications/destinatarios'),
+  notificacaoEnviar: (payload: { titulo: string; texto: string; alvo: 'usuarios' | 'papeis' | 'todos'; userIds?: number[]; roles?: string[] }) =>
+    request<{
+      ok: boolean; destinatarios: number; comDevice: number; semDevice: number; porPlataforma: Record<string, number>;
+      sinoOk: boolean; modo: 'real' | 'simulado';
+      push: { status: 'enviado' | 'desligado' | 'sem_destinatarios' | 'sem_tokens' | 'simulado' | 'erro'; success: number; failure: number; tokens: number };
+    }>('/notifications/enviar', { method: 'POST', body: payload }),
 
   // ─── Onboarding de contratação (gating Documentos/Contrato) ──────────────
   onbMe: () => request<any>('/onboarding-colaborador/me'),

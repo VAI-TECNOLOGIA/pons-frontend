@@ -114,6 +114,7 @@ const Pessoal         = lazyRetry(() => import('./pages/Pessoal'));
 // Academia Pons — vídeo aulas públicas/abertas (app e web)
 const Treinamentos    = lazyRetry(() => import('./pages/Treinamentos'));
 const AcessoPendente  = lazyRetry(() => import('./pages/AcessoPendente'));
+const EnviarNotificacao = lazyRetry(() => import('./pages/EnviarNotificacao'));
 // DEV panel
 const DevMensagens    = lazyRetry(() => import('./pages/DevMensagens'));
 const DevFeedback     = lazyRetry(() => import('./pages/DevFeedback'));
@@ -195,6 +196,7 @@ export default function App() {
           <Route path="/avisos" element={<Avisos />} />
           <Route path="/videos" element={<Videos />} />
           <Route path="/acesso-pendente" element={<AcessoPendente />} />
+          <Route path="/enviar-notificacao" element={<EnviarNotificacao />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/perfil" element={<Perfil />} />
