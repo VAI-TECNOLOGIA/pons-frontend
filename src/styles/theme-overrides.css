@@ -143,6 +143,33 @@
    ============================================================ */
 .notif-bell { position: relative; display: inline-flex; }
 .notif-bell__btn { position: relative; }
+
+/* Sino FLUTUANTE — fixo no topo direito de TODA tela (pedido Elison 21/09).
+   Mesmo visual do botão do menu; abaixo do recorte/status bar do celular.
+   z-index abaixo do drawer/backdrop (1000) e acima do conteúdo. */
+.notif-bell--flutuante {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 12px;
+  z-index: 900;
+}
+.notif-bell--flutuante .notif-bell__btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #0B0F1A;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.notif-bell--flutuante .notif-bell__btn:active { transform: scale(0.96); }
+.notif-bell--flutuante .notif-bell__dropdown { z-index: 1001; }
+/* Onde a página já tem barra de topo com o sino (PageHeader), esconde o flutuante */
+body:has(.topbar .notif-bell) .notif-bell--flutuante { display: none; }
 .notif-bell__badge {
   position: absolute;
   top: -5px;

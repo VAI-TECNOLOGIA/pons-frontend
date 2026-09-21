@@ -202,6 +202,11 @@ export async function initPush(navigate?: (path: string) => void) {
       Api.pushLog({ ok: false, platform, error: String(msg) }).catch(() => {});
     });
 
+    // Chegou push com o app aberto (iOS e Android) ou o usuário tocou numa
+    // notificação: avisa o sino do topo pra atualizar a lista/badge na hora.
+    const avisarSino = () => { try { window.dispatchEvent(new CustomEvent('pons:notificacoes:atualizar')); } catch { /* noop */ } };
+    await PushNotifications.addListener('pushNotificationReceived', () => { avisarSino(); });
+
     // App ABERTO (Android): o sistema não mostra nada — mostramos nós: faixa em
     // destaque + som + vibração. Lead/fila = alerta intenso (toca 2x, pulsa 15s).
     if (platform === 'android') {

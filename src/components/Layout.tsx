@@ -8,6 +8,7 @@ import { BirthdayGreeter } from './BirthdayGreeter';
 import { WelcomeSplash } from './WelcomeSplash';
 import { AssistantChat } from './AssistantChat';
 import { VerificarNotificacoes } from './VerificarNotificacoes';
+import { NotificationsBell } from './NotificationsBell';
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -99,6 +100,8 @@ export function AppLayout() {
       <AssistantChat />
       {/* Android nativo: diagnóstico de permissão/canal de notificação no aparelho */}
       <VerificarNotificacoes />
+      {/* Sino fixo no topo direito de toda tela (escondido via CSS onde já há .topbar com sino) */}
+      <NotificationsBell flutuante />
     </>
   );
 }
