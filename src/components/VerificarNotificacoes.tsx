@@ -6,10 +6,13 @@ import './verificar-notificacoes.css';
 
 // Diagnóstico de notificações NO APARELHO (Android, app nativo). Pedido do Elison
 // 21/09: "pop-up e vibrou, mas sem som". O plugin lê a permissão e o estado real
-// dos canais (importância / som) — se algo estiver desligado no celular, mostra
-// o que está errado, o caminho pra ajustar e um botão "Testar agora" (push de
-// teste pro próprio aparelho). Reavalia ao voltar pro primeiro plano.
-// iOS: o sistema já expõe isso na permissão; não mostramos nada.
+// dos canais (importância / som). Mostra o que está errado, o caminho pra ajustar
+// no celular e um botão "Testar agora" (push de teste pro próprio aparelho).
+//
+// Abre: (1) sozinho quando detecta problema; (2) UMA vez após a atualização,
+// mesmo sem problema (o corretor confere e testa — modo vibrar o app não lê);
+// (3) a qualquer hora pelo atalho "Notificações do celular" no pé do menu
+// (evento window 'pons:notificacoes:abrir'). iOS: não mostra nada.
 
 type Estado = {
   permissao: string;
@@ -18,6 +21,8 @@ type Estado = {
 };
 
 const CHAVE_ADIAR = 'pons.notif-check-adiado-ate';
+const CHAVE_APRESENTADO = 'pons.notif-check-apresentado';
+export const EVENTO_ABRIR = 'pons:notificacoes:abrir';
 const CANAIS = ['leads_alerta', 'leads_high'];
 
 async function diagnosticar(): Promise<Estado> {
@@ -44,6 +49,11 @@ async function diagnosticar(): Promise<Estado> {
   return { permissao: String(perm.receive), canal, problemas };
 }
 
+const ls = {
+  get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* noop */ } },
+};
+
 export function VerificarNotificacoes() {
   const nativoAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
   const [estado, setEstado] = useState<Estado | null>(null);
@@ -51,30 +61,36 @@ export function VerificarNotificacoes() {
   const [testando, setTestando] = useState(false);
   const [msgTeste, setMsgTeste] = useState<string | null>(null);
 
-  const adiado = () => {
-    try { return Number(localStorage.getItem(CHAVE_ADIAR) || 0) > Date.now(); } catch { return false; }
-  };
+  const adiado = () => Number(ls.get(CHAVE_ADIAR) || 0) > Date.now();
 
-  const rodar = useCallback(async () => {
+  const rodar = useCallback(async (forcarAbrir = false) => {
     if (!nativoAndroid) return;
     try {
       const e = await diagnosticar();
       setEstado(e);
-      if (e.problemas.length > 0 && !adiado()) setAberto(true);
+      if (forcarAbrir) { setAberto(true); return; }
+      if (e.problemas.length > 0 && !adiado()) { setAberto(true); return; }
+      // Primeira vez após a atualização: mostra uma vez, mesmo sem problema.
+      if (!ls.get(CHAVE_APRESENTADO)) { ls.set(CHAVE_APRESENTADO, '1'); setAberto(true); }
     } catch { /* sem plugin: silencioso */ }
   }, [nativoAndroid]);
 
   useEffect(() => {
     rodar();
     const onVisible = () => { if (document.visibilityState === 'visible') rodar(); };
+    const onAbrir = () => { rodar(true); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    window.addEventListener(EVENTO_ABRIR, onAbrir);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener(EVENTO_ABRIR, onAbrir);
+    };
   }, [rodar]);
 
   if (!nativoAndroid || !estado) return null;
 
-  const adiar = () => {
-    try { localStorage.setItem(CHAVE_ADIAR, String(Date.now() + 24 * 3600 * 1000)); } catch { /* noop */ }
+  const fechar = () => {
+    if (estado.problemas.length > 0) ls.set(CHAVE_ADIAR, String(Date.now() + 24 * 3600 * 1000));
     setAberto(false);
   };
 
@@ -99,8 +115,6 @@ export function VerificarNotificacoes() {
       : 'canal de lead ainda não criado neste aparelho')
     : 'não foi possível ler o canal';
 
-  // Sem problema detectado: só um atalho discreto pra testar (o corretor pode
-  // estar em modo vibrar — coisa que o app não consegue ler).
   if (!aberto) {
     return estado.problemas.length > 0 ? (
       <button type="button" className="vnotif-pill" onClick={() => setAberto(true)} aria-label="Ajustar notificações">
@@ -109,20 +123,25 @@ export function VerificarNotificacoes() {
     ) : null;
   }
 
+  const temProblema = estado.problemas.length > 0;
+
   return (
     <div className="vnotif" role="dialog" aria-label="Notificações de lead">
       <div className="vnotif__head">
         <Icon name="bell" size={18} />
-        <b>{estado.problemas.length > 0 ? 'Notificações de lead precisam de ajuste' : 'Notificações de lead'}</b>
-        <button type="button" className="vnotif__x" onClick={adiar} aria-label="Fechar">&times;</button>
+        <b>{temProblema ? 'Notificações de lead precisam de ajuste' : 'Confira as notificações de lead'}</b>
+        <button type="button" className="vnotif__x" onClick={fechar} aria-label="Fechar">&times;</button>
       </div>
 
-      {estado.problemas.length > 0 ? (
+      {temProblema ? (
         <ul className="vnotif__lista">
           {estado.problemas.map((p) => <li key={p}>{p}</li>)}
         </ul>
       ) : (
-        <p className="vnotif__ok">Permissão e canal estão certos neste aparelho.</p>
+        <p className="vnotif__ok">
+          Permissão e canal estão certos neste aparelho. Se mesmo assim o lead chega sem som, é o
+          <b> volume de notificações / modo vibrar</b> do celular — o app não consegue ler isso. Siga os passos e teste.
+        </p>
       )}
 
       <div className="vnotif__passos">
@@ -138,8 +157,8 @@ export function VerificarNotificacoes() {
         <button type="button" className="vnotif__btn vnotif__btn--primario" onClick={testar} disabled={testando}>
           {testando ? 'Enviando…' : 'Testar agora'}
         </button>
-        <button type="button" className="vnotif__btn" onClick={rodar}>Já ajustei, verificar de novo</button>
-        <button type="button" className="vnotif__btn vnotif__btn--link" onClick={adiar}>Depois</button>
+        <button type="button" className="vnotif__btn" onClick={() => rodar(true)}>Já ajustei, verificar de novo</button>
+        <button type="button" className="vnotif__btn vnotif__btn--link" onClick={fechar}>{temProblema ? 'Depois' : 'Fechar'}</button>
       </div>
       {msgTeste && <p className="vnotif__msg">{msgTeste}</p>}
       <p className="vnotif__detalhe">{detalhe} · permissão: {estado.permissao}</p>

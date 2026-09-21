@@ -322,6 +322,19 @@
   padding: 0 4px 10px;
   font-size: 10px;
 }
+/* Atalho (Android nativo) pro painel de diagnóstico/teste de notificações */
+.sidebar__notif-btn {
+  display: block;
+  margin: 6px auto 0;
+  background: transparent;
+  border: 1px solid var(--sb-border);
+  color: var(--sb-muted);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
 
 .sidebar__footer-btn {
   background: transparent;

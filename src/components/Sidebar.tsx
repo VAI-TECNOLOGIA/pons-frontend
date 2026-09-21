@@ -5,8 +5,9 @@ import { useUser } from '../lib/userContext';
 import { useTheme } from '../lib/theme';
 import { Icon } from './Icon';
 import { ReportarProblemaModal } from './ReportarProblemaModal';
-import { isNativeApp } from '../lib/platform';
+import { isNativeApp, currentPlatform } from '../lib/platform';
 import { VersaoApp } from './VersaoApp';
+import { EVENTO_ABRIR as EVENTO_ABRIR_NOTIF } from './VerificarNotificacoes';
 
 // Sidebar estilo BRK: perfil no topo, favoritos com estrela, grupos
 // colapsáveis e modo recolhido (só-ícones). Mantém as rotas/permissões da Pons.
@@ -390,6 +391,16 @@ export function Sidebar({
           saber na hora em que versão a pessoa está. Curta no modo recolhido. */}
       <div className="sidebar__versao">
         <VersaoApp compact={collapsed} />
+        {/* Android nativo: abre o painel de diagnóstico/teste de notificações */}
+        {!collapsed && isNativeApp() && currentPlatform() === 'android' && (
+          <button
+            type="button"
+            className="sidebar__notif-btn"
+            onClick={() => { onClose?.(); window.dispatchEvent(new CustomEvent(EVENTO_ABRIR_NOTIF)); }}
+          >
+            Notificações do celular
+          </button>
+        )}
       </div>
 
       <ReportarProblemaModal open={reportOpen} onClose={() => setReportOpen(false)} />
