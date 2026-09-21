@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.21b",
+  "versao": "2026.09.21c",
   "data": "21/09/2026",
   "novidades": [
+    {
+      "titulo": "Sino de notificações no topo de toda tela",
+      "itens": [
+        "No topo direito de qualquer tela há o sino com o número de avisos não lidos. Ao tocar, a lista mostra cada aviso com o horário exato em que chegou e há quanto tempo — e abre o destino. Atualiza na hora em que chega um push com o app aberto."
+      ]
+    },
     {
       "titulo": "Notificações do celular — confira e teste (Android)",
       "itens": [
