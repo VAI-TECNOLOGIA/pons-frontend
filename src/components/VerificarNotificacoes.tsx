@@ -30,6 +30,7 @@ async function abrirConfiguracao(tipo: 'notificacoes' | 'som'): Promise<boolean>
 type Estado = {
   permissao: string;
   canal: { encontrado: boolean; importancia: number; som: string | null } | null;
+  build: number; // versionCode instalado (0 = não deu pra ler)
   problemas: string[];
 };
 
@@ -37,6 +38,10 @@ const CHAVE_ADIAR = 'pons.notif-check-adiado-ate';
 const CHAVE_APRESENTADO = 'pons.notif-check-apresentado';
 export const EVENTO_ABRIR = 'pons:notificacoes:abrir';
 const CANAIS = ['leads_alerta', 'leads_high'];
+// versionCode mais novo publicado na Play. Quem está abaixo vê "Atualizar na Play
+// Store". Subir para 5 quando a 1.0.4 estiver "Disponível no Google Play".
+const BUILD_NA_PLAY = 4;
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=br.com.grupopons.sistema';
 
 async function diagnosticar(): Promise<Estado> {
   const { PushNotifications } = await import('@capacitor/push-notifications');
@@ -53,13 +58,20 @@ async function diagnosticar(): Promise<Estado> {
     }
   } catch { /* plugin antigo sem listChannels: não dá pra ler */ }
 
+  let build = 0;
+  try {
+    const { App } = await import('@capacitor/app');
+    build = parseInt((await App.getInfo()).build, 10) || 0;
+  } catch { /* sem plugin App */ }
+
   const problemas: string[] = [];
+  if (build > 0 && build < BUILD_NA_PLAY) problemas.push('Seu app está desatualizado — atualize pela Play Store para receber os avisos de lead corretamente.');
   if (perm.receive !== 'granted') problemas.push('A permissão de notificações está desligada para o Grupo Pons.');
   if (canal?.encontrado) {
     if (canal.importancia < 4) problemas.push('As notificações de lead estão sem destaque (não aparecem como pop-up).');
     if (!canal.som) problemas.push('As notificações de lead estão SEM SOM neste aparelho.');
   }
-  return { permissao: String(perm.receive), canal, problemas };
+  return { permissao: String(perm.receive), canal, build, problemas };
 }
 
 const ls = {
@@ -83,8 +95,10 @@ export function VerificarNotificacoes() {
       setEstado(e);
       if (forcarAbrir) { setAberto(true); return; }
       if (e.problemas.length > 0 && !adiado()) { setAberto(true); return; }
-      // Primeira vez após a atualização: mostra uma vez, mesmo sem problema.
-      if (!ls.get(CHAVE_APRESENTADO)) { ls.set(CHAVE_APRESENTADO, '1'); setAberto(true); }
+      // Primeira vez em CADA versão do app (chave por versionCode): mostra uma vez,
+      // mesmo sem problema — quem atualizar pela Play vê o painel de novo.
+      const chave = `${CHAVE_APRESENTADO}:${e.build}`;
+      if (!ls.get(chave)) { ls.set(chave, '1'); setAberto(true); }
     } catch { /* sem plugin: silencioso */ }
   }, [nativoAndroid]);
 
@@ -167,6 +181,15 @@ export function VerificarNotificacoes() {
       </div>
 
       <div className="vnotif__acoes">
+        {estado.build > 0 && estado.build < BUILD_NA_PLAY && (
+          <button
+            type="button"
+            className="vnotif__btn vnotif__btn--primario"
+            onClick={() => { window.open(PLAY_URL, '_system'); }}
+          >
+            Atualizar na Play Store
+          </button>
+        )}
         <button
           type="button"
           className="vnotif__btn vnotif__btn--primario"
