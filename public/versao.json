@@ -1,7 +1,14 @@
 {
-  "versao": "2026.09.21",
+  "versao": "2026.09.21b",
   "data": "21/09/2026",
   "novidades": [
+    {
+      "titulo": "Notificações do celular — confira e teste (Android)",
+      "itens": [
+        "Ao abrir o app no Android aparece o painel 'Confira as notificações de lead', com o passo a passo para ativar som e vibração no celular e o botão 'Testar agora', que envia uma notificação de teste para o próprio aparelho. Ele também fica no pé do menu, em 'Notificações do celular'.",
+        "Lembrete: com o celular em modo vibrar ou silencioso, o lead aparece e vibra, mas não toca — isso é o Android, e só o volume de notificações resolve."
+      ]
+    },
     {
       "titulo": "Notificações no Android — atualize o app",
       "itens": [
