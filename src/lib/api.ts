@@ -213,6 +213,9 @@ export const Api = {
   registerDevice: (token: string, platform: 'ios' | 'android') =>
     request<{ id: number; platform: string }>('/notifications/device-token', { method: 'POST', body: { token, platform } }),
   pushTest: () => request<{ ok: boolean; devicesRegistrados: number }>('/notifications/test', { method: 'POST' }),
+  // Gestão dispara um push de teste pro aparelho de UM corretor (clicar no corretor → testar pra ele).
+  pushTestCorretor: (corretorId: number) =>
+    request<{ ok: boolean; corretor: string | null; devicesRegistrados: number }>(`/notifications/test-corretor/${corretorId}`, { method: 'POST' }),
   // Reporta ao backend o resultado do registro de push (sucesso/erro/permissão negada).
   // Torna visível quem está SEM push, em vez de falhar em silêncio.
   pushLog: (payload: { ok: boolean; platform?: 'ios' | 'android'; error?: string; appVersion?: string }) =>

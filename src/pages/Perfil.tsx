@@ -22,8 +22,27 @@ export default function Perfil() {
   const [saving, setSaving] = useState(false);
   const [openSenha, setOpenSenha] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(user?.avatarUrl || null);
+  const [testando, setTestando] = useState(false);
 
   if (!user) return null;
+
+  // Auto-teste: o corretor dispara uma notificação pro próprio celular pra conferir
+  // se está chegando. Se não tem aparelho registrado, avisa o que fazer.
+  const testarMinhaNotif = async () => {
+    setTestando(true);
+    try {
+      const r = await Api.pushTest();
+      if (r.devicesRegistrados > 0) {
+        toast.success(`Teste enviado pra ${r.devicesRegistrados} aparelho(s). Confira a notificação no seu celular agora.`);
+      } else {
+        toast.error('Seu celular ainda não está registrado. Abra o app no celular e aceite as notificações — depois teste de novo.');
+      }
+    } catch (err: any) {
+      toast.error('Erro ao testar: ' + (err.message || 'falha'));
+    } finally {
+      setTestando(false);
+    }
+  };
 
   const dataNascValue = user.dataNascimento
     ? new Date(user.dataNascimento).toISOString().slice(0, 10)
@@ -108,6 +127,17 @@ export default function Perfil() {
           title="Meu perfil"
           subtitle="Atualize seus dados pessoais, foto e senha"
         />
+
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16, padding: '14px 16px' }}>
+          <Icon name="bell" size={20} />
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Testar notificação</div>
+            <div className="text-xs text-secondary">Dispara um aviso no seu celular pra conferir se as notificações estão chegando.</div>
+          </div>
+          <button type="button" className="btn btn--primary btn--sm" onClick={testarMinhaNotif} disabled={testando} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+            <Icon name="bell" size={14} /> {testando ? 'Testando…' : 'Testar notificação'}
+          </button>
+        </div>
 
         <div className="perfil-grid">
           <form className="card perfil-card" onSubmit={submit}>

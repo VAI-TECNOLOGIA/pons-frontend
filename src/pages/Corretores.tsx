@@ -628,6 +628,24 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [verTransfs, setVerTransfs] = useState(false);
+  const [testando, setTestando] = useState(false);
+
+  // Gestão testa a notificação do corretor: dispara push + sino no aparelho dele.
+  const testarNotif = async () => {
+    setTestando(true);
+    try {
+      const r = await Api.pushTestCorretor(id);
+      if (r.devicesRegistrados > 0) {
+        toast.success(`Teste enviado — ${r.devicesRegistrados} aparelho(s) registrado(s). Deve chegar no celular dele agora.`);
+      } else {
+        toast.error('Enviado, mas ele NÃO tem aparelho registrado — só o sino no app. Ele precisa abrir o app no celular e aceitar as notificações.');
+      }
+    } catch (err: any) {
+      toast.error('Erro ao testar: ' + (err.message || 'falha'));
+    } finally {
+      setTestando(false);
+    }
+  };
 
   const fmt = (v: number) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
   const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
@@ -664,6 +682,16 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
               <div className="font-semibold">{c.nome}</div>
               <div className="text-xs text-secondary">{c.creci ? `CRECI ${c.creci} · ` : ''}{c.status}{c.equipe?.nome ? ` · ${c.equipe.nome}` : ''}</div>
             </div>
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+              onClick={testarNotif}
+              disabled={testando}
+              title="Enviar uma notificação de teste pro celular deste corretor"
+            >
+              <Icon name="bell" size={14} /> {testando ? 'Testando…' : 'Testar notificação'}
+            </button>
           </div>
 
           <form onSubmit={salvar}>

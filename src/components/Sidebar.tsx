@@ -129,7 +129,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: '/avisos', label: 'Avisos', icon: 'bell' },
       // Envio manual de push + sino (CEO, Diretor Comercial e a família Marketing).
-      { to: '/enviar-notificacao', label: 'Enviar notificação', icon: 'send', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+      { to: '/enviar-notificacao', label: 'Enviar notificação', icon: 'send', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GESTOR_MARKETING'] },
       { to: '/videos', label: 'Vídeos', icon: 'video' },
       { to: '/reuniao', label: 'Reunião', icon: 'users', roles: ['CEO', 'DIRETOR_COMERCIAL'] },
       { to: '/painel-tv', label: 'Painel TV', icon: 'tv', blank: true, roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
