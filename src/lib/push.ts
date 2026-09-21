@@ -10,6 +10,9 @@ import { Preferences } from '@capacitor/preferences';
 import { Api } from './api';
 
 let jaIniciado = false;
+// versionCode do app nativo (0 = desconhecido/web). Decide o que o build suporta:
+// >= 5 (1.0.4) embute o som próprio e o plugin de notificação local.
+let buildNativo = 0;
 
 // iOS: o evento `registration` do plugin entrega o token do APNs (cru), mas o
 // backend envia por FCM (Firebase Admin). O AppDelegate nativo troca o APNs pelo
@@ -152,7 +155,8 @@ export async function initPush(navigate?: (path: string) => void) {
       try {
         const { App } = await import('@capacitor/app');
         const info = await App.getInfo();
-        if ((parseInt(info.build, 10) || 0) >= 5) {
+        buildNativo = parseInt(info.build, 10) || 0;
+        if (buildNativo >= 5) {
           await PushNotifications.createChannel({
             id: 'leads_alerta',
             name: 'Leads (alerta sonoro)',
@@ -201,16 +205,52 @@ export async function initPush(navigate?: (path: string) => void) {
     // App ABERTO (Android): o sistema não mostra nada — mostramos nós: faixa em
     // destaque + som + vibração. Lead/fila = alerta intenso (toca 2x, pulsa 15s).
     if (platform === 'android') {
-      await PushNotifications.addListener('pushNotificationReceived', (n) => {
+      await PushNotifications.addListener('pushNotificationReceived', async (n) => {
         const data = (n?.data || {}) as Record<string, unknown>;
         const tipo = String(data?.tipo || '');
         const intenso = tipo === 'lead' || tipo === 'fila';
-        tocarSomAlerta(intenso);
-        mostrarAlertaNaTela(n?.title || 'Grupo Pons', n?.body || '', intenso, () => {
+        const titulo = n?.title || 'Grupo Pons';
+        const texto = n?.body || '';
+
+        // Build >= 5 (1.0.4): dispara uma notificação LOCAL no canal do sistema —
+        // toca pelo volume de NOTIFICAÇÃO (não de mídia), com heads-up e o som
+        // próprio do canal. Antes disso, só o áudio da web (depende do volume de
+        // mídia do aparelho — foi o "não tocou" reportado em 21/09).
+        let viaSistema = false;
+        if (buildNativo >= 5) {
+          try {
+            const { LocalNotifications } = await import('@capacitor/local-notifications');
+            await LocalNotifications.schedule({ notifications: [{
+              id: Math.floor(Date.now() % 2147483647),
+              title: titulo,
+              body: texto,
+              channelId: intenso ? 'leads_alerta' : 'leads_high',
+              extra: data,
+            }] });
+            viaSistema = true;
+          } catch { /* plugin ausente no binário: cai no áudio da web */ }
+        }
+        if (viaSistema) {
+          try { navigator.vibrate?.(intenso ? [350, 150, 350, 150, 500] : [200]); } catch { /* sem vibração */ }
+        } else {
+          tocarSomAlerta(intenso);
+        }
+        mostrarAlertaNaTela(titulo, texto, intenso, () => {
           const p = destinoPorTipo(data);
           if (p && navigate) navigate(p);
         });
       });
+
+      // Toque na notificação LOCAL (build >= 5) -> mesmo destino do push.
+      if (buildNativo >= 5) {
+        try {
+          const { LocalNotifications } = await import('@capacitor/local-notifications');
+          await LocalNotifications.addListener('localNotificationActionPerformed', (ev) => {
+            const p = destinoPorTipo((ev?.notification?.extra || {}) as Record<string, unknown>);
+            if (p && navigate) navigate(p);
+          });
+        } catch { /* plugin ausente: ignora */ }
+      }
     }
 
     // Toque na notificação -> navega pro destino
