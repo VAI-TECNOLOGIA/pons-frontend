@@ -303,6 +303,25 @@
   margin-top: 14px;
 }
 
+/* Versão do sistema (app instalado + web) — pé do menu, visível pra todos.
+   Discreta, mas legível e selecionável (pra copiar e mandar no suporte). */
+.sidebar__versao {
+  padding: 0 14px 10px;
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--sb-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: .2px;
+  user-select: text;
+}
+.sidebar--collapsed .sidebar__versao {
+  padding: 0 4px 10px;
+  font-size: 10px;
+}
+
 .sidebar__footer-btn {
   background: transparent;
   border: none;

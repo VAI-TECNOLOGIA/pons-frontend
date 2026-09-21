@@ -413,3 +413,14 @@ select.login-field__input option { background: #14161c; color: #fff; }
 
   .login-foot { font-size: 11px; padding: 0 16px; }
 }
+
+/* Versão do sistema no rodapé do login — quem nem consegue entrar já vê a versão
+   (app instalado + web) e o suporte sabe na hora em que build a pessoa está. */
+.login-foot__versao {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: .7;
+  letter-spacing: .2px;
+  user-select: text;
+}

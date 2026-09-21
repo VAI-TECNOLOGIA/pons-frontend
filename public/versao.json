@@ -1,7 +1,20 @@
 {
-  "versao": "2026.09.18b",
-  "data": "18/09/2026",
+  "versao": "2026.09.21",
+  "data": "21/09/2026",
   "novidades": [
+    {
+      "titulo": "Notificações no Android — atualize o app",
+      "itens": [
+        "Corrigido o aviso de lead no Android: o app agora pede a permissão de notificação e o aviso chega com pop-up, som e vibração. Para funcionar, ATUALIZE o app pela Play Store para a versão 1.0.3 e aceite a permissão de notificação ao abrir.",
+        "Avisos que estavam desligados voltaram: lead transferido pelo gestor, cliente respondeu no WhatsApp, sua vez na fila e leads da distribuição agendada."
+      ]
+    },
+    {
+      "titulo": "Versão do sistema visível",
+      "itens": [
+        "No rodapé do menu (e na tela de login) aparece a versão do aplicativo instalado e a versão web — ex.: Android 1.0.3 (4) · Web 2026.09.21. Facilita o suporte: basta olhar."
+      ]
+    },
     {
       "titulo": "Lead transferido chega zerado (com a hora que recebeu)",
       "itens": [

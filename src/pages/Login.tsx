@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Auth } from '../lib/auth';
 import { Api, ApiError } from '../lib/api';
 import { useUser } from '../lib/userContext';
+import { VersaoApp } from '../components/VersaoApp';
 import './login.css';
 
 // Colaborador em contratação (onboardingStatus != ATIVO) fica preso na esteira
@@ -178,7 +179,10 @@ export default function Login() {
         </div>
       </main>
 
-      <footer className="login-foot">Grupo Pons Imobiliário ®</footer>
+      <footer className="login-foot">
+        Grupo Pons Imobiliário ®
+        <VersaoApp className="login-foot__versao" />
+      </footer>
 
       {showRequest && <CriarContaModal onClose={() => setShowRequest(false)} />}
       {showEsqueci && <EsqueciSenhaModal onClose={() => setShowEsqueci(false)} />}
