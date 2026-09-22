@@ -559,6 +559,13 @@ export const Api = {
   bolsaoCapturar: (id: number, leadId: number) => request<any>(`/bolsoes/${id}/capturar`, { method: 'POST', body: { leadId } }),
   // ── Visão do CORRETOR: minhas filas (posição), pausar recebimento, meus bolsões ──
   roletasMinhas: () => request<{ filas: any[]; recebendoLeads: boolean }>('/roletas/minhas'),
+  // Visão ao vivo da fila pro gestor (3 painéis: próximos, pausados, leads recebidos).
+  roletaAoVivo: (id: number) => request<{
+    id: number; nome: string; ativa: boolean; ts: string; totalElegiveis: number; totalPausados: number;
+    proximos: Array<{ posicao: number; corretorId: number; nome: string; sala: string; ultimaAtribuicao: string | null; totalRecebidos: number }>;
+    pausados: Array<{ corretorId: number; nome: string; sala: string; ultimaAtribuicao: string | null; totalRecebidos: number; posicaoRetoma: number }>;
+    recebidos: Array<{ lead: string; corretor: string; sala: string; quando: string }>;
+  }>(`/roletas/${id}/ao-vivo`),
   roletaReceber: (receber: boolean) => request<{ ok: boolean; recebendoLeads: boolean }>('/roletas/minhas/receber', { method: 'POST', body: { receber } }),
   bolsoesMeus: () => request<any[]>('/bolsoes/meus'),
   bolsaoMeusLeads: (id: number) => request<any[]>(`/bolsoes/meus/${id}/leads`),
