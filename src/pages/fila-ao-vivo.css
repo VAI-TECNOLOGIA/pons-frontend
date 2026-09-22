@@ -48,3 +48,19 @@
 .flv-retoma { font-weight: 800; color: #f59e0b; text-align: right; }
 .flv-vazio { padding: 18px 8px; text-align: center; color: var(--text-secondary); font-size: 13px; }
 .flv-tabela--leads { max-height: 620px; overflow-y: auto; }
+
+/* Como esta fila funciona + fluxo do lead */
+.flv-como { display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; margin-bottom: 14px; align-items: stretch; }
+@media (max-width: 1100px) { .flv-como { grid-template-columns: 1fr; } }
+.flv-como__texto { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 14px; padding: 14px 16px; }
+.flv-como__texto h3 { font-size: 14px; font-weight: 800; margin: 0 0 10px; }
+.flv-como__texto ul { margin: 0; padding-left: 18px; }
+.flv-como__texto li { margin: 5px 0; font-size: 13.5px; line-height: 1.45; }
+.flv-como__texto li small { color: var(--text-secondary); }
+.flv-regra { margin: 12px 0 0; padding: 10px 12px; background: rgba(82,247,254,.07); border-left: 3px solid var(--pons-blue); border-radius: 8px; font-size: 13px; line-height: 1.5; }
+.flv-fluxo { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 14px; padding: 14px 16px; }
+.flv-fluxo__titulo { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-secondary); font-weight: 700; }
+.flv-fluxo__passos { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-top: 10px; }
+.flv-passo { display: flex; align-items: center; gap: 10px; background: var(--bg-app); border: 1px solid var(--border-light); border-radius: 10px; padding: 9px 12px; font-size: 13px; }
+.flv-passo__n { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; background: var(--pons-blue); color: #fff; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.flv-seta { text-align: center; color: var(--text-secondary); font-size: 16px; line-height: 1; }

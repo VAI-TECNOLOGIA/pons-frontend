@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Topbar } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { Icon } from '../components/Icon';
@@ -89,6 +89,35 @@ export default function FilaAoVivo() {
 
         {dados && (
           <>
+            {/* Como esta fila funciona + fluxo do lead */}
+            <section className="flv-como">
+              <div className="flv-como__texto">
+                <h3>Como esta fila funciona</h3>
+                <ul>
+                  <li><b>Quem entra:</b> {dados.comoFunciona.oQueEntra}</li>
+                  <li><b>Ordem:</b> {dados.comoFunciona.modo}</li>
+                  <li><b>Prioridade:</b> {dados.comoFunciona.prioridade} <small>(quando 2 filas pegam o mesmo lead, a de maior prioridade ganha)</small></li>
+                  <li><b>Pulo:</b> {dados.comoFunciona.pulo}</li>
+                  <li><b>Horário:</b> {dados.comoFunciona.expediente}</li>
+                  {dados.comoFunciona.extras.map((e) => <li key={e}>{e}</li>)}
+                </ul>
+                <p className="flv-regra">
+                  <b>Sobre a ordem:</b> quem pausa o recebimento sai da contagem, mas ao voltar retoma a MESMA posição — não vai pro fim. Por isso a posição de quem está ativo pode subir ou descer quando alguém pausa/volta. Ninguém fura a fila.
+                </p>
+              </div>
+              <div className="flv-fluxo">
+                <span className="flv-fluxo__titulo">Fluxo do lead</span>
+                <div className="flv-fluxo__passos">
+                  {dados.fluxo.map((p, i) => (
+                    <Fragment key={i}>
+                      <div className="flv-passo"><span className="flv-passo__n">{i + 1}</span><span>{p}</span></div>
+                      {i < dados.fluxo.length - 1 && <span className="flv-seta">↓</span>}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            </section>
+
             <div className="flv-kpis">
               <div className="flv-kpi"><b>{dados.totalElegiveis}</b><span>na fila (recebendo)</span></div>
               <div className="flv-kpi flv-kpi--pausa"><b>{dados.totalPausados}</b><span>pausados</span></div>

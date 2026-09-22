@@ -562,6 +562,8 @@ export const Api = {
   // Visão ao vivo da fila pro gestor (3 painéis: próximos, pausados, leads recebidos).
   roletaAoVivo: (id: number) => request<{
     id: number; nome: string; ativa: boolean; ts: string; totalElegiveis: number; totalPausados: number;
+    comoFunciona: { oQueEntra: string; modo: string; prioridade: number; pulo: string; expediente: string; extras: string[] };
+    fluxo: string[];
     proximos: Array<{ posicao: number; corretorId: number; nome: string; sala: string; ultimaAtribuicao: string | null; totalRecebidos: number }>;
     pausados: Array<{ corretorId: number; nome: string; sala: string; ultimaAtribuicao: string | null; totalRecebidos: number; posicaoRetoma: number }>;
     recebidos: Array<{ lead: string; corretor: string; sala: string; quando: string }>;
