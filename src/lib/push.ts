@@ -252,6 +252,24 @@ export async function initPush(navigate?: (path: string) => void) {
           });
         } catch { /* plugin ausente: ignora */ }
       }
+    } else if (platform === 'ios') {
+      // App ABERTO no iPhone (foreground): o iOS entrega o push DIRETO pro app e
+      // NÃO mostra banner nem toca (só o sino atualizava — foi o "chega no app mas
+      // não notifica"). Mostramos a mesma faixa em destaque do Android pra avisar
+      // na hora. Em segundo plano/bloqueado o iOS já exibe o banner nativo, então
+      // este handler nem dispara (não duplica).
+      await PushNotifications.addListener('pushNotificationReceived', (n) => {
+        const data = (n?.data || {}) as Record<string, unknown>;
+        const tipo = String(data?.tipo || '');
+        const intenso = tipo === 'lead' || tipo === 'fila';
+        const titulo = n?.title || 'Grupo Pons';
+        const texto = n?.body || '';
+        // Som/vibração em foreground no iOS é limitado (o WebView bloqueia autoplay
+        // sem gesto do usuário e o iPhone não tem navigator.vibrate) — tentamos, mas
+        // o que garante o aviso é a faixa visual.
+        tocarSomAlerta(intenso);
+        mostrarAlertaNaTela(titulo, texto, intenso, () => abrirDestino(data, navigate));
+      });
     }
 
     // Toque na notificação -> navega pro destino

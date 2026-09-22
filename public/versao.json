@@ -1,12 +1,13 @@
 {
-  "versao": "2026.09.22",
+  "versao": "2026.09.22b",
   "data": "22/09/2026",
   "novidades": [
     {
       "titulo": "Notificação com link (abre post, site ou tela do app)",
       "itens": [
         "Na tela 'Enviar notificação' agora tem o campo 'Link ao tocar' (opcional). Ao tocar na notificação, o corretor abre o link: pode ser um endereço externo — como um post do Instagram do Grupo Pons — que abre no navegador do celular, ou uma tela do próprio sistema.",
-        "Sem link, o toque continua abrindo a tela de Avisos, como antes."
+        "Sem link, o toque continua abrindo a tela de Avisos, como antes.",
+        "No iPhone, com o app aberto, o aviso agora também aparece em uma faixa em destaque no topo da tela (antes só atualizava o sino, sem chamar atenção)."
       ]
     },
     {
