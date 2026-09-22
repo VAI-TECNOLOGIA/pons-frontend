@@ -1,7 +1,14 @@
 {
-  "versao": "2026.09.21e",
-  "data": "21/09/2026",
+  "versao": "2026.09.22",
+  "data": "22/09/2026",
   "novidades": [
+    {
+      "titulo": "Notificação com link (abre post, site ou tela do app)",
+      "itens": [
+        "Na tela 'Enviar notificação' agora tem o campo 'Link ao tocar' (opcional). Ao tocar na notificação, o corretor abre o link: pode ser um endereço externo — como um post do Instagram do Grupo Pons — que abre no navegador do celular, ou uma tela do próprio sistema.",
+        "Sem link, o toque continua abrindo a tela de Avisos, como antes."
+      ]
+    },
     {
       "titulo": "Contas a pagar — lote vai pro sócio pagar no banco",
       "itens": [

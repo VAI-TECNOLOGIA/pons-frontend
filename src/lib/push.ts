@@ -240,10 +240,7 @@ export async function initPush(navigate?: (path: string) => void) {
         } else {
           tocarSomAlerta(intenso);
         }
-        mostrarAlertaNaTela(titulo, texto, intenso, () => {
-          const p = destinoPorTipo(data);
-          if (p && navigate) navigate(p);
-        });
+        mostrarAlertaNaTela(titulo, texto, intenso, () => abrirDestino(data, navigate));
       });
 
       // Toque na notificação LOCAL (build >= 5) -> mesmo destino do push.
@@ -251,8 +248,7 @@ export async function initPush(navigate?: (path: string) => void) {
         try {
           const { LocalNotifications } = await import('@capacitor/local-notifications');
           await LocalNotifications.addListener('localNotificationActionPerformed', (ev) => {
-            const p = destinoPorTipo((ev?.notification?.extra || {}) as Record<string, unknown>);
-            if (p && navigate) navigate(p);
+            abrirDestino((ev?.notification?.extra || {}) as Record<string, unknown>, navigate);
           });
         } catch { /* plugin ausente: ignora */ }
       }
@@ -260,15 +256,35 @@ export async function initPush(navigate?: (path: string) => void) {
 
     // Toque na notificação -> navega pro destino
     await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      const data = action.notification?.data || {};
-      const path = destinoPorTipo(data);
-      if (path && navigate) navigate(path);
+      abrirDestino(action.notification?.data || {}, navigate);
     });
 
     await PushNotifications.register();
   } catch {
     jaIniciado = false; // deixa tentar de novo depois
   }
+}
+
+// Abre o destino de uma notificação ao tocar. Se veio `url` no push: link interno
+// (/rota) navega dentro do app; link externo (http/https) abre no navegador do
+// celular via window.open('_system') — comportamento nativo do Capacitor, não
+// precisa de plugin extra. URL da própria origem do app volta pra navegação
+// interna. Sem `url`, usa o destino padrão por `tipo` (comportamento antigo).
+function abrirDestino(data: Record<string, any>, navigate?: (path: string) => void) {
+  const url = typeof data?.url === 'string' ? data.url.trim() : '';
+  if (url) {
+    if (/^https?:\/\//i.test(url)) {
+      try {
+        const u = new URL(url);
+        if (u.origin === window.location.origin) { navigate?.(u.pathname + u.search + u.hash); return; }
+      } catch { /* URL malformada: segue pro open externo */ }
+      try { window.open(url, '_system'); } catch { try { window.open(url, '_blank'); } catch { /* sem como abrir */ } }
+      return;
+    }
+    if (url.startsWith('/')) { navigate?.(url); return; }
+  }
+  const p = destinoPorTipo(data);
+  if (p && navigate) navigate(p);
 }
 
 function destinoPorTipo(data: Record<string, any>): string | null {

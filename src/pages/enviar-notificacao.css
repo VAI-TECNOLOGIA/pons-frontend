@@ -65,6 +65,8 @@
   color: var(--text-primary); font-size: 14px; font-family: inherit; resize: vertical;
 }
 .env__campo input:focus, .env__campo textarea:focus { outline: 2px solid var(--pons-blue); outline-offset: 0; }
+.env__campo input[aria-invalid="true"] { border-color: #ef4444; }
+.env__campo small.env__campo-erro { color: #ef4444; font-weight: 500; }
 
 .env__preview {
   border: 1px solid var(--border-light); border-left: 3px solid var(--pons-blue); border-radius: 10px;

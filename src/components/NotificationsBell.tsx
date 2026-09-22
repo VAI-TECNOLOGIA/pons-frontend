@@ -107,6 +107,16 @@ export function NotificationsBell({ flutuante = false }: { flutuante?: boolean }
   const clicarItem = (n: Notificacao) => {
     setAberto(false);
     let destino = n.link || '';
+    // Link externo (http/https): abre no navegador do celular. Se for da própria
+    // origem do app, volta pra navegação interna (não recarrega o app à toa).
+    if (/^https?:\/\//i.test(destino)) {
+      try {
+        const u = new URL(destino);
+        if (u.origin === window.location.origin) { navigate(u.pathname + u.search + u.hash); return; }
+      } catch { /* URL malformada: tenta abrir externo */ }
+      try { window.open(destino, '_system'); } catch { try { window.open(destino, '_blank'); } catch { /* noop */ } }
+      return;
+    }
     // Rota legada: '/atendimento' nunca existiu no router → caía no catch-all e
     // voltava pro login/dashboard. Remapeia pra rota real '/chat' (preservando
     // querystring, ex.: ?lead=123 abre direto a conversa).

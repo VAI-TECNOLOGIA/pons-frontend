@@ -35,6 +35,7 @@ export default function EnviarNotificacao() {
   const [papeis, setPapeis] = useState<Set<string>>(new Set());
   const [titulo, setTitulo] = useState('');
   const [texto, setTexto] = useState('');
+  const [link, setLink] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [resultado, setResultado] = useState<Resultado | null>(null);
@@ -58,7 +59,11 @@ export default function EnviarNotificacao() {
     : alvo === 'papeis'
       ? dest.filter((d) => papeis.has(d.role)).length
       : sel.size;
-  const podeEnviar = !!titulo.trim() && !!texto.trim() && qtdPrevista > 0 && !enviando;
+  // Link opcional: interno (/rota) ou externo (http/https). Vazio é válido.
+  const linkLimpo = link.trim();
+  const linkExterno = /^https?:\/\//i.test(linkLimpo);
+  const linkValido = !linkLimpo || linkLimpo.startsWith('/') || linkExterno;
+  const podeEnviar = !!titulo.trim() && !!texto.trim() && qtdPrevista > 0 && linkValido && !enviando;
 
   const toggleSel = (id: number) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const togglePapel = (r: string) => setPapeis((s) => { const n = new Set(s); if (n.has(r)) n.delete(r); else n.add(r); return n; });
@@ -75,6 +80,7 @@ export default function EnviarNotificacao() {
         alvo,
         userIds: alvo === 'usuarios' ? [...sel] : undefined,
         roles: alvo === 'papeis' ? [...papeis] : undefined,
+        link: linkLimpo || undefined,
       });
       setResultado(r);
     } catch (e) {
@@ -213,6 +219,27 @@ export default function EnviarNotificacao() {
           <label className="env__campo">
             <span>Texto <small>{texto.length}/200</small></span>
             <textarea value={texto} maxLength={200} rows={4} onChange={(e) => setTexto(e.target.value)} placeholder="O que a pessoa vai ler na notificação." />
+          </label>
+
+          <label className="env__campo">
+            <span>Link ao tocar <small>opcional</small></span>
+            <input
+              value={link}
+              maxLength={500}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="Cole um link (ex.: post do Instagram) — ou deixe vazio"
+              inputMode="url"
+              aria-invalid={!linkValido}
+            />
+            {!linkValido ? (
+              <small className="env__campo-erro">Link inválido. Use um endereço que comece com http:// ou https://.</small>
+            ) : linkLimpo ? (
+              <small className="env__muted">
+                {linkExterno ? 'Abre no navegador do celular ao tocar na notificação.' : 'Abre uma tela do app ao tocar na notificação.'}
+              </small>
+            ) : (
+              <small className="env__muted">Sem link, o toque abre a tela de Avisos (padrão).</small>
+            )}
           </label>
 
           <div className="env__preview" aria-label="Prévia da notificação">

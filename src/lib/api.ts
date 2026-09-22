@@ -223,7 +223,7 @@ export const Api = {
   // Envio manual de notificação (diretoria/marketing): escolher destinatários e mandar.
   notificacaoDestinatarios: () =>
     request<Array<{ id: number; name: string; role: string; unidade: string | null; plataformas: string[] }>>('/notifications/destinatarios'),
-  notificacaoEnviar: (payload: { titulo: string; texto: string; alvo: 'usuarios' | 'papeis' | 'todos'; userIds?: number[]; roles?: string[] }) =>
+  notificacaoEnviar: (payload: { titulo: string; texto: string; alvo: 'usuarios' | 'papeis' | 'todos'; userIds?: number[]; roles?: string[]; link?: string }) =>
     request<{
       ok: boolean; destinatarios: number; comDevice: number; semDevice: number; porPlataforma: Record<string, number>;
       sinoOk: boolean; modo: 'real' | 'simulado';
