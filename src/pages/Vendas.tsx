@@ -205,6 +205,24 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
     const n = Math.max(1, Number(parcelas) || 1);
     const ent = parseMoedaBR(entradaTotal) || 0;
     const arr = parseMoedaBR(arras) || 0;
+    // Reconciliação com o VGV (mesma trava do backend): não salva sem fechar. Faixas
+    // de mensais e saldo remanescente (financiamento) não são editados aqui → usa os
+    // já salvos pra não barrar venda que já fechava por eles.
+    {
+      const faixas = Array.isArray(f.mensaisDetalhe) ? f.mensaisDetalhe : null;
+      const mensaisT = faixas && faixas.length
+        ? faixas.reduce((a: number, x: any) => a + (Number(x.valor) || 0) * (Number(x.qtd) || 0), 0)
+        : (parseMoedaBR(mensaisValor) || 0) * (Number(mensaisQtd) || 0);
+      const anuaisT = (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0);
+      const soma = ent + mensaisT + anuaisT + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + Number(f.saldoRemanescente || 0);
+      if (Math.abs(soma - vv) > 0.01) {
+        const dif = vv - soma;
+        toast.error(dif > 0
+          ? `Faltam ${formatMoedaBR(dif)} pra fechar o VGV (soma ${formatMoedaBR(soma)}). Ajuste os valores ou lance a diferença como financiamento/saldo.`
+          : `A soma passa ${formatMoedaBR(Math.abs(dif))} do VGV. Reduza algum valor.`);
+        return;
+      }
+    }
     const alvo = Math.max(0, ent - arr);
     const base = Math.round((alvo / n) * 100) / 100;
     const detalhe = Array.from({ length: n }, (_, i) => {
