@@ -1,7 +1,14 @@
 {
-  "versao": "2026.09.22b",
-  "data": "22/09/2026",
+  "versao": "2026.09.23",
+  "data": "23/09/2026",
   "novidades": [
+    {
+      "titulo": "Tarefas privadas",
+      "itens": [
+        "Ao criar ou editar uma tarefa, agora há a opção Tarefa privada — quando marcada, só você (quem criou) e o responsável enxergam a tarefa; ninguém mais vê, nem gestores ou diretoria. Para deixar uma tarefa só entre você e outra pessoa, marque privada e escolha essa pessoa como responsável.",
+        "Tarefa privada aparece com um cadeado no quadro. As notificações continuam: ao atribuir uma tarefa, o responsável é avisado por push e sino; ao concluir, quem criou é avisado."
+      ]
+    },
     {
       "titulo": "Notificação com link (abre post, site ou tela do app)",
       "itens": [

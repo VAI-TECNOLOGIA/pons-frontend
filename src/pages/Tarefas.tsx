@@ -139,6 +139,7 @@ export default function Tarefas() {
         area: String(fd.get('area') || 'GERAL'),
         prioridade: String(fd.get('prioridade') || 'NORMAL'),
         responsavelId: fd.get('responsavelId') ? Number(fd.get('responsavelId')) : null,
+        privada: fd.get('privada') === 'on',
         prazo: fd.get('prazo') ? String(fd.get('prazo')) : null,
         solicitadoEm: fd.get('solicitadoEm') ? String(fd.get('solicitadoEm')) : null,
         link: fd.get('link') ? String(fd.get('link')) : null,
@@ -165,6 +166,7 @@ export default function Tarefas() {
         area: String(fd.get('area') || 'GERAL'),
         prioridade: String(fd.get('prioridade') || 'NORMAL'),
         responsavelId: fd.get('responsavelId') ? Number(fd.get('responsavelId')) : null,
+        privada: fd.get('privada') === 'on',
         prazo: fd.get('prazo') ? String(fd.get('prazo')) : null,
         solicitadoEm: fd.get('solicitadoEm') ? String(fd.get('solicitadoEm')) : null,
       });
@@ -252,9 +254,19 @@ export default function Tarefas() {
                     >
                       <div className="kanban-card__header">
                         <div>
-                          <div className="kanban-card__title">{t.titulo}</div>
+                          <div className="kanban-card__title">
+                            {t.privada && (
+                              <span
+                                title="Privada — só você e o responsável enxergam"
+                                style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: 5, color: 'var(--pons-blue, #0E7C9B)' }}
+                              >
+                                <Icon name="shield" size={13} />
+                              </span>
+                            )}
+                            {t.titulo}
+                          </div>
                           <div className="kanban-card__meta">
-                            {t.area}
+                            {t.privada ? 'Privada' : t.area}
                             {(t.solicitadoEm || t.createdAt) && ' · solicitada ' + dataBr(t.solicitadoEm || t.createdAt)}
                             {t.prazo && ' · até ' + dataBrHora(t.prazo)}
                           </div>
@@ -391,6 +403,15 @@ export default function Tarefas() {
             </div>
             <div className="field field--span-2">
               <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" name="privada" />
+                Tarefa privada — só você e o responsável enxergam
+              </label>
+              <div className="text-xs text-secondary" style={{ marginTop: 4 }}>
+                Ninguém mais vê esta tarefa (nem gestores ou diretoria). Para deixá-la só entre você e o Paulo, marque privada e escolha o Paulo como responsável.
+              </div>
+            </div>
+            <div className="field field--span-2">
+              <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <input type="checkbox" checked={waOn} onChange={(e) => setWaOn(e.target.checked)} />
                 Enviar lembrete pelo WhatsApp (API oficial)
               </label>
@@ -472,6 +493,12 @@ export default function Tarefas() {
               <div className="field">
                 <label className="field__label">Prazo</label>
                 <input name="prazo" type="datetime-local" className="field__input" defaultValue={editTarefa.prazo ? String(editTarefa.prazo).slice(0, 16) : ''} />
+              </div>
+              <div className="field field--span-2">
+                <label className="field__label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input type="checkbox" name="privada" defaultChecked={!!editTarefa.privada} />
+                  Tarefa privada — só você e o responsável enxergam
+                </label>
               </div>
             </div>
             <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
