@@ -198,6 +198,10 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
   const [anuaisPeriodicidade, setAnuaisPeriodicidade] = useState(String(f.anuaisPeriodicidade ?? 'ANUAL'));
   const [chaves, setChaves] = useState(m(f.chavesValor));
   const [permuta, setPermuta] = useState(m(f.permutaValor));
+  // Parte paga FORA do parcelamento (financiamento / direto com a construtora). Precisa
+  // ser editável aqui pra fechar o VGV — tanto pra DECLARAR financiamento quanto pra
+  // corrigir saldo lançado a mais (vendas que estouravam o VGV).
+  const [saldoRem, setSaldoRem] = useState(m(f.saldoRemanescente));
 
   const salvar = async () => {
     const vv = parseMoedaBR(valorVenda) || 0;
@@ -214,7 +218,7 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
         ? faixas.reduce((a: number, x: any) => a + (Number(x.valor) || 0) * (Number(x.qtd) || 0), 0)
         : (parseMoedaBR(mensaisValor) || 0) * (Number(mensaisQtd) || 0);
       const anuaisT = (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0);
-      const soma = ent + mensaisT + anuaisT + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + Number(f.saldoRemanescente || 0);
+      const soma = ent + mensaisT + anuaisT + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
       if (Math.abs(soma - vv) > 0.01) {
         const dif = vv - soma;
         toast.error(dif > 0
@@ -247,6 +251,7 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
       anuaisPeriodicidade: anuaisPeriodicidade || null,
       chavesValor: parseMoedaBR(chaves) || null,
       permutaValor: parseMoedaBR(permuta) || 0,
+      saldoRemanescente: parseMoedaBR(saldoRem) || 0,
     };
     setSalvando(true);
     try {
@@ -265,6 +270,18 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
   const money = (v: string, set: (s: string) => void, ph = 'R$ 0,00') => (
     <input className="field__input" inputMode="numeric" placeholder={ph} value={v} onChange={(e) => set(maskMoedaBR(e.target.value))} />
   );
+
+  // Conferência ao vivo: soma dos componentes × VGV (mesma regra da trava do backend).
+  const faixasMd = Array.isArray(f.mensaisDetalhe) ? f.mensaisDetalhe : null;
+  const somaAtual = (parseMoedaBR(entradaTotal) || 0)
+    + (faixasMd && faixasMd.length
+      ? faixasMd.reduce((a: number, x: any) => a + (Number(x.valor) || 0) * (Number(x.qtd) || 0), 0)
+      : (parseMoedaBR(mensaisValor) || 0) * (Number(mensaisQtd) || 0))
+    + (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0)
+    + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
+  const vgvAtual = parseMoedaBR(valorVenda) || 0;
+  const difAtual = vgvAtual - somaAtual;
+  const fechaAtual = vgvAtual > 0 && Math.abs(difAtual) <= 0.01;
 
   return (
     <Modal open onClose={onClose} title="Editar negociação" subtitle={`${venda.clienteNome || 'Venda'} · recalcula parcelas e comissão`}>
@@ -285,6 +302,15 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
         {campo('Reforços — periodicidade', <select className="field__select" value={anuaisPeriodicidade} onChange={(e) => setAnuaisPeriodicidade(e.target.value)}><option value="ANUAL">Anual</option><option value="SEMESTRAL">Semestral</option></select>)}
         {campo('Chaves', money(chaves, setChaves))}
         {campo('Permuta', money(permuta, setPermuta))}
+        {campo('Saldo remanescente / financiamento', money(saldoRem, setSaldoRem))}
+        <div className="field field--span-2">
+          <div className="field__hint" style={{ fontWeight: 600, color: fechaAtual ? 'var(--color-success)' : 'var(--color-danger)' }}>
+            {vgvAtual <= 0 ? 'Informe o valor da venda.' : fechaAtual
+              ? `✓ Fecha o VGV (soma ${formatMoedaBR(somaAtual)})`
+              : `Soma ${formatMoedaBR(somaAtual)} · ${difAtual > 0 ? 'faltam' : 'excede em'} ${formatMoedaBR(Math.abs(difAtual))} pra fechar o VGV (${formatMoedaBR(vgvAtual)})`}
+          </div>
+          <div className="field__hint">A diferença que for financiamento/banco vai em “Saldo remanescente”. Só salva quando fechar.</div>
+        </div>
       </div>
       <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 18 }}>
         <button type="button" className="btn btn--secondary" onClick={onClose}>Cancelar</button>
