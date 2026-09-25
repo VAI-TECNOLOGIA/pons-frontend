@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.23b",
-  "data": "23/09/2026",
+  "versao": "2026.09.25",
+  "data": "25/09/2026",
   "novidades": [
+    {
+      "titulo": "Enviar notificação liberado por pessoa",
+      "itens": [
+        "A tela Enviar notificação agora pode ser liberada para uma pessoa específica que precise mandar comunicados, sem mudar o cargo dela no sistema."
+      ]
+    },
     {
       "titulo": "Perfil que vende e cuida do marketing",
       "itens": [

@@ -182,6 +182,9 @@ function papeisEfetivos(role: Role): Role[] {
 
 function canSee(it: NavItem, role: Role, email?: string): boolean {
   if (it.emails) return !!email && it.emails.includes(email);
+  // Liberação individual (backend: Setting notificacoes.envio.extraUserIds) — vê o
+  // item mesmo sem o papel. Vem antes das regras por papel pra valer pra qualquer um.
+  if (it.to === '/enviar-notificacao' && Auth.user?.podeEnviarNotificacao) return true;
   // Equipe Financeiro = perfil restrito: vê só o Dashboard + os itens do Financeiro.
   if (role === 'FINANCEIRO') return it.to === '/dashboard' || (!!it.roles && it.roles.includes('FINANCEIRO'));
   // Gestor: vê tudo, exceto os destinos bloqueados acima.

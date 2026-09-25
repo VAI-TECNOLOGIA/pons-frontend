@@ -33,6 +33,7 @@ export interface User {
   creci?: string | null;
   onboardingStatus?: string | null; // null/ATIVO = sem gating; PENDENTE_DOCS, AGUARDANDO_* prendem em /onboarding
   statusCadastro?: string | null; // AGUARDANDO_APROVACAO = cadastro aberto pendente → só vê Academia Pons até um Analista liberar
+  podeEnviarNotificacao?: boolean; // liberação da tela Enviar notificação (papel OU liberação individual — decide o backend)
   modalidade?: string | null; // ESTAGIARIO | CORRETOR
   unidade?: { id: number; nome: string } | null;
   corretor?: {
