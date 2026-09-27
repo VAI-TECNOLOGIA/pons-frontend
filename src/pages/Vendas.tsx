@@ -640,7 +640,7 @@ export default function Vendas() {
  // Mensais por FAIXA (opcional): quando as parcelas mensais têm valores diferentes
  // por bloco (ex.: 80x 3.990 + 20x 4.000 + 20x 5.000). O dia/início são compartilhados.
  const [mensaisPorFaixa, setMensaisPorFaixa] = useState(false);
- const [faixasMensais, setFaixasMensais] = useState<{ qtd: string; valor: string }[]>([{ qtd: '', valor: '' }]);
+ const [faixasMensais, setFaixasMensais] = useState<{ qtd: string; valor: string; venc: string }[]>([{ qtd: '', valor: '', venc: '' }]);
  const [anuaisValor, setAnuaisValor] = useState('');
  const [anuaisQtd, setAnuaisQtd] = useState('');
  const [anuaisMes, setAnuaisMes] = useState('');
@@ -844,7 +844,7 @@ export default function Vendas() {
  setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setPermuta(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setClienteInternacional(false); setConjugeInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setSociedadeAtiva(false); setParticipacaoTitular(''); setSociosCompra([]);
- setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setMensaisPorFaixa(false); setFaixasMensais([{ qtd: '', valor: '' }]); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false); setReforcoPeriodicidade('ANUAL');
+ setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setMensaisPorFaixa(false); setFaixasMensais([{ qtd: '', valor: '', venc: '' }]); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false); setReforcoPeriodicidade('ANUAL');
  setResumo(null); setOrigemManualIdx(0);
  setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
  }, [openNew]);
@@ -887,7 +887,7 @@ export default function Vendas() {
  setOrigemManualIdx(s.origemManualIdx || 0); setLeadSel(s.leadSel || null); setLeadNegadoId(s.leadNegadoId ?? null); setLeadSugDispensada(!!s.leadSugDispensada); setLeadBusca(s.leadBusca || '');
  setValorVenda(s.valorVenda || ''); setEntradaTotal(s.entradaTotal || ''); setChavesValor(s.chavesValor || ''); setPermuta(s.permuta || ''); setSaldoRem(s.saldoRem || '');
  setEntradaParcelas(s.entradaParcelas || '1'); setEntradaData(s.entradaData || ''); setArrasValor(s.arrasValor || ''); setParcelasEntrada(s.parcelasEntrada || []); setParcelasTocadas(!!s.parcelasTocadas);
- setMensaisValor(s.mensaisValor || ''); setMensaisQtd(s.mensaisQtd || ''); setMensaisDia(s.mensaisDia || ''); setMensaisPorFaixa(!!s.mensaisPorFaixa); setFaixasMensais(s.faixasMensais || [{ qtd: '', valor: '' }]);
+ setMensaisValor(s.mensaisValor || ''); setMensaisQtd(s.mensaisQtd || ''); setMensaisDia(s.mensaisDia || ''); setMensaisPorFaixa(!!s.mensaisPorFaixa); setFaixasMensais(s.faixasMensais || [{ qtd: '', valor: '', venc: '' }]);
  setAnuaisValor(s.anuaisValor || ''); setAnuaisQtd(s.anuaisQtd || ''); setAnuaisMes(s.anuaisMes || ''); setReforcoParcelado(!!s.reforcoParcelado); setParcelasReforco(s.parcelasReforco || []); setParcelasReforcoTocadas(!!s.parcelasReforcoTocadas); setReforcoPeriodicidade(s.reforcoPeriodicidade || 'ANUAL');
  setEmpSelId(s.empSelId || ''); setUnidadeSelId(s.unidadeSelId || ''); setUnidadeLivre(s.unidadeLivre || '');
  setComEspecial(!!s.comEspecial); setTemNf(s.temNf !== false); setNfAliquota(s.nfAliquota || String(nfAliquotaGlobal));
@@ -1165,7 +1165,7 @@ export default function Vendas() {
  ? (faixasMensais.reduce((a, f) => a + (Number(f.qtd) || 0), 0) || undefined)
  : (fd.get('mensaisQtd') ? Number(fd.get('mensaisQtd')) : undefined),
  ...(mensaisPorFaixa && faixasMensais.some((f) => (Number(f.qtd) || 0) > 0)
- ? { mensaisFaixasDetalhe: faixasMensais.filter((f) => (Number(f.qtd) || 0) > 0).map((f) => ({ qtd: Number(f.qtd), valor: parseMoedaBR(f.valor) })) }
+ ? { mensaisFaixasDetalhe: faixasMensais.filter((f) => (Number(f.qtd) || 0) > 0).map((f) => ({ qtd: Number(f.qtd), valor: parseMoedaBR(f.valor), inicio: f.venc || null })) }
  : {}),
  // Selects Mês+Ano → salva legível: "Dezembro/2026"
  mensaisInicio: (() => { const m = str('mensaisInicioMes'); if (!m) return undefined; return `${m}/${str('mensaisInicioAno') || new Date().getFullYear()}`; })(),
@@ -2183,20 +2183,29 @@ export default function Vendas() {
  </div>
  {mensaisPorFaixa && (
  <div className="field field--span-2">
- <label className="field__label">Faixas de mensais <span className="text-secondary" style={{ fontWeight: 400 }}>— quantidade × valor por bloco</span></label>
+ <label className="field__label">Faixas de mensais <span className="text-secondary" style={{ fontWeight: 400 }}>— quantidade × valor × 1º vencimento por bloco</span></label>
  <div style={{ display: 'grid', gap: 6 }}>
  {faixasMensais.map((f, i) => (
  <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
- <input type="number" min={1} className="field__input" style={{ maxWidth: 90 }} placeholder="80" value={f.qtd} onChange={(e) => { const v = e.target.value; setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, qtd: v } : x))); }} />
+ <input type="number" min={1} className="field__input" style={{ maxWidth: 80 }} placeholder="80" value={f.qtd} onChange={(e) => { const v = e.target.value; setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, qtd: v } : x))); }} />
  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>x de</span>
- <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" placeholder="R$ 3.990,00" value={f.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
+ <input className="field__input" style={{ maxWidth: 140 }} inputMode="numeric" placeholder="R$ 3.990,00" value={f.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
+ <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· 1º venc</span>
+ <input type="date" className="field__input" style={{ maxWidth: 150 }} value={f.venc} title="1º vencimento deste bloco (as parcelas seguem mensalmente a partir daqui)" onChange={(e) => { const v = e.target.value; setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, venc: v } : x))); }} />
  {faixasMensais.length > 1 && (
  <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasMensais((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>
  )}
  </div>
  ))}
  </div>
- <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6, alignSelf: 'flex-start' }} onClick={() => setFaixasMensais((cur) => [...cur, { qtd: '', valor: '' }])}>＋ Adicionar faixa</button>
+ <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6, alignSelf: 'flex-start' }} onClick={() => setFaixasMensais((cur) => {
+   // Encadeia a data: o próximo bloco começa 1 mês após a última parcela do bloco anterior.
+   const last = cur[cur.length - 1];
+   let venc = '';
+   if (last?.venc && (Number(last.qtd) || 0) > 0) { const d = new Date(last.venc + 'T00:00:00'); d.setMonth(d.getMonth() + Number(last.qtd)); venc = d.toISOString().slice(0, 10); }
+   return [...cur, { qtd: '', valor: '', venc }];
+ })}>＋ Adicionar faixa</button>
+ <div className="field__hint">Cada bloco vence mensalmente a partir do 1º vencimento. Ao adicionar uma faixa, a data já vem encadeada (logo após o bloco anterior) — edite se precisar.</div>
  <div className="field__hint" style={{ fontWeight: 600 }}>Total mensais: {formatMoedaBR(recon.mensaisTot)} · {faixasMensais.reduce((a, f) => a + (Number(f.qtd) || 0), 0)}x parcelas</div>
  </div>
  )}
