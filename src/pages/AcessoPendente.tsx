@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Api } from '../lib/api';
+import { Api, isSessaoExpirada } from '../lib/api';
 import { formatRole } from '../lib/auth';
 import { Icon } from '../components/Icon';
 import './acesso-pendente.css';
@@ -33,7 +33,8 @@ export default function AcessoPendente() {
       const r = await Api.acessoPendentes();
       setLista(r.pendentes || []);
       setAtribuiveis(r.atribuiveis || []);
-    } catch (e: any) {
+    } catch (e) {
+      if (isSessaoExpirada(e)) return; // sessão caiu → já vai pro login
       setErro('Não foi possível carregar os cadastros pendentes.');
     } finally {
       setCarregando(false);
@@ -48,7 +49,8 @@ export default function AcessoPendente() {
     try {
       await Api.acessoAprovar(p.id, role);
       setLista((l) => l.filter((x) => x.id !== p.id));
-    } catch {
+    } catch (e) {
+      if (isSessaoExpirada(e)) return; // já está indo pro login — não mostra erro na tela
       setErro(`Falha ao liberar o acesso de ${p.name}.`);
     } finally {
       setOcupado(null);
@@ -61,7 +63,8 @@ export default function AcessoPendente() {
     try {
       await Api.acessoRecusar(p.id);
       setLista((l) => l.filter((x) => x.id !== p.id));
-    } catch {
+    } catch (e) {
+      if (isSessaoExpirada(e)) return;
       setErro(`Falha ao recusar ${p.name}.`);
     } finally {
       setOcupado(null);

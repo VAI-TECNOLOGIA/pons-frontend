@@ -126,6 +126,26 @@ function mensagemDeErro(status: number, details: { error?: string; message?: str
   return ERROS[code] || details?.message || statusFallback;
 }
 
+// Encerra a sessão expirada uma única vez: limpa credenciais, guarda um aviso
+// amigável pro Login mostrar e redireciona. Guard evita múltiplos redirects
+// quando várias chamadas estouram 401 ao mesmo tempo.
+let encerrandoSessao = false;
+function encerrarSessaoExpirada() {
+  if (encerrandoSessao) return;
+  encerrandoSessao = true;
+  try { Auth.clear(); } catch { /* storage indisponível */ }
+  try { sessionStorage.setItem('auth.aviso', 'Sua sessão expirou. Entre novamente para continuar.'); } catch { /* noop */ }
+  // replace (não href): não deixa "voltar" pra tela quebrada; força reload do app.
+  try { window.location.replace('/login'); } catch { window.location.href = '/login'; }
+}
+
+// True quando o erro é de sessão expirada (401 já tratado com redirect) — os
+// catches das telas usam isto pra NÃO mostrar mensagem de erro genérica.
+export function isSessaoExpirada(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 401
+    && !!(err.details as { sessionExpired?: boolean } | null)?.sessionExpired;
+}
+
 async function request<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, auth = true } = opts;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -157,9 +177,13 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
       const details = await res.json().catch(() => ({}));
       throw new ApiError(details.error || 'credenciais_invalidas', 401, details);
     }
-    Auth.clear();
-    window.location.href = '/login';
-    throw new ApiError('unauthorized', 401, null);
+    // Sessão expirada em qualquer outra tela: desloga e manda pro login com aviso
+    // claro — SEM deixar o erro genérico ("Falha ao liberar…") pipocar na tela.
+    // Guard: várias chamadas podem estourar 401 juntas; só a 1ª redireciona.
+    encerrarSessaoExpirada();
+    // Erro marcado como sessão expirada — os catches das telas checam isso e
+    // ignoram (não mostram "erro aleatório"); quem não checar, a navegação some.
+    throw new ApiError('sessao_expirada', 401, { sessionExpired: true });
   }
 
   if (!res.ok) {

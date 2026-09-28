@@ -39,6 +39,15 @@ export default function Login() {
     return () => clearInterval(t);
   }, []);
 
+  // Aviso de sessão expirada: quando um 401 derrubou a pessoa aqui, mostra o
+  // motivo (em vez de ela achar que "sumiu" ou que deu bug na tela anterior).
+  useEffect(() => {
+    try {
+      const aviso = sessionStorage.getItem('auth.aviso');
+      if (aviso) { setError(aviso); sessionStorage.removeItem('auth.aviso'); }
+    } catch { /* noop */ }
+  }, []);
+
   useEffect(() => {
     if (Auth.token) {
       // Onboarding: /api/users/me daria 403 (gate) e o catch limparia a sessão.
