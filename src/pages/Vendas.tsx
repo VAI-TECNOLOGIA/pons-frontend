@@ -219,7 +219,8 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
         : (parseMoedaBR(mensaisValor) || 0) * (Number(mensaisQtd) || 0);
       const anuaisT = (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0);
       const soma = ent + mensaisT + anuaisT + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
-      if (Math.abs(soma - vv) > 0.01) {
+      // Tolerância de R$1 (arredondamento de 120x etc.) — igual ao cadastro/backend.
+      if (Math.abs(soma - vv) > 1) {
         const dif = vv - soma;
         toast.error(dif > 0
           ? `Faltam ${formatMoedaBR(dif)} pra fechar o VGV (soma ${formatMoedaBR(soma)}). Ajuste os valores ou lance a diferença como financiamento/saldo.`
@@ -281,7 +282,7 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
     + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
   const vgvAtual = parseMoedaBR(valorVenda) || 0;
   const difAtual = vgvAtual - somaAtual;
-  const fechaAtual = vgvAtual > 0 && Math.abs(difAtual) <= 0.01;
+  const fechaAtual = vgvAtual > 0 && Math.abs(difAtual) <= 1;
 
   return (
     <Modal open onClose={onClose} title="Editar negociação" subtitle={`${venda.clienteNome || 'Venda'} · recalcula parcelas e comissão`}>
@@ -672,7 +673,12 @@ export default function Vendas() {
  const saldo = vgv - soma; // > 0 = a financiar; < 0 = excede o VGV
  const nParc = Math.max(1, Number(entradaParcelas) || 1);
  const parcela = Math.max(0, (entrada - arras)) / nParc;
- return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, permutaTot, soma, saldo, parcela, nParc, excede: saldo < -0.01, fecha: vgv > 0 && Math.abs(saldo) <= 0.01 };
+ // Tolerância de R$1: uma venda de 120x de valor redondo (ex.: 120× 6.666,67 =
+ // 800.000,40) acumula centavos que NUNCA fecham no centavo exato. Mesmo limite
+ // das parcelas da entrada e do backend — senão a trava barra venda legítima
+ // (Márcio 28/09). Diferença de milhares = quebrada de verdade, aí sim barra.
+ const TOL_VGV = 1;
+ return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, permutaTot, soma, saldo, parcela, nParc, excede: saldo < -TOL_VGV, fecha: vgv > 0 && Math.abs(saldo) <= TOL_VGV };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
