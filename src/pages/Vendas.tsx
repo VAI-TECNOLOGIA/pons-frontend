@@ -726,6 +726,11 @@ export default function Vendas() {
  const [reforcoParcelado, setReforcoParcelado] = useState(false);
  const [parcelasReforco, setParcelasReforco] = useState<{ valor: string; venc: string }[]>([]);
  const [parcelasReforcoTocadas, setParcelasReforcoTocadas] = useState(false);
+ // Reforços por FAIXA (opcional): blocos de valores diferentes (ex.: 5x de 50.000
+ // + 5x de 64.800), igual aos mensais por faixa — pedido Gutierre 30/09. Cada faixa
+ // tem qtd × valor × 1º vencimento; expande em parcelas individuais no envio.
+ const [reforcosPorFaixa, setReforcosPorFaixa] = useState(false);
+ const [faixasReforcos, setFaixasReforcos] = useState<{ qtd: string; valor: string; venc: string }[]>([{ qtd: '', valor: '', venc: '' }]);
  // Periodicidade do reforço: ANUAL (12 em 12 meses) ou SEMESTRAL (6 em 6). Ju Peixera 03/09.
  const [reforcoPeriodicidade, setReforcoPeriodicidade] = useState<'ANUAL' | 'SEMESTRAL'>('ANUAL');
  // Parte paga FORA do parcelamento Pons (financiamento/direto com a construtora)
@@ -740,7 +745,9 @@ export default function Vendas() {
  const mensaisTot = mensaisPorFaixa
  ? faixasMensais.reduce((a, f) => a + parseMoedaBR(f.valor) * (Number(f.qtd) || 0), 0)
  : parseMoedaBR(mensaisValor) * (Number(mensaisQtd) || 0);
- const anuaisTot = reforcoParcelado
+ const anuaisTot = reforcosPorFaixa
+ ? faixasReforcos.reduce((a, f) => a + parseMoedaBR(f.valor) * (Number(f.qtd) || 0), 0)
+ : reforcoParcelado
  ? parcelasReforco.reduce((a, p) => a + parseMoedaBR(p.valor), 0)
  : parseMoedaBR(anuaisValor) * (Number(anuaisQtd) || 0);
  const chaves = parseMoedaBR(chavesValor);
@@ -758,6 +765,26 @@ export default function Vendas() {
  return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, permutaTot, soma, saldo, parcela, nParc, excede: saldo < -TOL_VGV, fecha: vgv > 0 && Math.abs(saldo) <= TOL_VGV };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+ // Expande as faixas de reforços [{qtd, valor, 1º venc}] em parcelas individuais
+ // [{valor, vencimento}] — dentro de cada bloco os vencimentos seguem a
+ // periodicidade (anual/semestral) a partir do 1º venc da faixa. É o que vai pro
+ // backend (anuaisParcelasDetalhe); o protocolo reagrupa reforços de mesmo valor.
+ const expandirFaixasReforcos = () => {
+   const passo = reforcoPeriodicidade === 'SEMESTRAL' ? 6 : 12;
+   const out: { valor: number; vencimento: string | null }[] = [];
+   for (const f of faixasReforcos) {
+     const qtd = Number(f.qtd) || 0;
+     const valor = parseMoedaBR(f.valor);
+     if (qtd <= 0) continue;
+     const base = f.venc ? new Date(f.venc + 'T00:00:00') : null;
+     for (let i = 0; i < qtd; i++) {
+       let venc: string | null = null;
+       if (base && !isNaN(base.getTime())) { const d = new Date(base); d.setMonth(d.getMonth() + i * passo); venc = d.toISOString().slice(0, 10); }
+       out.push({ valor, vencimento: venc });
+     }
+   }
+   return out;
+ };
 
  // Pré-preenche as parcelas da entrada (base = entrada/nParc; arras sai da 1ª;
  // a última acerta o arredondamento pra soma fechar com entrada − arras).
@@ -927,7 +954,7 @@ export default function Vendas() {
  setValorVenda(''); setEntradaTotal(''); setEntradaAutorizada(false); setEntradaAutorizacaoObs(''); setChavesValor(''); setPermuta(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setClienteInternacional(false); setConjugeInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setSociedadeAtiva(false); setParticipacaoTitular(''); setSociosCompra([]);
- setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setMensaisPorFaixa(false); setFaixasMensais([{ qtd: '', valor: '', venc: '' }]); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false); setReforcoPeriodicidade('ANUAL');
+ setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setMensaisPorFaixa(false); setFaixasMensais([{ qtd: '', valor: '', venc: '' }]); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false); setReforcosPorFaixa(false); setFaixasReforcos([{ qtd: '', valor: '', venc: '' }]); setReforcoPeriodicidade('ANUAL');
  setResumo(null); setOrigemManualIdx(0);
  setTelIntl(false); setSalaGpi(''); salaAutoRef.current = ''; setDocsAnexar([]);
  }, [openNew]);
@@ -935,7 +962,7 @@ export default function Vendas() {
  // Coleta o estado atual (controlados + inputs não-controlados via FormData).
  const coletarRascunho = () => {
  const form = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {};
- const st: any = { step, tipoComprador, estadoCivil, cliente, telIntl, salaGpi, entradaAutorizada, entradaAutorizacaoObs, emancipado, clienteInternacional, conjugeInternacional, origemManualIdx, leadSel, leadNegadoId, leadSugDispensada, leadBusca, valorVenda, entradaTotal, chavesValor, permuta, saldoRem, entradaParcelas, entradaData, arrasValor, parcelasEntrada, parcelasTocadas, mensaisValor, mensaisQtd, mensaisDia, mensaisPorFaixa, faixasMensais, anuaisValor, anuaisQtd, anuaisMes, reforcoParcelado, parcelasReforco, parcelasReforcoTocadas, reforcoPeriodicidade, empSelId, unidadeSelId, unidadeLivre, comEspecial, temNf, nfAliquota, endPF,
+ const st: any = { step, tipoComprador, estadoCivil, cliente, telIntl, salaGpi, entradaAutorizada, entradaAutorizacaoObs, emancipado, clienteInternacional, conjugeInternacional, origemManualIdx, leadSel, leadNegadoId, leadSugDispensada, leadBusca, valorVenda, entradaTotal, chavesValor, permuta, saldoRem, entradaParcelas, entradaData, arrasValor, parcelasEntrada, parcelasTocadas, mensaisValor, mensaisQtd, mensaisDia, mensaisPorFaixa, faixasMensais, anuaisValor, anuaisQtd, anuaisMes, reforcoParcelado, parcelasReforco, parcelasReforcoTocadas, reforcosPorFaixa, faixasReforcos, reforcoPeriodicidade, empSelId, unidadeSelId, unidadeLivre, comEspecial, temNf, nfAliquota, endPF,
  sociedadeAtiva, participacaoTitular, sociosCompra };
  return { v: 1, at: Date.now(), form, st };
  };
@@ -971,7 +998,7 @@ export default function Vendas() {
  setValorVenda(s.valorVenda || ''); setEntradaTotal(s.entradaTotal || ''); setChavesValor(s.chavesValor || ''); setPermuta(s.permuta || ''); setSaldoRem(s.saldoRem || '');
  setEntradaParcelas(s.entradaParcelas || '1'); setEntradaData(s.entradaData || ''); setArrasValor(s.arrasValor || ''); setParcelasEntrada(s.parcelasEntrada || []); setParcelasTocadas(!!s.parcelasTocadas);
  setMensaisValor(s.mensaisValor || ''); setMensaisQtd(s.mensaisQtd || ''); setMensaisDia(s.mensaisDia || ''); setMensaisPorFaixa(!!s.mensaisPorFaixa); setFaixasMensais(s.faixasMensais || [{ qtd: '', valor: '', venc: '' }]);
- setAnuaisValor(s.anuaisValor || ''); setAnuaisQtd(s.anuaisQtd || ''); setAnuaisMes(s.anuaisMes || ''); setReforcoParcelado(!!s.reforcoParcelado); setParcelasReforco(s.parcelasReforco || []); setParcelasReforcoTocadas(!!s.parcelasReforcoTocadas); setReforcoPeriodicidade(s.reforcoPeriodicidade || 'ANUAL');
+ setAnuaisValor(s.anuaisValor || ''); setAnuaisQtd(s.anuaisQtd || ''); setAnuaisMes(s.anuaisMes || ''); setReforcoParcelado(!!s.reforcoParcelado); setParcelasReforco(s.parcelasReforco || []); setParcelasReforcoTocadas(!!s.parcelasReforcoTocadas); setReforcosPorFaixa(!!s.reforcosPorFaixa); setFaixasReforcos(s.faixasReforcos || [{ qtd: '', valor: '', venc: '' }]); setReforcoPeriodicidade(s.reforcoPeriodicidade || 'ANUAL');
  setEmpSelId(s.empSelId || ''); setUnidadeSelId(s.unidadeSelId || ''); setUnidadeLivre(s.unidadeLivre || '');
  setComEspecial(!!s.comEspecial); setTemNf(s.temNf !== false); setNfAliquota(s.nfAliquota || String(nfAliquotaGlobal));
  if (s.endPF) setEndPF(s.endPF);
@@ -1255,11 +1282,16 @@ export default function Vendas() {
  : {}),
  // Selects Mês+Ano → salva legível: "Dezembro/2026"
  mensaisInicio: (() => { const m = str('mensaisInicioMes'); if (!m) return undefined; return `${m}/${str('mensaisInicioAno') || new Date().getFullYear()}`; })(),
- anuaisValor: optNum('anuaisValor'),
+ anuaisValor: reforcosPorFaixa ? undefined : optNum('anuaisValor'),
  anuaisInicio: str('anuaisInicio'),
- anuaisQtd: reforcoParcelado ? parcelasReforco.length : (fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined),
- ...(reforcoParcelado && parcelasReforco.length ? { anuaisParcelasDetalhe: parcelasReforco.map((p) => ({ valor: parseMoedaBR(p.valor), vencimento: p.venc })) } : {}),
- anuaisPeriodicidade: (parseMoedaBR(anuaisValor) > 0 || reforcoParcelado) ? reforcoPeriodicidade : undefined,
+ // Reforços por faixa → expande em parcelas individuais. Parcelado → linha a linha. Senão Valor×Qtd.
+ anuaisQtd: reforcosPorFaixa
+ ? (expandirFaixasReforcos().length || undefined)
+ : reforcoParcelado ? parcelasReforco.length : (fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined),
+ ...(reforcosPorFaixa
+ ? (() => { const ps = expandirFaixasReforcos(); return ps.length ? { anuaisParcelasDetalhe: ps } : {}; })()
+ : (reforcoParcelado && parcelasReforco.length ? { anuaisParcelasDetalhe: parcelasReforco.map((p) => ({ valor: parseMoedaBR(p.valor), vencimento: p.venc })) } : {})),
+ anuaisPeriodicidade: (parseMoedaBR(anuaisValor) > 0 || reforcoParcelado || reforcosPorFaixa) ? reforcoPeriodicidade : undefined,
  chavesValor: optNum('chavesValor'),
  permutaValor: parseMoedaBR(permuta) || undefined,
  saldoRemanescente: parseMoedaBR(saldoRem) || undefined,
@@ -2310,14 +2342,15 @@ export default function Vendas() {
  <div className="field__hint" style={{ fontWeight: 600 }}>Total mensais: {formatMoedaBR(recon.mensaisTot)} · {faixasMensais.reduce((a, f) => a + (Number(f.qtd) || 0), 0)}x parcelas</div>
  </div>
  )}
- <div className="field">
+ <div className="field" style={reforcosPorFaixa ? { opacity: 0.45 } : undefined}>
  <label className="field__label">Reforços / balões (R$)</label>
- <input name="anuaisValor" className="field__input" inputMode="numeric" placeholder="R$ 30.000,00" value={anuaisValor} onChange={(e) => setAnuaisValor(maskMoedaBR(e.target.value))} />
+ <input name="anuaisValor" className="field__input" inputMode="numeric" placeholder="R$ 30.000,00" value={anuaisValor} disabled={reforcosPorFaixa} onChange={(e) => setAnuaisValor(maskMoedaBR(e.target.value))} />
+ {reforcosPorFaixa && <div className="field__hint">Usando faixas abaixo</div>}
  </div>
- <div className="field">
+ <div className="field" style={reforcosPorFaixa ? { opacity: 0.45 } : undefined}>
  <label className="field__label">Qtd de reforços</label>
- <input name="anuaisQtd" type="number" min={0} className="field__input" placeholder="3" value={anuaisQtd} onChange={(e) => setAnuaisQtd(e.target.value)} />
- {recon.anuaisTot > 0 && <div className="field__hint">Total reforços: <strong>{formatMoedaBR(recon.anuaisTot)}</strong></div>}
+ <input name="anuaisQtd" type="number" min={0} className="field__input" placeholder="3" value={anuaisQtd} disabled={reforcosPorFaixa} onChange={(e) => setAnuaisQtd(e.target.value)} />
+ {!reforcosPorFaixa && recon.anuaisTot > 0 && <div className="field__hint">Total reforços: <strong>{formatMoedaBR(recon.anuaisTot)}</strong></div>}
  </div>
  <div className="field">
  <label className="field__label">Periodicidade dos reforços</label>
@@ -2333,7 +2366,51 @@ export default function Vendas() {
  {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
  </select>
  </div>
- {/* Botão: parcelar o reforço (valores/datas individuais) — só às vezes. */}
+ {/* Reforços por FAIXA: blocos de valores diferentes (ex.: 5x 50.000 + 5x 64.800) */}
+ {!reforcoParcelado && (
+ <div className="field field--span-2">
+ <button
+ type="button"
+ className={reforcosPorFaixa ? 'btn btn--secondary btn--sm' : 'btn btn--ghost btn--sm'}
+ style={{ alignSelf: 'flex-start' }}
+ onClick={() => setReforcosPorFaixa((v) => !v)}
+ >
+ {reforcosPorFaixa ? '✕ Voltar ao reforço simples' : '＋ Reforços com valores diferentes por faixa'}
+ </button>
+ <div className="field__hint">Ligue quando os reforços têm blocos de valores diferentes (ex.: 5x de R$ 50.000 + 5x de R$ 64.800). Cada bloco tem qtd × valor × 1º vencimento e segue a periodicidade acima.</div>
+ </div>
+ )}
+ {reforcosPorFaixa && (
+ <div className="field field--span-2">
+ <label className="field__label">Faixas de reforços <span className="text-secondary" style={{ fontWeight: 400 }}>— quantidade × valor × 1º vencimento por bloco</span></label>
+ <div style={{ display: 'grid', gap: 6 }}>
+ {faixasReforcos.map((f, i) => (
+ <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+ <input type="number" min={1} className="field__input" style={{ maxWidth: 80 }} placeholder="5" value={f.qtd} onChange={(e) => { const v = e.target.value; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, qtd: v } : x))); }} />
+ <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>x de</span>
+ <input className="field__input" style={{ maxWidth: 150 }} inputMode="numeric" placeholder="R$ 50.000,00" value={f.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
+ <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· 1º venc</span>
+ <input type="date" className="field__input" style={{ maxWidth: 150 }} value={f.venc} title="1º vencimento deste bloco (os reforços seguem a periodicidade a partir daqui)" onChange={(e) => { const v = e.target.value; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, venc: v } : x))); }} />
+ {faixasReforcos.length > 1 && (
+ <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasReforcos((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>
+ )}
+ </div>
+ ))}
+ </div>
+ <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6, alignSelf: 'flex-start' }} onClick={() => setFaixasReforcos((cur) => {
+   // Encadeia a data: o próximo bloco começa 1 período após o fim do bloco anterior.
+   const last = cur[cur.length - 1];
+   const passo = reforcoPeriodicidade === 'SEMESTRAL' ? 6 : 12;
+   let venc = '';
+   if (last?.venc && (Number(last.qtd) || 0) > 0) { const d = new Date(last.venc + 'T00:00:00'); d.setMonth(d.getMonth() + Number(last.qtd) * passo); venc = d.toISOString().slice(0, 10); }
+   return [...cur, { qtd: '', valor: '', venc }];
+ })}>＋ Adicionar faixa</button>
+ <div className="field__hint">Ao adicionar uma faixa, a data já vem encadeada (logo após o bloco anterior) — edite se precisar. Ex.: 5x de 50.000 começando 11/2027 e 5x de 64.800 começando 11/2032.</div>
+ <div className="field__hint" style={{ fontWeight: 600 }}>Total reforços: {formatMoedaBR(recon.anuaisTot)} · {faixasReforcos.reduce((a, f) => a + (Number(f.qtd) || 0), 0)}x</div>
+ </div>
+ )}
+ {/* Botão: parcelar o reforço (valores/datas individuais) — alternativa p/ datas irregulares. */}
+ {!reforcosPorFaixa && (
  <div className="field field--span-2">
  <button
  type="button"
@@ -2343,8 +2420,9 @@ export default function Vendas() {
  >
  {reforcoParcelado ? '✕ Voltar ao reforço simples' : '＋ Parcelar o reforço (valores e datas por parcela)'}
  </button>
- <div className="field__hint">Ligue quando os reforços têm valores ou vencimentos diferentes entre si. No modo simples, é Valor × Qtd.</div>
+ <div className="field__hint">Alternativa: edite cada reforço linha a linha (datas irregulares). Pra blocos de valores, use “por faixa” acima.</div>
  </div>
+ )}
  {reforcoParcelado && parcelasReforco.length > 0 && (
  <div className="field field--span-2">
  <label className="field__label">Valores e vencimentos dos reforços <span className="text-secondary" style={{ fontWeight: 400 }}>— pré-preenchido, editável</span></label>
