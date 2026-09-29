@@ -76,18 +76,26 @@ export default function AdminVendas() {
 
   // Confirmar venda: envia o protocolo no WhatsApp e MANTÉM em "Contrato em confecção"
   // (não avança pra conferência). Pedido do cliente 17/08.
+  // Trava o botão enquanto envia: o protocolo leva alguns segundos (PDF + WhatsApp)
+  // e, sem retorno visual, o Adm clicava de novo e duplicava o envio (29/09).
+  const [confirmando, setConfirmando] = useState<number | null>(null);
   const confirmarVenda = async (v: any) => {
+    if (confirmando) return;
+    setConfirmando(v.id);
+    toast.info('Enviando o protocolo no WhatsApp…');
     try {
       const r = await Api.vendaConfirmar(v.id);
       if (r?.whatsapp && r.whatsapp.enviado === false) {
         toast.error('Venda confirmada, mas o protocolo NÃO foi pro WhatsApp: ' + (r.whatsapp.motivo || 'confira o número do protocolo em Configurações'));
       } else {
-        toast.success(`Venda ${v.codigo} confirmada — protocolo enviado no WhatsApp. Mantida em "Contrato em confecção".`);
+        toast.success(`Venda ${v.codigo} confirmada — protocolo enviado no WhatsApp (os documentos seguem em instantes). Mantida em "Contrato em confecção".`);
       }
       setSelId(null);
       reload();
     } catch (e: any) {
-      toast.error('Erro: ' + (e.message || 'falha'));
+      toast.error(e.message === 'envio_em_andamento' ? 'O protocolo desta venda já está sendo enviado — aguarde.' : 'Erro: ' + (e.message || 'falha'));
+    } finally {
+      setConfirmando(null);
     }
   };
 
@@ -248,8 +256,8 @@ export default function AdminVendas() {
             </div>
             <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
               {sel.status === 'PRE_ANALISE' && (
-                <button className="btn btn--primary" onClick={() => confirmarVenda(sel)} title="Envia o protocolo + documentos no WhatsApp do Adm e mantém em Contrato em confecção">
-                  <Icon name="check" size={14} /> Confirmar venda (envia protocolo)
+                <button className="btn btn--primary" onClick={() => confirmarVenda(sel)} disabled={confirmando === sel.id} title="Envia o protocolo + documentos no WhatsApp do Adm e mantém em Contrato em confecção">
+                  <Icon name="check" size={14} /> {confirmando === sel.id ? 'Enviando protocolo…' : 'Confirmar venda (envia protocolo)'}
                 </button>
               )}
               {PROXIMA_FASE[sel.status] && (

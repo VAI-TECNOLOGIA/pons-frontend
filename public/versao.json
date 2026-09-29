@@ -1,7 +1,18 @@
 {
-  "versao": "2026.09.25",
-  "data": "25/09/2026",
+  "versao": "2026.09.29",
+  "data": "29/09/2026",
   "novidades": [
+    {
+      "titulo": "Vendas: ajustes pedidos pelo Administrativo",
+      "itens": [
+        "Confirmar venda (envia protocolo): o botão mostra \"Enviando protocolo…\" e responde em segundos; a segunda parte do protocolo e os documentos chegam logo em seguida. Clicar duas vezes não duplica mais o envio.",
+        "Resumo da venda: VGV e comissão aparecem com o valor exato, em centavos (antes arredondava para o milhar).",
+        "Rateio da comissão: mostra o total da venda somando todas as parcelas, a regra de cada fatia (ex.: 55% do líquido após a nota fiscal) e o percentual real sobre a comissão.",
+        "Entrada abaixo do mínimo: com a autorização da construtora marcada, a venda segue para aprovação do Paulo em vez de ser bloqueada.",
+        "Formulário GPI: mostra quantas parcelas mensais e de reforço (anuais ou semestrais), com valor, dia e início.",
+        "Sala GPI: escolhida numa lista com as salas oficiais, em vez de digitada."
+      ]
+    },
     {
       "titulo": "Enviar notificação liberado por pessoa",
       "itens": [

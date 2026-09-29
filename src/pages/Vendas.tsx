@@ -321,6 +321,73 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
   );
 }
 
+// Salas GPI oficiais (mesma lista do cadastro de colaboradores — EQUIPES_LP no
+// backend). Pedido do Adm 29/09: sala em LISTA, não digitável.
+const SALAS_GPI = ['GPI DELAS BC', 'GPI BC', 'GPI 2ª AVENIDA', 'GPI DALLO 703', 'GPI DALLO 803', 'GPI CAPÃO DA CANOA', 'GPI TRAMANDAÍ', 'GPI DELAS ITAJAÍ', 'GPI ITAJAÍ'];
+
+// Rateio da comissão pra exibição: soma TODAS as parcelas (a tela mostrava só a
+// 1ª, que ainda carrega a taxa de marketing — % parecia "incorreta", Adm 29/09) e
+// descreve a REGRA de cada fatia, além da fatia real sobre a comissão.
+function linhasRateio(rm: any): { papel: string; nome: string; valor: number; pctComissao: number | null; regra: string | null }[] {
+  if (!rm) return [];
+  const parcelas: any[] = Array.isArray(rm.parcelas) ? rm.parcelas : [rm];
+  const base = parcelas[0] || {};
+  const bruto = parcelas.reduce((s: number, p: any) => s + (Number(p.valorComissaoBruta) || 0), 0);
+  const fmt = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const imobBruto = Number(base.imobiliaria?.valorBruto) || 0;
+  const regra = (papel: string): string | null => {
+    switch (papel) {
+      case 'CORRETOR': {
+        if (base.splitCorretorPct == null) return null;
+        const desc = [base.corretor?.descontoMarketing ? 'marketing' : '', (base.corretor?.descontoCampanha || base.corretor?.descontoLazaro) ? 'campanha' : ''].filter(Boolean);
+        return `${fmt(base.splitCorretorPct)}% do líquido (após NF)${desc.length ? ` − ${desc.join(' e ')}` : ''}`;
+      }
+      case 'GESTOR': return imobBruto ? `${fmt((base.imobiliaria.descontoGestor / imobBruto) * 100)}% da parte da imobiliária` : null;
+      case 'DIRECAO': return imobBruto ? `${fmt((base.imobiliaria.descontoDirecao / imobBruto) * 100)}% da parte da imobiliária` : null;
+      case 'CASA': return base.splitImobPct != null ? `restante dos ${fmt(base.splitImobPct)}% da imobiliária` : null;
+      case 'NOTA_FISCAL': return base.valorComissaoBruta ? `${fmt((base.valorNF / base.valorComissaoBruta) * 100)}% da comissão` : null;
+      case 'GESTOR_TRAFEGO': return 'retenção de campanha (corretor + imobiliária)';
+      case 'MARKETING': return 'taxa fixa, só na 1ª parcela';
+      default: return null;
+    }
+  };
+  const mapa = new Map<string, { papel: string; nome: string; valor: number }>();
+  for (const p of parcelas) for (const b of (p.beneficiarios || [])) {
+    const cur = mapa.get(b.papel) || { papel: b.papel, nome: b.nome, valor: 0 };
+    cur.valor += Number(b.valor) || 0;
+    mapa.set(b.papel, cur);
+  }
+  return [...mapa.values()].map((b) => ({ ...b, valor: Math.round(b.valor * 100) / 100, pctComissao: bruto ? (b.valor / bruto) * 100 : null, regra: regra(b.papel) }));
+}
+
+// Parcelas no Formulário GPI — mesma leitura do protocolo do WhatsApp (backend
+// resumoMensais/resumoReforcos): QUANTIDADE × valor, faixas, dia e início.
+function resumoMensaisGpi(f: any, brl: (v: any) => string | null): string | null {
+  const dia = f.mensaisMelhorDia ? ` · todo dia ${f.mensaisMelhorDia}` : '';
+  const det = Array.isArray(f.mensaisDetalhe) ? f.mensaisDetalhe.filter((x: any) => x && x.qtd) : [];
+  const dtBr = (v: any) => { if (!v) return ''; const q = String(v).slice(0, 10).split('-'); return q.length === 3 ? ` (1º venc. ${q[2]}/${q[1]}/${q[0]})` : ''; };
+  if (det.length) {
+    const temData = det.some((x: any) => x.inicio);
+    const total = det.reduce((a: number, x: any) => a + (Number(x.qtd) || 0), 0);
+    const faixas = det.map((x: any) => `${x.qtd}x de ${brl(x.valor)}${dtBr(x.inicio)}`).join(' + ');
+    return `${total} parcelas: ${faixas}${temData ? '' : (f.mensaisInicio ? ` · início ${f.mensaisInicio}` : '')}${dia}`;
+  }
+  if (!f.mensaisValor) return null;
+  return `${f.mensaisQtd ? `${f.mensaisQtd}x de ` : ''}${brl(f.mensaisValor)}${dia}${f.mensaisInicio ? ` · início ${f.mensaisInicio}` : ''}`;
+}
+function resumoReforcosGpi(f: any, brl: (v: any) => string | null): string | null {
+  const per = f.anuaisPeriodicidade === 'SEMESTRAL' ? ' · semestral' : ' · anual';
+  const ini = f.anuaisInicio ? ` · início ${f.anuaisInicio}` : '';
+  const det = Array.isArray(f.anuaisDetalhe) ? f.anuaisDetalhe.filter(Boolean) : [];
+  if (det.length) {
+    const grupos: { valor: number; qtd: number }[] = [];
+    for (const q of det) { const val = Number(q?.valor) || 0; const last = grupos[grupos.length - 1]; if (last && last.valor === val) last.qtd += 1; else grupos.push({ valor: val, qtd: 1 }); }
+    return `${det.length} parcelas: ${grupos.map((g) => `${g.qtd}x de ${brl(g.valor)}`).join(' + ')}${per}${ini}`;
+  }
+  if (!f.anuaisValor) return null;
+  return `${f.anuaisQtd ? `${f.anuaisQtd}x de ` : ''}${brl(f.anuaisValor)}${per}${ini}`;
+}
+
 export default function Vendas() {
  const [selected, setSelected] = useState<number | null>(null);
  // Deep-link vindo da Análise de Vendas (?venda=<id>): abre a venda direto.
@@ -461,6 +528,9 @@ export default function Vendas() {
  const [telIntl, setTelIntl] = useState(false);
  // Sala GPI pré-preenchida com a da última venda do corretor (editável).
  const [salaGpi, setSalaGpi] = useState('');
+ // Entrada abaixo do mínimo: só segue se a construtora autorizou → aprovação do Paulo.
+ const [entradaAutorizada, setEntradaAutorizada] = useState(false);
+ const [entradaAutorizacaoObs, setEntradaAutorizacaoObs] = useState('');
  // Guarda o último valor de sala preenchido AUTOMATICAMENTE. Serve pra saber se
  // pode sobrescrever ao trocar o corretor (só sobrescreve o auto, nunca o que o
  // usuário digitou à mão).
@@ -847,7 +917,7 @@ export default function Vendas() {
  setLeadNegadoId(null); setLeadSugDispensada(false); setLeadAutoSug([]);
  setCliente({ nome: '', email: '', telefone: '' }); setEstadoCivil('');
  setEmpSelId(''); setUnidadeSelId(''); setUnidades([]); setUnidadeLivre(''); setUnidadeOcupadaCod(null);
- setValorVenda(''); setEntradaTotal(''); setChavesValor(''); setPermuta(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
+ setValorVenda(''); setEntradaTotal(''); setEntradaAutorizada(false); setEntradaAutorizacaoObs(''); setChavesValor(''); setPermuta(''); setSaldoRem(''); setComEspecial(false); setTemNf(true); setNfAliquota(String(nfAliquotaGlobal));
  setEmancipado(false); setClienteInternacional(false); setConjugeInternacional(false); setEndPF({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  setSociedadeAtiva(false); setParticipacaoTitular(''); setSociosCompra([]);
  setEntradaParcelas('1'); setEntradaData(''); setArrasValor(''); setParcelasEntrada([]); setParcelasTocadas(false); setMensaisValor(''); setMensaisQtd(''); setMensaisDia(''); setMensaisPorFaixa(false); setFaixasMensais([{ qtd: '', valor: '', venc: '' }]); setAnuaisValor(''); setAnuaisQtd(''); setAnuaisMes(''); setReforcoParcelado(false); setParcelasReforco([]); setParcelasReforcoTocadas(false); setReforcoPeriodicidade('ANUAL');
@@ -858,7 +928,7 @@ export default function Vendas() {
  // Coleta o estado atual (controlados + inputs não-controlados via FormData).
  const coletarRascunho = () => {
  const form = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {};
- const st: any = { step, tipoComprador, estadoCivil, cliente, telIntl, salaGpi, emancipado, clienteInternacional, conjugeInternacional, origemManualIdx, leadSel, leadNegadoId, leadSugDispensada, leadBusca, valorVenda, entradaTotal, chavesValor, permuta, saldoRem, entradaParcelas, entradaData, arrasValor, parcelasEntrada, parcelasTocadas, mensaisValor, mensaisQtd, mensaisDia, mensaisPorFaixa, faixasMensais, anuaisValor, anuaisQtd, anuaisMes, reforcoParcelado, parcelasReforco, parcelasReforcoTocadas, reforcoPeriodicidade, empSelId, unidadeSelId, unidadeLivre, comEspecial, temNf, nfAliquota, endPF,
+ const st: any = { step, tipoComprador, estadoCivil, cliente, telIntl, salaGpi, entradaAutorizada, entradaAutorizacaoObs, emancipado, clienteInternacional, conjugeInternacional, origemManualIdx, leadSel, leadNegadoId, leadSugDispensada, leadBusca, valorVenda, entradaTotal, chavesValor, permuta, saldoRem, entradaParcelas, entradaData, arrasValor, parcelasEntrada, parcelasTocadas, mensaisValor, mensaisQtd, mensaisDia, mensaisPorFaixa, faixasMensais, anuaisValor, anuaisQtd, anuaisMes, reforcoParcelado, parcelasReforco, parcelasReforcoTocadas, reforcoPeriodicidade, empSelId, unidadeSelId, unidadeLivre, comEspecial, temNf, nfAliquota, endPF,
  sociedadeAtiva, participacaoTitular, sociosCompra };
  return { v: 1, at: Date.now(), form, st };
  };
@@ -888,7 +958,7 @@ export default function Vendas() {
  if (s.tipoComprador) setTipoComprador(s.tipoComprador);
  setEstadoCivil(s.estadoCivil || '');
  setCliente(s.cliente || { nome: '', email: '', telefone: '' });
- setTelIntl(!!s.telIntl); setSalaGpi(s.salaGpi || ''); setEmancipado(!!s.emancipado);
+ setTelIntl(!!s.telIntl); setSalaGpi(s.salaGpi || ''); setEntradaAutorizada(!!s.entradaAutorizada); setEntradaAutorizacaoObs(s.entradaAutorizacaoObs || ''); setEmancipado(!!s.emancipado);
  setClienteInternacional(!!s.clienteInternacional); setConjugeInternacional(!!s.conjugeInternacional);
  setOrigemManualIdx(s.origemManualIdx || 0); setLeadSel(s.leadSel || null); setLeadNegadoId(s.leadNegadoId ?? null); setLeadSugDispensada(!!s.leadSugDispensada); setLeadBusca(s.leadBusca || '');
  setValorVenda(s.valorVenda || ''); setEntradaTotal(s.entradaTotal || ''); setChavesValor(s.chavesValor || ''); setPermuta(s.permuta || ''); setSaldoRem(s.saldoRem || '');
@@ -939,7 +1009,7 @@ export default function Vendas() {
  if (!isCorretor && !cid) return;
  Api.vendaSalaSugerida(cid)
  .then((r) => {
- if (!r.salaGpi) return;
+ if (!r.salaGpi || !SALAS_GPI.includes(r.salaGpi)) return; // sugestão só se for sala da lista oficial
  // Sobrescreve quando o campo está vazio OU ainda tem o valor auto anterior
  // (troca de corretor). Se o usuário digitou algo diferente, respeita.
  setSalaGpi((s) => {
@@ -1030,15 +1100,16 @@ export default function Vendas() {
  : `A soma dos pagamentos passa ${formatMoedaBR(Math.abs(recon.saldo))} do VGV. Reduza algum valor pra fechar.`);
  return;
  }
- // Entrada abaixo do mínimo do empreendimento: NÃO avança (regra 21/07 — antes
- // só alertava e a venda seguia pra aprovação).
- if (step === 2 && politicaVigente?.entradaMinimaPct != null) {
+ // Entrada abaixo do mínimo do empreendimento: NÃO avança (regra 21/07), EXCETO
+ // quando a construtora autorizou — aí segue e a venda vai pra aprovação do Paulo
+ // (Adm 29/09). Mínimo oficial = financeiro do empreendimento, igual ao backend.
+ if (step === 2 && entradaMinimaOficial != null) {
  const vvNum = parseMoedaBR(valorVenda);
  const etNum = parseMoedaBR(entradaTotal);
  // Compara por VALOR (não por % arredondado): entrada tem que ser >= mínimo exato.
- const minEntrada = vvNum * (politicaVigente.entradaMinimaPct / 100);
- if (vvNum > 0 && etNum < minEntrada - 0.005) {
- toast.error(`Entrada ${formatMoedaBR(etNum)} (${((etNum / vvNum) * 100).toFixed(2)}%) está abaixo do mínimo de ${politicaVigente.entradaMinimaPct}% = ${formatMoedaBR(minEntrada)}. Ajuste pra avançar.`);
+ const minEntrada = vvNum * (entradaMinimaOficial / 100);
+ if (vvNum > 0 && etNum < minEntrada - 0.005 && !entradaAutorizada) {
+ toast.error(`Entrada ${formatMoedaBR(etNum)} (${((etNum / vvNum) * 100).toFixed(2)}%) está abaixo do mínimo de ${entradaMinimaOficial}% = ${formatMoedaBR(minEntrada)}. Ajuste, ou marque que a construtora autorizou para enviar à aprovação do Paulo.`);
  return;
  }
  }
@@ -1140,6 +1211,8 @@ export default function Vendas() {
  // Formulário oficial GPI (protocolo PF/PJ)
  tipoComprador,
  salaGpi: str('salaGpi'),
+ // Entrada abaixo do mínimo autorizada pela construtora → backend manda pro Paulo.
+ ...(entradaAutorizada ? { entradaAbaixoMinimoAutorizada: true, entradaAutorizacaoObs: entradaAutorizacaoObs.trim() || undefined } : {}),
  clienteRg: str('clienteRg'),
  clienteNascimento: str('clienteNascimento'),
  clienteProfissao: str('clienteProfissao'),
@@ -1500,8 +1573,8 @@ export default function Vendas() {
  <div className="uppercase-tag" style={{ marginBottom: 10 }}>Resumo da venda</div>
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '10px 16px' }}>
  <div><div className="text-xs text-secondary">Data da venda</div><strong>{sel.createdAt ? new Date(sel.createdAt).toLocaleDateString('pt-BR') : '—'}</strong></div>
- <div><div className="text-xs text-secondary">VGV</div><strong>{formatCurrencyShort(sel.valorVenda ?? sel.valor ?? 0)}</strong></div>
- <div><div className="text-xs text-secondary">Comissão</div><strong>{sel.percentualComissao ? `${formatCurrencyShort(((sel.valorVenda ?? 0) * sel.percentualComissao) / 100)} (${sel.percentualComissao.toLocaleString('pt-BR')}%)` : '—'}</strong></div>
+ <div><div className="text-xs text-secondary">VGV</div><strong>{formatCurrencyExact(sel.valorVenda ?? sel.valor ?? 0)}</strong></div>
+ <div><div className="text-xs text-secondary">Comissão</div><strong>{sel.percentualComissao ? `${formatCurrencyExact(((sel.valorVenda ?? 0) * sel.percentualComissao) / 100)} (${sel.percentualComissao.toLocaleString('pt-BR')}%)` : '—'}</strong></div>
  <div><div className="text-xs text-secondary">Construtora</div><strong>{typeof sel.construtora === 'string' ? sel.construtora : sel.construtora?.nome || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Unidade</div><strong>{sel.unidade || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Sala GPI</div><strong>{sel.salaGpi || '—'}</strong></div>
@@ -1962,7 +2035,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Sala GPI</label>
- <input name="salaGpi" className="field__input" placeholder="Sala 12" value={salaGpi} onChange={(e) => setSalaGpi(e.target.value)} />
+ <select name="salaGpi" className="field__select" value={salaGpi} onChange={(e) => setSalaGpi(e.target.value)}>
+ <option value="">Selecione a sala</option>
+ {salaGpi && !SALAS_GPI.includes(salaGpi) && <option value={salaGpi}>{salaGpi} (valor antigo)</option>}
+ {SALAS_GPI.map((sala) => <option key={sala} value={sala}>{sala}</option>)}
+ </select>
  <div className="field__hint">Preenchida com a sala da sua última venda — ajuste se mudou.</div>
  </div>
  </div>
@@ -2107,7 +2184,18 @@ export default function Vendas() {
  // é abaixo dos 40.387,15 (7% real) — não pode passar como "dentro da política".
  const minEntrada = vv * (entradaMinimaOficial / 100);
  return et < minEntrada - 0.005
- ? <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(2)}% ({formatMoedaBR(et)}) — abaixo do mínimo de {entradaMinimaOficial}% ({formatMoedaBR(minEntrada)}). A venda NÃO pode ser registrada assim.</div>
+ ? (
+ <div>
+ <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(2)}% ({formatMoedaBR(et)}) — abaixo do mínimo de {entradaMinimaOficial}% ({formatMoedaBR(minEntrada)}). Só segue com autorização da construtora.</div>
+ <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 8, fontSize: 13, cursor: 'pointer' }}>
+ <input type="checkbox" checked={entradaAutorizada} onChange={(e) => setEntradaAutorizada(e.target.checked)} style={{ marginTop: 3 }} />
+ <span>A construtora autorizou esta entrada — enviar a venda para aprovação do Paulo</span>
+ </label>
+ {entradaAutorizada && (
+ <input className="field__input" style={{ marginTop: 6 }} placeholder="Quem autorizou na construtora / observação (opcional)" value={entradaAutorizacaoObs} onChange={(e) => setEntradaAutorizacaoObs(e.target.value)} maxLength={300} />
+ )}
+ </div>
+ )
  : <div className="field__hint" style={{ color: 'var(--color-success)' }}>Entrada de {pct.toFixed(2)}% — dentro da política ({entradaMinimaOficial}% mín. = {formatMoedaBR(minEntrada)}).</div>;
  })()}
  </div>
@@ -2538,7 +2626,7 @@ export default function Vendas() {
 // venda — só renderiza o que foi preenchido; some se a venda for anterior ao form.
 export function FormularioGpi({ f }: { f: any }) {
  if (!f) return null;
- const brl = (v: any) => (v || v === 0 ? 'R$ ' + Number(v).toLocaleString('pt-BR') : null);
+ const brl = (v: any) => (v || v === 0 ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : null);
  const rows: [string, any][] = ([
  ['Tipo de comprador', f.tipoComprador === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'],
  ['Sala GPI', f.salaGpi],
@@ -2559,10 +2647,8 @@ export function FormularioGpi({ f }: { f: any }) {
  ['Origem do lead', f.origemLead],
  ['Construtora (form)', f.construtora],
  ['Arras', f.arrasValor ? `${brl(f.arrasValor)} · venc. ${f.arrasVencimento || '—'}` : null],
- ['Mensais', f.mensaisValor ? `${brl(f.mensaisValor)} · dia ${f.mensaisMelhorDia || '—'}${f.mensaisInicio ? ` · início ${f.mensaisInicio}` : ''}` : null],
- ['Anuais', (Array.isArray(f.anuaisDetalhe) && f.anuaisDetalhe.length)
- ? `${f.anuaisDetalhe.length}x parcelado · total ${brl(f.anuaisDetalhe.reduce((a: number, p: any) => a + (p?.valor || 0), 0))} (${f.anuaisDetalhe.map((p: any) => brl(p?.valor || 0)).join(' + ')})`
- : (f.anuaisValor ? `${brl(f.anuaisValor)} · início ${f.anuaisInicio || '—'}` : null)],
+ ['Mensais', resumoMensaisGpi(f, brl)],
+ ['Anuais', resumoReforcosGpi(f, brl)],
  ['Chaves', brl(f.chavesValor)],
  ] as [string, any][]).filter(([, v]) => v !== null && v !== undefined && v !== '');
  // Só o tipo preenchido (venda antiga) não justifica o bloco
@@ -3003,26 +3089,32 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  );
  })()}
 
- {/* Vendas criadas pelo sistema: rateio calculado pelo motor Pons */}
- {!temPlanilha && rateioMotor && (
+ {/* Vendas criadas pelo sistema: rateio do motor Pons — TOTAL da venda (todas as parcelas) + regra de cada fatia */}
+ {!temPlanilha && rateioMotor && (() => {
+ const linhas = linhasRateio(rateioMotor);
+ if (!linhas.length) return null;
+ const nParc = Array.isArray(rateioMotor.parcelas) ? rateioMotor.parcelas.length : 1;
+ return (
  <div style={{ marginTop: 14 }}>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão</div>
- <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '10px 16px' }}>
- {((rateioMotor.beneficiarios || rateioMotor.parcelas?.[0]?.beneficiarios) || []).map((b: any) => (
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '10px 16px' }}>
+ {linhas.map((b) => (
  <div key={b.papel}>
  <div className="text-xs text-secondary">{b.nome}</div>
- <strong>{(b.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
- {b.percentualSobreBruto != null && <span className="text-xs text-secondary"> · {b.percentualSobreBruto.toLocaleString('pt-BR')}%</span>}
+ <strong>{b.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+ {b.regra && <div className="text-xs text-secondary">{b.regra}</div>}
+ {b.pctComissao != null && <div className="text-xs text-secondary">{b.pctComissao.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% da comissão</div>}
  </div>
  ))}
  </div>
- {rateioMotor.parcelas && (
+ {nParc > 1 && (
  <div className="text-xs text-secondary" style={{ marginTop: 6 }}>
- Comissão parcelada em {rateioMotor.parcelas.length}x — valores da 1ª parcela; taxa de marketing só na primeira.
+ Comissão parcelada em {nParc}x — valores somados de todas as parcelas; a taxa de marketing entra só na 1ª.
  </div>
  )}
  </div>
- )}
+ );
+ })()}
  </div>
  );
 }
