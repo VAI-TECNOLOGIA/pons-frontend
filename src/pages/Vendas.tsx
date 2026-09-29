@@ -321,9 +321,9 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
   );
 }
 
-// Salas GPI oficiais (mesma lista do cadastro de colaboradores — EQUIPES_LP no
-// backend). Pedido do Adm 29/09: sala em LISTA, não digitável.
-const SALAS_GPI = ['GPI DELAS BC', 'GPI BC', 'GPI 2ª AVENIDA', 'GPI DALLO 703', 'GPI DALLO 803', 'GPI CAPÃO DA CANOA', 'GPI TRAMANDAÍ', 'GPI DELAS ITAJAÍ', 'GPI ITAJAÍ'];
+// Salas GPI — as mesmas do controle de vendas do financeiro (uma planilha por sala,
+// Marcelo 29/09). Pedido do Adm 29/09: sala em LISTA, não digitável.
+const SALAS_GPI = ['604', '703', '803', '2ª Avenida', '3202 Mista', '3203 Delas', 'Itajaí Seixas', 'Itajaí Embraed', 'Capão da Canoa', 'Tramandaí'];
 
 // Rateio da comissão pra exibição: soma TODAS as parcelas (a tela mostrava só a
 // 1ª, que ainda carrega a taxa de marketing — % parecia "incorreta", Adm 29/09) e
