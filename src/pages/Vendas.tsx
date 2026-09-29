@@ -322,8 +322,15 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
 }
 
 // Salas GPI — as mesmas do controle de vendas do financeiro (uma planilha por sala,
-// Marcelo 29/09). Pedido do Adm 29/09: sala em LISTA, não digitável.
-const SALAS_GPI = ['604', '703', '803', '2ª Avenida', '3202 Mista', '3203 Delas', 'Itajaí Seixas', 'Itajaí Embraed', 'Capão da Canoa', 'Tramandaí'];
+// Marcelo 29/09). Pedido do Adm 29/09: sala em LISTA, não digitável. O VALOR gravado
+// segue o que as vendas já cadastradas usam ("3202", "3203"…), pra agrupar certo.
+const SALAS_GPI: { valor: string; rotulo: string }[] = [
+  { valor: '604', rotulo: '604' }, { valor: '703', rotulo: '703' }, { valor: '803', rotulo: '803' },
+  { valor: '2ª Avenida', rotulo: '2ª Avenida' }, { valor: '3202', rotulo: '3202 Mista' }, { valor: '3203', rotulo: '3203 Delas' },
+  { valor: 'Itajaí Seixas', rotulo: 'Itajaí Seixas' }, { valor: 'Itajaí Embraed', rotulo: 'Itajaí Embraed' },
+  { valor: 'Capão da Canoa', rotulo: 'Capão da Canoa' }, { valor: 'Tramandaí', rotulo: 'Tramandaí' },
+];
+const ehSalaOficial = (v: string) => SALAS_GPI.some((s) => s.valor === v);
 
 // Rateio da comissão pra exibição: soma TODAS as parcelas (a tela mostrava só a
 // 1ª, que ainda carrega a taxa de marketing — % parecia "incorreta", Adm 29/09) e
@@ -1009,7 +1016,7 @@ export default function Vendas() {
  if (!isCorretor && !cid) return;
  Api.vendaSalaSugerida(cid)
  .then((r) => {
- if (!r.salaGpi || !SALAS_GPI.includes(r.salaGpi)) return; // sugestão só se for sala da lista oficial
+ if (!r.salaGpi || !ehSalaOficial(r.salaGpi)) return; // sugestão só se for sala da lista oficial
  // Sobrescreve quando o campo está vazio OU ainda tem o valor auto anterior
  // (troca de corretor). Se o usuário digitou algo diferente, respeita.
  setSalaGpi((s) => {
@@ -2037,8 +2044,8 @@ export default function Vendas() {
  <label className="field__label">Sala GPI</label>
  <select name="salaGpi" className="field__select" value={salaGpi} onChange={(e) => setSalaGpi(e.target.value)}>
  <option value="">Selecione a sala</option>
- {salaGpi && !SALAS_GPI.includes(salaGpi) && <option value={salaGpi}>{salaGpi} (valor antigo)</option>}
- {SALAS_GPI.map((sala) => <option key={sala} value={sala}>{sala}</option>)}
+ {salaGpi && !ehSalaOficial(salaGpi) && <option value={salaGpi}>{salaGpi} (valor antigo)</option>}
+ {SALAS_GPI.map((sala) => <option key={sala.valor} value={sala.valor}>{sala.rotulo}</option>)}
  </select>
  <div className="field__hint">Preenchida com a sala da sua última venda — ajuste se mudou.</div>
  </div>
