@@ -1,6 +1,7 @@
-// Gera um .xlsx real (uma aba) SEM dependência externa: ZIP "store" (sem compressão)
+// Gera um .xlsx real (uma ou várias abas) SEM dependência externa: ZIP "store" (sem compressão)
 // + XML mínimo do OpenXML. Excel, Numbers e Google Sheets abrem normalmente.
 // Uso: exportarXlsx('vendas.xlsx', ['Col A','Col B'], [['x', 10], ['y', 2.5]]).
+// Várias abas: exportarXlsxAbas('rel.xlsx', [{ nome, cabecalho, linhas }, ...]).
 
 type Celula = string | number | null | undefined;
 
@@ -76,33 +77,64 @@ function linhaXml(r: number, valores: Celula[]): string {
   return `<row r="${r}">${cells}</row>`;
 }
 
-export function gerarXlsxBytes(cabecalho: string[], linhas: Celula[][], aba = 'Planilha'): Uint8Array {
+export type AbaXlsx = { nome: string; cabecalho: string[]; linhas: Celula[][] };
+
+function sheetXml(cabecalho: string[], linhas: Celula[][]): string {
   const rows = [linhaXml(1, cabecalho), ...linhas.map((l, i) => linhaXml(i + 2, l))].join('');
   // largura das colunas: proporcional ao maior texto (limite 60)
   const widths = cabecalho.map((h, i) => {
     const max = Math.max(h.length, ...linhas.map((l) => String(l[i] ?? '').length));
     return `<col min="${i + 1}" max="${i + 1}" width="${Math.min(60, Math.max(10, max + 2))}" customWidth="1"/>`;
   }).join('');
-  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>${widths}</cols><sheetData>${rows}</sheetData></worksheet>`;
-  const workbook = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${esc(aba)}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
-  const wbRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>${widths}</cols><sheetData>${rows}</sheetData></worksheet>`;
+}
+
+// Nome de aba no Excel: até 31 caracteres, sem : \ / ? * [ ] e sem repetir.
+function nomesDeAba(nomes: string[]): string[] {
+  const usados = new Set<string>();
+  return nomes.map((n, i) => {
+    let base = (n || `Planilha ${i + 1}`).replace(/[:\\/?*[\]]/g, ' ').trim().slice(0, 31) || `Planilha ${i + 1}`;
+    let nome = base; let k = 2;
+    while (usados.has(nome.toLowerCase())) nome = `${base.slice(0, 28)} ${k++}`;
+    usados.add(nome.toLowerCase());
+    return nome;
+  });
+}
+
+export function gerarXlsxAbasBytes(abas: AbaXlsx[]): Uint8Array {
+  const nomes = nomesDeAba(abas.map((a) => a.nome));
+  const sheets = nomes.map((n, i) => `<sheet name="${esc(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('');
+  const workbook = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets}</sheets></workbook>`;
+  const wbRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${abas.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}</Relationships>`;
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
-  const types = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`;
+  const types = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${abas.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`;
   return zipStore([
     { name: '[Content_Types].xml', data: utf8(types) },
     { name: '_rels/.rels', data: utf8(rels) },
     { name: 'xl/workbook.xml', data: utf8(workbook) },
     { name: 'xl/_rels/workbook.xml.rels', data: utf8(wbRels) },
-    { name: 'xl/worksheets/sheet1.xml', data: utf8(sheet) },
+    ...abas.map((a, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: utf8(sheetXml(a.cabecalho, a.linhas)) })),
   ]);
 }
 
-export function exportarXlsx(nomeArquivo: string, cabecalho: string[], linhas: Celula[][], aba = 'Planilha') {
-  const zip = gerarXlsxBytes(cabecalho, linhas, aba);
+export function gerarXlsxBytes(cabecalho: string[], linhas: Celula[][], aba = 'Planilha'): Uint8Array {
+  return gerarXlsxAbasBytes([{ nome: aba, cabecalho, linhas }]);
+}
+
+function baixar(nomeArquivo: string, zip: Uint8Array) {
   const blob = new Blob([zip.buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = nomeArquivo;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+}
+
+// Várias abas num arquivo só (ex.: relatório com Resumo, Por sala, Vendas...).
+export function exportarXlsxAbas(nomeArquivo: string, abas: AbaXlsx[]) {
+  baixar(nomeArquivo, gerarXlsxAbasBytes(abas));
+}
+
+export function exportarXlsx(nomeArquivo: string, cabecalho: string[], linhas: Celula[][], aba = 'Planilha') {
+  baixar(nomeArquivo, gerarXlsxBytes(cabecalho, linhas, aba));
 }

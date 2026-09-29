@@ -1,7 +1,18 @@
 {
-  "versao": "2026.09.29",
+  "versao": "2026.09.29.2",
   "data": "29/09/2026",
   "novidades": [
+    {
+      "titulo": "Análise de Vendas: relatório completo do financeiro",
+      "itens": [
+        "Vendas por sala: VGV, número de vendas, participação, ticket médio, comissão, recebido e a receber de cada sala (604, 703, 803, 2ª Avenida, 3202 Mista, 3203 Delas, Itajaí, Capão da Canoa e Tramandaí). Toque numa sala para ver o relatório só dela.",
+        "Filtros novos por sala e por corretor, além de período, empreendimento, construtora, equipe e status. Novos períodos: mês passado, últimos 12 meses e ano passado.",
+        "Histórico mês a mês: vendas, VGV, variação contra o mês anterior e contra o mesmo mês do ano anterior, comissão e ticket médio, com linha de total.",
+        "Comparação com o ano anterior nos indicadores e no gráfico de evolução do VGV. O período anterior agora é o mesmo intervalo do mês anterior (ex.: 1 a 29/09 contra 1 a 29/08).",
+        "Ranking de corretores com sala, recebido e a receber. Toque num corretor para ver só as vendas desse corretor.",
+        "Exportar Excel: baixa o relatório com os mesmos filtros da tela, em abas (Resumo, Mês a mês, Por sala, Por corretor, Por empreendimento, Por construtora e a lista de vendas)."
+      ]
+    },
     {
       "titulo": "Vendas: ajustes pedidos pelo Administrativo",
       "itens": [
