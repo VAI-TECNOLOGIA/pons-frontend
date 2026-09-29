@@ -51,7 +51,9 @@ export default function Pipeline() {
   const { data: campanhas } = useApi<{ nome: string }[]>(() => Api.roletaCampanhas());
   const optCampanhas = (campanhas || []).map((c) => ({ value: c.nome, label: c.nome }));
   const optEquipes = (equipes || []).map((e: any) => ({ value: String(e.id), label: e.nome }));
-  const optCorretores = (corretores || []).map((c: any) => ({ value: String(c.id), label: c.nome }));
+  // Só corretores ATIVOS no filtro — cadastro inativo/duplicado (ex.: "Fulano velho")
+  // dava 0 leads e parecia que a corretora não recebia (relatado 29/09).
+  const optCorretores = (corretores || []).filter((c: any) => c.ativo !== false).map((c: any) => ({ value: String(c.id), label: c.nome }));
   const [leads, setLeads] = useState<any[]>([]);
   const [showPerdidos, setShowPerdidos] = useState(false);
   const toast = useToast();
