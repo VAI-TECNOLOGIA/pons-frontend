@@ -2495,10 +2495,24 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Botões — focus visible acessível */
+/* Botões — focus visible acessível: contorno sólido fora do botão, visível
+   também sobre o btn--primary. Não usa --shadow-focus (fraco demais aqui). */
 .btn:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+[data-theme="dark"] .btn:focus-visible {
+  outline-color: var(--pons-cyan);
+}
+
+/* Celular: campos com 16px para o iPhone não dar zoom sozinho ao tocar
+   (o zoom por pinça voltou a ser permitido no index.html). */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 .btn:active {
   transform: translateY(0);

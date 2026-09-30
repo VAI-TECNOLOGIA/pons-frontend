@@ -513,7 +513,7 @@ function Shell({ tab, setTab, children, onNew, onSicredi }: { tab: Tab; setTab: 
 }
 
 function DreRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
- const color = value < 0 ? 'var(--color-danger)' : strong ? '#4D7A26' : 'var(--text-primary)';
+ const color = value < 0 ? 'var(--color-danger)' : strong ? 'var(--color-success-fg)' : 'var(--text-primary)';
  const formatted = (value < 0 ? '−' : '') + formatCurrency(Math.abs(value));
  return (
  <div
@@ -546,6 +546,8 @@ function PrevisaoTab() {
   const [salvando, setSalvando] = useState<number | null>(null);
   const toast = useToast();
   const confirm = useConfirm();
+  // Baixa/estorno de parcela: o backend (PATCH /vendas/:id/pagamentos/:pid) só aceita CEO e DIRETOR_FINANCEIRO.
+  const podeBaixar = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
 
   const alterarStatus = async (linha: any, status: string) => {
     if (status === 'PAGO') {
@@ -555,11 +557,19 @@ function PrevisaoTab() {
         confirmText: 'Marcar recebido',
       });
       if (!ok) return;
+    } else if (status === 'ABERTO') {
+      const ok = await confirm({
+        title: `Estornar a entrada de ${linha.cliente}?`,
+        message: `Parcela ${linha.numero}/${linha.total} da venda ${linha.codigo} (${formatCurrency(linha.valor)}) volta para Em aberto e entra de novo no radar de atraso. Use só se marcou por engano.`,
+        confirmText: 'Estornar',
+        tone: 'danger',
+      });
+      if (!ok) return;
     }
     setSalvando(linha.pagamentoId);
     try {
       await Api.vendaParcelaStatus(linha.vendaId, linha.pagamentoId, status);
-      toast.success(status === 'PAGO' ? 'Entrada confirmada' : 'Status atualizado');
+      toast.success(status === 'PAGO' ? 'Entrada confirmada' : status === 'ABERTO' ? 'Entrada estornada' : 'Status atualizado');
       reload();
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao atualizar');
@@ -656,11 +666,11 @@ function PrevisaoTab() {
                               {l.rateio?.length > 0 && (
                                 <button className="btn btn--ghost btn--sm" onClick={() => setExpandido(aberto ? null : l.pagamentoId)}>{aberto ? 'Ocultar' : 'Rateio'}</button>
                               )}
-                              {l.status !== 'PAGO' ? (
+                              {podeBaixar && (l.status !== 'PAGO' ? (
                                 <button className="btn btn--secondary btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'PAGO')}>Marcar recebido</button>
                               ) : (
                                 <button className="btn btn--ghost btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'ABERTO')}>Estornar</button>
-                              )}
+                              ))}
                             </div>
                           </td>
                         </tr>
@@ -712,6 +722,8 @@ function ComissoesPorCorretor() {
   const [pagando, setPagando] = useState<number | null>(null);
   const toast = useToast();
   const confirm = useConfirm();
+  // Repasse/estorno de comissão: o backend (/financeiro/comissoes/pagar|estornar) só aceita CEO e DIRETOR_FINANCEIRO.
+  const podeBaixar = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
 
   const baixar = async (corretorId: number) => {
     setBaixando(corretorId);
@@ -786,7 +798,7 @@ function ComissoesPorCorretor() {
           <div className="flex gap-2" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
             <span className="text-secondary text-sm">Total bruto: <strong>{formatCurrency(data.totais?.valorTotal || 0)}</strong></span>
             <span className="text-secondary text-sm">· Pago: <strong>{formatCurrency(data.totais?.valorPago || 0)}</strong></span>
-            <span className="text-secondary text-sm">· A receber: <strong style={{ color: '#4D7A26' }}>{formatCurrency(data.totais?.aReceber || 0)}</strong></span>
+            <span className="text-secondary text-sm">· A receber: <strong style={{ color: 'var(--color-success-fg)' }}>{formatCurrency(data.totais?.aReceber || 0)}</strong></span>
           </div>
           <table className="table">
             <thead><tr><th>Corretor</th><th>Unidade</th><th className="text-right">Total</th><th className="text-right">Pago</th><th className="text-right">A receber</th><th></th></tr></thead>
@@ -797,14 +809,14 @@ function ComissoesPorCorretor() {
                   <td className="text-sm text-secondary">{c.unidade || '—'}</td>
                   <td className="text-right money">{formatCurrency(c.valorTotal)}</td>
                   <td className="text-right money">{formatCurrency(c.valorPago)}</td>
-                  <td className="text-right money" style={{ color: '#4D7A26' }}>{formatCurrency(c.aReceber)}</td>
+                  <td className="text-right money" style={{ color: 'var(--color-success-fg)' }}>{formatCurrency(c.aReceber)}</td>
                   <td className="text-right">
-                    {c.aReceber > 0 && (
+                    {podeBaixar && c.aReceber > 0 && (
                       <button className="btn btn--primary btn--sm" style={{ marginRight: 6 }} disabled={pagando === c.corretorId} onClick={() => marcarPago(c)}>
                         {pagando === c.corretorId ? '...' : 'Marcar pago'}
                       </button>
                     )}
-                    {c.valorPago > 0 && (
+                    {podeBaixar && c.valorPago > 0 && (
                       <button className="btn btn--ghost btn--sm" style={{ marginRight: 6 }} disabled={pagando === c.corretorId} onClick={() => estornar(c)}>
                         Estornar
                       </button>
@@ -838,7 +850,7 @@ function ComissoesPlano() {
       {data && (
         <>
           <div className="kpi-grid" style={{ margin: '12px 0 16px' }}>
-            <div className="kpi"><div className="kpi__label">A receber</div><div className="kpi__value" style={{ color: '#4D7A26' }}>{formatCurrencyShort(data.totalAReceber || 0)}</div></div>
+            <div className="kpi"><div className="kpi__label">A receber</div><div className="kpi__value" style={{ color: 'var(--color-success-fg)' }}>{formatCurrencyShort(data.totalAReceber || 0)}</div></div>
             <div className="kpi"><div className="kpi__label">Já recebido</div><div className="kpi__value">{formatCurrencyShort(data.totalRecebido || 0)}</div></div>
             <div className="kpi"><div className="kpi__label">Corretor</div><div className="kpi__value">{formatCurrencyShort(data.porGrupo?.corretor || 0)}</div></div>
             <div className="kpi"><div className="kpi__label">Gestor / Casa</div><div className="kpi__value">{formatCurrencyShort((data.porGrupo?.gestor || 0) + (data.porGrupo?.casa || 0))}</div></div>
@@ -908,7 +920,7 @@ function FragmentRow({ v, aberta, setAberta }: { v: any; aberta: number | null; 
                       <td className="text-sm">{r.nome}</td>
                       <td className="text-right money">{formatCurrency(r.valorTotal)}</td>
                       <td className="text-right money">{formatCurrency(r.valorPago)}</td>
-                      <td className="text-right money" style={{ color: '#4D7A26' }}>{formatCurrency(r.valorAReceber)}</td>
+                      <td className="text-right money" style={{ color: 'var(--color-success-fg)' }}>{formatCurrency(r.valorAReceber)}</td>
                     </tr>
                   ))}
                 </tbody>

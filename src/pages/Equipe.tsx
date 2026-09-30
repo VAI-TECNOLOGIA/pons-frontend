@@ -22,10 +22,10 @@ export default function Equipe() {
 
   return (
     <>
-      <Topbar title="Equipe" />
+      <Topbar title="Usuários e hierarquia" />
       <div className="equipe">
         <aside className="equipe__side">
-          <div className="equipe__side-title">Equipe</div>
+          <div className="equipe__side-title">Usuários e hierarquia</div>
           <nav className="equipe__nav">
             {TABS.map((t) => (
               <button

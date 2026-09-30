@@ -56,7 +56,7 @@ export function WelcomeSplash() {
  </h1>
 
  <p className="welcome__hello">
- {saudacao()}, <b>{primeiroNome}</b> — sua operação já está em movimento. 🏁
+ {saudacao()}, <b>{primeiroNome}</b> — sua operação já está em movimento.
  </p>
  <p className="welcome__tagline">Grandeza &amp; Velocidade · a operação imobiliária mais veloz do litoral</p>
 

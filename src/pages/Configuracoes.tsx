@@ -827,7 +827,7 @@ function FacebookBMCard() {
 
   const conectar = async () => {
     if (!health?.configured) {
-      toast.error('Meta App não configurado no backend (META_APP_ID/SECRET).');
+      toast.error('A integração com a Meta ainda não está configurada. Fale com o suporte da VAI.');
       return;
     }
     setConnecting(true);
@@ -970,7 +970,7 @@ function FacebookBMCard() {
           </a>
           {!health?.configured && (
             <span className="text-xs text-secondary" style={{ alignSelf: 'center' }}>
-              ⚠️ META_APP_ID/SECRET não configurado no backend
+              <Icon name="warn" size={12} style={{ verticalAlign: '-2px' }} /> A integração com a Meta ainda não está configurada. Fale com o suporte da VAI.
             </span>
           )}
         </div>

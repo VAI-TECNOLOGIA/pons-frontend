@@ -272,6 +272,21 @@ export const Api = {
     request<any>(`/onboarding-colaborador/${userId}/docs/decisao`, { method: 'POST', body }),
   onbDecisaoContrato: (userId: number, body: any) =>
     request<any>(`/onboarding-colaborador/${userId}/contrato/decisao`, { method: 'POST', body }),
+  // Upload genérico → R2 com prefixo escolhido. Erro vem traduzido (mensagemDeErro).
+  upload: async (file: File, prefix = 'uploads') => {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await fetch(`${BASE}/uploads?prefix=${encodeURIComponent(prefix)}`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    if (!r.ok) {
+      const details = await r.json().catch(() => ({}));
+      throw new ApiError(mensagemDeErro(r.status, details), r.status, details);
+    }
+    return r.json() as Promise<{ url: string; key?: string; size?: number; contentType?: string }>;
+  },
   // Upload genérico → R2 (prefixo documentos). Retorna { url, key, size, contentType }.
   uploadDocumento: async (file: File) => {
     const form = new FormData();
@@ -352,11 +367,6 @@ export const Api = {
       origens: Array<{ origem: string; total: number; ultimos30d: number; ultimoEm: string | null }>;
       tokenStatus: { configurado: boolean; preview?: string };
     }>('/leads/sources-stats'),
-  leadsTestWebhook: (origem = 'TESTE') =>
-    request<{ ok?: boolean; leadId?: number; distribuido?: boolean; corretor?: string | null; error?: string }>(
-      '/leads/test-webhook',
-      { method: 'POST', body: { origem } },
-    ),
   leadEnviarMensagem: (id: number, texto: string, autor = 'CORRETOR') =>
     request<any>(`/leads/${id}/mensagens`, { method: 'POST', body: { texto, autor } }),
   leadIaResponder: (id: number) => request<any>(`/leads/${id}/ia-responder`, { method: 'POST' }),

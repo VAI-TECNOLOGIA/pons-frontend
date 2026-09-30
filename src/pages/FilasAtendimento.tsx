@@ -273,7 +273,7 @@ function DiffView({ antes, depois }: { antes: any; depois: any }) {
         return (
           <div key={k} style={{ fontSize: 12, padding: '3px 0', opacity: mud ? 1 : 0.5 }}>
             <span className="text-secondary">{k}: </span>
-            <span style={{ fontWeight: mud ? 700 : 400, color: mud ? 'var(--pons-cyan, #52f7fe)' : undefined }}>{String(snap?.[k] ?? '—')}</span>
+            <span style={{ fontWeight: mud ? 700 : 400, color: mud ? 'var(--link-accent, #0E7C9B)' : undefined }}>{String(snap?.[k] ?? '—')}</span>
           </div>
         );
       })}

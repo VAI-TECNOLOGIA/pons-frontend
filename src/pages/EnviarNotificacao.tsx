@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Api } from '../lib/api';
 import { formatRole } from '../lib/auth';
 import { Icon } from '../components/Icon';
+import { useConfirm } from '../lib/confirm';
 import './enviar-notificacao.css';
 
 // Tela "Enviar notificação" (pedido do Elison 21/09): diretoria/marketing escolhe
@@ -39,6 +40,7 @@ export default function EnviarNotificacao() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const confirmar = useConfirm();
 
   useEffect(() => {
     Api.notificacaoDestinatarios()
@@ -71,7 +73,18 @@ export default function EnviarNotificacao() {
   async function enviar() {
     setErro(null);
     setResultado(null);
-    if (alvo === 'todos' && !confirm(`Enviar para TODOS os ${dest.length} usuários ativos? Vai tocar no celular de cada um.`)) return;
+    // Envio em massa (todos, por papel ou lista grande) sempre pede confirmação.
+    if (alvo !== 'usuarios' || qtdPrevista > 20) {
+      const ok = await confirmar({
+        title: alvo === 'todos'
+          ? `Enviar para todos os ${qtdPrevista} usuários ativos?`
+          : `Enviar para ${qtdPrevista} usuário${qtdPrevista === 1 ? '' : 's'}?`,
+        message: 'A notificação vai tocar no celular de cada um.',
+        confirmText: 'Enviar',
+        tone: 'primary',
+      });
+      if (!ok) return;
+    }
     setEnviando(true);
     try {
       const r = await Api.notificacaoEnviar({
@@ -83,6 +96,11 @@ export default function EnviarNotificacao() {
         link: linkLimpo || undefined,
       });
       setResultado(r);
+      // Limpa a mensagem para um segundo clique não reenviar o mesmo push.
+      // A seleção de destinatários fica (a tela também serve de painel de teste).
+      setTitulo('');
+      setTexto('');
+      setLink('');
     } catch (e) {
       // Api já traduz o código do servidor (push_desligado, sem_destinatarios…).
       setErro((e as Error)?.message || 'Falha ao enviar. Tente de novo.');

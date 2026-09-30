@@ -142,7 +142,7 @@ const GROUPS: NavGroup[] = [
     icon: 'settings',
     items: [
       { to: '/configuracoes', label: 'Configurações', icon: 'settings', roles: ['CEO'] },
-      { to: '/equipe', label: 'Equipe', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
+      { to: '/equipe', label: 'Usuários e hierarquia', icon: 'team', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
       { to: '/agente-ia', label: 'Agentes IA', icon: 'bot', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', SOCIO] },
       { to: '/auditoria', label: 'Auditoria', icon: 'lock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_JURIDICO'] },
     ],
@@ -163,6 +163,7 @@ const TODOS_ITENS: NavItem[] = [...TOP_ITEMS, ...GROUPS.flatMap((g) => g.items)]
 const GESTOR_BLOQUEADO = new Set([
   // Seção Financeiro inteira
   '/financeiro-pons', '/onboarding-aprovacoes', '/financeiro', '/meta-custos', '/relatorios', '/painel-executivo',
+  '/painel-financeiro', '/financeiro-filial', '/boletos',
   // Gestão de usuários + sistema (só CEO)
   '/equipe', '/configuracoes', '/auditoria',
 ]);
@@ -486,20 +487,27 @@ function NavItemLink({
   );
 }
 
-// Bloco "Baixe o aplicativo" — Google Play + App Store em cinza com tooltip "Em breve".
+// Bloco "Baixe o aplicativo" — link real da ficha na Google Play (Pons CRM publicado).
+// App Store: selo escondido até confirmar o link da ficha no App Store Connect;
+// quando confirmar, preencher APP_STORE_URL e o selo volta a aparecer.
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=br.com.grupopons.sistema';
+const APP_STORE_URL = '';
 function AppDownloadBlock() {
+  const badgeLink = { textDecoration: 'none', cursor: 'pointer' } as const;
   return (
     <div className="sidebar__app-download">
       <div className="sidebar__app-download-title">Baixe o aplicativo</div>
       <div className="sidebar__app-download-row">
-        <div className="sidebar__app-badge" title="Em breve">
-          <img src="/assets/apple.png" alt="App Store" />
-          <span>App Store</span>
-        </div>
-        <div className="sidebar__app-badge" title="Em breve">
-          <img src="/assets/android.png" alt="Google Play" />
+        {APP_STORE_URL && (
+          <a className="sidebar__app-badge" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" style={badgeLink}>
+            <img src="/assets/apple.png" alt="" />
+            <span>App Store</span>
+          </a>
+        )}
+        <a className="sidebar__app-badge" href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" style={badgeLink}>
+          <img src="/assets/android.png" alt="" />
           <span>Google Play</span>
-        </div>
+        </a>
       </div>
     </div>
   );

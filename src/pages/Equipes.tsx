@@ -5,6 +5,7 @@ import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { formatCurrencyShort } from '../lib/format';
 import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import './equipes.css';
@@ -72,6 +73,15 @@ export default function Equipes() {
  // que ele comanda (a lista completa segue disponível como destino de transferência).
  const cardVisivel = (equipeId?: number) => !minhas || minhas.admin || !minhas.equipeIds.length || comando(equipeId);
  const equipesVisiveis = (equipes || []).filter((eq: any) => cardVisivel(eq.id));
+
+ // Resultados reais do mês corrente (GET /equipes/resultados): vendas, receita,
+ // ticket médio e comissão efetivamente paga (soma de valorPago dos benefícios).
+ // A rota devolve todas as equipes, então o filtro de visibilidade segue aqui no front.
+ const { data: resultados } = useApi<any>(() => Api.equipesResultados());
+ const resultadosVisiveis = ((resultados?.equipes || []) as any[]).filter((e: any) => cardVisivel(e.id));
+
+ // Criar equipe: o backend aceita CEO e DIRETOR_COMERCIAL (+ o coringa GESTOR).
+ const podeCriar = ['CEO', 'DIRETOR_COMERCIAL', 'GESTOR'].includes(Auth.user?.role as string);
 
  // Busca por nome/telefone + filtro por equipe atual no seletor de corretor
  const normaliza = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -167,28 +177,29 @@ export default function Equipes() {
  }
  };
 
- if (loading) return <Shell onNew={() => setOpen(true)}><LoadingBlock /></Shell>;
- if (error) return <Shell onNew={() => setOpen(true)}><ErrorBlock error={error} /></Shell>;
+ if (loading) return <Shell onNew={podeCriar ? () => setOpen(true) : undefined}><LoadingBlock /></Shell>;
+ if (error) return <Shell onNew={podeCriar ? () => setOpen(true) : undefined}><ErrorBlock error={error} /></Shell>;
  if (!equipes) return null;
 
- const totais = equipesVisiveis.reduce(
+ const totais = resultadosVisiveis.reduce(
  (acc: any, e: any) => ({
- vendas: acc.vendas + (e.vendasMes ?? 0),
- receita: acc.receita + (e.volumeMes ?? 0),
- corretores: acc.corretores + (e.totalCorretores ?? e.corretores ?? (e.membros?.length || 0)),
+ vendas: acc.vendas + (Number(e.vendas) || 0),
+ receita: acc.receita + (Number(e.receita) || 0),
+ comissaoPaga: acc.comissaoPaga + (Number(e.comissaoPaga) || 0),
+ corretores: acc.corretores + (Number(e.corretores) || 0),
  }),
- { vendas: 0, receita: 0, corretores: 0 },
+ { vendas: 0, receita: 0, comissaoPaga: 0, corretores: 0 },
  );
 
  return (
  <>
  <Topbar
  title="Equipes"
- right={
+ right={podeCriar ? (
  <button className="btn btn--primary btn--sm" onClick={() => setOpen(true)}>
  + Nova Equipe
  </button>
- }
+ ) : undefined}
  />
  <div className="main__content">
  <PageHeader
@@ -337,7 +348,7 @@ export default function Equipes() {
 
  <div className="tabs">
  <button className={'tab ' + (view === 'escuderias' ? 'tab--active' : '')} onClick={() => setView('escuderias')}>
- ️ Escuderias
+ Escuderias
  </button>
  <button className={'tab ' + (view === 'resultados' ? 'tab--active' : '')} onClick={() => setView('resultados')}>
  Resultados
@@ -364,7 +375,7 @@ export default function Equipes() {
  <p className="card__subtitle">{eq.descricao || 'Equipe ativa'}</p>
  </div>
  <span className="badge" style={{ background: `${eq.cor}1a`, color: eq.cor }}>
- {totalCorr} ️
+ {totalCorr} {totalCorr === 1 ? 'corretor' : 'corretores'}
  </span>
  </div>
 
@@ -410,10 +421,13 @@ export default function Equipes() {
 
  {view === 'resultados' && (
  <>
+ <div className="text-secondary text-sm" style={{ marginBottom: 10 }}>
+ Período: do dia 1º do mês atual até hoje. Comissão paga = repasses já registrados no Financeiro para as vendas do período.
+ </div>
  <div className="kpi-grid">
  <div className="kpi"><div className="kpi__label">Vendas no período</div><div className="kpi__value">{totais.vendas}</div></div>
  <div className="kpi"><div className="kpi__label">Receita gerada</div><div className="kpi__value">{formatCurrencyShort(totais.receita)}</div></div>
- <div className="kpi"><div className="kpi__label">Comissão paga (5%)</div><div className="kpi__value">{formatCurrencyShort(totais.receita * 0.05)}</div></div>
+ <div className="kpi"><div className="kpi__label">Comissão paga</div><div className="kpi__value">{formatCurrencyShort(totais.comissaoPaga)}</div></div>
  <div className="kpi"><div className="kpi__label">Corretores</div><div className="kpi__value">{totais.corretores}</div></div>
  </div>
 
@@ -430,21 +444,21 @@ export default function Equipes() {
  </tr>
  </thead>
  <tbody>
- {equipesVisiveis.map((e: any) => {
- const totalCorr = e.totalCorretores ?? e.corretores ?? (e.membros?.length || 0);
- const volume = e.volumeMes ?? 0;
- const vendas = e.vendasMes ?? 0;
- return (
+ {resultadosVisiveis.map((e: any) => (
  <tr key={e.id}>
  <td><span className="badge" style={{ background: `${e.cor}1a`, color: e.cor }}>{e.nome}</span></td>
- <td className="numeric">{totalCorr}</td>
- <td className="numeric font-semibold">{vendas}</td>
- <td className="numeric money">{formatCurrencyShort(volume)}</td>
- <td className="numeric money">{formatCurrencyShort(volume * 0.05)}</td>
- <td className="numeric money">{formatCurrencyShort(volume / Math.max(vendas, 1))}</td>
+ <td className="numeric">{Number(e.corretores) || 0}</td>
+ <td className="numeric font-semibold">{Number(e.vendas) || 0}</td>
+ <td className="numeric money">{formatCurrencyShort(Number(e.receita) || 0)}</td>
+ <td className="numeric money">{formatCurrencyShort(Number(e.comissaoPaga) || 0)}</td>
+ <td className="numeric money">{formatCurrencyShort(Number(e.ticketMedio) || 0)}</td>
  </tr>
- );
- })}
+ ))}
+ {!resultadosVisiveis.length && (
+ <tr><td colSpan={6} className="text-secondary" style={{ textAlign: 'center', padding: 16 }}>
+ {resultados ? 'Nenhum resultado no período.' : 'Carregando resultados…'}
+ </td></tr>
+ )}
  </tbody>
  </table>
  </div>
@@ -520,7 +534,7 @@ function Shell({ children, onNew }: { children: React.ReactNode; onNew?: () => v
  <>
  <Topbar
  title="Equipes"
- right={<button className="btn btn--primary btn--sm" onClick={onNew}>+ Nova Equipe</button>}
+ right={onNew ? <button className="btn btn--primary btn--sm" onClick={onNew}>+ Nova Equipe</button> : undefined}
  />
  <div className="main__content">
  <PageHeader breadcrumb="Gestão · Equipes" title="Equipes Comerciais" />

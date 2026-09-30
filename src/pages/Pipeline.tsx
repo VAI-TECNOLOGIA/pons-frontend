@@ -10,7 +10,7 @@ import { parseFunil, faseDoStatus } from '../lib/funil';
 import { MultiFiltro } from '../components/MultiFiltro';
 
 export default function Pipeline() {
-  // Filtros do funil (campanha, filial/equipe, corretor, período, busca) — reusa
+  // Filtros do funil (campanha, equipe, corretor, período, busca) — reusa
   // os params do GET /leads. Multi-seleção via MultiFiltro (busca + chips).
   const [fCampanha, setFCampanha] = useState<string[]>([]);
   const [fEquipe, setFEquipe] = useState<string[]>([]);
@@ -27,7 +27,7 @@ export default function Pipeline() {
   // Busca PAGINADA: GET /leads sem ?page corta em 100 — corretor com 100+ leads
   // via cards "sumindo" do funil (caso Luiz Bier, 02/09). Teto de 1000 cards
   // pra não travar o navegador de CEO/gestor (que enxergam a base inteira).
-  const { data, loading, error } = useApi<any[]>(async () => {
+  const { data, loading, error } = useApi<{ leads: any[]; total: number }>(async () => {
     const base: any = {};
     if (fCampanha.length) base.campanha = fCampanha.join(',');
     if (fEquipe.length) base.equipeId = fEquipe.join(',');
@@ -36,14 +36,16 @@ export default function Pipeline() {
     if (fDataFim) base.dataFinal = fDataFim;
     if (buscaDeb) base.q = buscaDeb;
     const out: any[] = [];
+    let totalServidor = 0;
     for (let page = 1; page <= 5; page++) {
       const r: any = await Api.leads({ ...base, page, limit: 200 });
       const lote = Array.isArray(r) ? r : (r.leads || []);
       out.push(...lote);
       const total = Array.isArray(r) ? lote.length : (r.total ?? lote.length);
+      if (page === 1) totalServidor = Array.isArray(r) ? 0 : Number(r.total ?? 0);
       if (lote.length === 0 || out.length >= total) break;
     }
-    return out;
+    return { leads: out, total: Math.max(totalServidor, out.length) };
   }, [fCampanha.join(','), fEquipe.join(','), fCorretor.join(','), fDataIni, fDataFim, buscaDeb]);
   const { data: settings } = useApi<Record<string, string>>(() => Api.settings());
   const { data: equipes } = useApi<any[]>(() => Api.equipes());
@@ -57,7 +59,7 @@ export default function Pipeline() {
   const [leads, setLeads] = useState<any[]>([]);
   const [showPerdidos, setShowPerdidos] = useState(false);
   const toast = useToast();
-  useEffect(() => { if (data) setLeads(data); }, [data]);
+  useEffect(() => { if (data) setLeads(data.leads); }, [data]);
 
   const fases = parseFunil(settings);          // rótulos editáveis pelo cliente
   const cols = fases.filter((f) => f.key !== 'PERDIDO'); // Perdido é terminal (fica no seletor)
@@ -81,6 +83,10 @@ export default function Pipeline() {
   const ativos = leads.filter((l: any) => l.status !== 'PERDIDO');
   const fechados = leads.filter((l: any) => l.status === 'FECHADO').length;
   const conv = ativos.length ? Math.round((fechados / ativos.length) * 100) : 0;
+  // Teto de 1.000 cards: quando o servidor tem mais, os números da tela são parciais.
+  const totalServidor = Math.max(data?.total ?? 0, leads.length);
+  const cortado = totalServidor > leads.length;
+  const fmt = (n: number) => n.toLocaleString('pt-BR');
 
   // Perdido é terminal e sai do board — mas pode ser reaberto (volta à 1ª fase).
   const perdidos = leads.filter((l: any) => l.status === 'PERDIDO');
@@ -90,11 +96,11 @@ export default function Pipeline() {
     <>
       <Topbar
         title="Funil de Vendas"
-        extra={<span className="badge badge--neutral">{ativos.length} ativos</span>}
+        extra={<span className="badge badge--neutral">{cortado ? `${fmt(leads.length)} de ${fmt(totalServidor)} carregados` : `${ativos.length} ativos`}</span>}
         right={
           <>
             <Link to="/leads" className="btn btn--secondary btn--sm">Ver lista</Link>
-            <Link to="/leads" className="btn btn--primary btn--sm">+ Novo Lead</Link>
+            <Link to="/leads?novo=1" className="btn btn--primary btn--sm">+ Novo Lead</Link>
           </>
         }
       />
@@ -102,18 +108,20 @@ export default function Pipeline() {
       <div className="main__content">
         <PageHeader
           breadcrumb="Comercial · Funil"
-          title={`${ativos.length} negócios no funil`}
-          subtitle={`${fechados} fechados · conversão ${conv}% · arraste ou mude o status no card`}
+          title={cortado ? `${fmt(ativos.length)} negócios carregados (de ${fmt(totalServidor)} leads)` : `${ativos.length} negócios no funil`}
+          subtitle={cortado
+            ? `${fechados} fechados nesta amostra · conversão disponível com filtros · arraste ou mude o status no card`
+            : `${fechados} fechados · conversão ${conv}% · arraste ou mude o status no card`}
         />
 
-        {/* Filtros do funil: busca por nome + campanha/filial/corretor (chips) + período */}
+        {/* Filtros do funil: busca por nome + campanha/equipe/corretor (chips) + período */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
           {/* Busca sozinha em cima — largura estável, não reflui ao digitar */}
           <input className="field__input" placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ width: '100%' }} />
           {/* Filtros embaixo — quebram bem no mobile */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
             <MultiFiltro label="Campanha" opcoes={optCampanhas} values={fCampanha} onChange={setFCampanha} />
-            <MultiFiltro label="Filial" opcoes={optEquipes} values={fEquipe} onChange={setFEquipe} />
+            <MultiFiltro label="Equipe" opcoes={optEquipes} values={fEquipe} onChange={setFEquipe} />
             <MultiFiltro label="Corretor" opcoes={optCorretores} values={fCorretor} onChange={setFCorretor} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input type="date" className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} title="Data inicial" style={{ width: 145 }} />
@@ -122,6 +130,12 @@ export default function Pipeline() {
             </div>
             {temFiltro && <button className="btn btn--ghost btn--sm" onClick={limparFiltros}>Limpar filtros</button>}
           </div>
+          {cortado && (
+            <div role="status" className="text-xs" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-warning-fg)' }}>
+              <Icon name="warn" size={12} />
+              Mostrando {fmt(leads.length)} de {fmt(totalServidor)} leads. Use os filtros para refinar.
+            </div>
+          )}
         </div>
 
         <div className="kanban">
@@ -253,7 +267,7 @@ export default function Pipeline() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Topbar title="Funil de Vendas" right={<Link to="/leads" className="btn btn--primary btn--sm">+ Novo Lead</Link>} />
+      <Topbar title="Funil de Vendas" right={<Link to="/leads?novo=1" className="btn btn--primary btn--sm">+ Novo Lead</Link>} />
       <div className="main__content">
         <PageHeader breadcrumb="Comercial · Funil" title="Funil" />
         {children}

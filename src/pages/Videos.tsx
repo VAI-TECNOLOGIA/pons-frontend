@@ -67,17 +67,7 @@ export default function Videos() {
       let thumbnail: string | undefined;
       const file = capaFileRef.current?.files?.[0];
       if (file) {
-        const up = new FormData();
-        up.append('file', file);
-        up.append('prefix', 'uploads');
-        const r = await fetch('/api/uploads', {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + (Auth.token || '') },
-          body: up,
-        });
-        if (!r.ok) throw new Error('upload_capa_falhou');
-        const j = await r.json();
-        thumbnail = j.url;
+        thumbnail = (await Api.upload(file, 'uploads')).url;
       }
       await Api.videoCreate({
         titulo: String(fd.get('titulo') || ''),
@@ -92,7 +82,7 @@ export default function Videos() {
       resetForm();
       reload();
     } catch (err: any) {
-      toast.error('Erro: ' + (err.message || 'falha'));
+      toast.error(err?.message || 'Não foi possível adicionar o vídeo. Tente de novo.');
     } finally {
       setSaving(false);
     }
@@ -112,7 +102,7 @@ export default function Videos() {
       toast.success('Vídeo excluído');
       reload();
     } catch (err: any) {
-      toast.error('Erro: ' + (err.message || 'falha'));
+      toast.error(err?.message || 'Não foi possível excluir o vídeo. Tente de novo.');
     }
   };
 

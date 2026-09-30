@@ -18,7 +18,7 @@
 }
 .trn-top__bg {
   position: absolute; inset: 0;
-  background: #05070a url('/assets/home/f1-hero.jpg') center/cover no-repeat;
+  background: #05070a url('/assets/f1-hero.jpg') center/cover no-repeat;
   transform: scale(1.02);
 }
 .trn-top__veil {

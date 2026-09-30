@@ -14,7 +14,22 @@ Chart.register(...registerables);
 
 const brl = (n: number) => (n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const brlShort = (n: number) => 'R$ ' + (Math.abs(n) >= 1000 ? (n / 1000).toFixed(0) + 'k' : String(Math.round(n)));
-const dataBr = (s?: string | null) => (s ? new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—');
+// Vencimento é gravado como meia-noite UTC ("só dia"). Sem timeZone:'UTC' uma
+// parcela de 01/10 aparecia como 30/09 no fuso do Brasil (mesma regra de lib/format.ts).
+const ehSoDia = (d: Date) => d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+const dataBr = (s?: string | null) => {
+  if (!s) return '—';
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', ...(ehSoDia(d) ? { timeZone: 'UTC' } : {}) });
+};
+// Data "só dia" (meia-noite UTC) → meia-noite LOCAL do mesmo dia; demais datas ficam como estão.
+// Usar em toda comparação de status/mês pra parcela do dia 1º não cair no mês anterior.
+const diaLocal = (s?: string | null) => {
+  const d = new Date(s as string);
+  if (isNaN(d.getTime())) return d;
+  return ehSoDia(d) ? new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) : d;
+};
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 const STATUS_PARCELA: Record<string, [string, string]> = {
@@ -74,9 +89,11 @@ export default function MinhasComissoes() {
   const todas: any[] = data?.parcelas || [];
   const vendas: any[] = data?.vendas || [];
   const hoje = new Date();
+  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  // Atrasado só a partir do dia SEGUINTE ao vencimento (no dia do vencimento ainda está em dia).
   const statusEfetivo = (p: any) => {
     if (p.status === 'PAGO') return 'PAGO';
-    return new Date(p.vencimento) < hoje ? 'ATRASADO' : (p.status || 'AGENDADO');
+    return diaLocal(p.vencimento) < inicioHoje ? 'ATRASADO' : (p.status || 'AGENDADO');
   };
 
   // opções de empreendimento (do conjunto completo)
@@ -95,7 +112,7 @@ export default function MinhasComissoes() {
   }, [periodo]);
 
   const parcelas = useMemo(() => todas.filter((p) => {
-    if (desde && new Date(p.vencimento) < desde) return false;
+    if (desde && diaLocal(p.vencimento) < desde) return false;
     if (empFiltro && p.empreendimento !== empFiltro) return false;
     if (statusFiltro) {
       const ef = statusEfetivo(p);
@@ -114,7 +131,7 @@ export default function MinhasComissoes() {
     for (const p of parcelas) {
       const v = p.valorCorretor || 0;
       const ef = statusEfetivo(p);
-      const venc = new Date(p.vencimento);
+      const venc = diaLocal(p.vencimento);
       if (ef === 'PAGO') { r.recebido += v; continue; }
       r.aReceber += v;
       if (ef === 'ATRASADO') r.atrasado += v;
@@ -128,16 +145,24 @@ export default function MinhasComissoes() {
   // evita o gráfico com 2 barrões colados. Comissões e vendas usam a mesma grade.
   const serie = useMemo(() => {
     const datas: Date[] = [];
-    for (const p of parcelas) datas.push(new Date(p.vencimento));
-    for (const v of vendas) if (v.data) datas.push(new Date(v.data));
+    for (const p of parcelas) datas.push(diaLocal(p.vencimento));
+    for (const v of vendas) if (v.data) datas.push(diaLocal(v.data));
     if (datas.length === 0) return [] as any[];
     const min = new Date(Math.min(...datas.map((d) => d.getTime())));
     const max = new Date(Math.max(...datas.map((d) => d.getTime())));
     const meses: { key: string; label: string; recebido: number; aReceber: number; atrasado: number; vgv: number; vendas: number }[] = [];
     const idx = new Map<string, number>();
-    const cur = new Date(min.getFullYear(), min.getMonth(), 1);
-    const fim = new Date(max.getFullYear(), max.getMonth(), 1);
-    // limita a 18 meses pra não estourar
+    // Janela de até 18 meses ANCORADA no mês atual (11 pra trás, 6 pra frente),
+    // sem passar dos limites dos dados. Antes começava no mês mais antigo e cortava
+    // justamente os meses atuais/futuros de quem tem histórico longo.
+    const addM = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+    const minM = new Date(min.getFullYear(), min.getMonth(), 1);
+    const maxM = new Date(max.getFullYear(), max.getMonth(), 1);
+    let ini = addM(new Date(hoje.getFullYear(), hoje.getMonth(), 1), -11);
+    if (ini < minM) ini = minM;
+    let fim = addM(ini, 17);
+    if (fim > maxM) { fim = maxM; const alt = addM(fim, -17); ini = alt < minM ? minM : alt; }
+    const cur = new Date(ini);
     let guard = 0;
     while (cur <= fim && guard < 18) {
       const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
@@ -151,9 +176,9 @@ export default function MinhasComissoes() {
     };
     for (const p of parcelas) {
       const ef = statusEfetivo(p); const v = p.valorCorretor || 0;
-      put(new Date(p.vencimento), (b) => { if (ef === 'PAGO') b.recebido += v; else if (ef === 'ATRASADO') b.atrasado += v; else b.aReceber += v; });
+      put(diaLocal(p.vencimento), (b) => { if (ef === 'PAGO') b.recebido += v; else if (ef === 'ATRASADO') b.atrasado += v; else b.aReceber += v; });
     }
-    for (const v of vendas) if (v.data) put(new Date(v.data), (b) => { b.vgv += v.valorVenda || 0; b.vendas += 1; });
+    for (const v of vendas) if (v.data) put(diaLocal(v.data), (b) => { b.vgv += v.valorVenda || 0; b.vendas += 1; });
     return meses;
   }, [parcelas, vendas]);
 
@@ -222,13 +247,13 @@ export default function MinhasComissoes() {
   const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59);
   const bucketParcelas = (key: string) => parcelas.filter((p) => {
     const ef = statusEfetivo(p);
-    const venc = new Date(p.vencimento);
+    const venc = diaLocal(p.vencimento);
     if (key === 'recebido') return ef === 'PAGO';
     if (key === 'aReceber') return ef !== 'PAGO';
     if (key === 'esteMs') return ef !== 'PAGO' && venc >= inicioMes && venc <= fimMes;
     if (key === 'proximos') return ef !== 'PAGO' && venc > fimMes;
     return false;
-  }).sort((a, b) => new Date(a.vencimento).getTime() - new Date(b.vencimento).getTime());
+  }).sort((a, b) => diaLocal(a.vencimento).getTime() - diaLocal(b.vencimento).getTime());
 
   return (
     <Shell>

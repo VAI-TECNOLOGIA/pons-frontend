@@ -3,6 +3,7 @@ import { Topbar, PageHeader } from '../components/PageHeader';
 import { SLAStatusPanel } from '../components/SLAStatusPanel';
 import { SLACharts } from '../components/SLACharts';
 import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -322,7 +323,7 @@ export default function Roletas() {
  {r.origemFiltro && <span className="badge badge--neutral">{r.origemFiltro}</span>}
  {r.campanhaFiltro && <span className="badge badge--launch">campanha: {r.campanhaFiltro}</span>}
  {String(r.formularioFiltro || '').split(',').map((f: string) => f.trim()).filter(Boolean).map((f: string) => (
- <span key={f} className="badge badge--analysis" title="Formulário do Facebook vinculado">📋 {f}</span>
+ <span key={f} className="badge badge--analysis" title="Formulário do Facebook vinculado"><Icon name="doc" size={11} style={{ verticalAlign: '-2px' }} /> {f}</span>
  ))}
  {r.slaHoras != null && <span className="badge badge--analysis">SLA {r.slaHoras}h</span>}
  <span className="badge badge--neutral">prioridade {r.prioridade ?? 0}</span>
@@ -360,7 +361,7 @@ export default function Roletas() {
  <button className="btn btn--ghost btn--sm" onClick={() => togglePausar(p.id, p.ativo)}>
  {p.ativo ? 'Pausar' : 'Ativar'}
  </button>
- <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => removerParticipante(p.id, p.nome)} title="Remover da roleta">✕</button>
+ <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => removerParticipante(p.id, p.nome)} title="Remover da roleta" aria-label="Remover da roleta"><Icon name="x" size={14} /></button>
  </div>
  ))
  )}

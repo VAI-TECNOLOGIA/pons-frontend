@@ -118,7 +118,7 @@ export default function CadastroColaborador() {
 
             {done.novo && (
               <div className="cad-wel__note">
-                ⏳ Seu acesso será liberado assim que for aprovado pela administração do Grupo Pons. Você receberá a confirmação em breve.
+                Seu acesso será liberado assim que for aprovado pela administração do Grupo Pons. Você receberá a confirmação em breve.
               </div>
             )}
 

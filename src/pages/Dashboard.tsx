@@ -243,7 +243,7 @@ export default function Dashboard() {
  const href: string | null = al.href || ({
  'Ver contratos':   '/vendas?status=PRE_ANALISE',
  'Ver atendimento': '/chat',
- 'Ver roleta':      '/distribuicao',
+ 'Ver distribuição': '/distribuicao',
  'Cobrar cliente':  '/vendas?status=EM_ASSINATURA',
  } as Record<string, string>)[al.acao] || null;
  const baseStyle: React.CSSProperties = {

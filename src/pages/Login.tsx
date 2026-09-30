@@ -327,9 +327,11 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    // WhatsApp é obrigatório: é por ele que a pessoa recupera a senha sozinha.
+    if (telefone.replace(/\D/g, '').length < 10) { setError('Informe o WhatsApp com DDD.'); return; }
     setBusy(true);
     try {
-      const { token, user } = await Api.registrar({ name: nome.trim(), email: email.trim(), password: senha, phone: telefone.trim() || undefined, equipeId: equipeId ? Number(equipeId) : null });
+      const { token, user } = await Api.registrar({ name: nome.trim(), email: email.trim(), password: senha, phone: telefone.trim(), equipeId: equipeId ? Number(equipeId) : null });
       Auth.set(token, user);
       setUser(user);
       sessionStorage.setItem('pons.welcome.show', '1');
@@ -363,8 +365,9 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
             <input className="login-field__input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </label>
           <label className="login-field">
-            <span className="login-field__label">Telefone (opcional)</span>
-            <input className="login-field__input" type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+            <span className="login-field__label">WhatsApp (com DDD)</span>
+            <input className="login-field__input" type="tel" inputMode="tel" autoComplete="tel" required placeholder="(47) 99999-9999" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+            <span className="login-field__hint">Usado para recuperar a senha.</span>
           </label>
           <label className="login-field">
             <span className="login-field__label">Equipe</span>

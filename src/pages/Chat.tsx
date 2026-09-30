@@ -589,13 +589,13 @@ export default function Chat() {
   const descricaoImovel = (emp: any) => {
     const loc = [emp.bairro, emp.cidade].filter(Boolean).join(' · ');
     const det = [
-      emp.dormitorios ? `🛏️ ${emp.dormitorios} dorm.` : '',
-      emp.suites ? `🛁 ${emp.suites} suíte(s)` : '',
-      emp.vagas ? `🚗 ${emp.vagas} vaga(s)` : '',
-      emp.area ? `📐 ${emp.area} m²` : '',
-    ].filter(Boolean).join('   ');
+      emp.dormitorios ? `${emp.dormitorios} dormitório(s)` : '',
+      emp.suites ? `${emp.suites} suíte(s)` : '',
+      emp.vagas ? `${emp.vagas} vaga(s)` : '',
+      emp.area ? `${emp.area} m²` : '',
+    ].filter(Boolean).join(' · ');
     return [
-      `🏢 *${emp.nome}*`,
+      `*${emp.nome}*`,
       loc,
       det,
       // Mantém as quebras de linha da descrição (formatação do WhatsApp). Vai
@@ -1069,7 +1069,7 @@ export default function Chat() {
                           target="_blank"
                           rel="noreferrer"
                           title="Abrir conversa no WhatsApp"
-                          style={{ color: 'var(--pons-cyan, #52f7fe)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          style={{ color: 'var(--link-accent, #0E7C9B)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         >
                           <Icon name="whatsapp" size={13} /> {conv.telefone}
                         </a>
@@ -1143,7 +1143,7 @@ export default function Chat() {
                     </span>
                   )}
                   {(conv as any).iaLimiteAtingido && !conv.reservado && (
-                    <span className="badge" style={{ background: 'rgba(245,158,11,0.18)', color: '#B45309' }}>
+                    <span className="badge" style={{ background: 'rgba(245,158,11,0.18)', color: 'var(--color-warning-fg)' }}>
                       <Icon name="warn" size={10} /> IA esgotou (3/3)
                     </span>
                   )}
@@ -2042,7 +2042,7 @@ function BannerRedistribuicao({ info, leadId }: { info: any; leadId?: number }) 
     <div
       style={{
         background: 'rgba(234,179,8,0.10)',
-        color: '#854D0E',
+        color: 'var(--color-warning-fg)',
         border: '1px solid rgba(234,179,8,0.30)',
         borderRadius: 8,
         padding: '8px 12px',

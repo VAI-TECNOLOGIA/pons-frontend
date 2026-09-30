@@ -38,6 +38,7 @@
   --pons-navy: #263654;
   --pons-blue: #0E7C9B;            /* cyan-azulado legível (AA em botão e texto) */
   --pons-cyan: #52f7fe;            /* cyan vivo — só em superfícies escuras (sidebar) */
+  --link-accent: var(--pons-blue);  /* destaque de link/valor: azul no claro, cyan no escuro */
   --pons-accent-red: #C70A1A;
   --pons-success: #88C559;
 
@@ -212,6 +213,7 @@
   --color-warning-fg: #F7CC7B;
   --color-danger-fg:  #FFA6A6;
   --color-info-fg:    #9DE8F0;
+  --link-accent:      var(--pons-cyan);
 
   --color-success-border: rgba(136, 197, 89, 0.6);
   --color-warning-border: rgba(242, 181, 68, 0.6);

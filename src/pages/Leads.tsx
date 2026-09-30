@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
@@ -92,7 +92,7 @@ export default function Leads() {
  const [filtroEtiqueta, setFiltroEtiqueta] = useState<string[]>([]);
  const [filtroCorretor, setFiltroCorretor] = useState(''); // '' | 'sem' | id do corretor
  // ?base=ID na URL (vindo da tela Bases de Leads) já abre filtrado
- const [searchParams] = useSearchParams();
+ const [searchParams, setSearchParams] = useSearchParams();
  const [filtroEquipe, setFiltroEquipe] = useState<string[]>([]); // ids das equipes
  const [filtroBase, setFiltroBase] = useState<string[]>(() => (searchParams.get('base') ? [String(searchParams.get('base'))] : []));
  // Aplica o ?base=ID sempre que mudar na URL (ex.: atalho "Base Imobiliária" na
@@ -112,6 +112,21 @@ export default function Leads() {
  const [buscaDeb, setBuscaDeb] = useState('');
  const [page, setPage] = useState(1);
  const [open, setOpen] = useState(false);
+ // ?novo=1 na URL (botão "+ Novo Lead" do Funil) já abre o cadastro.
+ const novoParam = searchParams.get('novo');
+ useEffect(() => { if (novoParam === '1') setOpen(true); }, [novoParam]);
+ // Fecha o cadastro e tira o ?novo da URL (senão reabre ao atualizar a página). Mantém o ?base.
+ const fecharNovo = () => {
+ setOpen(false);
+ if (searchParams.get('novo')) {
+ const p = new URLSearchParams(searchParams);
+ p.delete('novo');
+ setSearchParams(p, { replace: true });
+ }
+ };
+ // Trava do envio: evita lead duplicado por duplo clique com a API lenta.
+ const [salvando, setSalvando] = useState(false);
+ const salvandoRef = useRef(false);
  const [campoLead, setCampoLead] = useState<any>(null);
  // Colunas visíveis (config do usuário, salva no navegador) + dropdown "Configurar visualização".
  const [colsVis, setColsVis] = useState<Set<string>>(() => {
@@ -248,6 +263,7 @@ export default function Leads() {
 
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
+ if (salvandoRef.current) return;
  const fd = new FormData(e.currentTarget);
  // Telefone: se preenchido, tem que ser número de verdade (>=8 dígitos).
  // Evita digitar o nome no campo telefone (bug antigo do cadastro manual).
@@ -256,6 +272,8 @@ export default function Leads() {
  toast.error('Telefone inválido — informe um número com DDD (ex.: 47 99999-9999).');
  return;
  }
+ salvandoRef.current = true;
+ setSalvando(true);
  try {
  const r = await Api.leadCreate({
  nome: String(fd.get('nome') || ''),
@@ -273,11 +291,14 @@ export default function Leads() {
  } else {
  toast.success('Lead criado com sucesso');
  }
- setOpen(false);
+ fecharNovo();
  reload();
  reloadStats();
  } catch (err: any) {
  toast.error('Erro: ' + (err.message || 'falha ao criar'));
+ } finally {
+ salvandoRef.current = false;
+ setSalvando(false);
  }
  };
 
@@ -451,7 +472,7 @@ export default function Leads() {
  <div className="text-xs text-secondary">{l.telefone || l.email || '—'}</div>
  {l.campanha && (
  <div className="text-xs" style={{ color: '#0E7C9B', marginTop: 2 }} title={l.campanha}>
- 📣 {l.campanha}
+ <Icon name="megafone" size={11} /> {l.campanha}
  </div>
  )}
  </div>
@@ -469,27 +490,27 @@ export default function Leads() {
 
  <Modal
  open={open}
- onClose={() => setOpen(false)}
+ onClose={fecharNovo}
  title="Novo Lead"
  subtitle="Cadastre um lead manualmente — entrará no funil imediatamente"
  >
  <form id="form-lead" onSubmit={submit}>
  <div className="form-grid">
  <div className="field field--span-2">
- <label className="field__label">Nome <span className="field__required">*</span></label>
- <input name="nome" className="field__input" required />
+ <label htmlFor="lead-nome" className="field__label">Nome <span className="field__required">*</span></label>
+ <input id="lead-nome" name="nome" className="field__input" required />
  </div>
  <div className="field">
- <label className="field__label">E-mail</label>
- <input name="email" type="email" className="field__input" />
+ <label htmlFor="lead-email" className="field__label">E-mail</label>
+ <input id="lead-email" name="email" type="email" className="field__input" />
  </div>
  <div className="field">
- <label className="field__label">Telefone</label>
- <input name="telefone" type="tel" inputMode="tel" className="field__input" placeholder="(48) 99999-0000" />
+ <label htmlFor="lead-telefone" className="field__label">Telefone</label>
+ <input id="lead-telefone" name="telefone" type="tel" inputMode="tel" className="field__input" placeholder="(48) 99999-0000" />
  </div>
  <div className="field">
- <label className="field__label">Origem</label>
- <select name="origem" className="field__select" defaultValue="MANUAL">
+ <label htmlFor="lead-origem" className="field__label">Origem</label>
+ <select id="lead-origem" name="origem" className="field__select" defaultValue="MANUAL">
  <option value="META_ADS">Meta Ads</option>
  <option value="INSTAGRAM">Instagram</option>
  <option value="GOOGLE">Google</option>
@@ -499,16 +520,16 @@ export default function Leads() {
  </select>
  </div>
  <div className="field">
- <label className="field__label">Status</label>
- <select name="status" className="field__select" defaultValue="NOVO">
+ <label htmlFor="lead-status" className="field__label">Status</label>
+ <select id="lead-status" name="status" className="field__select" defaultValue="NOVO">
  <option value="NOVO">Tentando Contato</option>
  <option value="EM_ATENDIMENTO">Em atendimento</option>
  <option value="NEGOCIANDO">Em Negociação</option>
  </select>
  </div>
  <div className="field">
- <label className="field__label">Empreendimento de interesse</label>
- <select name="empreendimentoInteresseId" className="field__select" defaultValue="">
+ <label htmlFor="lead-empreendimento" className="field__label">Empreendimento de interesse</label>
+ <select id="lead-empreendimento" name="empreendimentoInteresseId" className="field__select" defaultValue="">
  <option value="">—</option>
  {(empreendimentos || []).map((e: any) => (
  <option key={e.id} value={e.id}>{e.nome}</option>
@@ -516,18 +537,18 @@ export default function Leads() {
  </select>
  </div>
  <div className="field">
- <label className="field__label">VIP?</label>
- <select name="vip" className="field__select" defaultValue="false">
+ <label htmlFor="lead-vip" className="field__label">VIP?</label>
+ <select id="lead-vip" name="vip" className="field__select" defaultValue="false">
  <option value="false">Não</option>
  <option value="true">Sim</option>
  </select>
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
- <button type="button" className="btn btn--secondary" onClick={() => setOpen(false)}>
+ <button type="button" className="btn btn--secondary" onClick={fecharNovo}>
  Cancelar
  </button>
- <button type="submit" className="btn btn--primary">Criar Lead</button>
+ <button type="submit" className="btn btn--primary" disabled={salvando}>{salvando ? 'Criando...' : 'Criar Lead'}</button>
  </div>
  </form>
  </Modal>

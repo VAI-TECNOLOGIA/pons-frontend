@@ -153,12 +153,13 @@ export default function Campanhas() {
           <div className="camp-empty">Carregando campanhas…</div>
         ) : campanhas.length === 0 ? (
           <div className="camp-empty">
-            <div className="camp-empty__icon">📣</div>
+            <div className="camp-empty__icon"><Icon name="megafone" size={36} /></div>
             <h3>Nenhuma campanha ainda</h3>
             <p>Crie sua primeira campanha para enviar mensagens em massa via WhatsApp.</p>
             <button className="btn btn--primary" onClick={() => setWizard(true)}>+ Nova Campanha</button>
           </div>
         ) : (
+          <div className="camp-table-wrap">
           <table className="camp-table">
             <thead>
               <tr><th>Campanha</th><th>Status</th><th>Progresso</th><th>Contatos</th><th>Criada</th><th></th></tr>
@@ -239,6 +240,7 @@ export default function Campanhas() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -496,13 +498,13 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
       <div className="camp-modal" onClick={(e) => e.stopPropagation()}>
         <div className="camp-modal__head">
           <h2>{ed ? 'Editar Campanha' : 'Nova Campanha'}</h2>
-          <button className="camp-modal__close" onClick={onClose} disabled={enviando}>✕</button>
+          <button className="camp-modal__close" onClick={onClose} disabled={enviando} aria-label="Fechar"><Icon name="x" size={16} /></button>
         </div>
 
         <div className="camp-steps">
           {STEPS.map((s, i) => (
             <div key={s} className={'camp-step' + (i === step ? ' is-active' : '') + (i < step ? ' is-done' : '')}>
-              <span className="camp-step__num">{i < step ? '✓' : i + 1}</span>{s}
+              <span className="camp-step__num">{i < step ? <Icon name="check" size={12} /> : i + 1}</span>{s}
             </div>
           ))}
         </div>
@@ -646,7 +648,7 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
                   </>
                 ) : (
                   <div className="camp-done">
-                    <div className="camp-done__icon">✅</div>
+                    <div className="camp-done__icon"><Icon name="checkCircle" size={40} /></div>
                     <h3>Campanha disparada!</h3>
                     <p>{prog?.enviados} mensagens enviadas{prog?.falhas ? ` · ${prog.falhas} falhas` : ''}.</p>
                     <button className="btn btn--primary" onClick={onClose}>Concluir</button>

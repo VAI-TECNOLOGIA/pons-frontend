@@ -1,7 +1,20 @@
 {
-  "versao": "2026.09.29.2",
-  "data": "29/09/2026",
+  "versao": "2026.09.30",
+  "data": "30/09/2026",
   "novidades": [
+    {
+      "titulo": "Revisão de entrega: ajustes de telas e segurança",
+      "itens": [
+        "Funil avisa quando a lista está limitada e mostra o total real de leads; \"+ Novo Lead\" abre direto o cadastro.",
+        "Minhas Comissões: vencimentos no dia certo e gráfico centrado no mês atual.",
+        "Equipes: \"Comissão paga\" passa a mostrar o valor real das vendas, não mais uma estimativa.",
+        "Financeiro: estornar uma entrada pede confirmação; botões de baixa aparecem só para quem pode usar.",
+        "Enviar notificação pede confirmação para envios grandes e limpa o formulário após enviar.",
+        "Criar Lead não duplica com clique duplo; criar conta pede o WhatsApp (usado para recuperar a senha).",
+        "Menu: \"Usuários e hierarquia\" no lugar de um dos itens \"Equipe\"; link do app na Google Play.",
+        "Textos e ícones padronizados, cores corrigidas no tema escuro, zoom liberado no celular."
+      ]
+    },
     {
       "titulo": "Análise de Vendas: relatório completo do financeiro",
       "itens": [

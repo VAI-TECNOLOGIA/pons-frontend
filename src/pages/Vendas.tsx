@@ -469,7 +469,7 @@ export default function Vendas() {
        (STATUS_MAP[v.status] || [null, v.status])[1], v.origemLead || '', v.salaGpi || '', dt(v.assinadoEm)];
    });
    const hoje = new Date().toISOString().slice(0, 10);
-   exportarXlsx(`vendas-${hoje}.xlsx`, ['Código', 'Data', 'Cliente', 'Empreendimento', 'Unidade', 'Construtora', 'Corretor', 'Filial/Equipe', 'Gestor', 'VGV', '% Comissão', 'Comissão', 'Status', 'Origem do lead', 'Sala GPI', 'Assinado em'], linhas, 'Vendas');
+   exportarXlsx(`vendas-${hoje}.xlsx`, ['Código', 'Data', 'Cliente', 'Empreendimento', 'Unidade', 'Construtora', 'Corretor', 'Equipe', 'Gestor', 'VGV', '% Comissão', 'Comissão', 'Status', 'Origem do lead', 'Sala GPI', 'Assinado em'], linhas, 'Vendas');
  };
  const corretoresOpcoes = Array.from(new Map((vendas || []).filter((v: any) => v.corretor?.id).map((v: any) => [String(v.corretor.id), v.corretor.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
  const toast = useToast();
@@ -1364,7 +1364,7 @@ export default function Vendas() {
  const ehGestorTrafego = podeAprovarTrafego;
  return (
  <div className="card" style={{ padding: '12px 14px', marginBottom: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.4)' }}>
- <div style={{ fontWeight: 700, color: '#B45309', marginBottom: 8 }}>
+ <div style={{ fontWeight: 700, color: 'var(--color-warning-fg)', marginBottom: 8 }}>
  {ehGestorTrafego ? 'Aguardando sua análise — Tráfego pago' : 'Aguardando aprovação do Gestor de Tráfego'} · {pend.length}
  </div>
  <div style={{ display: 'grid', gap: 8 }}>
@@ -1415,7 +1415,7 @@ export default function Vendas() {
  <input className="field__input" type="date" title="Até" value={filtro.ate} onChange={(e) => setF('ate', e.target.value)} style={{ width: 145 }} />
  </div>
  <input className="field__input" type="search" placeholder="Buscar contrato: código, cliente, unidade ou empreendimento" value={filtro.busca} onChange={(e) => setF('busca', e.target.value)} style={{ flex: '1 1 280px', minWidth: 220 }} />
- <MultiFiltro label="Filial" opcoes={filiaisOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.filial} onChange={(v) => setFArr('filial', v)} />
+ <MultiFiltro label="Equipe" opcoes={filiaisOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.filial} onChange={(v) => setFArr('filial', v)} />
  <MultiFiltro label="Status" opcoes={Object.entries(STATUS_MAP).map(([k, [, lbl]]) => ({ value: k, label: String(lbl) }))} values={filtro.status} onChange={(v) => setFArr('status', v)} />
  <MultiFiltro label="Corretor" opcoes={corretoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.corretorId} onChange={(v) => setFArr('corretorId', v)} />
  <MultiFiltro label="Gestor" opcoes={gestoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.gestorId} onChange={(v) => setFArr('gestorId', v)} />
@@ -1565,7 +1565,7 @@ export default function Vendas() {
 
  {sel.aguardandoAprovacao && (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10 }}>
- <div style={{ fontWeight: 700, fontSize: 13, color: '#B45309', marginBottom: 4 }}>
+ <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-warning-fg)', marginBottom: 4 }}>
  {sel.aprovacaoMotivo || `Parcelamento ${sel.entradaParcelas}x`} — aguardando aprovação do Paulo
  </div>
  {role === 'CEO' ? (
@@ -1592,7 +1592,7 @@ export default function Vendas() {
 
  {sel.aguardandoAprovacaoTrafego && (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10 }}>
- <div style={{ fontWeight: 700, fontSize: 13, color: '#B45309', marginBottom: 4 }}>
+ <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-warning-fg)', marginBottom: 4 }}>
  Aguardando aprovação do Gestor de Tráfego — o corretor negou um lead da base
  </div>
  <EvidenciaTrafego v={sel} />
@@ -1645,7 +1645,7 @@ export default function Vendas() {
  <form ref={formRef} onSubmit={submit} noValidate>
  {rascunhoAchado && (
  <div className="card" style={{ marginBottom: 16, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', background: 'var(--color-warning-bg, #fff8e6)', border: '1px solid var(--color-warning, #e6b800)' }}>
- <div className="text-xs">📝 Você tem um rascunho salvo às <strong>{new Date(rascunhoAchado.at).toLocaleString('pt-BR')}</strong>. Restaurar o que já tinha preenchido?</div>
+ <div className="text-xs"><Icon name="doc" size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />Você tem um rascunho salvo às <strong>{new Date(rascunhoAchado.at).toLocaleString('pt-BR')}</strong>. Restaurar o que já tinha preenchido?</div>
  <div className="flex gap-2">
  <button type="button" className="btn btn--primary btn--sm" onClick={restaurarRascunho}>Restaurar</button>
  <button type="button" className="btn btn--ghost btn--sm" onClick={limparRascunho}>Descartar</button>
@@ -1712,7 +1712,7 @@ export default function Vendas() {
  {leadNegadoId && !leadSel && (
  <div className="card" style={{ padding: '10px 14px', marginBottom: 14, background: 'var(--color-warning-bg, #fff6e6)', border: '1px solid var(--color-warning, #f5a623)' }}>
  <div className="text-xs" style={{ fontWeight: 600 }}>
- ⚠️ Você indicou que o cliente <strong>não é</strong> um lead da base. A venda entra <strong>pendente</strong> até a aprovação do <strong>Gestor de Tráfego</strong>.
+ <Icon name="warn" size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />Você indicou que o cliente <strong>não é</strong> um lead da base. A venda entra <strong>pendente</strong> até a aprovação do <strong>Gestor de Tráfego</strong>.
  <button type="button" className="btn btn--ghost btn--sm" style={{ marginLeft: 8 }} onClick={() => { setLeadNegadoId(null); setLeadSugDispensada(false); }}>Desfazer</button>
  </div>
  <textarea className="field__input" style={{ marginTop: 8, width: '100%', minHeight: 58, resize: 'vertical' }} maxLength={600}
@@ -2044,7 +2044,7 @@ export default function Vendas() {
  )}
  {unidadeOcupadaCod && (
  <div className="field" style={{ gridColumn: '1 / -1' }}>
- <div className="text-xs" style={{ color: '#dc2626', fontWeight: 600 }}>⚠ Esta unidade já possui uma venda ativa nossa ({unidadeOcupadaCod}). Cancele a venda anterior para liberá-la.</div>
+ <div className="text-xs" style={{ color: 'var(--color-danger-fg)', fontWeight: 600 }}><Icon name="warn" size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />Esta unidade já possui uma venda ativa nossa ({unidadeOcupadaCod}). Cancele a venda anterior para liberá-la.</div>
  </div>
  )}
  <div className="field">
@@ -2225,7 +2225,7 @@ export default function Vendas() {
  return et < minEntrada - 0.005
  ? (
  <div>
- <div className="field__hint" style={{ color: '#DC2626', fontWeight: 600 }}>Entrada de {pct.toFixed(2)}% ({formatMoedaBR(et)}) — abaixo do mínimo de {entradaMinimaOficial}% ({formatMoedaBR(minEntrada)}). Só segue com autorização da construtora.</div>
+ <div className="field__hint" style={{ color: 'var(--color-danger-fg)', fontWeight: 600 }}>Entrada de {pct.toFixed(2)}% ({formatMoedaBR(et)}) — abaixo do mínimo de {entradaMinimaOficial}% ({formatMoedaBR(minEntrada)}). Só segue com autorização da construtora.</div>
  <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 8, fontSize: 13, cursor: 'pointer' }}>
  <input type="checkbox" checked={entradaAutorizada} onChange={(e) => setEntradaAutorizada(e.target.checked)} style={{ marginTop: 3 }} />
  <span>A construtora autorizou esta entrada — enviar a venda para aprovação do Paulo</span>
@@ -2672,7 +2672,7 @@ export default function Vendas() {
  {/* Aviso destacado: corretor precisa anexar doc pra liberar o botão salvar.
      Sem isso o botão fica cinza e a pessoa clica sem entender por quê. */}
  {step === stepConfirma && isCorretor && docsAnexar.length === 0 && (
- <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.45)', color: '#eab308', borderRadius: 10, padding: '11px 14px', fontSize: 13.5, fontWeight: 600 }}>
+ <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.45)', color: 'var(--color-warning-fg)', borderRadius: 10, padding: '11px 14px', fontSize: 13.5, fontWeight: 600 }}>
  <Icon name="warn" size={18} />
  <span>Anexe os documentos acima para liberar o botão <strong>Salvar venda</strong>. Sem os documentos a venda não pode ser registrada.</span>
  </div>
@@ -2997,7 +2997,7 @@ function ParcelasAtrasadas({ onSelect }: { onSelect: (id: number) => void }) {
  return (
  <div style={{ margin: '0 0 12px', padding: '12px 16px', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.35)', borderRadius: 10 }}>
  <div className="flex-between" style={{ alignItems: 'center', cursor: 'pointer' }} onClick={() => setAberto((v) => !v)}>
- <div style={{ fontWeight: 700, fontSize: 13, color: '#B91C1C' }}>
+ <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-danger-fg)' }}>
  {data.length} parcela(s) em atraso · {formatCurrencyShort(totalValor)}
  </div>
  <button className="btn btn--ghost btn--sm">{aberto ? 'Ocultar' : 'Ver'}</button>
@@ -3012,7 +3012,7 @@ function ParcelasAtrasadas({ onSelect }: { onSelect: (id: number) => void }) {
  </div>
  <div style={{ textAlign: 'right' }}>
  <div style={{ fontSize: 13, fontWeight: 700 }}>{formatCurrencyShort(p.valor)}</div>
- <div className="text-xs" style={{ color: '#B91C1C' }}>{p.diasAtraso} dia(s)</div>
+ <div className="text-xs" style={{ color: 'var(--color-danger-fg)' }}>{p.diasAtraso} dia(s)</div>
  </div>
  </div>
  ))}

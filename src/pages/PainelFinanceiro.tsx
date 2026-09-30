@@ -122,7 +122,7 @@ export default function PainelFinanceiro() {
               <tr><th>Venc.</th><th>Cliente</th><th>Empreend.</th><th>Parcela</th><th>Empresa</th><th style={{ textAlign: 'right' }}>Valor</th><th></th></tr>
             </thead>
             <tbody>
-              {aConfirmar.length === 0 && <tr><td colSpan={7} className="text-secondary" style={{ textAlign: 'center', padding: 16 }}>Nada pendente pra confirmar. 🎉</td></tr>}
+              {aConfirmar.length === 0 && <tr><td colSpan={7} className="text-secondary" style={{ textAlign: 'center', padding: 16 }}>Nada pendente pra confirmar.</td></tr>}
               {aConfirmar.map((p: any) => (
                 <tr key={p.parcelaId}>
                   <td className="text-xs" style={{ color: vencido(p.vencimento) ? '#e5484d' : undefined, fontWeight: vencido(p.vencimento) ? 700 : 400 }}>{dataBR(p.vencimento)}</td>
