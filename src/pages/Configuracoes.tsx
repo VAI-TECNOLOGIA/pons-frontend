@@ -11,6 +11,8 @@ import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 import { GestoresEquipes } from '../components/GestoresEquipes';
 import { GestaoFiliais } from '../components/GestaoFiliais';
 import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
+import { SicrediMultipagCard } from '../components/SicrediMultipagCard';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
@@ -516,6 +518,7 @@ function PanelIntegracoes() {
  Salvar integrações
  </button>
  </form>
+ {['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string) && <SicrediMultipagCard />}
  </>
  );
 }

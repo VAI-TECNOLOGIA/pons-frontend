@@ -1091,6 +1091,9 @@ export const Api = {
   impostosAliquotas: () => request<any>('/impostos/aliquotas'),
   impostosSetAliquotas: (parcial: any) => request<any>('/impostos/aliquotas', { method: 'PUT', body: parcial }),
 
+  multipagConfig: () => request<{ disponivel: boolean; ambiente: string; temCredenciais: boolean; temCertificado: boolean; clientIdFinal: string | null }>('/sicredi-multipag/config'),
+  multipagSalvarCredenciais: (clientId: string, clientSecret: string) => request<{ ok: boolean; ambiente: string; clientIdFinal: string }>('/sicredi-multipag/credenciais', { method: 'PUT', body: { clientId, clientSecret } }),
+  multipagTestarConexao: () => request<{ ok: boolean; etapa: string; ambiente: string; mensagem: string }>('/sicredi-multipag/testar-conexao'),
   loteSicrediList: () => request<any[]>('/sicredi-lote'),
   loteSicrediProxima: () => request<{ dataExecucao: string; total: number; valor: number; lancamentos: any[] }>('/sicredi-lote/proxima'),
   loteSicrediPreparar: () => request<any>('/sicredi-lote/preparar', { method: 'POST' }),

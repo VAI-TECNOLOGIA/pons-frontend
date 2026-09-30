@@ -1,7 +1,13 @@
 {
-  "versao": "2026.09.30",
+  "versao": "2026.09.30.2",
   "data": "30/09/2026",
   "novidades": [
+    {
+      "titulo": "Banco Sicredi: credenciais cadastradas pela própria Pons",
+      "itens": [
+        "Em Rateio & Sócios, aba Banco (Sicredi), o CEO ou o Diretor Financeiro cola o Client-Id e o Client-Secret de produção do Portal do Desenvolvedor Sicredi. Depois de salvo, o Client-Secret não aparece mais para ninguém. O botão Testar conexão confirma se o banco aceitou. Nenhum pagamento é feito automaticamente."
+      ]
+    },
     {
       "titulo": "Revisão de entrega: ajustes de telas e segurança",
       "itens": [

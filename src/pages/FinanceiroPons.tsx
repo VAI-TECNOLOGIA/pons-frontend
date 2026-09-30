@@ -8,13 +8,17 @@ import { useConfirm } from '../lib/confirm';
 import { Icon } from '../components/Icon';
 import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 import { GestaoFiliais } from '../components/GestaoFiliais';
+import { SicrediMultipagCard } from '../components/SicrediMultipagCard';
+import { Auth } from '../lib/auth';
 
-type Tab = 'POLITICA' | 'SOCIOS' | 'FILIAIS' | 'FECHAMENTO' | 'IMPOSTOS' | 'SICREDI';
+type Tab = 'POLITICA' | 'SOCIOS' | 'FILIAIS' | 'FECHAMENTO' | 'IMPOSTOS' | 'SICREDI' | 'BANCO';
 
 const fmt = (v: number) => (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 });
 
 export default function FinanceiroPons() {
   const [tab, setTab] = useState<Tab>('POLITICA');
+  // Credenciais do banco: só CEO e Diretor Financeiro (mesma regra do servidor).
+  const podeBanco = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
   return (
     <>
       <Topbar title="Financeiro · Pons" />
@@ -32,6 +36,7 @@ export default function FinanceiroPons() {
             <button className={`btn btn--sm ${tab === 'FILIAIS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('FILIAIS')}>Filiais & Empresas</button>
             <button className={`btn btn--sm ${tab === 'FECHAMENTO' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('FECHAMENTO')}>Fechamento Mensal</button>
             <button className={`btn btn--sm ${tab === 'IMPOSTOS' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('IMPOSTOS')}>Impostos</button>
+            {podeBanco && <button className={`btn btn--sm ${tab === 'BANCO' ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setTab('BANCO')}>Banco (Sicredi)</button>}
             {/* Aba "Lotes Sicredi" removida — integração não vai existir. */}
           </div>
         </div>
@@ -41,6 +46,7 @@ export default function FinanceiroPons() {
         {tab === 'FILIAIS' && <GestaoFiliais />}
         {tab === 'FECHAMENTO' && <FechamentoTab />}
         {tab === 'IMPOSTOS' && <ImpostosTab />}
+        {tab === 'BANCO' && podeBanco && <SicrediMultipagCard />}
       </div>
     </>
   );
