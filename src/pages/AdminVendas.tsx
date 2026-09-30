@@ -45,6 +45,11 @@ export default function AdminVendas() {
   // Busca por contrato (Marcelo 08/09): código, cliente, unidade ou empreendimento — dentro da fase.
   const [busca, setBusca] = useState('');
   const [selId, setSelId] = useState<number | null>(null);
+  // Trava o botão "Confirmar venda" enquanto envia (protocolo leva alguns segundos).
+  // PRECISA ficar aqui, ANTES dos returns condicionais abaixo — senão o nº de hooks
+  // muda entre renders (loading vs carregado) e o React quebra a tela toda com
+  // "Rendered more hooks than during the previous render" (crash da aba, 30/09).
+  const [confirmando, setConfirmando] = useState<number | null>(null);
   const toast = useToast();
 
   if (loading) return <Shell><LoadingBlock /></Shell>;
@@ -78,7 +83,6 @@ export default function AdminVendas() {
   // (não avança pra conferência). Pedido do cliente 17/08.
   // Trava o botão enquanto envia: o protocolo leva alguns segundos (PDF + WhatsApp)
   // e, sem retorno visual, o Adm clicava de novo e duplicava o envio (29/09).
-  const [confirmando, setConfirmando] = useState<number | null>(null);
   const confirmarVenda = async (v: any) => {
     if (confirmando) return;
     setConfirmando(v.id);
