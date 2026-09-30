@@ -7,6 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <title>VAI Sistema — Grupo Pons</title>
+    <script>
+      // Domínio único: o app só deve rodar em app.grupopons.com.br. Quem cair no
+      // domínio de fábrica da Vercel (pons-frontend.vercel.app) é mandado pro
+      // oficial ANTES do app carregar, preservando caminho/busca. Pedido Bello 30/09.
+      (function () {
+        if (location.hostname === 'pons-frontend.vercel.app') {
+          location.replace('https://app.grupopons.com.br' + location.pathname + location.search + location.hash);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
