@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Auth } from '../lib/auth';
+import { Api } from '../lib/api';
 import { initPush } from '../lib/push';
 import { Icon } from './Icon';
 import { BirthdayGreeter } from './BirthdayGreeter';
@@ -32,6 +33,26 @@ export function AppLayout() {
   // autenticado (no-op no navegador).
   useEffect(() => {
     if (Auth.token) initPush((path) => navigate(path));
+  }, []);
+
+  // Revalida acesso pendente: se o cache (login antigo) ainda diz
+  // AGUARDANDO_APROVACAO mas o analista JÁ liberou no banco, o corretor ficaria
+  // preso na Academia até SAIR e logar de novo (caso Diogenes 30/09). Aqui, no
+  // boot, confere o status FRESCO via /me e, se mudou, atualiza o cache e
+  // re-renderiza — libera sozinho, sem o corretor precisar relogar.
+  const [, bumpGate] = useState(0);
+  useEffect(() => {
+    if (!Auth.token || Auth.user?.statusCadastro !== 'AGUARDANDO_APROVACAO') return;
+    Api.me()
+      .then((r: any) => {
+        const fresco = r?.user;
+        if (fresco && fresco.statusCadastro !== 'AGUARDANDO_APROVACAO') {
+          try { Auth.set(Auth.token!, fresco); } catch { /* storage indisponível */ }
+          bumpGate((n) => n + 1);
+        }
+      })
+      .catch(() => { /* offline/erro: mantém o gate atual, sem derrubar */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleCollapse = () => {
