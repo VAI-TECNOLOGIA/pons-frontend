@@ -2,6 +2,7 @@ import { lazy, Suspense, ComponentType } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/Layout';
 import { LoadingBlock } from './lib/useApi';
+import { registrarTela } from './lib/preCarregar';
 import { isNativeApp } from './lib/platform';
 import { Auth } from './lib/auth';
 import { AvisoAtualizacao } from './components/AvisoAtualizacao';
@@ -19,6 +20,7 @@ import RedefinirSenha from './pages/RedefinirSenha';
 // dynamically imported module" / "'text/html' is not a valid JavaScript MIME
 // type". A correção certa é dar `location.reload()` pra pegar o novo asset map.
 function lazyRetry<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  registrarTela(factory);
   return lazy(async () => {
     try {
       return await factory();

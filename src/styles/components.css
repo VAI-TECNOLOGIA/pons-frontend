@@ -2736,24 +2736,12 @@ dialog.modal[open] {
 
 
 /* ============================================================
-   ANIMAÇÃO GLOBAL — toda página entra com fade-in suave
+   ANIMAÇÃO GLOBAL — entrada de página discreta e RÁPIDA (sem deslizar e sem
+   blocos aparecendo um a um: isso atrasava ~0,5 s e dava sensação de lentidão)
    ============================================================ */
 .main__content {
-  animation: pageEnter 320ms var(--ease-out) both;
+  animation: fadeIn 140ms var(--ease-out) both;
 }
-
-/* Cards dentro de main__content fazem stagger automático na 1ª view */
-.main__content > .card,
-.main__content > .grid,
-.main__content > .kpi-grid {
-  animation: cardStagger 360ms var(--ease-out) both;
-}
-.main__content > *:nth-child(1) { animation-delay: 40ms; }
-.main__content > *:nth-child(2) { animation-delay: 80ms; }
-.main__content > *:nth-child(3) { animation-delay: 120ms; }
-.main__content > *:nth-child(4) { animation-delay: 160ms; }
-.main__content > *:nth-child(5) { animation-delay: 200ms; }
-.main__content > *:nth-child(n+6) { animation-delay: 240ms; }
 
 
 

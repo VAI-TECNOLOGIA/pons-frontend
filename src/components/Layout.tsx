@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Auth } from '../lib/auth';
@@ -10,6 +10,8 @@ import { WelcomeSplash } from './WelcomeSplash';
 import { AssistantChat } from './AssistantChat';
 import { VerificarNotificacoes } from './VerificarNotificacoes';
 import { NotificationsBell } from './NotificationsBell';
+import { LoadingBlock } from '../lib/useApi';
+import { preCarregarTelas } from '../lib/preCarregar';
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,6 +66,8 @@ export function AppLayout() {
   };
 
   // Hooks ANTES dos returns condicionais (regra dos hooks: mesma ordem em todo render).
+  useEffect(() => { if (Auth.token) preCarregarTelas(); }, []);
+
   useEffect(() => {
     setMenuOpen(false);
   }, [loc.pathname]);
@@ -114,7 +118,10 @@ export function AppLayout() {
           onToggleCollapse={toggleCollapse}
         />
         <main className="main">
-          <Outlet />
+          {/* Carregamento só na área de conteúdo: a barra lateral nunca some. */}
+          <Suspense fallback={<LoadingBlock />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
       <WelcomeSplash />
