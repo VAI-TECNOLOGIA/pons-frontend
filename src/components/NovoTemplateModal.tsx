@@ -2,9 +2,9 @@ import { useMemo, useRef, useState } from 'react';
 import { Api } from '../lib/api';
 import { Icon } from './Icon';
 import { Modal } from './Modal';
+import { APP_STORE_URL } from '../lib/appLinks';
 import './novo-template.css';
 
-const APP_STORE_URL = 'https://apps.apple.com/br/app/grupo-pons/id6783093167';
 const LIMITE_META = 1024;
 
 // Comprimento como a Meta conta (UTF-16: emoji vale 2).

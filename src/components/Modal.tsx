@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { Icon } from './Icon';
 
 import './modal.css';
@@ -15,6 +15,7 @@ interface Props {
 
 export function Modal({ open, onClose, title, subtitle, children, footer, size = 'md' }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const dlg = ref.current;
@@ -38,11 +39,12 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
     <dialog
       ref={ref}
       className={`modal modal--${size}`}
+      aria-labelledby={titleId}
     >
       <div className="modal__content">
         <header className="modal__header">
           <div>
-            <h3 className="modal__title">{title}</h3>
+            <h3 id={titleId} className="modal__title">{title}</h3>
             {subtitle && <p className="modal__subtitle">{subtitle}</p>}
           </div>
           <button onClick={onClose} className="modal__close" aria-label="Fechar">

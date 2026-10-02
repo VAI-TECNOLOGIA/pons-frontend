@@ -4,6 +4,8 @@ import { Auth, formatRole, type Role } from '../lib/auth';
 import { useUser } from '../lib/userContext';
 import { useTheme } from '../lib/theme';
 import { Icon } from './Icon';
+import { AppsModal } from './AppsModal';
+import { APP_STORE_URL, PLAY_STORE_URL } from '../lib/appLinks';
 import { ReportarProblemaModal } from './ReportarProblemaModal';
 import { isNativeApp, currentPlatform } from '../lib/platform';
 import { VersaoApp } from './VersaoApp';
@@ -333,6 +335,7 @@ export function Sidebar({
                     type="button"
                     onClick={() => toggleGroup(g.key)}
                     className={'sidebar__group-trigger' + (open ? ' is-open' : '')}
+                    aria-expanded={open}
                   >
                     <Icon name={g.icon} />
                     <span className="sidebar__group-label">{g.label}</span>
@@ -464,7 +467,7 @@ function NavItemLink({
       {inner}
     </a>
   ) : (
-    <NavLink to={item.to} className={cls(active)} title={item.label} data-tour={`nav:${item.to}`}>
+    <NavLink to={item.to} className={cls(active)} title={item.label} data-tour={`nav:${item.to}`} aria-current={active ? 'page' : undefined}>
       {inner}
     </NavLink>
   );
@@ -487,15 +490,13 @@ function NavItemLink({
   );
 }
 
-// Bloco "Baixe o aplicativo" — link real da ficha na Google Play (Pons CRM publicado).
-// App Store: selo escondido até confirmar o link da ficha no App Store Connect;
-// quando confirmar, preencher APP_STORE_URL e o selo volta a aparecer.
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=br.com.grupopons.sistema';
-const APP_STORE_URL = '';
+// Bloco "Baixe o aplicativo": links reais em lib/appLinks.ts; o botão abre o modal com QR Code.
 function AppDownloadBlock() {
   const badgeLink = { textDecoration: 'none', cursor: 'pointer' } as const;
+  const [qrAberto, setQrAberto] = useState(false);
   return (
     <div className="sidebar__app-download">
+      <AppsModal open={qrAberto} onClose={() => setQrAberto(false)} />
       <div className="sidebar__app-download-title">Baixe o aplicativo</div>
       <div className="sidebar__app-download-row">
         {APP_STORE_URL && (
@@ -509,6 +510,7 @@ function AppDownloadBlock() {
           <span>Google Play</span>
         </a>
       </div>
+      <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6, width: '100%' }} onClick={() => setQrAberto(true)}>Ver QR Code</button>
     </div>
   );
 }
