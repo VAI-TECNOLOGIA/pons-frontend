@@ -131,15 +131,15 @@ export default function Financeiro() {
 
  const pagarSicredi = async (l: any) => {
  const ok = await confirm({
- title: 'Aprovar e pagar pelo Sicredi?',
- message: `"${l.descricao || l.beneficiario || 'Lançamento'}" · R$ ${(l.valor || 0).toLocaleString('pt-BR')} será aprovado e enviado AGORA ao Sicredi. Só este lançamento é pago.`,
- confirmText: 'Pagar pelo Sicredi',
+ title: 'Enviar ao Sicredi para aprovação?',
+ message: `"${l.descricao || l.beneficiario || 'Lançamento'}" · R$ ${(l.valor || 0).toLocaleString('pt-BR')} será enviado ao Sicredi e ficará aguardando a aprovação do CEO no Internet Banking. O dinheiro só sai depois dessa aprovação. Só este lançamento é enviado.`,
+ confirmText: 'Enviar ao Sicredi',
  tone: 'primary',
  });
  if (!ok) return;
  try {
  await Api.finPagarSicredi(l.id);
- toast.success('Pagamento enviado ao Sicredi');
+ toast.success('Enviado ao Sicredi. Aguardando aprovação do CEO no banco.');
  reloadLanc();
  reloadResumo();
  } catch (err: any) {
@@ -348,7 +348,7 @@ export default function Financeiro() {
  <button className="btn btn--secondary btn--sm" onClick={() => aprovar(l.id)}>Aprovar</button>
  )}
  {l.tipo === 'SAIDA' && ['PENDENTE', 'AGUARDANDO_APROVACAO', 'APROVADO'].includes(l.status) && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string) && (
- <button className="btn btn--primary btn--sm" onClick={() => pagarSicredi(l)}>Pagar pelo Sicredi</button>
+ <button className="btn btn--primary btn--sm" onClick={() => pagarSicredi(l)}>Enviar ao Sicredi</button>
  )}
  {l.status !== 'PAGO' && l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" onClick={() => marcarPago(l.id)}>Marcar pago</button>
