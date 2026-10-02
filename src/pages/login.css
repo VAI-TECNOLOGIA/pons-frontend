@@ -1,36 +1,8 @@
+/* Fontes F1: declaradas uma vez em styles/tokens.css (WOFF2 + TTF). */
 /* ───────────────────────────────────────────────────────────────────────
    Login — Grid de Largada (tema F1 Grupo Pons)
    Cinza #8c8c8c · Azul #52f7fe · fontes Formula1
    ─────────────────────────────────────────────────────────────────────── */
-
-@font-face {
-  font-family: 'F1';
-  src: url('/fonts/f1-regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'F1';
-  src: url('/fonts/f1-bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'F1';
-  src: url('/fonts/f1-italic.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'F1 Wide';
-  src: url('/fonts/f1-wide.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
 .login-screen {
   --cyan: #52f7fe;
