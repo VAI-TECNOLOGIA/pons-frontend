@@ -2,8 +2,9 @@ import { useState, Fragment } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { RowMenu } from '../components/RowMenu';
+import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
-import { formatCurrency, formatCurrencyShort, formatDate } from '../lib/format';
+import { formatCurrency, formatCurrencyExact, formatCurrencyShort, formatDate } from '../lib/format';
 import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -57,6 +58,25 @@ const STATUS_BADGE: Record<string, [string, string]> = {
  CANCELADO: ['cancelled', 'CANCELADO'],
 };
 
+// Jornada de uma conta a pagar, juntando o status do lançamento com o do banco.
+// Retorna [classe do badge, texto, dica].
+function statusJornada(l: any): [string, string, string] {
+ const sic = l.sicredi;
+ if (l.status === 'CANCELADO') return ['cancelled', 'CANCELADO', ''];
+ if (l.status === 'PAGO' || sic?.status === 'SUCESSO') return ['paid', 'PAGO', ''];
+ if (sic) {
+ const quando = sic.dataPagamento ? new Date(sic.dataPagamento + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+ if (sic.status === 'AGUARDANDO_APROVACAO') return ['analysis', 'NO BANCO · APROVAR', 'Enviado ao Sicredi. Falta o CEO aprovar no Internet Banking.'];
+ if (sic.status === 'AGENDADO' || sic.status === 'RECEBIDO') return ['signature', quando ? `AGENDADO · ${quando}` : 'AGENDADO NO BANCO', 'Aprovado no banco. O Sicredi paga na data agendada.'];
+ if (sic.status === 'ERRO') return ['cancelled', 'ERRO NO BANCO', sic.erro || 'O Sicredi recusou. Corrija e envie de novo.'];
+ }
+ if (l.tipo === 'SAIDA' && ['PENDENTE', 'AGUARDANDO_APROVACAO', 'APROVADO'].includes(l.status)) {
+ return ['neutral', 'NÃO ENVIADO', 'Lançado no sistema, mas ainda não foi para o banco. Clique em Enviar ao Sicredi.'];
+ }
+ const [k, lbl] = STATUS_BADGE[l.status] || ['neutral', l.status];
+ return [k, lbl, ''];
+}
+
 type Tab = 'extrato' | 'previsao' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
 
 export default function Financeiro() {
@@ -108,8 +128,53 @@ export default function Financeiro() {
  await Api.finLancamentoUpdate(editando.id, payload);
  toast.success('Lançamento corrigido');
  } else {
- await Api.finLancamentoCreate(payload);
+ let criado: any;
+ try {
+ criado = await Api.finLancamentoCreate(payload);
+ } catch (err: any) {
+ // Anti-duplicata: o servidor avisa se já existe conta igual (mesmo boleto ou
+ // mesmo beneficiário + valor + vencimento).
+ const det: any = err?.details;
+ if (err?.status !== 409 || det?.error !== 'duplicado') throw err;
+ const lista = (det.duplicados || []).slice(0, 3)
+ .map((d: any) => `#${d.id} ${d.descricao || d.beneficiario || ''} · ${formatCurrencyExact(d.valor || 0)} · ${statusJornada(d)[1]}`)
+ .join(' | ');
+ const seguir = await confirm({
+ title: 'Já existe um lançamento igual',
+ message: `Encontramos: ${lista}. Só lance de novo se for uma conta DIFERENTE — senão ela pode ser paga duas vezes.`,
+ confirmText: 'Lançar mesmo assim',
+ cancelText: 'Não lançar',
+ tone: 'danger',
+ });
+ if (!seguir) return;
+ criado = await Api.finLancamentoCreate({ ...payload, confirmarDuplicado: true });
+ }
  toast.success('Lançamento criado');
+ setOpenNew(false);
+ setEditando(null);
+ reloadLanc();
+ reloadResumo();
+ // Conta a pagar: oferece mandar pro banco na hora (era o passo esquecido).
+ if (tipoLanc === 'SAIDA' && criado?.id && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string)) {
+ const enviar = await confirm({
+ title: 'Enviar ao Sicredi agora?',
+ message: 'Lançar só registra a conta no sistema. Para pagar, ela precisa ir ao banco — depois o CEO aprova no Internet Banking.',
+ confirmText: 'Enviar ao Sicredi',
+ cancelText: 'Depois',
+ tone: 'primary',
+ });
+ if (enviar) {
+ try {
+ await Api.finPagarSicredi(criado.id);
+ toast.success('Enviado ao Sicredi. Aguardando aprovação do CEO no banco.');
+ } catch (e: any) {
+ toast.error(e?.message || 'O Sicredi não recebeu o pagamento.');
+ }
+ reloadLanc();
+ reloadResumo();
+ }
+ }
+ return;
  }
  setOpenNew(false);
  setEditando(null);
@@ -281,6 +346,17 @@ export default function Financeiro() {
  });
  return (
  <>
+ {/* Guia do fluxo de pagamento: lançar não paga — precisa enviar ao banco. */}
+ <div className="fluxo-pagamento" role="note" aria-label="Como pagar uma conta">
+ <span className="fluxo-pagamento__titulo">Como pagar uma conta</span>
+ <span className="fluxo-pagamento__passo"><b>1</b> Lançar (+ Lançamento)</span>
+ <Icon name="chevron-right" size={14} />
+ <span className="fluxo-pagamento__passo"><b>2</b> Enviar ao Sicredi</span>
+ <Icon name="chevron-right" size={14} />
+ <span className="fluxo-pagamento__passo"><b>3</b> CEO aprova no Internet Banking</span>
+ <Icon name="chevron-right" size={14} />
+ <span className="fluxo-pagamento__passo"><b>4</b> Banco paga na data</span>
+ </div>
  <div className="card flex gap-2" style={{ alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 12 }}>
  <div className="field" style={{ margin: 0, flex: 1, minWidth: 200 }}>
  <label className="field__label">Buscar (beneficiário, descrição, categoria)</label>
@@ -324,7 +400,7 @@ export default function Financeiro() {
  </tr>
  ) : (
  filtrados.map((l: any) => {
- const [k, lbl] = STATUS_BADGE[l.status] || ['neutral', l.status];
+ const [k, lbl, dica] = statusJornada(l);
  const isOut = l.tipo === 'SAIDA';
  return (
  <tr key={l.id}>
@@ -339,14 +415,14 @@ export default function Financeiro() {
  </td>
  <td className="text-sm">{formatDate(l.vencimento)}</td>
  <td>
- <span className={`badge badge--${k}`}>{lbl}</span>
+ <span className={`badge badge--${k}`} title={dica || undefined}>{lbl}</span>
  </td>
  <td>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
  {l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" onClick={() => abrirEdicao(l)}>Editar</button>
  )}
- {l.tipo === 'SAIDA' && ['PENDENTE', 'AGUARDANDO_APROVACAO', 'APROVADO'].includes(l.status) && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string) && (
+ {l.tipo === 'SAIDA' && ['PENDENTE', 'AGUARDANDO_APROVACAO', 'APROVADO'].includes(l.status) && (!l.sicredi || l.sicredi.status === 'ERRO') && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string) && (
  <button className="btn btn--primary btn--sm" onClick={() => pagarSicredi(l)}>Enviar ao Sicredi</button>
  )}
  {l.status !== 'CANCELADO' && (

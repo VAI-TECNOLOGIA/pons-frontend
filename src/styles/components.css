@@ -2915,3 +2915,26 @@ html.statusbar-overlay body::before {
   font-size: 13px;
   color: var(--text-secondary);
 }
+
+/* ---------- Guia do fluxo de pagamento (Financeiro) ---------- */
+.fluxo-pagamento {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-light);
+  border-left: 3px solid var(--pons-blue);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+[data-theme="dark"] .fluxo-pagamento { border-left-color: var(--pons-cyan); }
+.fluxo-pagamento__titulo { font-weight: 700; color: var(--text-primary); margin-right: 4px; }
+.fluxo-pagamento__passo b {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin-right: 4px; border-radius: 50%;
+  background: var(--bg-elevated); color: var(--text-primary); font-size: 11px;
+}
