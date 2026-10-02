@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.02.3",
+  "versao": "2026.10.02.4",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Painéis com foco no que importa",
+      "itens": [
+        "Os painéis destacam o número principal (ex.: Saldo realizado, Vendas no mês) e marcam em âmbar o que pede ação (ex.: Aguardando aprovação, Sem follow-up).",
+        "Listas sem resultado em todo o sistema agora explicam o que fazer em vez de ficarem em branco."
+      ]
+    },
     {
       "titulo": "Financeiro mais limpo",
       "itens": [
