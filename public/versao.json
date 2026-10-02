@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.02.5",
+  "versao": "2026.10.02.6",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Textos mais uniformes",
+      "itens": [
+        "Tamanhos de texto padronizados em todo o sistema: leitura mais confortável e telas com aparência mais consistente."
+      ]
+    },
     {
       "titulo": "Tabelas ordenáveis e sistema mais rápido",
       "itens": [
