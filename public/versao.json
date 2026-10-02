@@ -1,7 +1,16 @@
 {
-  "versao": "2026.09.30.2",
-  "data": "30/09/2026",
+  "versao": "2026.10.02.1",
+  "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Visual refinado e aplicativos",
+      "itens": [
+        "Textos mais legíveis (contraste), foco de teclado visível e mensagens de erro claras no tema escuro.",
+        "Novo ícone do Grupo Pons (GPI) na aba do navegador e no celular.",
+        "Baixe o aplicativo: na barra lateral, o botão Ver QR Code mostra os QR Codes do Android e do iPhone.",
+        "Financeiro: o botão Enviar ao Sicredi manda o pagamento para o banco, onde o CEO aprova."
+      ]
+    },
     {
       "titulo": "Banco Sicredi: credenciais cadastradas pela própria Pons",
       "itens": [
