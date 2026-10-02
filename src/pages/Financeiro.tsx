@@ -215,7 +215,34 @@ export default function Financeiro() {
  }
  };
 
+ const NO_BANCO = ['AGUARDANDO_APROVACAO', 'AGENDADO', 'RECEBIDO'];
+ const cancelarNoBanco = async (l: any) => {
+ const ok = await confirm({
+ title: 'Cancelar este pagamento no Sicredi?',
+ message: `"${l.descricao || l.beneficiario || 'Pagamento'}" · ${formatCurrencyExact(l.valor || 0)} será cancelado NO BANCO e não será pago. O lançamento volta para "não enviado" — dá para reenviar ou cancelar depois.`,
+ confirmText: 'Cancelar no banco',
+ cancelText: 'Voltar',
+ tone: 'danger',
+ });
+ if (!ok) return;
+ try {
+ await Api.finCancelarSicredi(l.id);
+ toast.success('Pagamento cancelado no Sicredi.');
+ } catch (e: any) {
+ toast.error(e?.message || 'O Sicredi não cancelou. Cancele pelo Internet Banking.');
+ }
+ reloadLanc();
+ reloadResumo();
+ };
+
  const cancelar = async (l: any) => {
+ // No banco: cancelar só no sistema NÃO impede o pagamento.
+ if (l.sicredi && NO_BANCO.includes(l.sicredi.status)) {
+ toast.error(Auth.user?.role === 'CEO'
+ ? 'Este pagamento está no banco. Use ⋯ → "Cancelar no banco" primeiro; senão o Sicredi paga mesmo assim.'
+ : 'Este pagamento está no banco. Peça ao CEO para usar "Cancelar no banco" (⋯) primeiro.');
+ return;
+ }
  const ok = await confirm({
  title: 'Cancelar este lançamento?',
  message: `"${l.descricao || l.beneficiario || 'Lançamento'}" · R$ ${(l.valor || 0).toLocaleString('pt-BR')} será marcado como CANCELADO e sai do total a pagar. Fica no histórico (auditoria), não é apagado.`,
@@ -433,6 +460,7 @@ export default function Financeiro() {
  items={[
  ...(l.status === 'AGUARDANDO_APROVACAO' && Auth.user?.role === 'CEO' ? [{ label: 'Aprovar', onClick: () => aprovar(l.id) }] : []),
  ...(l.status !== 'PAGO' && l.status !== 'CANCELADO' ? [{ label: 'Marcar pago', onClick: () => marcarPago(l.id) }] : []),
+ ...(Auth.user?.role === 'CEO' && l.sicredi && NO_BANCO.includes(l.sicredi.status) ? [{ label: 'Cancelar no banco', danger: true, onClick: () => cancelarNoBanco(l) }] : []),
  ]}
  />
  </div>

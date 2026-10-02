@@ -690,6 +690,7 @@ export const Api = {
   finPainelDiretor: () => request<any>('/financeiro/painel-diretor'),
   finImportar: (lancamentos: any[]) => request<any>('/financeiro/importar', { method: 'POST', body: { lancamentos } }),
   finSicrediStatus: () => request<any>('/financeiro/sicredi/status'),
+  finCancelarSicredi: (id: number) => request<{ ok: boolean }>(`/financeiro/lancamentos/${id}/cancelar-sicredi`, { method: 'POST' }),
   finPagarSicredi: (id: number) => request<{ ok: boolean }>(`/financeiro/lancamentos/${id}/pagar-sicredi`, { method: 'POST' }),
   finSicrediEnviar: () => request<any>('/financeiro/sicredi/enviar', { method: 'POST' }),
   finComprovantePdf: async (corretorId: number, params: any = {}) => {
