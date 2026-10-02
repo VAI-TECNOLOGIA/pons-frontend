@@ -129,6 +129,25 @@ export default function Financeiro() {
  }
  };
 
+ const pagarSicredi = async (l: any) => {
+ const ok = await confirm({
+ title: 'Aprovar e pagar pelo Sicredi?',
+ message: `"${l.descricao || l.beneficiario || 'Lançamento'}" · R$ ${(l.valor || 0).toLocaleString('pt-BR')} será aprovado e enviado AGORA ao Sicredi. Só este lançamento é pago.`,
+ confirmText: 'Pagar pelo Sicredi',
+ tone: 'primary',
+ });
+ if (!ok) return;
+ try {
+ await Api.finPagarSicredi(l.id);
+ toast.success('Pagamento enviado ao Sicredi');
+ reloadLanc();
+ reloadResumo();
+ } catch (err: any) {
+ toast.error(err?.message || 'O Sicredi não recebeu o pagamento.');
+ reloadLanc();
+ }
+ };
+
  const cancelar = async (l: any) => {
  const ok = await confirm({
  title: 'Cancelar este lançamento?',
@@ -327,6 +346,9 @@ export default function Financeiro() {
  )}
  {l.status === 'AGUARDANDO_APROVACAO' && Auth.user?.role === 'CEO' && (
  <button className="btn btn--secondary btn--sm" onClick={() => aprovar(l.id)}>Aprovar</button>
+ )}
+ {l.tipo === 'SAIDA' && ['PENDENTE', 'AGUARDANDO_APROVACAO', 'APROVADO'].includes(l.status) && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string) && (
+ <button className="btn btn--primary btn--sm" onClick={() => pagarSicredi(l)}>Pagar pelo Sicredi</button>
  )}
  {l.status !== 'PAGO' && l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" onClick={() => marcarPago(l.id)}>Marcar pago</button>
