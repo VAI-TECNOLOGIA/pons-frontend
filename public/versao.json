@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.02.8",
+  "versao": "2026.10.02.9",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Troca de telas mais rápida",
+      "itens": [
+        "Ao clicar no menu, a tela atual continua visível até a próxima abrir — sem a tela piscando e sem a barra lateral sumir.",
+        "O sistema prepara as telas em segundo plano, então elas abrem quase na hora."
+      ]
+    },
     {
       "titulo": "Cancelar pagamento no banco",
       "itens": [
