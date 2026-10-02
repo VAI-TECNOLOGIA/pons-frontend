@@ -189,7 +189,7 @@ export function TourGuiado() {
       {/* Tooltip */}
       <div style={{ ...tipBase, ...tip }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#52f7fe', letterSpacing: 0.3 }}>PASSO {idx + 1} DE {PASSOS.length}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--pons-cyan)', letterSpacing: 0.3 }}>PASSO {idx + 1} DE {PASSOS.length}</span>
           <button type="button" onClick={sair} title="Sair do tour" style={xBtn}>✕</button>
         </div>
         <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800 }}>{passo.titulo}</h3>

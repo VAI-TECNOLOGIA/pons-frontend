@@ -1,6 +1,6 @@
 /* ============================================================
    ACADEMIA PONS — Treinamentos (pública, exclusiva do app)
-   Identidade do sistema: dark motorsport · cyan #52f7fe · fonte F1
+   Identidade do sistema: dark motorsport · cyan var(--pons-cyan) · fonte F1
    ============================================================ */
 
 .trn-page {

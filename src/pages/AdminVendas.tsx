@@ -200,7 +200,7 @@ export default function AdminVendas() {
       {sel && (
         <Modal open onClose={() => setSelId(null)} title={`Auditoria — Venda #${sel.codigo}`} subtitle="Confira dados e documentos antes de avançar a fase" size="lg">
           {/* Hero: cliente + valor + situação */}
-          <div style={{ background: 'linear-gradient(135deg, #1E2A44, #263654)', borderRadius: 14, padding: '18px 22px', color: '#fff', marginBottom: 16 }}>
+          <div style={{ background: 'linear-gradient(135deg, #1E2A44, var(--navy-700))', borderRadius: 14, padding: '18px 22px', color: '#fff', marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, lineHeight: 1.15 }}>{sel.clienteNome}</div>

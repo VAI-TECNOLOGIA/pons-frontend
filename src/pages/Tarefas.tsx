@@ -258,7 +258,7 @@ export default function Tarefas() {
                             {t.privada && (
                               <span
                                 title="Privada — só você e o responsável enxergam"
-                                style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: 5, color: 'var(--pons-blue, #0E7C9B)' }}
+                                style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: 5, color: 'var(--pons-blue)' }}
                               >
                                 <Icon name="shield" size={13} />
                               </span>

@@ -397,7 +397,7 @@ export default function Leads() {
 
  {/* Barra de ação em massa — aparece com leads selecionados (igual à da Distribuição) */}
  {podeTransferir && sel.size > 0 && (
- <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan, #52f7fe)', borderRadius: 10 }}>
+ <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan)', borderRadius: 10 }}>
  <strong style={{ fontSize: 14 }}>{sel.size} selecionado(s)</strong>
  <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
  {podeArquivar && (
@@ -481,7 +481,7 @@ export default function Leads() {
  </div>
  <div className="text-xs text-secondary">{l.telefone || l.email || '—'}</div>
  {l.campanha && (
- <div className="text-xs" style={{ color: '#0E7C9B', marginTop: 2 }} title={l.campanha}>
+ <div className="text-xs" style={{ color: 'var(--pons-blue)', marginTop: 2 }} title={l.campanha}>
  <Icon name="megafone" size={11} /> {l.campanha}
  </div>
  )}

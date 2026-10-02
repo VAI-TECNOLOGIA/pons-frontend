@@ -103,7 +103,7 @@
   border-radius: 50%;
   background: var(--color-success);
 }
-.assistant__status-dot--demo { background: #F2B544; }
+.assistant__status-dot--demo { background: var(--color-warning); }
 .assistant__close {
   background: rgba(255, 255, 255, 0.12);
   border: none;

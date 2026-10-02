@@ -144,7 +144,7 @@ export function AvisoAtualizacao() {
             cursor: 'pointer', fontSize: 13, fontWeight: 600,
           }}
         >
-          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: '#52f7fe', boxShadow: '0 0 0 3px rgba(82,247,254,0.25)' }} />
+          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--pons-cyan)', boxShadow: '0 0 0 3px rgba(82,247,254,0.25)' }} />
           Sistema atualizado
         </button>
       )}

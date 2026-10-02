@@ -37,7 +37,7 @@ body:has(.tv) {
   font-weight: 800;
   letter-spacing: 0.45em;
   text-transform: uppercase;
-  color: #52f7fe;
+  color: var(--pons-cyan);
 }
 .tvh__brand-title {
   font-size: 18px;
@@ -330,7 +330,7 @@ body:has(.tv) {
 .ffill {
   height: 100%;
   border-radius: 6px;
-  background: linear-gradient(90deg, #ffffff 0%, #52f7fe 55%, #19c8d8 100%);
+  background: linear-gradient(90deg, #ffffff 0%, var(--pons-cyan) 55%, #19c8d8 100%);
   box-shadow: 0 0 12px rgba(82,247,254,0.4);
   transition: width 800ms ease;
   min-width: 2px;

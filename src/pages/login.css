@@ -1,11 +1,11 @@
 /* Fontes F1: declaradas uma vez em styles/tokens.css (WOFF2 + TTF). */
 /* ───────────────────────────────────────────────────────────────────────
    Login — Grid de Largada (tema F1 Grupo Pons)
-   Cinza #8c8c8c · Azul #52f7fe · fontes Formula1
+   Cinza #8c8c8c · Azul var(--pons-cyan) · fontes Formula1
    ─────────────────────────────────────────────────────────────────────── */
 
 .login-screen {
-  --cyan: #52f7fe;
+  --cyan: var(--pons-cyan);
   --gray: #8c8c8c;
   position: fixed;
   inset: 0;

@@ -327,7 +327,7 @@ export default function Distribuicao() {
               </div>
               {/* Barra de ação — aparece quando há leads selecionados */}
               {sel.size > 0 && (
-                <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan, #52f7fe)', borderRadius: 10 }}>
+                <div className="flex" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, padding: '10px 12px', background: 'var(--bg-elevated)', border: '1px solid var(--pons-cyan)', borderRadius: 10 }}>
                   <strong style={{ fontSize: 14 }}>{sel.size} selecionado(s)</strong>
                   <button className="btn btn--ghost btn--sm" onClick={() => setSel(new Set())}>Limpar seleção</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={arquivarSelecionados} disabled={arquivando}>{arquivando ? 'Arquivando…' : 'Arquivar'}</button>

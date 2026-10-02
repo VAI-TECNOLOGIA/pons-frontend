@@ -107,7 +107,7 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
                   <td>
                     <div className="avatar avatar--sm" style={{ position: 'relative' }}>
                       {p.initials}
-                      <span style={{ position: 'absolute', bottom: -4, right: -4, background: 'var(--pons-cyan, #52f7fe)', color: '#08090F', borderRadius: 999, minWidth: 16, height: 16, fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{i + 1}</span>
+                      <span style={{ position: 'absolute', bottom: -4, right: -4, background: 'var(--pons-cyan)', color: '#08090F', borderRadius: 999, minWidth: 16, height: 16, fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{i + 1}</span>
                     </div>
                   </td>
                   <td className="font-semibold">{p.nome}</td>

@@ -29,7 +29,7 @@
   --sb-fav-divider: var(--border-medium);
   --sb-hover: var(--gray-100);
   --sb-active-bg: var(--gray-100);
-  --sb-accent: #0E7C9B;          /* ciano-azulado legível sobre branco */
+  --sb-accent: var(--pons-blue);          /* ciano-azulado legível sobre branco */
   --sb-accent-soft: rgba(14, 124, 155, 0.10);
 
   background: var(--sb-bg);
@@ -52,7 +52,7 @@
   --sb-fav-divider: rgba(255, 255, 255, 0.16);
   --sb-hover: rgba(255, 255, 255, 0.06);
   --sb-active-bg: rgba(255, 255, 255, 0.09);
-  --sb-accent: #52f7fe;
+  --sb-accent: var(--pons-cyan);
   --sb-accent-soft: rgba(82, 247, 254, 0.12);
 
   color: rgba(255, 255, 255, 0.85);
@@ -1861,7 +1861,7 @@
    ============================================================ */
 
 .tv-mode {
-  background: linear-gradient(135deg, #0F1729 0%, #1A2444 50%, #263654 100%);
+  background: linear-gradient(135deg, #0F1729 0%, #1A2444 50%, var(--navy-700) 100%);
   min-height: 100vh;
   color: white;
   padding: 48px;
@@ -2184,7 +2184,7 @@
   --speed-mclaren:  #FF8000;
   --speed-redbull:  #1E3A8A;
   --speed-mercedes: #00A19C;
-  --speed-box:      #79797C;
+  --speed-box:      var(--gray-500);
   --speed-accent:   var(--pons-blue);
 }
 
@@ -2413,7 +2413,7 @@
 .tv-funnel__track { flex: 1; height: 26px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; position: relative; }
 .tv-funnel__fill {
   height: 100%;
-  background: linear-gradient(90deg, #0E7C9B, var(--blue-300));
+  background: linear-gradient(90deg, var(--pons-blue), var(--blue-300));
   border-radius: 6px;
   display: flex; align-items: center; padding: 0 10px;
   font-size: 12px; font-weight: 800; font-style: italic;

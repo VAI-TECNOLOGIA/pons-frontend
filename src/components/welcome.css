@@ -46,7 +46,7 @@
  left: 0;
  right: 0;
  height: 4px;
- background: linear-gradient(90deg, #e10600 0%, #f2b544 35%, #88c559 70%, #52f7fe 100%);
+ background: linear-gradient(90deg, #e10600 0%, var(--color-warning) 35%, #88c559 70%, var(--pons-cyan) 100%);
  background-size: 220% 100%;
  animation: wlc-speed 3.2s linear infinite;
 }

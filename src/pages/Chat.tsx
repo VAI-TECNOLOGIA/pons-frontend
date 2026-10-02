@@ -1069,7 +1069,7 @@ export default function Chat() {
                           target="_blank"
                           rel="noreferrer"
                           title="Abrir conversa no WhatsApp"
-                          style={{ color: 'var(--link-accent, #0E7C9B)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          style={{ color: 'var(--link-accent, var(--pons-blue))', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         >
                           <Icon name="whatsapp" size={13} /> {conv.telefone}
                         </a>

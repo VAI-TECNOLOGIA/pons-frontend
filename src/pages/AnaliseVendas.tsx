@@ -135,7 +135,7 @@ function CardHead({ title, total, onVerTodas }: { title: string; total: number; 
     <div className="flex-between" style={{ marginTop: 0, marginBottom: 10, gap: 8 }}>
       <h3 className="card__title" style={{ margin: 0 }}>{title}</h3>
       {total > 0 && (
-        <button onClick={onVerTodas} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pons-blue, #0E7C9B)', fontSize: 12, fontWeight: 700, padding: 2, whiteSpace: 'nowrap' }}>
+        <button onClick={onVerTodas} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 12, fontWeight: 700, padding: 2, whiteSpace: 'nowrap' }}>
           Ver todas ({total}) <Icon name="chevron-right" size={14} />
         </button>
       )}

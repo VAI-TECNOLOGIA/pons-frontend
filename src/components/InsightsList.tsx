@@ -16,7 +16,7 @@ export function InsightsList() {
 
   const Header = (
     <div className="flex" style={{ alignItems: 'center', gap: 10, marginBottom: 12 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#0E7C9B,#3FB6D4)', color: '#fff', flexShrink: 0 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,var(--pons-blue),#3FB6D4)', color: '#fff', flexShrink: 0 }}>
         <Icon name="lightbulb" size={17} />
       </span>
       <div>
