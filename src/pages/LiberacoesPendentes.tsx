@@ -52,7 +52,7 @@ export default function LiberacoesPendentes() {
                 key={p.id}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
-                  borderBottom: '1px solid var(--border)', flexWrap: 'wrap',
+                  borderBottom: '1px solid var(--border-light)', flexWrap: 'wrap',
                 }}
               >
                 <div style={{ flex: 1, minWidth: 220 }}>

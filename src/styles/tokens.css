@@ -125,7 +125,8 @@
   --bg-overlay:       rgba(38, 54, 84, 0.6);
 
   --text-primary:    var(--gray-900);
-  --text-secondary:  var(--gray-500);
+  --text-secondary:  #5F5F62; /* contraste >= 4.5:1 sobre branco e bg-app (era gray-500 = 4.3) */
+  --text-placeholder: #6B7280;
   --text-disabled:   var(--gray-300);
   --text-on-dark:    var(--gray-0);
   --text-on-brand:   var(--gray-0);
@@ -196,6 +197,7 @@
   --text-primary:    #E6EAF2;
   --text-secondary:  #8893A8;
   --text-disabled:   #4A5468;
+  --text-placeholder: #7A8498;
   --text-link:       #6FE3F0;
   --text-link-hover: #A6F2FA;
 
@@ -336,3 +338,17 @@ body {
    --bp-tv: 1920px
    ============================================================ */
 
+
+/* ===========================================================
+   ALIASES — variáveis que o código já usava sem estar definidas
+   (falhavam em silêncio). Só aditivo: não altera nenhum token existente.
+   =========================================================== */
+:root {
+  --text-muted:    var(--text-secondary);
+  --text-tertiary: var(--text-secondary);
+  --bg-subtle:     var(--bg-elevated);
+  --red-300: #F08A93;
+  --red-400: #E0525E;
+  --red-600: var(--color-danger);
+  --red-700: #A20815;
+}

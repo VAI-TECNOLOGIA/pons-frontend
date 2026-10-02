@@ -879,10 +879,15 @@
 .badge--analysis    { background: var(--color-warning-bg); color: var(--color-warning-fg); }
 .badge--signature   { background: var(--blue-50);          color: var(--blue-700); }
 .badge--signed      { background: var(--color-success-bg); color: var(--color-success-fg); }
-.badge--paid        { background: var(--color-success);    color: white; }
+.badge--paid        { background: var(--color-success);    color: #1F3A0A; } /* texto escuro: branco sobre o verde dava 2.06:1 */
 .badge--cancelled   { background: var(--color-danger-bg);  color: var(--color-danger-fg); }
 .badge--neutral     { background: var(--gray-100);         color: var(--gray-700); }
 .badge--launch      { background: var(--src-instagram-bg); color: var(--src-instagram-fg); }
+/* Variantes semânticas — já eram usadas no TSX (badge--info/warning/success) sem estilo */
+.badge--info        { background: var(--color-info-bg);    color: var(--color-info-fg); }
+.badge--warning     { background: var(--color-warning-bg); color: var(--color-warning-fg); }
+.badge--success     { background: var(--color-success-bg); color: var(--color-success-fg); }
+.badge--sm          { padding: 2px 8px; font-size: 10px; }
 
 .badge--dot::before {
   content: '';
@@ -2505,6 +2510,29 @@
   outline-color: var(--pons-cyan);
 }
 
+/* Foco de teclado global: só aparece em navegação por teclado (não no clique). */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab:focus-visible,
+.sidebar__item:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+[data-theme="dark"] a:focus-visible,
+[data-theme="dark"] button:focus-visible,
+[data-theme="dark"] [role="button"]:focus-visible,
+[data-theme="dark"] [role="tab"]:focus-visible,
+[data-theme="dark"] .tab:focus-visible,
+[data-theme="dark"] .sidebar__item:focus-visible,
+[data-theme="dark"] select:focus-visible,
+[data-theme="dark"] summary:focus-visible {
+  outline-color: var(--pons-cyan);
+}
+
 /* Celular: campos com 16px para o iPhone não dar zoom sozinho ao tocar
    (o zoom por pinça voltou a ser permitido no index.html). */
 @media (max-width: 768px) {
@@ -2522,8 +2550,8 @@
 /* Inputs — placeholder mais visível em dark */
 .field__input::placeholder,
 .field__textarea::placeholder {
-  color: var(--text-disabled);
-  opacity: 0.85;
+  color: var(--text-placeholder);
+  opacity: 1;
 }
 
 /* Topbar sticky no mobile */
