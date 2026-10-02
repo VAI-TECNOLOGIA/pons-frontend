@@ -44,10 +44,6 @@
     --fs-display-lg: 26px;
   }
 
-  /* Hide desktop sidebar; mobile usa overlay */
-  .layout__sidebar { display: none !important; }
-  .layout__sidebar--mobile-open { display: flex !important; }
-
   .main__content { padding: 12px !important; }
 
   /* KPI vira coluna única ou 2 col */

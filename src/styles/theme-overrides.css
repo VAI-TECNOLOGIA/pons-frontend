@@ -493,7 +493,7 @@
 
   .main__content { padding: 16px; }
 
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .kpi-grid { gap: 12px; } /* colunas vêm de responsive.css (!important) */
   .kpi__value { font-size: 20px; }
   .kpi__label { font-size: 11px; }
 
@@ -509,7 +509,6 @@
 }
 
 @media (max-width: 640px) {
-  .kpi-grid { grid-template-columns: 1fr; }
   .main__content { padding: 12px; }
   .auth { grid-template-columns: 1fr; }
   .page-header__title { font-size: 20px; }
