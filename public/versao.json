@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.02.7",
+  "versao": "2026.10.02.8",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Cancelar pagamento no banco",
+      "itens": [
+        "O CEO pode cancelar no Sicredi um pagamento que ainda não foi pago (aguardando aprovação ou agendado): menu ⋯ → Cancelar no banco.",
+        "Cancelar só no sistema um pagamento que já está no banco agora é bloqueado, para não haver pagamento sem controle."
+      ]
+    },
     {
       "titulo": "Pagamentos: fluxo mais claro e sem pagar em dobro",
       "itens": [
