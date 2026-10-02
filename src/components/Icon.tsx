@@ -1,4 +1,7 @@
 const ICON_PATHS: Record<string, string> = {
+  // Menu de ações (três pontos)
+  more:
+    '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
   // Sidebar
   dashboard:
     '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',

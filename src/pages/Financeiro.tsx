@@ -1,6 +1,7 @@
 import { useState, Fragment } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
+import { RowMenu } from '../components/RowMenu';
 import { Modal } from '../components/Modal';
 import { formatCurrency, formatCurrencyShort, formatDate } from '../lib/format';
 import { Api } from '../lib/api';
@@ -345,18 +346,19 @@ export default function Financeiro() {
  {l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" onClick={() => abrirEdicao(l)}>Editar</button>
  )}
- {l.status === 'AGUARDANDO_APROVACAO' && Auth.user?.role === 'CEO' && (
- <button className="btn btn--secondary btn--sm" onClick={() => aprovar(l.id)}>Aprovar</button>
- )}
  {l.tipo === 'SAIDA' && ['PENDENTE', 'AGUARDANDO_APROVACAO', 'APROVADO'].includes(l.status) && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string) && (
  <button className="btn btn--primary btn--sm" onClick={() => pagarSicredi(l)}>Enviar ao Sicredi</button>
- )}
- {l.status !== 'PAGO' && l.status !== 'CANCELADO' && (
- <button className="btn btn--ghost btn--sm" onClick={() => marcarPago(l.id)}>Marcar pago</button>
  )}
  {l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger)' }} onClick={() => cancelar(l)}>Cancelar</button>
  )}
+ {/* Ações raras (uso medido em 02/10: Aprovar 0x, Marcar pago 1x em 60 dias) ficam no menu. */}
+ <RowMenu
+ items={[
+ ...(l.status === 'AGUARDANDO_APROVACAO' && Auth.user?.role === 'CEO' ? [{ label: 'Aprovar', onClick: () => aprovar(l.id) }] : []),
+ ...(l.status !== 'PAGO' && l.status !== 'CANCELADO' ? [{ label: 'Marcar pago', onClick: () => marcarPago(l.id) }] : []),
+ ]}
+ />
  </div>
  </td>
  </tr>
