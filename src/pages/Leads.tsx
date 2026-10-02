@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { EmptyState } from '../components/EmptyState';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { LeadsFiltrosPanel } from '../components/LeadsFiltrosPanel';
@@ -446,8 +447,8 @@ export default function Leads() {
  <tbody>
  {filtered.length === 0 ? (
  <tr>
- <td colSpan={(podeTransferir ? 1 : 0) + 1 + colunasAtivas.length} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
- Nenhum lead
+ <td colSpan={(podeTransferir ? 1 : 0) + 1 + colunasAtivas.length} >
+ <EmptyState size="sm" icon="users" title="Nenhum lead" description="Nada encontrado com os filtros atuais." />
  </td>
  </tr>
  ) : (

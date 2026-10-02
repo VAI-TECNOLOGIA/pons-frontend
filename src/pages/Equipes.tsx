@@ -346,11 +346,11 @@ export default function Equipes() {
  </div>
  )}
 
- <div className="tabs">
- <button className={'tab ' + (view === 'escuderias' ? 'tab--active' : '')} onClick={() => setView('escuderias')}>
+ <div className="tabs" role="tablist">
+ <button className={'tab ' + (view === 'escuderias' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'escuderias')} onClick={() => setView('escuderias')}>
  Escuderias
  </button>
- <button className={'tab ' + (view === 'resultados' ? 'tab--active' : '')} onClick={() => setView('resultados')}>
+ <button className={'tab ' + (view === 'resultados' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'resultados')} onClick={() => setView('resultados')}>
  Resultados
  </button>
  </div>

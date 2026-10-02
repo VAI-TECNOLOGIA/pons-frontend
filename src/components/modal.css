@@ -96,3 +96,8 @@
   .modal__header { padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
   .modal__footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Toque: o X do modal ganha 44px em telas de toque (desktop segue 32px). */
+@media (hover: none) and (pointer: coarse) {
+  .modal__close { width: 44px; height: 44px; }
+}

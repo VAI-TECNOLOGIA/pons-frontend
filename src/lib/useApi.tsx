@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Skeleton } from '../components/Skeleton';
 import { Icon } from '../components/Icon';
 
 export interface UseApiState<T> {
@@ -135,9 +136,14 @@ export function ErrorBlock({ error, label = 'Erro ao carregar' }: { error: Error
 }
 
 export function LoadingBlock({ label = 'Carregando…' }: { label?: string }) {
+  // Esqueleto em vez de só texto: dá noção de que a página está montando.
   return (
-    <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>
-      {label}
+    <div className="card" role="status" aria-live="polite" aria-busy="true" style={{ padding: 24 }}>
+      <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>{label}</span>
+      <div aria-hidden="true">
+        <Skeleton variant="title" width="30%" />
+        <Skeleton variant="text" count={4} style={{ marginTop: 12 }} />
+      </div>
     </div>
   );
 }

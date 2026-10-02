@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { EmptyState } from '../components/EmptyState';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { LeadCamposCustom } from '../components/LeadCamposCustom';
@@ -63,7 +64,7 @@ export default function MeusLeads() {
           </thead>
           <tbody>
             {leads.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>Nenhum lead direcionado pra você ainda</td></tr>
+              <tr><td colSpan={6}><EmptyState size="sm" icon="users" title="Nenhum lead direcionado pra você ainda" /></td></tr>
             ) : leads.map((l) => {
               const [k, lab] = STATUS_MAP[l.status] || ['neutral', l.status];
               const digits = String(l.telefone || '').replace(/\D/g, '');

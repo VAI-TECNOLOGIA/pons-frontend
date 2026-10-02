@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { EmptyState } from '../components/EmptyState';
 import { Modal } from '../components/Modal';
 import { Auth } from '../lib/auth';
 import { Icon } from '../components/Icon';
@@ -1455,7 +1456,7 @@ export default function Vendas() {
  </thead>
  <tbody>
  {vendasFiltradas.length === 0 && (
- <tr><td colSpan={8} className="text-sm text-secondary" style={{ textAlign: 'center', padding: 24 }}>Nenhuma venda com esses filtros.</td></tr>
+ <tr><td colSpan={8}><EmptyState size="sm" icon="sales" title="Nenhuma venda com esses filtros" description="Ajuste os filtros para ver mais resultados." /></td></tr>
  )}
  {vendasFiltradas.map((v: any) => {
  const [k, lbl] = STATUS_MAP[v.status] || ['neutral', v.status];

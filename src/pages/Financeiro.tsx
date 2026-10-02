@@ -1,5 +1,6 @@
 import { useState, Fragment } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { EmptyState } from '../components/EmptyState';
 import { Modal } from '../components/Modal';
 import { formatCurrency, formatCurrencyShort, formatDate } from '../lib/format';
 import { Api } from '../lib/api';
@@ -248,7 +249,7 @@ export default function Financeiro() {
  </div>
  </div>
 
- <div className="tabs">
+ <div className="tabs" role="tablist">
  {([
  ['extrato', 'Extrato'],
  ['previsao', 'Previsão de entrada'],
@@ -262,7 +263,7 @@ export default function Financeiro() {
  ] as const).map(([key, label]) => (
  <button
  key={key}
- className={'tab ' + (tab === key ? 'tab--active' : '')}
+ className={'tab ' + (tab === key ? 'tab--active' : '')} role="tab" aria-selected={!!(tab === key)}
  onClick={() => setTab(key as Tab)}
  >
  {label}
@@ -316,8 +317,8 @@ export default function Financeiro() {
  <tbody>
  {filtrados.length === 0 ? (
  <tr>
- <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
- {(lancamentos || []).length === 0 ? 'Nenhum lançamento ainda' : 'Nenhum lançamento para o filtro'}
+ <td colSpan={7}>
+ <EmptyState size="sm" icon="wallet" title={(lancamentos || []).length === 0 ? 'Nenhum lançamento ainda' : 'Nenhum lançamento para o filtro'} description={(lancamentos || []).length === 0 ? undefined : 'Ajuste a busca ou o status para ver mais resultados.'} />
  </td>
  </tr>
  ) : (
@@ -726,9 +727,9 @@ function ComissoesTab() {
   const [view, setView] = useState<'corretor' | 'plano'>('corretor');
   return (
     <>
-      <div className="tabs" style={{ marginBottom: 12 }}>
-        <button className={'tab ' + (view === 'corretor' ? 'tab--active' : '')} onClick={() => setView('corretor')}>Por corretor</button>
-        <button className={'tab ' + (view === 'plano' ? 'tab--active' : '')} onClick={() => setView('plano')}>Plano de recebimento</button>
+      <div className="tabs" role="tablist" style={{ marginBottom: 12 }}>
+        <button className={'tab ' + (view === 'corretor' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'corretor')} onClick={() => setView('corretor')}>Por corretor</button>
+        <button className={'tab ' + (view === 'plano' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'plano')} onClick={() => setView('plano')}>Plano de recebimento</button>
       </div>
       {view === 'corretor' ? <ComissoesPorCorretor /> : <ComissoesPlano />}
     </>
@@ -1248,9 +1249,9 @@ function ContasTab() {
       <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <h3 className="card__title" style={{ margin: 0 }}>Contas a {tipo === 'PAGAR' ? 'Pagar' : 'Receber'}</h3>
         <div className="flex gap-2" style={{ alignItems: 'center' }}>
-          <div className="tabs" style={{ margin: 0 }}>
-            <button className={'tab ' + (tipo === 'PAGAR' ? 'tab--active' : '')} onClick={() => setTipo('PAGAR')}>A Pagar</button>
-            <button className={'tab ' + (tipo === 'RECEBER' ? 'tab--active' : '')} onClick={() => setTipo('RECEBER')}>A Receber</button>
+          <div className="tabs" role="tablist" style={{ margin: 0 }}>
+            <button className={'tab ' + (tipo === 'PAGAR' ? 'tab--active' : '')} role="tab" aria-selected={!!(tipo === 'PAGAR')} onClick={() => setTipo('PAGAR')}>A Pagar</button>
+            <button className={'tab ' + (tipo === 'RECEBER' ? 'tab--active' : '')} role="tab" aria-selected={!!(tipo === 'RECEBER')} onClick={() => setTipo('RECEBER')}>A Receber</button>
           </div>
           {tipo === 'PAGAR' && (
             <button className="btn btn--secondary btn--sm" disabled={baixando} onClick={baixarPdf}>{baixando ? 'Gerando...' : 'Baixar PDF'}</button>

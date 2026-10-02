@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
+import { EmptyState } from '../components/EmptyState';
 import { Modal } from '../components/Modal';
 import { formatCurrencyShort } from '../lib/format';
 import { Icon } from '../components/Icon';
@@ -240,8 +241,8 @@ export default function Corretores() {
  <tbody>
  {filtered.length === 0 ? (
  <tr>
- <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
- Nenhum corretor encontrado
+ <td colSpan={8}>
+ <EmptyState size="sm" icon="users" title="Nenhum corretor encontrado" description="Ajuste a busca ou os filtros." />
  </td>
  </tr>
  ) : (

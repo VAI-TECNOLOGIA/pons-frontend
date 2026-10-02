@@ -87,14 +87,14 @@ export default function Remarketing() {
           subtitle="Nutrir base segmentada via WhatsApp, Email, SMS ou Push"
         />
 
-        <div className="tabs">
+        <div className="tabs" role="tablist">
           {([
             ['campanhas', 'Campanhas'],
             ['regua', 'Régua de Cadência'],
           ] as const).map(([key, label]) => (
             <button
               key={key}
-              className={'tab ' + (tab === key ? 'tab--active' : '')}
+              className={'tab ' + (tab === key ? 'tab--active' : '')} role="tab" aria-selected={!!(tab === key)}
               onClick={() => setTab(key as Tab)}
             >
               {label}
