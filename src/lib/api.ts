@@ -1093,6 +1093,8 @@ export const Api = {
 
   multipagConfig: () => request<{ disponivel: boolean; ambiente: string; temCredenciais: boolean; temCertificado: boolean; clientIdFinal: string | null }>('/sicredi-multipag/config'),
   multipagSalvarCredenciais: (clientId: string, clientSecret: string) => request<{ ok: boolean; ambiente: string; clientIdFinal: string }>('/sicredi-multipag/credenciais', { method: 'PUT', body: { clientId, clientSecret } }),
+  multipagWebhookStatus: () => request<{ disponivel: boolean; cadastrado?: boolean; confere?: boolean; erro?: string; motivo?: string }>('/sicredi-multipag/webhook-status'),
+  multipagWebhookRegistrar: () => request<{ ok: boolean; urlCallback: string }>('/sicredi-multipag/webhook/registrar', { method: 'POST' }),
   multipagTestarConexao: () => request<{ ok: boolean; etapa: string; ambiente: string; mensagem: string }>('/sicredi-multipag/testar-conexao'),
   loteSicrediList: () => request<any[]>('/sicredi-lote'),
   loteSicrediProxima: () => request<{ dataExecucao: string; total: number; valor: number; lancamentos: any[] }>('/sicredi-lote/proxima'),

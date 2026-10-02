@@ -13,6 +13,8 @@ export function SicrediMultipagCard() {
  const [clientSecret, setClientSecret] = useState('');
  const [salvando, setSalvando] = useState(false);
  const [testando, setTestando] = useState(false);
+ const { data: wh, reload: reloadWh } = useApi(() => Api.multipagWebhookStatus());
+ const [registrando, setRegistrando] = useState(false);
  const [teste, setTeste] = useState<{ ok: boolean; mensagem: string } | null>(null);
 
  const salvar = async (e: React.FormEvent) => {
@@ -41,6 +43,19 @@ export function SicrediMultipagCard() {
  setTeste({ ok: false, mensagem: err?.message || 'Não foi possível testar agora.' });
  } finally {
  setTestando(false);
+ }
+ };
+
+ const registrarWebhook = async () => {
+ setRegistrando(true);
+ try {
+ await Api.multipagWebhookRegistrar();
+ toast.success('Aviso automático do banco cadastrado.');
+ reloadWh();
+ } catch (err: any) {
+ toast.error(err?.message || 'O banco não aceitou o cadastro. Tente de novo.');
+ } finally {
+ setRegistrando(false);
  }
  };
 
@@ -74,6 +89,17 @@ export function SicrediMultipagCard() {
  </div>
  {teste && (
  <div className="text-sm" role="status" style={{ marginTop: 10, color: teste.ok ? 'var(--color-success-fg)' : 'var(--color-danger-fg)' }}>{teste.mensagem}</div>
+ )}
+ {cfg?.temCredenciais && cfg?.ambiente === 'prod' && (
+ <div className="text-sm" style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--color-border, #e5e5e5)' }}>
+ <strong>Aviso automático do banco (webhook)</strong>
+ <div style={{ margin: '6px 0' }}>
+ {wh?.cadastrado && wh?.confere
+ ? <span className="pill-ok">Cadastrado e conferido</span>
+ : <span className="text-secondary">{wh?.erro ? 'Não foi possível consultar o banco agora.' : 'Ainda não cadastrado no banco.'}</span>}
+ </div>
+ <button type="button" className="btn btn--secondary" onClick={registrarWebhook} disabled={registrando}>{registrando ? 'Cadastrando...' : wh?.cadastrado ? 'Recadastrar webhook' : 'Cadastrar webhook'}</button>
+ </div>
  )}
  </form>
  );
