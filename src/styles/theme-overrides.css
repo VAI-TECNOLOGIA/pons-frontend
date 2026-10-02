@@ -344,7 +344,7 @@
 }
 [data-theme="dark"] .kanban__col--drop-target {
   background: rgba(82, 247, 254, 0.12);
-  outline: 2px dashed #3FB6D4;
+  outline: 2px dashed var(--blue-300);
 }
 .kanban__cards--empty-hint {
   min-height: 60px;

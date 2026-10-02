@@ -65,7 +65,7 @@
   color: var(--text-primary);
 }
 .equipe__nav-item:hover .icon {
-  color: var(--pons-blue, #3FB6D4);
+  color: var(--pons-blue, var(--blue-300));
 }
 /* Ativo: realce mais forte + ícone azul */
 .equipe__nav-item.is-active {
@@ -74,7 +74,7 @@
   font-weight: 600;
 }
 .equipe__nav-item.is-active .icon {
-  color: var(--pons-blue, #3FB6D4);
+  color: var(--pons-blue, var(--blue-300));
 }
 
 /* Modo escuro: mantém a sidebar escura igual à principal */

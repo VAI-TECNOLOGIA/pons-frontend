@@ -1935,7 +1935,7 @@
   font-size: 24px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #88C559;
+  color: var(--color-success);
   margin-left: auto;
   text-align: right;
 }
@@ -2155,8 +2155,8 @@
   overflow-x: auto;
   margin-top: 16px;
 }
-.pl-code-keyword { color: #3FB6D4; }
-.pl-code-string { color: #88C559; }
+.pl-code-keyword { color: var(--blue-300); }
+.pl-code-string { color: var(--color-success); }
 
 /* ============================================================
    🏁 SPEED THEME — pegada F1 / velocidade (sutil & elegante)
@@ -2191,7 +2191,7 @@
   left: 0;
   height: 100%;
   width: 40%;
-  background: linear-gradient(90deg, transparent 0%, var(--pons-blue) 40%, #3FB6D4 60%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--pons-blue) 40%, var(--blue-300) 60%, transparent 100%);
   animation: speed-flow 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 @keyframes speed-flow {
@@ -2368,7 +2368,7 @@
   border-radius: 12px;
   margin-bottom: 8px;
   background: rgba(255,255,255,0.03);
-  border-left: 4px solid var(--team-color, #3FB6D4);
+  border-left: 4px solid var(--team-color, var(--blue-300));
   transition: all 0.4s ease;
 }
 .grid-row--p1 {
@@ -2386,7 +2386,7 @@
 .grid-driver { flex: 1; }
 .grid-name { font-size: 18px; font-weight: 700; }
 .grid-team { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.06em; }
-.grid-time { font-size: 20px; font-weight: 800; font-style: italic; font-variant-numeric: tabular-nums; color: #88C559; }
+.grid-time { font-size: 20px; font-weight: 800; font-style: italic; font-variant-numeric: tabular-nums; color: var(--color-success); }
 .grid-sales { font-size: 11px; color: rgba(255,255,255,0.4); text-align: right; }
 
 /* --- Velocímetro / gauge de meta --- */
@@ -2402,7 +2402,7 @@
 .tv-funnel__track { flex: 1; height: 26px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; position: relative; }
 .tv-funnel__fill {
   height: 100%;
-  background: linear-gradient(90deg, #0E7C9B, #3FB6D4);
+  background: linear-gradient(90deg, #0E7C9B, var(--blue-300));
   border-radius: 6px;
   display: flex; align-items: center; padding: 0 10px;
   font-size: 12px; font-weight: 800; font-style: italic;
@@ -2424,9 +2424,9 @@
   padding: 24px;
   z-index: 1;
 }
-.tv-flash__tag { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #88C559; }
+.tv-flash__tag { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-success); }
 .tv-flash__title { font-size: 22px; font-weight: 700; margin: 8px 0 4px; }
-.tv-flash__value { font-size: 32px; font-weight: 900; font-style: italic; color: #88C559; }
+.tv-flash__value { font-size: 32px; font-weight: 900; font-style: italic; color: var(--color-success); }
 
 .tv__footer { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.08em; z-index: 1; }
 

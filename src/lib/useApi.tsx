@@ -119,7 +119,7 @@ export function ErrorBlock({ error, label = 'Erro ao carregar' }: { error: Error
   const isForbidden = (error as any)?.status === 403;
   const isNotFound  = (error as any)?.status === 404;
   const bg   = isForbidden ? 'var(--bg-elevated)' : 'var(--color-danger-bg)';
-  const cor  = isForbidden ? 'var(--text-primary)' : '#8B0712';
+  const cor  = isForbidden ? 'var(--text-primary)' : 'var(--color-danger-fg)';
   const iconName = isForbidden ? 'lock' : isNotFound ? 'search' : 'warn';
   const titulo = isForbidden ? 'Sem permissão' : isNotFound ? 'Não encontrado' : label;
   return (

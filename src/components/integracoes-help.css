@@ -102,11 +102,11 @@
   background: rgba(136, 197, 89, 0.08);
 }
 .help-table tbody tr.help-table__row--recommended td:first-child {
-  border-left: 3px solid #88C559;
+  border-left: 3px solid var(--color-success);
 }
 .help-table .help-badge--reco {
   display: inline-block;
-  background: #88C559;
+  background: var(--color-success);
   color: #061106;
   font-size: 9px;
   font-weight: 700;

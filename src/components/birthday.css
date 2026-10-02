@@ -14,7 +14,7 @@
   font-style: italic;
   margin: 0 0 8px;
   color: var(--text-primary);
-  background: linear-gradient(90deg, #E10600, #F2B544, #88C559);
+  background: linear-gradient(90deg, #E10600, #F2B544, var(--color-success));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -48,8 +48,8 @@
 }
 .bday__confetti span:nth-child(6n + 1) { --cor: #E10600; }
 .bday__confetti span:nth-child(6n + 2) { --cor: #F2B544; }
-.bday__confetti span:nth-child(6n + 3) { --cor: #88C559; }
-.bday__confetti span:nth-child(6n + 4) { --cor: #3FB6D4; }
+.bday__confetti span:nth-child(6n + 3) { --cor: var(--color-success); }
+.bday__confetti span:nth-child(6n + 4) { --cor: var(--blue-300); }
 .bday__confetti span:nth-child(6n + 5) { --cor: #C53FA8; }
 .bday__confetti span:nth-child(6n) { --cor: #0E7C9B; }
 

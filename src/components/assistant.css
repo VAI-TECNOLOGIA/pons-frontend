@@ -101,7 +101,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #88C559;
+  background: var(--color-success);
 }
 .assistant__status-dot--demo { background: #F2B544; }
 .assistant__close {
