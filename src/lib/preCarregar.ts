@@ -1,27 +1,14 @@
-// Pré-carrega em segundo plano o código das telas (cada tela é um arquivo
-// separado, baixado na 1ª visita — em produção levava 0,3–0,6 s e a troca de
-// tela "piscava"). Roda uma vez, quando o navegador está ocioso, 2 por vez.
-const fabricas: Array<() => Promise<unknown>> = [];
-let iniciado = false;
+import { ROTA_TELA } from './rotasTelas';
 
-export function registrarTela(f: () => Promise<unknown>) {
-  fabricas.push(f);
-}
-
-export function preCarregarTelas() {
-  if (iniciado) return;
-  iniciado = true;
-  // Economia de dados ligada no celular: não pré-carrega.
-  if ((navigator as any)?.connection?.saveData) return;
-  const fila = [...fabricas];
-  const proximo = (): void => {
-    const f = fila.shift();
-    if (!f) return;
-    f().catch(() => { /* falhou: carrega normalmente na visita */ }).finally(() => agendar(proximo));
-  };
-  const agendar = (cb: () => void) => {
-    const ric = (window as any).requestIdleCallback as undefined | ((cb: () => void, o?: { timeout: number }) => void);
-    if (ric) ric(cb, { timeout: 2000 }); else setTimeout(cb, 200);
-  };
-  setTimeout(() => { agendar(proximo); agendar(proximo); }, 2500);
+// Baixa o código de UMA tela quando o usuário aponta/toca no item do menu —
+// ~100–300 ms antes do clique. Só aquela tela, uma vez (sem pré-carregar tudo:
+// executar ~100 telas de uma vez pesava no navegador e no celular).
+const feitas = new Set<string>();
+export function preCarregarRota(caminho: string) {
+  const rota = caminho.split('?')[0];
+  if (feitas.has(rota)) return;
+  const f = ROTA_TELA[rota];
+  if (!f) return;
+  feitas.add(rota);
+  f().catch(() => feitas.delete(rota));
 }

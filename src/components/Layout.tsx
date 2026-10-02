@@ -11,7 +11,6 @@ import { AssistantChat } from './AssistantChat';
 import { VerificarNotificacoes } from './VerificarNotificacoes';
 import { NotificationsBell } from './NotificationsBell';
 import { LoadingBlock } from '../lib/useApi';
-import { preCarregarTelas } from '../lib/preCarregar';
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -66,8 +65,6 @@ export function AppLayout() {
   };
 
   // Hooks ANTES dos returns condicionais (regra dos hooks: mesma ordem em todo render).
-  useEffect(() => { if (Auth.token) preCarregarTelas(); }, []);
-
   useEffect(() => {
     setMenuOpen(false);
   }, [loc.pathname]);

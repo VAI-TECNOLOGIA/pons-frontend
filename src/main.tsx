@@ -28,9 +28,7 @@ function mount() {
           <UserProvider>
             <ToastProvider>
               <ConfirmProvider>
-                {/* v7_startTransition: ao trocar de tela, mantém a atual visível até a
-                    próxima estar pronta (sem a tela de carregamento piscando). */}
-                <BrowserRouter future={{ v7_startTransition: true }}>
+                <BrowserRouter>
                   <App />
                 </BrowserRouter>
               </ConfirmProvider>

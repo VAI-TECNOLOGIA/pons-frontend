@@ -5,6 +5,7 @@ import { useUser } from '../lib/userContext';
 import { useTheme } from '../lib/theme';
 import { Icon } from './Icon';
 import { AppsModal } from './AppsModal';
+import { preCarregarRota } from '../lib/preCarregar';
 import { APP_STORE_URL, PLAY_STORE_URL } from '../lib/appLinks';
 import { ReportarProblemaModal } from './ReportarProblemaModal';
 import { isNativeApp, currentPlatform } from '../lib/platform';
@@ -467,7 +468,7 @@ function NavItemLink({
       {inner}
     </a>
   ) : (
-    <NavLink to={item.to} className={cls(active)} title={item.label} data-tour={`nav:${item.to}`} aria-current={active ? 'page' : undefined}>
+    <NavLink to={item.to} className={cls(active)} title={item.label} data-tour={`nav:${item.to}`} aria-current={active ? 'page' : undefined} onMouseEnter={() => preCarregarRota(item.to)} onFocus={() => preCarregarRota(item.to)} onTouchStart={() => preCarregarRota(item.to)}>
       {inner}
     </NavLink>
   );
