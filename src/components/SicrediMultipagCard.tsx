@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { Auth } from '../lib/auth';
 
 // Credenciais de PRODUÇÃO do Sicredi Multipag (pagamentos). O próprio cliente
 // cola o Client-Id/Client-Secret do Portal do Desenvolvedor Sicredi: o segredo
@@ -46,6 +47,26 @@ export function SicrediMultipagCard() {
  }
  };
 
+ const [alterandoModo, setAlterandoModo] = useState(false);
+ const automatico = cfg?.modoLote === 'api';
+ const alternarAutomatico = async () => {
+ const ligar = !automatico;
+ const msg = ligar
+ ? 'Ligar o pagamento automático? A partir de agora, ao enviar um lote o SISTEMA paga as contas pelo Sicredi, sem o sócio pagar no banco.'
+ : 'Desligar o pagamento automático? Os lotes voltam a ir para o sócio pagar no banco.';
+ if (!window.confirm(msg)) return;
+ setAlterandoModo(true);
+ try {
+ await Api.multipagModoAutomatico(ligar);
+ toast.success(ligar ? 'Pagamento automático LIGADO.' : 'Pagamento automático desligado.');
+ reload();
+ } catch (err: any) {
+ toast.error(err?.message || 'Não foi possível alterar agora.');
+ } finally {
+ setAlterandoModo(false);
+ }
+ };
+
  const registrarWebhook = async () => {
  setRegistrando(true);
  try {
@@ -64,7 +85,7 @@ export function SicrediMultipagCard() {
  <h3 className="card__title" style={{ marginBottom: 4 }}>Sicredi Multipag — credenciais de produção</h3>
  <p className="text-sm text-secondary" style={{ marginTop: 0 }}>
  Cole aqui o Client-Id e o Client-Secret de PRODUÇÃO do Portal do Desenvolvedor Sicredi. Depois de salvo, o
- Client-Secret não aparece mais para ninguém. Isso não liga pagamento automático: os lotes continuam indo para o sócio pagar no banco.
+ Client-Secret não aparece mais para ninguém. Salvar não liga o pagamento automático: isso é um botão separado, só do CEO.
  </p>
  <div className="text-sm" style={{ margin: '8px 0 12px' }}>
  {cfg?.temCredenciais && cfg?.ambiente === 'prod'
@@ -99,6 +120,15 @@ export function SicrediMultipagCard() {
  : <span className="text-secondary">{wh?.erro ? 'Não foi possível consultar o banco agora.' : 'Ainda não cadastrado no banco.'}</span>}
  </div>
  <button type="button" className="btn btn--secondary" onClick={registrarWebhook} disabled={registrando}>{registrando ? 'Cadastrando...' : wh?.cadastrado ? 'Recadastrar webhook' : 'Cadastrar webhook'}</button>
+ </div>
+ )}
+ {cfg?.temCredenciais && cfg?.ambiente === 'prod' && Auth.user?.role === 'CEO' && (
+ <div className="text-sm" style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--color-border, #e5e5e5)' }}>
+ <strong>Pagamento automático dos lotes</strong>
+ <div style={{ margin: '6px 0' }}>
+ {automatico ? <span className="pill-ok">LIGADO: o sistema paga pelo Sicredi</span> : <span className="text-secondary">Desligado: o sócio paga no banco.</span>}
+ </div>
+ <button type="button" className={automatico ? 'btn btn--secondary' : 'btn btn--primary'} onClick={alternarAutomatico} disabled={alterandoModo}>{alterandoModo ? 'Alterando...' : automatico ? 'Desligar pagamento automático' : 'Ligar pagamento automático'}</button>
  </div>
  )}
  </form>

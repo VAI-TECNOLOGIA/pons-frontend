@@ -1091,10 +1091,11 @@ export const Api = {
   impostosAliquotas: () => request<any>('/impostos/aliquotas'),
   impostosSetAliquotas: (parcial: any) => request<any>('/impostos/aliquotas', { method: 'PUT', body: parcial }),
 
-  multipagConfig: () => request<{ disponivel: boolean; ambiente: string; temCredenciais: boolean; temCertificado: boolean; clientIdFinal: string | null }>('/sicredi-multipag/config'),
+  multipagConfig: () => request<{ disponivel: boolean; ambiente: string; temCredenciais: boolean; temCertificado: boolean; clientIdFinal: string | null; modoLote?: 'api' | 'socio' }>('/sicredi-multipag/config'),
   multipagSalvarCredenciais: (clientId: string, clientSecret: string) => request<{ ok: boolean; ambiente: string; clientIdFinal: string }>('/sicredi-multipag/credenciais', { method: 'PUT', body: { clientId, clientSecret } }),
   multipagWebhookStatus: () => request<{ disponivel: boolean; cadastrado?: boolean; confere?: boolean; erro?: string; motivo?: string }>('/sicredi-multipag/webhook-status'),
   multipagWebhookRegistrar: () => request<{ ok: boolean; urlCallback: string }>('/sicredi-multipag/webhook/registrar', { method: 'POST' }),
+  multipagModoAutomatico: (ligar: boolean) => request<{ ok: boolean; modoLote: 'api' | 'socio' }>('/sicredi-multipag/modo-automatico', { method: 'PUT', body: { ligar } }),
   multipagTestarConexao: () => request<{ ok: boolean; etapa: string; ambiente: string; mensagem: string }>('/sicredi-multipag/testar-conexao'),
   loteSicrediList: () => request<any[]>('/sicredi-lote'),
   loteSicrediProxima: () => request<{ dataExecucao: string; total: number; valor: number; lancamentos: any[] }>('/sicredi-lote/proxima'),
