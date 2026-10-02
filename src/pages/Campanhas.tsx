@@ -296,7 +296,7 @@ export default function Campanhas() {
             {(relatorio.destinatarios || []).length} contatos · as <strong>falhas</strong> aparecem com o motivo (número sem WhatsApp, inválido, etc.).
           </div>
           <div style={{ maxHeight: 380, overflow: 'auto', border: '1px solid var(--border-light)', borderRadius: 8 }}>
-            <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', textAlign: 'left' }}>
                   <th style={{ padding: '6px 10px' }}>Telefone</th>
@@ -320,7 +320,7 @@ export default function Campanhas() {
 
       {ajuda && (
         <Modal open onClose={() => setAjuda(false)} title="Entendendo a campanha" subtitle="O que cada status e cada erro significam" size="lg">
-          <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, lineHeight: 1.6 }}>
             <h4 style={{ margin: '4px 0 6px' }}>Status de cada contato</h4>
             <ul style={{ paddingLeft: 18, margin: '0 0 12px' }}>
               <li><strong>Pendente</strong> — ainda na fila; a mensagem <em>ainda não saiu</em> (o disparo processa em lotes).</li>
@@ -330,7 +330,7 @@ export default function Campanhas() {
               <li><strong>Respondido</strong> — o cliente respondeu (levantou a mão) → foi distribuído pro corretor da fila.</li>
               <li><strong>Falhou</strong> — o Meta não conseguiu entregar; o motivo aparece na coluna ao lado.</li>
             </ul>
-            <div style={{ background: 'var(--bg-card-hover)', borderRadius: 8, padding: '8px 12px', margin: '0 0 14px', fontSize: 12.5 }}>
+            <div style={{ background: 'var(--bg-card-hover)', borderRadius: 8, padding: '8px 12px', margin: '0 0 14px', fontSize: 13 }}>
               O funil é acumulativo: <strong>Enviado → Entregue → Lido → Respondido</strong>. Um "Entregue" já foi Enviado; um "Lido" já foi Entregue, e assim por diante.
             </div>
             <h4 style={{ margin: '4px 0 6px' }}>Motivos de falha</h4>

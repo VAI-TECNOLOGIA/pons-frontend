@@ -112,7 +112,7 @@ export default function NovaContratacao() {
         {/* honeypot */}
         <input type="text" value={hp} onChange={(e) => setHp(e.target.value)} tabIndex={-1} autoComplete="off" style={{ position: 'absolute', left: '-9999px' }} aria-hidden />
 
-        <button type="submit" disabled={busy} className="nc-submit" style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: C.blue, color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: '0.02em', cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}>
+        <button type="submit" disabled={busy} className="nc-submit" style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: C.blue, color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: '0.02em', cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1 }}>
           {busy ? 'Enviando…' : 'Criar acesso e continuar'}
         </button>
         </div>

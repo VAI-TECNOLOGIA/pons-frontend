@@ -38,7 +38,7 @@ export function PreferenciasCard() {
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
         <Icon name="settings" size={16} /> Preferências do App
       </h3>
 

@@ -131,7 +131,7 @@ const articleStyle: React.CSSProperties = {
   borderRadius: 12,
   boxShadow: '0 10px 40px rgba(0,0,0,.3)',
   lineHeight: 1.6,
-  fontSize: 15,
+  fontSize: 16,
 };
 
 const h1Style: React.CSSProperties = {

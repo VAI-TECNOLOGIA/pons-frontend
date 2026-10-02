@@ -132,7 +132,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
           <div style={{ background: headerBg, borderRadius: 12, padding: '18px 20px', color: '#fff', marginBottom: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>
               {lead.nome}
-              {lead.vip && <span className="badge badge--launch" style={{ fontSize: 9, marginLeft: 8, verticalAlign: 'middle' }}>VIP</span>}
+              {lead.vip && <span className="badge badge--launch" style={{ fontSize: 10, marginLeft: 8, verticalAlign: 'middle' }}>VIP</span>}
             </div>
             <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>
               {recebidoEmDe(lead) ? <>Recebido em: {dataExtensa(recebidoEmDe(lead)!)}</> : <>Criado em: {dataExtensa(lead.createdAt)}</>}
@@ -202,7 +202,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: 16 }}>
             {/* Detalhes da conversão */}
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 10 }}>Detalhes da conversão</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Detalhes da conversão</h3>
               <div style={{ display: 'flex', gap: 24, marginBottom: 10 }}>
                 <div>
                   <div style={rotuloSec}>Origem</div>
@@ -267,7 +267,7 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
 
             {/* Status de atendimento */}
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 10 }}>Status de atendimento</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Status de atendimento</h3>
               <div style={{ display: 'grid', gap: 10, fontSize: 13 }}>
                 <div className="text-secondary">Sem agendamento de contato.</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

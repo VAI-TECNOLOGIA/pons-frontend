@@ -40,7 +40,7 @@ body:has(.tv) {
   color: #52f7fe;
 }
 .tvh__brand-title {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -238,7 +238,7 @@ body:has(.tv) {
   padding: 12px 18px;
 }
 .grid-row__pos {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   font-style: italic;
   color: rgba(255,255,255,0.5);
@@ -259,7 +259,7 @@ body:has(.tv) {
 }
 .grid-row__main { flex: 1; min-width: 0; }
 .grid-row__name {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -339,7 +339,7 @@ body:has(.tv) {
   width: 44px;
   flex-shrink: 0;
   text-align: right;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   font-style: italic;
 }

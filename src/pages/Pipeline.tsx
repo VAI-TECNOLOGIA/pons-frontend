@@ -176,7 +176,7 @@ export default function Pipeline() {
                             <div className="kanban-card__meta">{l.interesse || l.empreendimentoInteresse?.nome || l.origem}</div>
                           </div>
                           {l.vip && (
-                            <span className="badge badge--launch" style={{ fontSize: 9, padding: '2px 6px' }}>VIP</span>
+                            <span className="badge badge--launch" style={{ fontSize: 10, padding: '2px 6px' }}>VIP</span>
                           )}
                         </div>
                         <div className="kanban-card__footer">

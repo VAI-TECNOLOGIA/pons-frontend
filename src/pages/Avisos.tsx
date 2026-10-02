@@ -102,10 +102,10 @@ export default function Avisos() {
                       <Icon name="pin" size={16} />
                     </span>
                   )}
-                  <span className={`badge ${bk}`} style={{ fontSize: 9 }}>
+                  <span className={`badge ${bk}`} style={{ fontSize: 10 }}>
                     {lbl}
                   </span>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, margin: '10px 0 6px' }}>{a.titulo}</h3>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, margin: '10px 0 6px' }}>{a.titulo}</h3>
                   <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--gray-700)', margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>
                     {a.conteudo}
                   </p>
@@ -113,7 +113,7 @@ export default function Avisos() {
                     <div className="text-xs text-secondary">
                       {a.autorNome || 'Grupo Pons'} · {timeAgo(a.createdAt)}
                       {a.equipes?.length > 0 && (
-                        <span className="badge badge--analysis" style={{ fontSize: 9, marginLeft: 8 }}>
+                        <span className="badge badge--analysis" style={{ fontSize: 10, marginLeft: 8 }}>
                           Equipe: {a.equipes.join(', ')}
                         </span>
                       )}

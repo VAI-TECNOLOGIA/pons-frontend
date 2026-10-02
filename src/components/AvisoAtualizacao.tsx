@@ -110,7 +110,7 @@ export function AvisoAtualizacao() {
             position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9500,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap',
             padding: '11px 16px', background: 'linear-gradient(90deg, #0ea5b7, #52f7fe)', color: '#04252b',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.35)', fontSize: 13.5, fontWeight: 700,
+            boxShadow: '0 6px 20px rgba(0,0,0,0.35)', fontSize: 14, fontWeight: 700,
           }}
         >
           <span aria-hidden="true" style={{ display: 'inline-flex', width: 10, height: 10, borderRadius: 999, background: '#04252b', boxShadow: '0 0 0 4px rgba(4,37,43,0.25)' }} />
@@ -126,7 +126,7 @@ export function AvisoAtualizacao() {
           <button
             type="button"
             onClick={() => setAberto(true)}
-            style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid rgba(4,37,43,0.4)', background: 'transparent', color: '#04252b', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }}
+            style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid rgba(4,37,43,0.4)', background: 'transparent', color: '#04252b', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
           >
             Ver o que mudou
           </button>
@@ -141,7 +141,7 @@ export function AvisoAtualizacao() {
             display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999,
             background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)',
             border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-            cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+            cursor: 'pointer', fontSize: 13, fontWeight: 600,
           }}
         >
           <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: '#52f7fe', boxShadow: '0 0 0 3px rgba(82,247,254,0.25)' }} />
@@ -154,15 +154,15 @@ export function AvisoAtualizacao() {
           <div style={{ width: '100%', maxWidth: 480, maxHeight: '82vh', overflowY: 'auto', background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.14))', borderRadius: 14, padding: 22, boxShadow: '0 18px 60px rgba(0,0,0,0.5)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52f7fe" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
-              <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 700 }}>{buildAtrasado ? 'Nova versão disponível' : 'Sistema atualizado'}</h3>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{buildAtrasado ? 'Nova versão disponível' : 'Sistema atualizado'}</h3>
             </div>
             <p style={{ margin: '0 0 14px', fontSize: 12, opacity: 0.7 }}>versão {info.versao}{info.data ? ` · ${info.data}` : ''}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {info.novidades.map((n, i) => (
                 <div key={i}>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>{n.titulo}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{n.titulo}</div>
                   <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    {n.itens.map((it, j) => <li key={j} style={{ fontSize: 12.5, lineHeight: 1.5, opacity: 0.85 }}>{it}</li>)}
+                    {n.itens.map((it, j) => <li key={j} style={{ fontSize: 13, lineHeight: 1.5, opacity: 0.85 }}>{it}</li>)}
                   </ul>
                 </div>
               ))}

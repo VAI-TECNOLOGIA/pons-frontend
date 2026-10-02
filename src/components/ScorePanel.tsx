@@ -24,7 +24,7 @@ export function ScorePanel({ corretorId, scoreMes, scoreAno, scoreAtual, posicao
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <div className="flex-between" style={{ marginBottom: 12 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Icon name="trophy" size={16} /> Score de Performance
         </h3>
         {posicaoMes != null && <span className="badge badge--launch">{posicaoMes}º no mês</span>}

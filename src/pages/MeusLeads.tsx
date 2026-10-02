@@ -76,7 +76,7 @@ export default function MeusLeads() {
                       <div className="avatar avatar--sm">{initials(l.nome)}</div>
                       <div>
                         <div className="font-semibold" style={{ cursor: 'pointer' }} onClick={() => setCampoLead(l)} title="Ver campos personalizados">
-                          {l.nome}{l.vip && <span className="badge badge--launch" style={{ fontSize: 9, padding: '2px 6px', marginLeft: 6 }}>VIP</span>}
+                          {l.nome}{l.vip && <span className="badge badge--launch" style={{ fontSize: 10, padding: '2px 6px', marginLeft: 6 }}>VIP</span>}
                         </div>
                         <div className="text-xs text-secondary">{l.telefone || l.email || '—'}</div>
                       </div>

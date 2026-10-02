@@ -147,7 +147,7 @@ export function TourGuiado() {
             <span style={dot} />
             <strong style={{ fontSize: 14 }}>Novidades da versão {TOUR_VERSAO}</strong>
           </div>
-          <p style={{ margin: '0 0 14px', fontSize: 12.5, opacity: 0.85, lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 14px', fontSize: 13, opacity: 0.85, lineHeight: 1.5 }}>
             Preparamos um tour rápido pelas atualizações de Vendas e Administrativo de Vendas.
             São {PASSOS.length} passos — você confirma cada um e vê como usar.
           </p>
@@ -192,8 +192,8 @@ export function TourGuiado() {
           <span style={{ fontSize: 11, fontWeight: 700, color: '#52f7fe', letterSpacing: 0.3 }}>PASSO {idx + 1} DE {PASSOS.length}</span>
           <button type="button" onClick={sair} title="Sair do tour" style={xBtn}>✕</button>
         </div>
-        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800 }}>{passo.titulo}</h3>
-        <p style={{ margin: '0 0 14px', fontSize: 12.5, lineHeight: 1.55, opacity: 0.9 }}>{passo.comoUsar}</p>
+        <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800 }}>{passo.titulo}</h3>
+        <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, opacity: 0.9 }}>{passo.comoUsar}</p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', gap: 4 }}>
             {PASSOS.map((_, i) => (
@@ -229,6 +229,6 @@ const dot: CSSProperties = { width: 8, height: 8, borderRadius: 999, background:
 const posFlutuante: CSSProperties = { top: 124, bottom: 'auto' };
 const cardWrap: CSSProperties = { position: 'fixed', right: 24, zIndex: 8200, maxWidth: 340 };
 const cardBox: CSSProperties = { background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.14))', borderRadius: 14, padding: 18, boxShadow: '0 18px 60px rgba(0,0,0,0.5)' };
-const pill: CSSProperties = { position: 'fixed', right: 24, zIndex: 8200, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999, background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', cursor: 'pointer', fontSize: 12.5, fontWeight: 600 };
+const pill: CSSProperties = { position: 'fixed', right: 24, zIndex: 8200, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 999, background: 'var(--bg-elevated, #111827)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.14))', boxShadow: '0 8px 24px rgba(0,0,0,0.35)', cursor: 'pointer', fontSize: 13, fontWeight: 600 };
 const tipBase: CSSProperties = { position: 'fixed', width: 340, maxWidth: 'calc(100vw - 32px)', background: 'var(--bg-elevated, #0f172a)', color: 'var(--text-primary, #f3f4f6)', border: '1px solid var(--border, rgba(255,255,255,0.16))', borderRadius: 14, padding: 18, boxShadow: '0 18px 60px rgba(0,0,0,0.6)', zIndex: 9600 };
 const xBtn: CSSProperties = { background: 'transparent', border: 'none', color: 'inherit', opacity: 0.6, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 2 };

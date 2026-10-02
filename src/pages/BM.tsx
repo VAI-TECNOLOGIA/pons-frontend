@@ -211,7 +211,7 @@ export default function BMPage() {
                   {(bm.nome || '?').charAt(0).toUpperCase()}
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bm.nome}</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bm.nome}</h3>
                   <div className="text-xs text-secondary" style={{ fontFamily: 'monospace' }}>BM {bm.bmId}</div>
                   {(() => {
                     const ok = bm.paginaFbId && bm.temToken;
@@ -524,7 +524,7 @@ function StatCard({ icon, label, value, tone = 'info' }: { icon: string; label: 
       </div>
       <div>
         <div className="text-xs text-secondary" style={{ marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 21, fontWeight: 700, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{value}</div>
       </div>
     </div>
   );

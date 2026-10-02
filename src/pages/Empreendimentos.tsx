@@ -1270,7 +1270,7 @@ function DocumentosEmpreendimento({
               background: drag ? 'rgba(59,130,246,0.06)' : 'var(--bg-card-hover)',
               marginBottom: 12,
               textAlign: 'center',
-              fontSize: 12.5,
+              fontSize: 13,
               opacity: busy ? 0.6 : 1,
               pointerEvents: busy ? 'none' : 'auto',
             }}
@@ -1295,8 +1295,8 @@ function DocumentosEmpreendimento({
                 <Icon name={d.tipo === 'VIDEO' ? 'play' : 'doc'} size={16} />
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome}</div>
-                {d.tamanho ? <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>{fmtBytes(d.tamanho)}</div> : null}
+                <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome}</div>
+                {d.tamanho ? <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{fmtBytes(d.tamanho)}</div> : null}
               </div>
               <button className="btn btn--secondary btn--sm" onClick={() => window.open(d.url, '_blank', 'noopener')} title="Visualizar">
                 <Icon name="eye" size={13} /> Ver

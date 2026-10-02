@@ -474,7 +474,7 @@ export default function Leads() {
  <div className="font-semibold" style={{ cursor: 'pointer' }} onClick={() => setCampoLead(l)} title="Ver campos personalizados">
  {l.nome}{' '}
  {l.vip && (
- <span className="badge badge--launch" style={{ fontSize: 9, padding: '2px 6px' }}>
+ <span className="badge badge--launch" style={{ fontSize: 10, padding: '2px 6px' }}>
  VIP
  </span>
  )}

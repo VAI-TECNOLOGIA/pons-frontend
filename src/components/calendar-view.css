@@ -371,7 +371,7 @@
   gap: 8px;
 }
 .cal-list__tag {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -601,7 +601,7 @@
   .cal-chip__title { font-size: 10px; }
 
   .cal-week__body { max-height: 420px; }
-  .cal-week__day-name { font-size: 9px; }
+  .cal-week__day-name { font-size: 10px; }
   .cal-week__day-num { font-size: 14px; }
 }
 
@@ -626,7 +626,7 @@
   /* Novo compacto, alinhado à esquerda (não estica na coluna do header). */
   .cal__novo { align-self: flex-start; }
 
-  .cal-month__weekday { padding: 4px 2px; font-size: 9px; }
+  .cal-month__weekday { padding: 4px 2px; font-size: 10px; }
   .cal-month {
     grid-template-rows: auto repeat(6, minmax(56px, 1fr));
   }
@@ -644,11 +644,11 @@
     border-left-width: 2px;
   }
   .cal-chip__title {
-    font-size: 9px;
+    font-size: 10px;
     line-height: 1.2;
   }
   .cal-chip--more {
-    font-size: 9px;
+    font-size: 10px;
     padding: 0 4px;
   }
 
@@ -658,8 +658,8 @@
     grid-template-columns: 44px repeat(7, minmax(80px, 1fr));
     overflow-x: auto;
   }
-  .cal-week__hour { font-size: 9px; padding: 0 4px; }
-  .cal-week__event-time { font-size: 9px; }
+  .cal-week__hour { font-size: 10px; padding: 0 4px; }
+  .cal-week__event-time { font-size: 10px; }
   .cal-week__event-title { font-size: 10px; }
 
   .cal-list { padding: 12px; }

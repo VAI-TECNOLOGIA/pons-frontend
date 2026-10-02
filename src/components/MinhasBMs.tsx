@@ -13,7 +13,7 @@ export function MinhasBMs() {
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <div className="flex-between" style={{ marginBottom: 12 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Icon name="target" size={16} /> Minhas BMs (Tráfego Próprio)
         </h3>
         <Link to="/bm" className="btn btn--ghost btn--sm">Gerenciar BMs →</Link>
@@ -33,7 +33,7 @@ export function MinhasBMs() {
             <div key={bm.id} style={{ padding: 10, background: 'var(--bg-elevated)', borderRadius: 6 }}>
               <div className="flex-between" style={{ marginBottom: 4 }}>
                 <strong style={{ fontSize: 13 }}>{bm.nome}</strong>
-                <span className={`badge ${bm.ativa ? 'badge--launch' : 'badge--neutral'}`} style={{ fontSize: 9 }}>{bm.ativa ? 'Ativa' : 'Pausada'}</span>
+                <span className={`badge ${bm.ativa ? 'badge--launch' : 'badge--neutral'}`} style={{ fontSize: 10 }}>{bm.ativa ? 'Ativa' : 'Pausada'}</span>
               </div>
               <div className="text-xs text-secondary">BM ID: {bm.bmId}</div>
               <div className="text-xs" style={{ marginTop: 4 }}>

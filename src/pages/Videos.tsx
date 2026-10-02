@@ -172,8 +172,8 @@ export default function Videos() {
                     </div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    <span className={`badge ${bk}`} style={{ fontSize: 9 }}>{lbl}</span>
-                    <h3 style={{ fontSize: 15, fontWeight: 700, margin: '8px 0 4px' }}>{v.titulo}</h3>
+                    <span className={`badge ${bk}`} style={{ fontSize: 10 }}>{lbl}</span>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, margin: '8px 0 4px' }}>{v.titulo}</h3>
                     <p className="text-xs text-secondary" style={{ margin: 0 }}>{v.descricao || v.duracao || ''}</p>
                   </div>
                 </div>

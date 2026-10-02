@@ -101,7 +101,7 @@ export default function LPPublica() {
         {lp.subheadline && <p style={{ fontSize: 18, color: '#ddd', marginBottom: 24 }}>{lp.subheadline}</p>}
 
         {lp.blocoTexto && (
-          <div style={{ fontSize: 15, color: '#eee', lineHeight: 1.6, marginBottom: 32, whiteSpace: 'pre-wrap' }}>{lp.blocoTexto}</div>
+          <div style={{ fontSize: 16, color: '#eee', lineHeight: 1.6, marginBottom: 32, whiteSpace: 'pre-wrap' }}>{lp.blocoTexto}</div>
         )}
 
         {!enviado ? (

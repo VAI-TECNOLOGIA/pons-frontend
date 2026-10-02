@@ -226,8 +226,8 @@ export function ReportarProblemaModal({ open, onClose }: Props) {
           <span style={{ width: 44, height: 44, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.4)' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
           </span>
-          <div style={{ fontSize: 15.5, fontWeight: 700 }}>Relatório enviado</div>
-          <p style={{ margin: 0, fontSize: 12.5, opacity: 0.75, lineHeight: 1.55 }}>Salvo com o print da tela. O time de desenvolvimento revisa todos os relatórios diariamente.</p>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Relatório enviado</div>
+          <p style={{ margin: 0, fontSize: 13, opacity: 0.75, lineHeight: 1.55 }}>Salvo com o print da tela. O time de desenvolvimento revisa todos os relatórios diariamente.</p>
           <button type="button" className="btn btn--primary btn--sm" style={{ marginTop: 8 }} onClick={handleClose}>Fechar</button>
         </div>
       ) : (

@@ -21,7 +21,7 @@ export function SLAStatusPanel() {
     <div className="card fade-in" style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <Icon name="clock" size={16} />
-        <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>SLA · Leads em risco</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>SLA · Leads em risco</h3>
         <span style={{
           marginLeft: 'auto', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
           background: total > 0 ? 'color-mix(in srgb, #DC2626 16%, transparent)' : 'var(--bg-elevated)',
@@ -87,7 +87,7 @@ export function SLAStatusPanel() {
               <div key={i} className="sla-histrow">
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F97316', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <span className="font-semibold" style={{ fontSize: 12.5 }}>{h.leadNome || `Lead #${h.leadId}`}</span>
+                  <span className="font-semibold" style={{ fontSize: 13 }}>{h.leadNome || `Lead #${h.leadId}`}</span>
                   <span className="text-xs text-secondary"> {h.texto}</span>
                 </div>
                 <span className="text-xs text-secondary" style={{ flexShrink: 0 }}>{new Date(h.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>

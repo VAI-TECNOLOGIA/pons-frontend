@@ -1655,7 +1655,7 @@ export default function Vendas() {
  {sel.observacoesRateio && (
  <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
  <div className="text-xs text-secondary" style={{ marginBottom: 4 }}>Observações / auditoria</div>
- <div style={{ fontSize: 12.5, whiteSpace: 'pre-wrap' }}>{sel.observacoesRateio}</div>
+ <div style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{sel.observacoesRateio}</div>
  </div>
  )}
  </div>
@@ -2703,7 +2703,7 @@ export default function Vendas() {
  {/* Aviso destacado: corretor precisa anexar doc pra liberar o botão salvar.
      Sem isso o botão fica cinza e a pessoa clica sem entender por quê. */}
  {step === stepConfirma && isCorretor && docsAnexar.length === 0 && (
- <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.45)', color: 'var(--color-warning-fg)', borderRadius: 10, padding: '11px 14px', fontSize: 13.5, fontWeight: 600 }}>
+ <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.45)', color: 'var(--color-warning-fg)', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontWeight: 600 }}>
  <Icon name="warn" size={18} />
  <span>Anexe os documentos acima para liberar o botão <strong>Salvar venda</strong>. Sem os documentos a venda não pode ser registrada.</span>
  </div>
@@ -2923,7 +2923,7 @@ function VendaKanban({ onSelect, podeMover }: { onSelect: (id: number) => void; 
  </div>
  </div>
  {c.aguardandoAprovacao && (
- <span className="badge badge--cancelled" style={{ fontSize: 9, marginTop: 8, display: 'inline-block' }}>
+ <span className="badge badge--cancelled" style={{ fontSize: 10, marginTop: 8, display: 'inline-block' }}>
  Aguardando aprovação {c.entradaParcelas}x
  </span>
  )}
@@ -3122,7 +3122,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
  return (
  <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
- <div style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+ <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
  <strong>{p.numero}/{p.total}</strong> · {moeda(p.valor)} · {venc}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
@@ -3156,7 +3156,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
  return (
  <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
- <div style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+ <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
  <strong>{p.numero}/{p.total}</strong> · {valorCorretor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · {venc}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>

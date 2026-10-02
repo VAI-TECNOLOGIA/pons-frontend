@@ -374,7 +374,7 @@ function BolsoesConfigurados() {
               style={{
                 flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 border: 'none', borderRadius: 9, padding: '10px 12px', cursor: 'pointer', font: 'inherit',
-                fontSize: 13.5, fontWeight: 700,
+                fontSize: 14, fontWeight: 700,
                 background: abaModal === k ? 'var(--pons-blue)' : 'transparent',
                 color: abaModal === k ? '#fff' : 'var(--text-secondary)',
                 transition: 'background 120ms ease, color 120ms ease',
@@ -390,7 +390,7 @@ function BolsoesConfigurados() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'end' }}>
               <div className="field">
                 <label className="field__label">Nome do bolsão</label>
-                <input className="field__input" style={{ height: 44, fontSize: 15, fontWeight: 600 }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder='Ex.: "Bolsão Geral", "Bolsão Balneário"' autoFocus />
+                <input className="field__input" style={{ height: 44, fontSize: 16, fontWeight: 600 }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder='Ex.: "Bolsão Geral", "Bolsão Balneário"' autoFocus />
               </div>
               <div className="field">
                 <label className="field__label">Status</label>
@@ -418,9 +418,9 @@ function BolsoesConfigurados() {
                 <Icon name="clock" size={13} /> Janela de funcionamento
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <input type="time" className="field__input" style={{ width: 130, height: 42, fontSize: 15 }} value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
+                <input type="time" className="field__input" style={{ width: 130, height: 42, fontSize: 16 }} value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
                 <span className="text-secondary" style={{ fontWeight: 700 }}>até</span>
-                <input type="time" className="field__input" style={{ width: 130, height: 42, fontSize: 15 }} value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
+                <input type="time" className="field__input" style={{ width: 130, height: 42, fontSize: 16 }} value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
                 {(horaInicio || horaFim) && (
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setHoraInicio(''); setHoraFim(''); }}>Limpar</button>
                 )}
@@ -446,7 +446,7 @@ function BolsoesConfigurados() {
                       style={{
                         position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 30, width: 300,
                         background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10,
-                        boxShadow: 'var(--shadow-lg)', padding: '10px 12px', fontSize: 12.5, lineHeight: 1.55,
+                        boxShadow: 'var(--shadow-lg)', padding: '10px 12px', fontSize: 13, lineHeight: 1.55,
                         color: 'var(--text-secondary)', textTransform: 'none', letterSpacing: 'normal', fontWeight: 400,
                       }}
                     >
@@ -520,7 +520,7 @@ function BolsoesConfigurados() {
                       >
                         <div className="avatar avatar--sm">{c.initials || (c.nome || '?').slice(0, 2).toUpperCase()}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
+                          <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
                           <div className="text-xs text-secondary">{c.equipe?.nome || 'Sem equipe'}</div>
                         </div>
                         <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', border: on ? 'none' : '2px solid var(--border-light)', background: on ? 'var(--pons-blue)' : 'transparent', color: '#fff' }}>

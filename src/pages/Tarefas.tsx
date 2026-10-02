@@ -183,9 +183,9 @@ export default function Tarefas() {
 
   const priorityBadge = (p: string) =>
     p === 'URGENTE' ? (
-      <span className="badge badge--cancelled" style={{ fontSize: 9, padding: '2px 6px' }}>URGENTE</span>
+      <span className="badge badge--cancelled" style={{ fontSize: 10, padding: '2px 6px' }}>URGENTE</span>
     ) : p === 'ALTA' ? (
-      <span className="badge badge--analysis" style={{ fontSize: 9, padding: '2px 6px' }}>ALTA</span>
+      <span className="badge badge--analysis" style={{ fontSize: 10, padding: '2px 6px' }}>ALTA</span>
     ) : null;
 
   // Tarefas com prazo viram eventos do calendário (posicionadas pelo dia do prazo).

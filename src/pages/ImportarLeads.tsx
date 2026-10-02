@@ -215,7 +215,7 @@ export default function ImportarLeads() {
 
         {preview && (
           <div className="card" style={{ marginTop: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Pré-visualização ({preview.total} linhas detectadas)</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Pré-visualização ({preview.total} linhas detectadas)</h3>
             <div style={{ overflowX: 'auto' }}>
               <table className="table">
                 <thead>
@@ -242,7 +242,7 @@ export default function ImportarLeads() {
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Importação concluída</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 44, fontWeight: 700, color: 'var(--color-success)', lineHeight: 1.05 }}>
                   {Number(resultado.criados).toLocaleString('pt-BR')}
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginLeft: 8 }}>leads criados</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 600, color: 'var(--text-secondary)', marginLeft: 8 }}>leads criados</span>
                 </div>
               </div>
               <div className="stagger" style={{ marginLeft: 'auto', display: 'flex', gap: 10, flexWrap: 'wrap' }}>

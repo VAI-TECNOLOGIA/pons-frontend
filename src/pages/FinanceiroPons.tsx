@@ -88,7 +88,7 @@ function PoliticaTab() {
     <>
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="flex-between" style={{ marginBottom: 12 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700 }}>Políticas cadastradas</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700 }}>Políticas cadastradas</h3>
           <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Nova política</button>
         </div>
         <table className="table">
@@ -112,7 +112,7 @@ function PoliticaTab() {
       </div>
 
       <div className="card">
-        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Icon name="calculator" size={16} /> Simulador de rateio
         </h3>
         <div className="form-grid">
@@ -277,7 +277,7 @@ function SociosTab() {
       </div>
       <div className="card">
         <div className="flex-between" style={{ marginBottom: 12 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700 }}>Sócios</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700 }}>Sócios</h3>
           <button className="btn btn--primary btn--sm" onClick={() => { setEditing(null); setOpen(true); }}>+ Novo sócio</button>
         </div>
         <table className="table">
@@ -356,7 +356,7 @@ function FechamentoTab() {
       {data && (
         <div className="card">
           <div className="flex-between" style={{ marginBottom: 12 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>{meses[mes-1]}/{ano}</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>{meses[mes-1]}/{ano}</h3>
             <span className={`badge ${data.status === 'FECHADO' ? 'badge--launch' : 'badge--info'}`}>{data.status}</span>
           </div>
 
@@ -430,7 +430,7 @@ function ImpostosTab() {
       {data && (
         <>
           <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Apuração mensal — PIS / COFINS / ISS</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Apuração mensal — PIS / COFINS / ISS</h3>
             <div style={{ overflowX: 'auto' }}>
               <table className="table">
                 <thead><tr><th>Mês</th><th className="text-right">Receita</th><th className="text-right">PIS</th><th className="text-right">COFINS</th><th className="text-right">ISS</th><th className="text-right">Total</th></tr></thead>
@@ -445,7 +445,7 @@ function ImpostosTab() {
           </div>
 
           <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Apuração trimestral — CSLL / IRPJ</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Apuração trimestral — CSLL / IRPJ</h3>
             <div style={{ overflowX: 'auto' }}>
               <table className="table">
                 <thead><tr><th>Trim.</th><th className="text-right">Receita</th><th className="text-right">CSLL</th><th className="text-right">IRPJ bruto</th><th className="text-right">(-) IR fonte</th><th className="text-right">IRPJ líq.</th></tr></thead>
@@ -460,7 +460,7 @@ function ImpostosTab() {
           </div>
 
           <div className="card">
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Provisão sugerida (reter no rateio dos sócios)</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Provisão sugerida (reter no rateio dos sócios)</h3>
             <p className="text-sm text-secondary" style={{ marginBottom: 10 }}>Quanto separar por mês antes de dividir o lucro, para cobrir os impostos.</p>
             <div style={{ overflowX: 'auto' }}>
               <table className="table">
@@ -531,7 +531,7 @@ function AliquotasEditor({ onSalvo }: { onSalvo: () => void }) {
   return (
     <div className="card" style={{ marginBottom: 16 }}>
       <div className="flex-between" style={{ alignItems: 'center' }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Alíquotas (parâmetros)</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Alíquotas (parâmetros)</h3>
         {!aberto
           ? <button className="btn btn--secondary btn--sm" onClick={editar} disabled={!data}>Editar alíquotas</button>
           : <div className="flex gap-2"><button className="btn btn--ghost btn--sm" onClick={() => setAberto(false)}>Cancelar</button><button className="btn btn--primary btn--sm" onClick={salvar} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button></div>}
@@ -616,7 +616,7 @@ function SicrediTab() {
     <>
       {proxima && (
         <div className="card" style={{ marginBottom: 16, background: 'var(--bg-elevated)' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Icon name="calendar" size={16} /> Próximo lote — {new Date(proxima.dataExecucao).toLocaleDateString('pt-BR')} (quarta-feira)
           </h3>
           <div>
@@ -627,7 +627,7 @@ function SicrediTab() {
       )}
 
       <div className="card">
-        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Histórico de lotes</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Histórico de lotes</h3>
         <table className="table">
           <thead><tr><th>Data</th><th>Status</th><th>Lançamentos</th><th>Valor</th><th>Enviado em</th><th></th></tr></thead>
           <tbody>

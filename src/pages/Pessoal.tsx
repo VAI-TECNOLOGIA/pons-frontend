@@ -229,7 +229,7 @@ function FinancasTab() {
         </div>
         <div className="kpi">
           <div className="kpi__label">Maior categoria</div>
-          <div className="kpi__value" style={{ fontSize: 17 }} title={maiorCat?.nome}>{maiorCat?.nome || '—'}</div>
+          <div className="kpi__value" style={{ fontSize: 18 }} title={maiorCat?.nome}>{maiorCat?.nome || '—'}</div>
           <div className="kpi__label" style={{ marginTop: 2 }}>{maiorCat ? brlShort(maiorCat.total) : ''}</div>
         </div>
         <div className="kpi">

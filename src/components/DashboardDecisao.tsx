@@ -81,13 +81,13 @@ function fmtHoras(h: number) {
 /** Seta + variação vs mês anterior. `inverso` = cair é bom (ex.: ciclo de venda). */
 function Trend({ v, inverso = false }: { v: number | null; inverso?: boolean }) {
   if (v == null || !isFinite(v)) {
-    return <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>sem base anterior</span>;
+    return <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>sem base anterior</span>;
   }
   const subiu = v >= 0;
   const bom = inverso ? !subiu : subiu;
   const cor = v === 0 ? 'var(--text-secondary)' : bom ? 'var(--color-success)' : 'var(--color-danger)';
   return (
-    <span style={{ fontSize: 11.5, fontWeight: 700, color: cor }}>
+    <span style={{ fontSize: 12, fontWeight: 700, color: cor }}>
       {v === 0 ? '—' : subiu ? '▲' : '▼'} {pct(Math.abs(v), 0)}
       <span style={{ fontWeight: 500, color: 'var(--text-secondary)', marginLeft: 4 }}>vs mês ant.</span>
     </span>
@@ -110,7 +110,7 @@ function Spark({ pontos, cor }: { pontos: number[]; cor: string }) {
 function Celula({ label, valor, children }: { label: string; valor: string; children?: React.ReactNode }) {
   return (
     <div style={{ minWidth: 0 }}>
-      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
         {label}
       </div>
       <div style={{ fontSize: 22, fontWeight: 900, fontStyle: 'italic', margin: '5px 0 3px' }}>{valor}</div>
@@ -235,16 +235,16 @@ function PitBoard({ alertas }: { alertas: Alerta[] }) {
     <div className="card chart-card">
       <div className="card__header">
         <h3 className="card__title">Quadro do pit</h3>
-        <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>o que custa dinheiro agora</span>
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>o que custa dinheiro agora</span>
       </div>
       <div>
         {ord.map((al, i) => {
           const inner = (
             <>
               <span style={{ width: 8, height: 8, borderRadius: '50%', flex: '0 0 8px', background: DOT[al.tipo] || DOT.info }} />
-              <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600 }}>{al.titulo}</span>
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{al.titulo}</span>
               {al.valor ? (
-                <span style={{ fontWeight: 900, fontStyle: 'italic', fontSize: 15, whiteSpace: 'nowrap' }}>
+                <span style={{ fontWeight: 900, fontStyle: 'italic', fontSize: 16, whiteSpace: 'nowrap' }}>
                   {formatCurrencyShort(al.valor)}
                 </span>
               ) : (
@@ -300,7 +300,7 @@ export function DashboardDecisao({
           <div className="card chart-card">
             <div className="card__header">
               <h3 className="card__title">A corrida do mês</h3>
-              <span style={{ fontSize: 11.5, color: 'var(--text-secondary)', display: 'flex', gap: 16 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', gap: 16 }}>
                 <span><i style={{ display: 'inline-block', width: 12, height: 2, background: 'var(--pons-blue)', verticalAlign: 'middle', marginRight: 5 }} />realizado</span>
                 <span><i style={{ display: 'inline-block', width: 12, height: 2, background: 'var(--color-success)', verticalAlign: 'middle', marginRight: 5 }} />ritmo da média</span>
               </span>
@@ -344,13 +344,13 @@ export function DashboardDecisao({
           </Celula>
 
           <Celula label="Ciclo médio" valor={d.cicloMedioDias != null ? `${d.cicloMedioDias} dias` : '—'}>
-            <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
               {d.cicloMedioDias != null ? 'da entrada do lead ao contrato' : 'sem vendas com lead no mês'}
             </span>
           </Celula>
 
           <Celula label="SLA 1º contato" valor={d.sla?.horas != null ? fmtHoras(d.sla.horas) : '—'}>
-            <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
               {d.sla?.horas != null ? `${d.sla.amostra.toLocaleString('pt-BR')} leads · 30 d` : 'sem leads distribuídos com resposta'}
             </span>
           </Celula>
@@ -367,7 +367,7 @@ export function DashboardDecisao({
           <div className="card__header">
             <h3 className="card__title">Setores do funil</h3>
             {vazamento && vazamento.conversaoEtapa < 1 && (
-              <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                 maior perda em <b style={{ color: 'var(--color-danger)' }}>{vazamento.etapa}</b>
               </span>
             )}
@@ -411,7 +411,7 @@ export function DashboardDecisao({
           <div className="card__header">
             <h3 className="card__title">Esteira do contrato</h3>
             {es && es.amostra > 0 && (
-              <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>{es.amostra} assinados · 90 d</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{es.amostra} assinados · 90 d</span>
             )}
           </div>
 
@@ -422,7 +422,7 @@ export function DashboardDecisao({
                 <Perna dias={es.aprovacaoAssinatura} nome="Aprovação → assinatura" />
                 <Perna dias={es.total} nome="Total até assinar" destaque />
               </div>
-              <p style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                 Da criação do contrato até a assinatura do cliente. Ajuda a separar o que é gargalo comercial do que é
                 jurídico ou do próprio cliente.
               </p>
@@ -494,7 +494,7 @@ function Perna({ dias, nome, destaque = false }: { dias: number | null; nome: st
       <div style={{ fontSize: 20, fontWeight: 900, fontStyle: 'italic', color: destaque ? 'var(--pons-blue)' : undefined }}>
         {dias != null ? `${String(dias).replace('.', ',')} d` : '—'}
       </div>
-      <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', marginTop: 2 }}>{nome}</div>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{nome}</div>
     </div>
   );
 }

@@ -146,7 +146,7 @@ export default function ExcluirDados() {
 }
 
 const containerStyle: React.CSSProperties = { minHeight: '100vh', background: '#0F172A', color: '#E2E8F0', padding: '40px 20px' };
-const articleStyle: React.CSSProperties = { maxWidth: 760, margin: '0 auto', background: '#1E293B', padding: '40px 32px', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,.3)', lineHeight: 1.6, fontSize: 15 };
+const articleStyle: React.CSSProperties = { maxWidth: 760, margin: '0 auto', background: '#1E293B', padding: '40px 32px', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,.3)', lineHeight: 1.6, fontSize: 16 };
 const h1Style: React.CSSProperties = { fontSize: 28, fontWeight: 700, marginTop: 0, marginBottom: 8, color: '#F8FAFC' };
 const metaStyle: React.CSSProperties = { color: '#94A3B8', fontSize: 13, margin: 0, marginBottom: 32 };
 const labelStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, color: '#CBD5E1' };

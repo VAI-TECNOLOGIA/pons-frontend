@@ -20,7 +20,7 @@ export function InsightsList() {
         <Icon name="lightbulb" size={17} />
       </span>
       <div>
-        <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>Insights da IA</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Insights da IA</h3>
         <div className="text-xs text-secondary">Análise do seu histórico, atualizada diariamente</div>
       </div>
     </div>

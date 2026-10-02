@@ -306,7 +306,7 @@ function Aviso({ titulo, texto, cor }: { titulo: string; texto: string; cor: str
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const wrap: React.CSSProperties = { minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px' };
 const card: React.CSSProperties = { background: C.card, borderRadius: 14, padding: 22, border: `1px solid ${C.border}`, boxShadow: '0 4px 24px rgba(11,37,69,.06)' };
-const h2: React.CSSProperties = { margin: '0 0 6px', fontSize: 17, color: C.navy };
+const h2: React.CSSProperties = { margin: '0 0 6px', fontSize: 18, color: C.navy };
 const pMuted: React.CSSProperties = { margin: '0 0 12px', color: C.muted, fontSize: 14, lineHeight: 1.5 };
 const lbl: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, margin: '0 0 4px' };
 const input: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'var(--field-bg)', color: C.text, fontSize: 14, boxSizing: 'border-box' };

@@ -83,7 +83,7 @@ export default function AcessoPendente() {
       </p>
 
       {erro && (
-        <div style={{ background: 'rgba(220,38,38,.12)', border: '1px solid rgba(220,38,38,.4)', color: '#fca5a5', padding: '10px 14px', borderRadius: 10, marginBottom: 16, fontSize: 13.5 }}>
+        <div style={{ background: 'rgba(220,38,38,.12)', border: '1px solid rgba(220,38,38,.4)', color: '#fca5a5', padding: '10px 14px', borderRadius: 10, marginBottom: 16, fontSize: 14 }}>
           {erro}
         </div>
       )}
@@ -100,7 +100,7 @@ export default function AcessoPendente() {
           {lista.map((p) => (
             <div key={p.id} className="acesso-card">
               <div className="acesso-card__info">
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{p.name}</div>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>{p.name}</div>
                 <div style={{ color: 'var(--muted, #94a3b8)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.email}{p.phone ? ` · ${p.phone}` : ''}
                 </div>

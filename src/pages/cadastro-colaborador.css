@@ -38,7 +38,7 @@
 .cad__wrap { max-width: 760px; margin: -32px auto 0; padding: 0 16px; position: relative; z-index: 2; }
 .cad__inst {
  background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--blue);
- border-radius: 12px; padding: 16px 20px; font-size: 14.5px; color: var(--muted); line-height: 1.55;
+ border-radius: 12px; padding: 16px 20px; font-size: 14px; color: var(--muted); line-height: 1.55;
  box-shadow: 0 8px 30px rgba(15,23,41,.06); margin-bottom: 20px;
 }
 .cad__inst b { color: var(--ink); }
@@ -55,7 +55,7 @@
  width: 30px; height: 30px; border-radius: 9px; background: var(--navy); color: #fff;
  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex: none;
 }
-.cad__block-title { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+.cad__block-title { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
 
 /* ---------- GRID DE CAMPOS ---------- */
 .cad__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
@@ -66,7 +66,7 @@
 .cad__opcional { color: var(--muted); font-weight: 500; font-size: 12px; }
 .cad__input, .cad__select, .cad__textarea {
  border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px;
- font-size: 15px; color: var(--ink); background: #fff; width: 100%;
+ font-size: 16px; color: var(--ink); background: #fff; width: 100%;
  transition: border-color .15s, box-shadow .15s; font-family: inherit;
 }
 .cad__input:focus, .cad__select:focus, .cad__textarea:focus {
@@ -75,7 +75,7 @@
 .cad__input--err, .cad__select--err, .cad__textarea--err { border-color: var(--err); }
 .cad__textarea { resize: vertical; min-height: 64px; }
 .cad__hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
-.cad__err { font-size: 12.5px; color: var(--err); margin-top: 6px; font-weight: 600; }
+.cad__err { font-size: 13px; color: var(--err); margin-top: 6px; font-weight: 600; }
 
 /* multi-seleção de equipes (Sócio supervisiona várias unidades) */
 .cad__multi { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -111,7 +111,7 @@
  background: #FEF2F2; border: 1px solid #FECACA; color: var(--err);
  border-radius: 10px; padding: 12px 16px; font-size: 14px; font-weight: 600; margin: 0 28px 4px;
 }
-.cad__footer { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 26px; }
+.cad__footer { text-align: center; font-size: 13px; color: var(--muted); margin-top: 26px; }
 
 /* honeypot — escondido de humanos */
 .cad__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -129,7 +129,7 @@
 }
 .cad__check svg { width: 38px; height: 38px; stroke: #fff; stroke-width: 3; fill: none; }
 .cad__success-card h2 { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
-.cad__success-card p { font-size: 15.5px; color: var(--muted); line-height: 1.6; }
+.cad__success-card p { font-size: 16px; color: var(--muted); line-height: 1.6; }
 @keyframes cad-pop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* ---------- TEMPLATE DE BOAS-VINDAS (pós-cadastro) ---------- */
@@ -170,7 +170,7 @@
 }
 .cad-wel__title { font-size: clamp(30px, 5vw, 42px); font-weight: 900; line-height: 1.04; letter-spacing: -.02em; }
 .cad-wel__title span { color: #4F7BD0; }
-.cad-wel__msg { margin: 18px auto 0; max-width: 440px; font-size: 15px; line-height: 1.6; color: #C7D0E0; }
+.cad-wel__msg { margin: 18px auto 0; max-width: 440px; font-size: 16px; line-height: 1.6; color: #C7D0E0; }
 .cad-wel__resumo {
  margin: 26px auto 0; max-width: 380px;
  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px;

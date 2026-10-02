@@ -53,7 +53,7 @@ export default function MinhasFilas() {
       {/* Controle de recebimento */}
       <div className="card" style={{ padding: '16px 18px', marginBottom: 16, borderLeft: `4px solid ${recebendo ? '#16A34A' : '#B45309'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icon name={recebendo ? 'check' : 'clock'} size={16} />
             {recebendo ? 'Recebendo leads' : 'Recebimento pausado'}
           </div>

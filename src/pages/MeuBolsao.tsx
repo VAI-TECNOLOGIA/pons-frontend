@@ -90,7 +90,7 @@ export default function MeuBolsao() {
             <div key={b.id} className="card" style={{ padding: 16 }}>
               <div className="flex-between" style={{ alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setAberto(aberto === b.id ? null : b.id)}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{b.nome}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>{b.nome}</div>
                   {b.descricao && <div className="text-xs text-secondary">{b.descricao}</div>}
                   {(b.horaInicio && b.horaFim) && <div className="text-xs text-secondary">Funciona das {b.horaInicio} às {b.horaFim}</div>}
                 </div>

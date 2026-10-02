@@ -56,7 +56,7 @@
 .camp-radio.is-on { border-color: var(--pons-blue, #0E7C9B); background: rgba(14,124,155,.14); font-weight: 700; }
 .camp-check label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-primary); }
 .camp-check input { width: 16px; height: 16px; }
-.camp-lista { width: 100%; min-height: 130px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; line-height: 1.6; }
+.camp-lista { width: 100%; min-height: 130px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 1.6; }
 
 .camp-aud-count { background: rgba(14,124,155,.12); border: 1px solid rgba(14,124,155,.28); border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--text-primary); }
 .camp-aud-count strong { font-size: 18px; color: #3cc4e3; }
@@ -71,7 +71,7 @@
 .camp-phone__avatar { width: 30px; height: 30px; border-radius: 50%; background: #ffffff35; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; }
 .camp-phone__head small { display: block; opacity: .8; font-size: 11px; }
 .camp-phone__body { padding: 14px 10px; flex: 1; }
-.camp-bubble { background: #fff; color: #111; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 1px 1px rgba(0,0,0,.15); border-top-left-radius: 0; }
+.camp-bubble { background: #fff; color: #111; border-radius: 8px; padding: 10px 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 1px 1px rgba(0,0,0,.15); border-top-left-radius: 0; }
 .camp-preview__meta { text-align: center; font-size: 12px; color: var(--text-secondary); }
 
 /* resumo / envio */

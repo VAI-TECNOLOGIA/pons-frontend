@@ -51,7 +51,7 @@
   background: var(--color-info-bg);
   color: var(--pons-blue);
 }
-.reuniao__upload h3 { margin: 0 0 6px; font-size: 17px; }
+.reuniao__upload h3 { margin: 0 0 6px; font-size: 18px; }
 .reuniao__upload p { margin: 0 0 18px; font-size: 13px; color: var(--text-secondary); }
 
 .reuniao__titulo-input {

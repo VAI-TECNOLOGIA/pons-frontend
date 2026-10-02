@@ -203,7 +203,7 @@ export default function AdminVendas() {
           <div style={{ background: 'linear-gradient(135deg, #1E2A44, #263654)', borderRadius: 14, padding: '18px 22px', color: '#fff', marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 21, fontWeight: 800, lineHeight: 1.15 }}>{sel.clienteNome}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, lineHeight: 1.15 }}>{sel.clienteNome}</div>
                 <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
                   {sel.empreendimento} · {sel.unidade} · {sel.construtora || 'construtora —'}
                 </div>

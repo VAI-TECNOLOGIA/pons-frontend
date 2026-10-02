@@ -573,7 +573,7 @@ export default function Distribuicao() {
             </div>
             <div className="field">
               <label className="field__label">Campanha (opcional)</label>
-              <input className="field__input" style={{ height: 32, fontSize: 12.5, marginBottom: 6 }} placeholder="Buscar campanha…" value={buscaCampanhaRegra} onChange={(e) => setBuscaCampanhaRegra(e.target.value)} />
+              <input className="field__input" style={{ height: 32, fontSize: 13, marginBottom: 6 }} placeholder="Buscar campanha…" value={buscaCampanhaRegra} onChange={(e) => setBuscaCampanhaRegra(e.target.value)} />
               <select name="campanhaLead" className="field__select" defaultValue={editing?.campanhaLead || ''}>
                 <option value="">Qualquer</option>
                 {(opcoesFiltro?.campanhas || []).filter((c) => casaBusca(c, buscaCampanhaRegra)).map((c) => <option key={c}>{c}</option>)}
@@ -582,7 +582,7 @@ export default function Distribuicao() {
             </div>
             <div className="field">
               <label className="field__label">Formulário (opcional)</label>
-              <input className="field__input" style={{ height: 32, fontSize: 12.5, marginBottom: 6 }} placeholder="Buscar formulário…" value={buscaFormRegra} onChange={(e) => setBuscaFormRegra(e.target.value)} />
+              <input className="field__input" style={{ height: 32, fontSize: 13, marginBottom: 6 }} placeholder="Buscar formulário…" value={buscaFormRegra} onChange={(e) => setBuscaFormRegra(e.target.value)} />
               <select name="formularioLead" className="field__select" defaultValue={editing?.formularioLead || ''}>
                 <option value="">Qualquer</option>
                 {(opcoesFiltro?.formularios || []).filter((f) => casaBusca(f, buscaFormRegra)).map((f) => <option key={f}>{f}</option>)}
@@ -590,7 +590,7 @@ export default function Distribuicao() {
             </div>
             <div className="field">
               <label className="field__label">Produto (opcional)</label>
-              <input className="field__input" style={{ height: 32, fontSize: 12.5, marginBottom: 6 }} placeholder="Buscar produto…" value={buscaProduto} onChange={(e) => setBuscaProduto(e.target.value)} />
+              <input className="field__input" style={{ height: 32, fontSize: 13, marginBottom: 6 }} placeholder="Buscar produto…" value={buscaProduto} onChange={(e) => setBuscaProduto(e.target.value)} />
               <select name="empreendimentoInteresseId" className="field__select" defaultValue={editing?.empreendimentoInteresseId || ''}>
                 <option value="">Qualquer</option>
                 {(empreendimentosFiltro || []).filter((e2: any) => casaBusca(e2.nome, buscaProduto)).map((e2: any) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}

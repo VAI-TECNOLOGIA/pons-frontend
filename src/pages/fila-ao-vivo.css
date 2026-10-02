@@ -15,7 +15,7 @@
   display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--text-primary);
   border: 1px solid var(--border-light); border-radius: 10px; padding: 8px 12px; font-size: 13px; cursor: pointer; font-family: inherit;
 }
-.flv-erro { background: rgba(220,38,38,.12); border: 1px solid rgba(220,38,38,.4); color: #fca5a5; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 13.5px; }
+.flv-erro { background: rgba(220,38,38,.12); border: 1px solid rgba(220,38,38,.4); color: #fca5a5; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 14px; }
 
 .flv-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
 .flv-kpi { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px 14px; }
@@ -31,7 +31,7 @@
 .flv-explica { font-size: 12px; color: var(--text-secondary); margin: -4px 0 10px; line-height: 1.4; }
 
 .flv-tabela { display: flex; flex-direction: column; }
-.flv-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 10px; align-items: center; padding: 9px 8px; border-bottom: 1px solid var(--border-light); font-size: 13.5px; }
+.flv-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 10px; align-items: center; padding: 9px 8px; border-bottom: 1px solid var(--border-light); font-size: 14px; }
 .flv-row:last-child { border-bottom: none; }
 .flv-row--pausa { grid-template-columns: 1fr auto 64px; }
 .flv-row--leads { grid-template-columns: 1.1fr 1fr auto; }
@@ -55,7 +55,7 @@
 .flv-como__texto { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 14px; padding: 14px 16px; }
 .flv-como__texto h3 { font-size: 14px; font-weight: 800; margin: 0 0 10px; }
 .flv-como__texto ul { margin: 0; padding-left: 18px; }
-.flv-como__texto li { margin: 5px 0; font-size: 13.5px; line-height: 1.45; }
+.flv-como__texto li { margin: 5px 0; font-size: 14px; line-height: 1.45; }
 .flv-como__texto li small { color: var(--text-secondary); }
 .flv-regra { margin: 12px 0 0; padding: 10px 12px; background: rgba(82,247,254,.07); border-left: 3px solid var(--pons-blue); border-radius: 8px; font-size: 13px; line-height: 1.5; }
 .flv-fluxo { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 14px; padding: 14px 16px; }

@@ -64,13 +64,13 @@ export function TrajetoTransferencias({ transfs, showLead = false }: { transfs: 
             </div>
             {/* lead (só na visão do corretor) */}
             {showLead && (
-              <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4 }}>{t.leadNome}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>{t.leadNome}</div>
             )}
             {/* linha 2: "pegou o lead" (evento solo) ou "de → para" */}
             {info.solo ? (
-              <div style={{ fontSize: 12.5, marginTop: 3, fontWeight: 600 }}>{t.paraCorretorNome || t.deCorretorNome || '—'}</div>
+              <div style={{ fontSize: 13, marginTop: 3, fontWeight: 600 }}>{t.paraCorretorNome || t.deCorretorNome || '—'}</div>
             ) : (
-              <div style={{ fontSize: 12.5, marginTop: 3, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 13, marginTop: 3, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                 <span className="text-secondary">de:</span> {t.deCorretorNome || 'Sistema'}
                 <Icon name="arrow_right" size={11} />
                 <span className="text-secondary">para:</span> {t.paraCorretorNome || '—'}
