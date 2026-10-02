@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.02.4",
+  "versao": "2026.10.02.5",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Tabelas ordenáveis e sistema mais rápido",
+      "itens": [
+        "Vendas e Leads: clique no título de uma coluna para ordenar (1º clique crescente, 2º decrescente). Vendas mostra 50 por página.",
+        "Fontes mais leves e carregadas pelo próprio sistema: as telas abrem mais rápido, também no aplicativo."
+      ]
+    },
     {
       "titulo": "Painéis com foco no que importa",
       "itens": [
