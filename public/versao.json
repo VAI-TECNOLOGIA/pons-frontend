@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.02.1",
+  "versao": "2026.10.02.2",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Telas mais claras",
+      "itens": [
+        "Listas sem resultado agora explicam o que fazer, em vez de ficarem em branco.",
+        "Carregamento com animação, e abas e janelas mais fáceis de usar com teclado e leitor de tela."
+      ]
+    },
     {
       "titulo": "Visual refinado e aplicativos",
       "itens": [
