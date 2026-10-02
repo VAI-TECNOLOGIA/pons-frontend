@@ -2884,3 +2884,34 @@ html.statusbar-overlay body::before {
 @media (max-width: 640px) {
   .kpi--destaque .kpi__value { font-size: 24px !important; }
 }
+
+/* ---------- Cabeçalho ordenável (SortTh) e paginação ---------- */
+.th-sort {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  white-space: nowrap;
+}
+.th-sort:hover { color: var(--text-primary); }
+.th-sort__icone { opacity: 0; transition: opacity var(--transition-fast); }
+.th-sort:hover .th-sort__icone { opacity: 0.6; }
+.th-sort--ativo { color: var(--text-primary); }
+.th-sort--ativo .th-sort__icone { opacity: 1; }
+.th-sort:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; border-radius: 4px; }
+.numeric .th-sort { justify-content: flex-end; }
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}

@@ -15,6 +15,7 @@ import { exportarXlsx } from '../lib/xlsx-simple';
 import { CampoCnpj } from '../components/CampoCnpj';
 import { BuscaSelect } from '../components/BuscaSelect';
 import { MultiFiltro } from '../components/MultiFiltro';
+import { SortTh, Paginacao, type Ordem } from '../components/SortTh';
 import type { CnpjInfo } from '../lib/consultaCnpj';
 import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
@@ -424,6 +425,8 @@ export default function Vendas() {
  // corretor e empreendimento. Client-side: a lista inteira já vem carregada.
  // Multi-seleção (filial/status/corretor/emp = arrays); período fica string.
  const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; status: string[]; corretorId: string[]; emp: string[]; gestorId: string[]; busca: string }>({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [], busca: '' });
+ const [ordemLista, setOrdemLista] = useState<Ordem>(null);
+ const [paginaLista, setPaginaLista] = useState(1);
  const setF = (k: string, v: string) => setFiltro((f) => ({ ...f, [k]: v }));
  const setFArr = (k: 'filial' | 'status' | 'corretorId' | 'emp' | 'gestorId', v: string[]) => setFiltro((f) => ({ ...f, [k]: v }));
  const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length || filtro.gestorId.length || filtro.busca.trim());
@@ -455,6 +458,32 @@ export default function Vendas() {
    if (filtro.gestorId.length && !corretoresDoGestor.has(v.corretor?.id)) return false;
    return true;
  });
+ // Ordenação (clique no cabeçalho) + paginação da LISTA. O Excel e os totais
+ // continuam usando vendasFiltradas inteira.
+ const POR_PAGINA_VENDAS = 50;
+ const chaveOrdem = (v: any): string | number => {
+   switch (ordemLista?.col) {
+     case 'codigo': return Number(v.codigo) || v.id || 0;
+     case 'data': return v.createdAt ? new Date(v.createdAt).getTime() : 0;
+     case 'cliente': return String(v.clienteNome || v.cliente || '').toLowerCase();
+     case 'emp': return String(empNomeDe(v) || '').toLowerCase();
+     case 'corretor': return String((typeof v.corretor === 'string' ? v.corretor : v.corretor?.nome || v.corretorTitular?.user?.name) || '').toLowerCase();
+     case 'vgv': return v.valorVenda ?? v.valor ?? 0;
+     case 'comissao': return ((v.valorVenda ?? v.valor ?? 0) * (v.percentualComissao || 0)) / 100;
+     case 'status': return String(v.status || '');
+     default: return 0;
+   }
+ };
+ const vendasOrdenadas = ordemLista
+   ? [...vendasFiltradas].sort((a: any, b: any) => {
+       const x = chaveOrdem(a), y = chaveOrdem(b);
+       const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'pt-BR');
+       return ordemLista.dir === 'asc' ? c : -c;
+     })
+   : vendasFiltradas;
+ const ultimaPaginaVendas = Math.max(1, Math.ceil(vendasOrdenadas.length / POR_PAGINA_VENDAS));
+ const paginaVendas = Math.min(paginaLista, ultimaPaginaVendas);
+ const vendasPagina = vendasOrdenadas.slice((paginaVendas - 1) * POR_PAGINA_VENDAS, paginaVendas * POR_PAGINA_VENDAS);
  const filiaisOpcoes = Array.from(new Map((corretores || []).filter((c: any) => c.equipe).map((c: any) => [String(c.equipe.id), c.equipe.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
  const empsOpcoes = Array.from(new Set((vendas || []).map(empNomeDe).filter(Boolean))).sort() as string[];
  const gestoresOpcoes = Array.from(new Map((equipes || []).filter((e: any) => e.lider).map((e: any) => [String(e.lider.id), e.lider.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
@@ -1444,21 +1473,21 @@ export default function Vendas() {
  <table className="table tabela-compacta">
  <thead>
  <tr>
- <th>Código</th>
- <th>Data</th>
- <th>Cliente</th>
- <th>Empreendimento</th>
- <th>Corretor</th>
- <th className="numeric">VGV</th>
- <th className="numeric">Comissão</th>
- <th>Status</th>
+ <SortTh label="Código" col="codigo" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
+ <SortTh label="Data" col="data" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
+ <SortTh label="Cliente" col="cliente" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
+ <SortTh label="Empreendimento" col="emp" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
+ <SortTh label="Corretor" col="corretor" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
+ <SortTh label="VGV" col="vgv" className="numeric" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
+ <SortTh label="Comissão" col="comissao" className="numeric" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
+ <SortTh label="Status" col="status" ordem={ordemLista} onOrdenar={(o) => { setOrdemLista(o); setPaginaLista(1); }} />
  </tr>
  </thead>
  <tbody>
  {vendasFiltradas.length === 0 && (
  <tr><td colSpan={8}><EmptyState size="sm" icon="sales" title="Nenhuma venda com esses filtros" description="Ajuste os filtros para ver mais resultados." /></td></tr>
  )}
- {vendasFiltradas.map((v: any) => {
+ {vendasPagina.map((v: any) => {
  const [k, lbl] = STATUS_MAP[v.status] || ['neutral', v.status];
  const cliente = v.clienteNome || v.cliente || '—';
  const empNome = typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '';
@@ -1508,6 +1537,7 @@ export default function Vendas() {
  })}
  </tbody>
  </table>
+ <Paginacao pagina={paginaVendas} total={vendasOrdenadas.length} porPagina={POR_PAGINA_VENDAS} onPagina={setPaginaLista} />
  </div>
  ))}
 

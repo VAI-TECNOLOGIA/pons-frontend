@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
+import { SortTh, type Ordem } from '../components/SortTh';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { LeadsFiltrosPanel } from '../components/LeadsFiltrosPanel';
@@ -51,6 +52,8 @@ const COLUNAS_LEAD: { key: string; label: string }[] = [
   { key: 'origem', label: 'Origem' },
   { key: 'campanha', label: 'Campanha' },
 ];
+// Colunas que o servidor sabe ordenar (lista branca em pons-backend routes/leads.js).
+const COLS_ORDENAVEIS = new Set(['telefone', 'status', 'entrada', 'email', 'dataCriacao', 'origem', 'campanha']);
 const COLS_LEAD_DEFAULT = ['telefone', 'produto', 'interesse', 'corretor', 'convertido', 'status', 'entrada', 'whatsapp'];
 const COLS_LEAD_VERSAO = '2'; // subir quando mudar o default pra reaplicar pra quem já tem config salva
 
@@ -112,6 +115,9 @@ export default function Leads() {
  const [busca, setBusca] = useState('');
  const [buscaDeb, setBuscaDeb] = useState('');
  const [page, setPage] = useState(1);
+ // Ordenação no SERVIDOR (lista paginada): sem ordem = ordem de chegada ao corretor.
+ const [ordemLeads, setOrdemLeads] = useState<Ordem>(null);
+ const ordenar = (o: Ordem) => { setOrdemLeads(o); setPage(1); };
  const [open, setOpen] = useState(false);
  // ?novo=1 na URL (botão "+ Novo Lead" do Funil) já abre o cadastro.
  const novoParam = searchParams.get('novo');
@@ -146,6 +152,7 @@ export default function Leads() {
  }, [busca]);
 
  const params: any = { page, limit: PAGE_SIZE };
+ if (ordemLeads) { params.ordem = ordemLeads.col; params.dir = ordemLeads.dir; }
  if (filterStatus.length) params.status = filterStatus.join(',');
  if (filtroOrigem.length) params.origem = filtroOrigem.join(',');
  if (filtroEtiqueta.length) params.classificacao = filtroEtiqueta.join(',');
@@ -440,8 +447,10 @@ export default function Leads() {
  <input type="checkbox" checked={sel.size >= filtered.length && filtered.length > 0} onChange={() => setSel((s) => s.size >= filtered.length ? new Set() : new Set(filtered.map((l: any) => l.id)))} title="Selecionar todos os da página" />
  </th>
  )}
- <th>Nome</th>
- {colunasAtivas.map((c) => <th key={c.key}>{c.label}</th>)}
+ <SortTh label="Nome" col="nome" ordem={ordemLeads} onOrdenar={ordenar} />
+ {colunasAtivas.map((c) => (COLS_ORDENAVEIS.has(c.key)
+ ? <SortTh key={c.key} label={c.label} col={c.key} ordem={ordemLeads} onOrdenar={ordenar} />
+ : <th key={c.key}>{c.label}</th>))}
  </tr>
  </thead>
  <tbody>
