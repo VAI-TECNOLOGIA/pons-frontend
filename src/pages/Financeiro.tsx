@@ -230,7 +230,7 @@ export default function Financeiro() {
  />
 
  <div className="kpi-grid">
- <div className="kpi">
+ <div className="kpi kpi--destaque">
  <div className="kpi__label">Saldo realizado</div>
  <div className="kpi__value" style={{ color: (f.saldo || 0) >= 0 ? 'var(--money-positive)' : 'var(--money-negative)' }}>
  {formatCurrencyShort(f.saldo)}
@@ -244,7 +244,7 @@ export default function Financeiro() {
  <div className="kpi__label">A pagar</div>
  <div className="kpi__value">{formatCurrencyShort(f.aPagar)}</div>
  </div>
- <div className="kpi">
+ <div className={'kpi' + ((f.aguardandoAprovacao || 0) > 0 ? ' kpi--atencao' : '')}>
  <div className="kpi__label">Aguardando aprovação</div>
  <div className="kpi__value">{f.aguardandoAprovacao || 0}</div>
  </div>

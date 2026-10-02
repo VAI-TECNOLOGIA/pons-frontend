@@ -51,16 +51,16 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Card({ label, valor, cor, icon, onClick }: { label: string; valor: number; cor: string; icon: string; onClick?: () => void }) {
+function Card({ label, valor, cor, icon, onClick, destaque }: { label: string; valor: number; cor: string; icon: string; onClick?: () => void; destaque?: boolean }) {
   return (
-    <div className="card" style={{ padding: '16px 18px', borderLeft: `4px solid ${cor}`, display: 'flex', flexDirection: 'column', gap: 4, cursor: onClick ? 'pointer' : undefined }} onClick={onClick}>
+    <div className={'card' + (destaque ? ' kpi-card--destaque' : '')} style={{ padding: '16px 18px', borderLeft: `4px solid ${cor}`, display: 'flex', flexDirection: 'column', gap: 4, cursor: onClick ? 'pointer' : undefined }} onClick={onClick}>
       <div className="flex-between" style={{ alignItems: 'flex-start' }}>
         <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{label}</div>
         <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 9, background: cor + '1A', color: cor, flexShrink: 0 }}>
           <Icon name={icon} size={16} />
         </span>
       </div>
-      <div style={{ fontSize: 'clamp(18px, 5.2vw, 24px)', fontWeight: 800, color: cor, whiteSpace: 'nowrap' }}>{brl(valor)}</div>
+      <div className="kpi-card__valor" style={{ fontSize: 'clamp(18px, 5.2vw, 24px)', fontWeight: 800, color: cor, whiteSpace: 'nowrap' }}>{brl(valor)}</div>
       {onClick && <div className="text-xs" style={{ color: cor, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 2 }}>Ver detalhes <Icon name="chevron-right" size={13} /></div>}
     </div>
   );
@@ -299,7 +299,7 @@ export default function MinhasComissoes() {
 
           <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
             <Card label="Já recebido" valor={resumo.recebido} cor="#16A34A" icon="check" onClick={() => setCardSel('recebido')} />
-            <Card label="A receber" valor={resumo.aReceber} cor="#0E7C9B" icon="clock" onClick={() => setCardSel('aReceber')} />
+            <Card destaque label="A receber" valor={resumo.aReceber} cor="#0E7C9B" icon="clock" onClick={() => setCardSel('aReceber')} />
             <Card label="Entra este mês" valor={resumo.esteMs} cor="#B45309" icon="calendar" onClick={() => setCardSel('esteMs')} />
             <Card label="Próximos meses" valor={resumo.proximos} cor="#64748B" icon="wallet" onClick={() => setCardSel('proximos')} />
           </div>

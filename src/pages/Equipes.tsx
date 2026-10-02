@@ -426,7 +426,7 @@ export default function Equipes() {
  </div>
  <div className="kpi-grid">
  <div className="kpi"><div className="kpi__label">Vendas no período</div><div className="kpi__value">{totais.vendas}</div></div>
- <div className="kpi"><div className="kpi__label">Receita gerada</div><div className="kpi__value">{formatCurrencyShort(totais.receita)}</div></div>
+ <div className="kpi kpi--destaque"><div className="kpi__label">Receita gerada</div><div className="kpi__value">{formatCurrencyShort(totais.receita)}</div></div>
  <div className="kpi"><div className="kpi__label">Comissão paga</div><div className="kpi__value">{formatCurrencyShort(totais.comissaoPaga)}</div></div>
  <div className="kpi"><div className="kpi__label">Corretores</div><div className="kpi__value">{totais.corretores}</div></div>
  </div>

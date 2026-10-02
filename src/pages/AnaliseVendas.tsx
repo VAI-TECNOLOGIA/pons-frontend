@@ -83,7 +83,7 @@ function Delta({ v }: { v: number }) {
   );
 }
 
-function Kpi({ label, valor, delta, spark, cor, sub }: { label: string; valor: string; delta?: number; spark?: number[]; cor: string; sub?: React.ReactNode }) {
+function Kpi({ label, valor, delta, spark, cor, sub, destaque }: { label: string; valor: string; delta?: number; spark?: number[]; cor: string; sub?: React.ReactNode; destaque?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (!ref.current || !spark?.length) return;
@@ -95,12 +95,12 @@ function Kpi({ label, valor, delta, spark, cor, sub }: { label: string; valor: s
     return () => ch.destroy();
   }, [spark, cor]);
   return (
-    <div className="card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div className={'card' + (destaque ? ' kpi-card--destaque' : '')} style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6, ...(destaque ? { boxShadow: `inset 3px 0 0 ${cor}, var(--shadow-sm)` } : {}) }}>
       <div className="flex-between" style={{ alignItems: 'flex-start' }}>
         <div className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{label}</div>
         {delta !== undefined && <Delta v={delta} />}
       </div>
-      <div style={{ fontSize: 'clamp(19px, 4.5vw, 26px)', fontWeight: 800, color: cor, whiteSpace: 'nowrap' }}>{valor}</div>
+      <div className="kpi-card__valor" style={{ fontSize: 'clamp(19px, 4.5vw, 26px)', fontWeight: 800, color: cor, whiteSpace: 'nowrap' }}>{valor}</div>
       {sub && <div className="text-xs text-secondary">{sub}</div>}
       {spark && spark.length > 1 && <div style={{ height: 34, marginTop: -4 }}><canvas ref={ref} /></div>}
     </div>
@@ -422,7 +422,7 @@ export default function AnaliseVendas() {
 
       {/* KPIs comparativos com sparkline */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
-        <Kpi label="VGV no período" valor={brl(r.vgv.atual)} delta={r.vgv.variacao} spark={sVgv} cor="#0E7C9B" sub={subAno(r.vgv, brl)} />
+        <Kpi destaque label="VGV no período" valor={brl(r.vgv.atual)} delta={r.vgv.variacao} spark={sVgv} cor="#0E7C9B" sub={subAno(r.vgv, brl)} />
         <Kpi label="Vendas" valor={String(r.vendas.atual)} delta={r.vendas.variacao} spark={sVendas} cor="#88C559" sub={subAno(r.vendas, String)} />
         <Kpi label="Comissão bruta" valor={brl(r.comissao.atual)} delta={r.comissao.variacao} spark={sCom} cor="#C084FC" sub={subAno(r.comissao, brl)} />
         <Kpi label="Ticket médio" valor={brl(r.ticketMedio.atual)} delta={r.ticketMedio.variacao} cor="#F2B544" sub={subAno(r.ticketMedio, brl)} />

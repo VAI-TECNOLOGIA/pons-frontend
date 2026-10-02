@@ -317,9 +317,9 @@ export default function Dashboard() {
  {/* KPIs */}
  {data.kpis && (
  <div className="kpi-grid">
- <KpiCard label="Vendas no mês" value={formatCurrencyShort(data.kpis.vendasMes?.valor)} sub={`${data.kpis.vendasMes?.quantidade ?? 0} contratos`} color="blue" iconName="dollar" />
+ <KpiCard variante="destaque" label="Vendas no mês" value={formatCurrencyShort(data.kpis.vendasMes?.valor)} sub={`${data.kpis.vendasMes?.quantidade ?? 0} contratos`} color="blue" iconName="dollar" />
  <KpiCard label="Pipeline ativo" value={(data.kpis.pipelineAtivo ?? 0).toLocaleString('pt-BR')} sub={`${data.kpis.leadsNovosHoje ?? 0} novos hoje`} color="green" iconName="users" />
- <KpiCard label="A pagar (próx. 7d)" value={formatCurrencyShort(data.kpis.aPagar?.valor)} sub={`${data.kpis.aPagar?.operacoes ?? 0} operações`} color="amber" iconName="clock" />
+ <KpiCard variante={(data.kpis.aPagar?.operacoes ?? 0) > 0 ? 'atencao' : undefined} label="A pagar (próx. 7d)" value={formatCurrencyShort(data.kpis.aPagar?.valor)} sub={`${data.kpis.aPagar?.operacoes ?? 0} operações`} color="amber" iconName="clock" />
  <KpiCard label="Em assinatura" value={(data.kpis.contratosEmAssinatura ?? 0).toLocaleString('pt-BR')} sub="aguardando cliente" color="navy" iconName="doc" />
  </div>
  )}
@@ -488,12 +488,14 @@ function KpiCard({
  sub,
  color,
  iconName,
+ variante,
 }: {
  label: string;
  value: string;
  sub?: string;
  color: 'blue' | 'green' | 'amber' | 'navy';
  iconName: string;
+ variante?: 'destaque' | 'atencao';
 }) {
  const ICON_SVG: Record<string, string> = {
  dollar:
@@ -504,7 +506,7 @@ function KpiCard({
  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
  };
  return (
- <div className="kpi">
+ <div className={'kpi' + (variante ? ` kpi--${variante}` : '')}>
  <div className={`kpi__icon kpi__icon--${color}`}>
  <svg
  className="icon"

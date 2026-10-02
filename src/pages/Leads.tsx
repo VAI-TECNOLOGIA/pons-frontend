@@ -324,7 +324,7 @@ export default function Leads() {
  <div className="kpi-grid">
  <KpiSimple color="blue" label="Novos hoje" value={stats?.novosHoje ?? 0} onClick={() => aplicarKpi('novos')} active={kpiAtivo === 'novos'} />
  <KpiSimple color="green" label="Em negociação" value={stats?.qualificados ?? 0} onClick={() => aplicarKpi('negociacao')} active={kpiAtivo === 'negociacao'} />
- <KpiSimple color="amber" label="Sem follow-up" value={stats?.semFollowup ?? 0} onClick={() => aplicarKpi('semfollowup')} active={kpiAtivo === 'semfollowup'} />
+ <KpiSimple color="amber" label="Sem follow-up" value={stats?.semFollowup ?? 0} atencao={(stats?.semFollowup ?? 0) > 0} onClick={() => aplicarKpi('semfollowup')} active={kpiAtivo === 'semfollowup'} />
  <KpiSimple color="navy" label={temFiltro ? 'Total no filtro' : 'Total no funil'} value={temFiltro ? total : (stats?.total ?? leads.length)} onClick={() => { setKpiAtivo(''); setFilterStatus([]); setSemFollowup(false); setNovosHoje(false); setDataInicial(''); setDataFinal(''); setPage(1); }} />
  </div>
 
@@ -578,10 +578,10 @@ function LeadsShell({ children, onNew }: { children: React.ReactNode; onNew?: ()
  );
 }
 
-function KpiSimple({ color, label, value, onClick, active }: { color: string; label: string; value: number; onClick?: () => void; active?: boolean }) {
+function KpiSimple({ color, label, value, onClick, active, atencao }: { color: string; label: string; value: number; onClick?: () => void; active?: boolean; atencao?: boolean }) {
  return (
  <div
- className="kpi"
+ className={'kpi' + (atencao ? ' kpi--atencao' : '')}
  onClick={onClick}
  style={onClick ? { cursor: 'pointer', outline: active ? '2px solid var(--pons-blue)' : undefined, outlineOffset: -2, borderRadius: 10 } : undefined}
  title={onClick ? (active ? 'Clique pra limpar o filtro' : `Filtrar por "${label}"`) : undefined}
