@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.02.2",
+  "versao": "2026.10.02.3",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Financeiro mais limpo",
+      "itens": [
+        "Caixa & Lançamentos: cada linha mostra só as ações mais usadas (Editar, Enviar ao Sicredi, Cancelar). Aprovar e Marcar pago ficam no botão ⋯ ao lado.",
+        "Seletores de corretor, destino e filtros fecham com a tecla ESC."
+      ]
+    },
     {
       "titulo": "Telas mais claras",
       "itens": [
