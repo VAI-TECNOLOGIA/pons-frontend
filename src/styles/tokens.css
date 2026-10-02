@@ -186,6 +186,12 @@
 /* ===========================================================
    TEMA ESCURO
    =========================================================== */
+/* ⚠️ ATENÇÃO (decisão 02/10/2026): no escuro as escalas --gray-*, --blue-50/100/700,
+   --navy-50/100 e --pons-navy são REMAPEADAS (ex.: --gray-900 vira texto CLARO).
+   É assim que o CSS antigo, escrito com var(--gray-*), herdou o tema escuro sem
+   reescrita. Não "corrigir" esse remapeamento: centenas de regras dependem dele.
+   Código novo deve usar os tokens SEMÂNTICOS (--text-*, --bg-*, --border-*,
+   --color-*), nunca --gray-* direto. */
 [data-theme="dark"] {
   --bg-app:           #08090F;
   --bg-card:          #0F1016;

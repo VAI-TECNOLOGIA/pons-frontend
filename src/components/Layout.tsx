@@ -63,6 +63,18 @@ export function AppLayout() {
     });
   };
 
+  // Hooks ANTES dos returns condicionais (regra dos hooks: mesma ordem em todo render).
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [loc.pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
   if (!Auth.token) return <Navigate to="/login" replace />;
 
   // Gate de onboarding: colaborador em contratação fica preso em /onboarding
@@ -83,17 +95,6 @@ export function AppLayout() {
   const onDev = loc.pathname.startsWith('/dev');
   if (role === 'DEV' && !onDev) return <Navigate to="/dev/mensagens" replace />;
   if (role && role !== 'DEV' && onDev) return <Navigate to="/dashboard" replace />;
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [loc.pathname]);
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [menuOpen]);
 
   return (
     <>

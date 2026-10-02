@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import { useEscFechar } from '../lib/useEscFechar';
 
 // Seletor de corretor com BUSCA (nome, equipe ou telefone) — substitui os
 // <select> gigantes das ações de transferir lead. Mostra lista clicável
@@ -22,6 +23,7 @@ export function CorretorPicker({
 }) {
   const [busca, setBusca] = useState('');
   const [open, setOpen] = useState(false);
+  useEscFechar(open, () => setOpen(false));
   const [pos, setPos] = useState<{ top: number; left: number; width: number; acima: boolean } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -118,6 +120,8 @@ export function CorretorPicker({
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
+            role="dialog"
+            aria-label="Escolher corretor"
             style={{
               position: 'fixed',
               ...(pos.acima ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),

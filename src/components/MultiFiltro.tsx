@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import { useEscFechar } from '../lib/useEscFechar';
 
 // Filtro multi-seleção estilo Imobilead: os selecionados viram CHIPS dentro do
 // próprio campo (com × pra tirar) e a lista abre embaixo com os marcados
@@ -20,6 +21,7 @@ export function MultiFiltro({
   onChange: (values: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  useEscFechar(open, () => setOpen(false));
   const [busca, setBusca] = useState('');
   const boxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +107,8 @@ export function MultiFiltro({
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
+            role="dialog"
+            aria-label="Filtro"
             style={{
               position: 'fixed',
               ...(pos.acima ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import { useEscFechar } from '../lib/useEscFechar';
 
 // Seletor de DESTINO da transferência de leads: Corretor, Equipe, Fila
 // (de atendimento) ou Bolsão — com busca em cada aba. Dropdown via portal
@@ -32,6 +33,7 @@ export function DestinoPicker({
   onChange: (d: DestinoTransf | null) => void;
 }) {
   const [open, setOpen] = useState(false);
+  useEscFechar(open, () => setOpen(false));
   const [aba, setAba] = useState<'CORRETOR' | 'EQUIPE' | 'FILA' | 'BASE' | 'BOLSAO'>('CORRETOR');
   const [busca, setBusca] = useState('');
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -133,6 +135,8 @@ export function DestinoPicker({
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setOpen(false)} />
           <div
+            role="dialog"
+            aria-label="Escolher destino"
             style={{
               position: 'fixed',
               ...(pos.top != null ? { top: pos.top } : {}),

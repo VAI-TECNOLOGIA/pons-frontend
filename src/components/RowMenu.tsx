@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 
 // Menu "⋯" para ações RARAS de uma linha de tabela. As ações frequentes ficam
 // visíveis na linha; só o que quase não é usado entra aqui.
-// Posição fixa (calculada do botão) para não ser cortado pelo overflow da tabela.
+// Posição fixa (calculada do botão), renderizado no <body> via portal: não é
+// cortado pelo overflow da tabela nem deslocado por ancestral com transform.
 export interface RowMenuItem {
   label: string;
   onClick: () => void;
@@ -59,7 +61,7 @@ export function RowMenu({ items, label = 'Mais ações' }: { items: RowMenuItem[
       >
         <Icon name="more" size={16} />
       </button>
-      {open && pos && (
+      {open && pos && createPortal(
         <div ref={menuRef} role="menu" className="row-menu" style={{ top: pos.top, right: pos.right }}>
           {items.map((it) => (
             <button
@@ -72,7 +74,8 @@ export function RowMenu({ items, label = 'Mais ações' }: { items: RowMenuItem[
               {it.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
