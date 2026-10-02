@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.02.6",
+  "versao": "2026.10.02.7",
   "data": "02/10/2026",
   "novidades": [
+    {
+      "titulo": "Pagamentos: fluxo mais claro e sem pagar em dobro",
+      "itens": [
+        "Caixa & Lançamentos mostra em que etapa cada conta está: NÃO ENVIADO, NO BANCO · APROVAR (falta o CEO aprovar no Internet Banking), AGENDADO ou PAGO.",
+        "Ao lançar uma conta a pagar, o sistema pergunta se já quer enviar ao Sicredi.",
+        "Se a conta já foi lançada (mesmo boleto ou mesmo beneficiário, valor e vencimento), o sistema avisa antes de duplicar — e nunca envia o mesmo boleto ao banco duas vezes."
+      ]
+    },
     {
       "titulo": "Textos mais uniformes",
       "itens": [
