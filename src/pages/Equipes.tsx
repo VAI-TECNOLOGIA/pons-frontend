@@ -9,6 +9,7 @@ import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import './equipes.css';
+import { EmptyState } from '../components/EmptyState';
 
 // Editor inline da meta mensal (R$) da equipe. A soma das metas das equipes vira a
 // meta geral da casa (alimenta a corrida do mês no Financeiro).
@@ -455,9 +456,7 @@ export default function Equipes() {
  </tr>
  ))}
  {!resultadosVisiveis.length && (
- <tr><td colSpan={6} className="text-secondary" style={{ textAlign: 'center', padding: 16 }}>
- {resultados ? 'Nenhum resultado no período.' : 'Carregando resultados…'}
- </td></tr>
+ <tr><td colSpan={6}>{resultados ? <EmptyState size="sm" title="Nenhum resultado no período" /> : <span className="text-secondary">Carregando resultados…</span>}</td></tr>
  )}
  </tbody>
  </table>

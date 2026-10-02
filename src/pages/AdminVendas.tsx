@@ -13,6 +13,7 @@ import { useToast } from '../lib/toast';
 import { formatCurrencyExact } from '../lib/format';
 import { Auth } from '../lib/auth';
 import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas } from './Vendas';
+import { EmptyState } from '../components/EmptyState';
 
 // Fases na ordem do processo — a fila mostra por fase.
 // Fluxo novo (Glaucia 29/07): confecção → conferência → alteração → jurídica →
@@ -144,7 +145,7 @@ export default function AdminVendas() {
           </thead>
           <tbody>
             {lista.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 28, color: 'var(--text-secondary)' }}>{bn ? 'Nenhum contrato encontrado com essa busca' : 'Nenhuma venda nesta fase'}</td></tr>
+              <tr><td colSpan={7}><EmptyState size="sm" title={`${bn ? 'Nenhum contrato encontrado com essa busca' : 'Nenhuma venda nesta fase'}`} /></td></tr>
             ) : lista.map((v) => (
               <tr key={v.id}>
                 <td className="font-semibold">#{v.codigo}</td>

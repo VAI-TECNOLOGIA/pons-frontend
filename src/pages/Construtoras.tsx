@@ -7,6 +7,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import './construtoras.css';
+import { EmptyState } from '../components/EmptyState';
 
 type CListItem = {
   id: number; nome: string; ativa?: boolean; logoUrl?: string | null;
@@ -49,9 +50,8 @@ export default function Construtoras() {
         />
 
         {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : !data ? null : data.length === 0 ? (
-          <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-            <p className="text-secondary" style={{ marginBottom: 16 }}>Nenhuma construtora cadastrada ainda.</p>
-            <button className="btn btn--primary btn--sm" onClick={() => setEditing('new')}><Icon name="plus" size={14} /> Cadastrar a primeira</button>
+          <div className="card">
+            <EmptyState icon="building" title="Nenhuma construtora cadastrada ainda" action={{ label: 'Cadastrar a primeira', onClick: () => setEditing('new') }} />
           </div>
         ) : (
           <div className="grid-3">

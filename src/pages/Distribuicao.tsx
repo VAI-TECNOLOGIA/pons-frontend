@@ -10,6 +10,7 @@ import { useConfirm } from '../lib/confirm';
 import { FichaLeadModal } from '../components/FichaLeadModal';
 import { Icon } from '../components/Icon';
 import { LeadsFiltrosPanel, FILTROS_LEAD_VAZIO, filtrosLeadParams, type FiltrosLead } from '../components/LeadsFiltrosPanel';
+import { EmptyState } from '../components/EmptyState';
 
 // Mesmos rótulos de status da tela de Leads (funil da Ju)
 const STATUS_OPCOES = [
@@ -353,7 +354,7 @@ export default function Distribuicao() {
                   </thead>
                   <tbody>
                     {leadsBolsao.length === 0 ? (
-                      <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 20 }}>Nenhum lead encontrado pra “{buscaBolsao}”.</td></tr>
+                      <tr><td colSpan={7}><EmptyState size="sm" title={`Nenhum lead encontrado pra “${buscaBolsao}”`} /></td></tr>
                     ) : leadsBolsao.map((l: any) => (
                       <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : undefined}>
                         <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggleSel(l.id)} /></td>
@@ -409,7 +410,7 @@ export default function Distribuicao() {
                 </tr>
               ))}
               {data?.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma regra criada</td></tr>
+                <tr><td colSpan={7}><EmptyState size="sm" title="Nenhuma regra criada" /></td></tr>
               )}
             </tbody>
           </table>

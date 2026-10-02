@@ -5,6 +5,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { EmptyState } from '../components/EmptyState';
 
 const TIPOS = [
   { v: 'TEXT', l: 'Texto' },
@@ -71,7 +72,7 @@ export default function CamposCustom() {
               </thead>
               <tbody>
                 {(data || []).length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>Nenhum campo criado ainda — clique em "+ Novo campo"</td></tr>
+                  <tr><td colSpan={6}><EmptyState size="sm" title="Nenhum campo criado ainda" description={"Clique em \"+ Novo campo\""} /></td></tr>
                 ) : (data || []).map((c) => (
                   <tr key={c.id}>
                     <td><strong>{c.nome}</strong><div className="text-xs text-secondary" style={{ fontFamily: 'monospace' }}>{c.slug}</div></td>

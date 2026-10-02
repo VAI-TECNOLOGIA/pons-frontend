@@ -10,6 +10,7 @@ import { useWhatsappNumeros } from '../lib/whatsappNumeros';
 import { Icon } from '../components/Icon';
 import { CorretorPicker } from '../components/CorretorPicker';
 import { useConfirm } from '../lib/confirm';
+import { EmptyState } from '../components/EmptyState';
 
 const ORIGENS = ['META_ADS', 'GOOGLE', 'SITE', 'INDICACAO', 'WHATSAPP', 'IMPORTACAO_MANUAL', 'IMPORTACAO'];
 const STATUS = ['NOVO', 'NAO_RESPONDE', 'LISTA_VIP', 'EM_ATENDIMENTO', 'FLUXO', 'PAROU_RESPONDER', 'POS_FLUXO', 'VISITA', 'NEGOCIANDO'];
@@ -155,7 +156,7 @@ export default function Bolsoes() {
               </thead>
               <tbody>
                 {loading && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Carregando…</td></tr>}
-                {!loading && leads.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhum lead no bolsão com esse filtro</td></tr>}
+                {!loading && leads.length === 0 && <tr><td colSpan={8}><EmptyState size="sm" title="Nenhum lead no bolsão com esse filtro" /></td></tr>}
                 {leads.map((l) => (
                   <tr key={l.id} style={sel.has(l.id) ? { background: 'var(--bg-elevated)' } : {}}>
                     <td><input type="checkbox" checked={sel.has(l.id)} onChange={() => toggle(l.id)} /></td>

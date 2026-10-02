@@ -6,6 +6,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { EmptyState } from '../components/EmptyState';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Filas de Atendimento (estilo Imobilead, tema escuro do sistema)
@@ -100,7 +101,7 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
             </thead>
             <tbody>
               {ordem.length === 0 ? (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 28, color: 'var(--text-secondary)' }}>Nenhum corretor nesta fila. Edite a fila e adicione corretores na aba "Corretores".</td></tr>
+                <tr><td colSpan={5}><EmptyState size="sm" title="Nenhum corretor nesta fila" description={"Edite a fila e adicione corretores na aba \"Corretores\"."} /></td></tr>
               ) : ordem.map((p: any, i: number) => (
                 <tr key={p.id}>
                   <td>
@@ -164,7 +165,7 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
             </thead>
             <tbody>
               {filtradas.length === 0 ? (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 28, color: 'var(--text-secondary)' }}>Nenhuma fila. Clique em "+ Adicionar fila".</td></tr>
+                <tr><td colSpan={8}><EmptyState size="sm" title="Nenhuma fila" description={"Clique em \"+ Adicionar fila\"."} /></td></tr>
               ) : filtradas.map((f) => {
                 const forms = String(f.formularioFiltro || '').split(',').map((s: string) => s.trim()).filter(Boolean);
                 const nPart = (f.participantes || []).filter((p: any) => p.ativo).length;
@@ -233,7 +234,7 @@ function HistoricoModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal open onClose={onClose} title="Histórico de alterações" subtitle="Auditoria das filas — quem mudou, quando e o quê" size="xl">
       {loading ? <LoadingBlock /> : error ? <ErrorBlock error={error} /> : itens.length === 0 ? (
-        <div className="text-secondary" style={{ padding: 24, textAlign: 'center' }}>Nenhuma alteração registrada ainda. As mudanças nas filas passam a aparecer aqui.</div>
+        <EmptyState size="sm" icon="history" title="Nenhuma alteração registrada ainda" description="As mudanças nas filas passam a aparecer aqui." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {itens.map((h) => {

@@ -8,6 +8,7 @@ import { useConfirm } from '../lib/confirm';
 import { initials } from '../lib/format';
 import { FichaLeadModal } from '../components/FichaLeadModal';
 import { CorretorPicker } from '../components/CorretorPicker';
+import { EmptyState } from '../components/EmptyState';
 
 // Histórico de transferências de leads — visão SIMPLIFICADA por operação
 // (estilo Imobilead, pedido do Vine 23/07): quem enviou, quem recebeu,
@@ -158,7 +159,7 @@ export default function Transferencias() {
               </thead>
               <tbody>
                 {data.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Sem transferências no filtro selecionado</td></tr>
+                  <tr><td colSpan={7}><EmptyState size="sm" title="Sem transferências no filtro selecionado" /></td></tr>
                 ) : data.map((g) => (
                   <>
                     <tr key={g.id}>

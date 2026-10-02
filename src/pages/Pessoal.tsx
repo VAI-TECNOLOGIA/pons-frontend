@@ -7,6 +7,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { EmptyState } from '../components/EmptyState';
 
 const DONO_EMAIL = 'paulo@grupopons.com.br';
 
@@ -313,7 +314,7 @@ function FinancasTab() {
               </tr>
             ))}
             {cats.length === 0 && (
-              <tr><td colSpan={visibleMonths.length + 2} style={{ textAlign: 'center', padding: 28, color: 'var(--text-secondary)' }}>Nenhuma categoria ainda. Adicione a primeira abaixo.</td></tr>
+              <tr><td colSpan={visibleMonths.length + 2}><EmptyState size="sm" title="Nenhuma categoria ainda" description="Adicione a primeira abaixo." /></td></tr>
             )}
           </tbody>
           {cats.length > 0 && (

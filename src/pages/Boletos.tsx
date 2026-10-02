@@ -6,6 +6,7 @@ import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { EmptyState } from '../components/EmptyState';
 
 const brl = (c: number) => `R$ ${((c || 0) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 const dt = (d: string) => new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
@@ -153,7 +154,7 @@ export default function Boletos() {
         <div className="card__title mb-4">Boletos emitidos</div>
         {loading && <LoadingBlock />}
         {error && <ErrorBlock error={error} />}
-        {lista && lista.length === 0 && <p className="text-sm text-secondary">Nenhum boleto emitido ainda.</p>}
+        {lista && lista.length === 0 && <EmptyState size="sm" icon="doc" title="Nenhum boleto emitido ainda" />}
         {lista && lista.length > 0 && (
           <table className="table">
             <thead>

@@ -11,6 +11,7 @@ import { useConfirm } from '../lib/confirm';
 import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 
 import './empreendimentos.css';
+import { EmptyState } from '../components/EmptyState';
 
 type Construtora = { id: number; nome: string };
 type Foto = { id: number; url: string; ordem: number; iaEnvia?: boolean; iaComentario?: string | null };
@@ -494,7 +495,7 @@ function UnidadesModal({
       {loading ? (
         <LoadingBlock />
       ) : !data?.unidades?.length ? (
-        <p className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nenhuma unidade cadastrada.</p>
+        <EmptyState size="sm" icon="building" title="Nenhuma unidade cadastrada" />
       ) : (
         <table className="table">
           <thead><tr><th>Unidade</th><th>Torre</th><th>Andar</th><th>Tipologia</th><th className="text-right">Valor</th><th>Status</th>{canEdit && <th></th>}</tr></thead>
@@ -1810,7 +1811,7 @@ function ConstrutorasModal({ onClose }: { onClose: () => void }) {
       {!lista ? (
         <LoadingBlock />
       ) : lista.length === 0 ? (
-        <p className="text-secondary">Nenhuma construtora cadastrada ainda. Clique em “Nova construtora”.</p>
+        <EmptyState size="sm" icon="building" title="Nenhuma construtora cadastrada ainda" description="Clique em “Nova construtora”." />
       ) : (
         <div style={{ display: 'grid', gap: 10 }}>
           {lista.map((c) => (

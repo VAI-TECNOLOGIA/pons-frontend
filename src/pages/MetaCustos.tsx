@@ -5,6 +5,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { Chart, registerables } from 'chart.js';
 import { Icon } from '../components/Icon';
 import { StatGlow } from '../components/StatGlow';
+import { EmptyState } from '../components/EmptyState';
 
 Chart.register(...registerables);
 
@@ -123,7 +124,7 @@ export default function MetaCustos() {
                       <td>{fmt(p.custo)}</td>
                     </tr>
                   ))}
-                  {data.porCorretor.length === 0 && <tr><td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Sem custos registrados</td></tr>}
+                  {data.porCorretor.length === 0 && <tr><td colSpan={3}><EmptyState size="sm" title="Sem custos registrados" /></td></tr>}
                 </tbody>
               </table>
             </div>

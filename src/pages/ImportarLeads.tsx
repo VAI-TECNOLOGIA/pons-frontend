@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useToast } from '../lib/toast';
+import { EmptyState } from '../components/EmptyState';
 
 // Fase B3 — Big Data Imobiliária: importação CSV/XLSX
 export default function ImportarLeads() {
@@ -155,7 +156,7 @@ export default function ImportarLeads() {
             </div>
             {lotes && (
               lotes.length === 0 ? (
-                <div className="text-xs text-secondary">Nenhum lote de importação encontrado.</div>
+                <EmptyState size="sm" icon="database" title="Nenhum lote de importação encontrado" />
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table className="table">

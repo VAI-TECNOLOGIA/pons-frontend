@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { EmptyState } from '../components/EmptyState';
 
 const brl = (n: number) => (n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 const mesLabel = (mk: string) => {
@@ -96,7 +97,7 @@ export default function PainelFinanceiro() {
               </tr>
             </thead>
             <tbody>
-              {(previsao?.porMes || []).length === 0 && <tr><td colSpan={empresaKeys.length + 3} className="text-secondary" style={{ textAlign: 'center', padding: 16 }}>Nenhuma parcela prevista.</td></tr>}
+              {(previsao?.porMes || []).length === 0 && <tr><td colSpan={empresaKeys.length + 3}><EmptyState size="sm" title="Nenhuma parcela prevista" /></td></tr>}
               {(previsao?.porMes || []).map((m: any) => (
                 <tr key={m.mes}>
                   <td style={{ fontWeight: 600, textTransform: 'capitalize' }}>{mesLabel(m.mes)}</td>

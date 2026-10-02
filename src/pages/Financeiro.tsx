@@ -669,7 +669,7 @@ function PrevisaoTab() {
               </thead>
               <tbody>
                 {data.linhas.length === 0 ? (
-                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>Nenhuma entrada prevista para o filtro</td></tr>
+                  <tr><td colSpan={10}><EmptyState size="sm" title="Nenhuma entrada prevista para o filtro" /></td></tr>
                 ) : (
                   data.linhas.map((l: any) => {
                     const [k, lbl] = STATUS_BADGE[l.status] || ['neutral', l.status];
@@ -853,7 +853,7 @@ function ComissoesPorCorretor() {
                 </tr>
               ))}
               {!data.corretores?.length && (
-                <tr><td colSpan={6} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nenhuma comissão no período.</td></tr>
+                <tr><td colSpan={6}><EmptyState size="sm" title="Nenhuma comissão no período" /></td></tr>
               )}
             </tbody>
           </table>
@@ -909,7 +909,7 @@ function ComissoesPlano() {
                 <FragmentRow key={v.id} v={v} aberta={aberta} setAberta={setAberta} />
               ))}
               {!data.vendas?.length && (
-                <tr><td colSpan={6} className="text-secondary text-sm" style={{ textAlign: 'center', padding: 24 }}>Nenhuma venda com comissão.</td></tr>
+                <tr><td colSpan={6}><EmptyState size="sm" title="Nenhuma venda com comissão" /></td></tr>
               )}
             </tbody>
           </table>

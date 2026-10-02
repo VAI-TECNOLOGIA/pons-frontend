@@ -10,6 +10,7 @@ import { CondicoesVendaModal } from '../components/CondicoesVendaModal';
 import { GestaoFiliais } from '../components/GestaoFiliais';
 import { SicrediMultipagCard } from '../components/SicrediMultipagCard';
 import { Auth } from '../lib/auth';
+import { EmptyState } from '../components/EmptyState';
 
 type Tab = 'POLITICA' | 'SOCIOS' | 'FILIAIS' | 'FECHAMENTO' | 'IMPOSTOS' | 'SICREDI' | 'BANCO';
 
@@ -105,7 +106,7 @@ function PoliticaTab() {
                 <td><button className="btn btn--ghost btn--sm" onClick={() => { setEditing(p); setOpen(true); }}>Editar</button></td>
               </tr>
             ))}
-            {politicas?.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma política cadastrada — crie a primeira pra ativar o cálculo Pons</td></tr>}
+            {politicas?.length === 0 && <tr><td colSpan={8}><EmptyState size="sm" title="Nenhuma política cadastrada" description="Crie a primeira pra ativar o cálculo Pons" /></td></tr>}
           </tbody>
         </table>
       </div>
@@ -686,7 +687,7 @@ function SicrediTab() {
                             </td>
                           </tr>
                         ))}
-                        {itens.length === 0 && <tr><td colSpan={6} className="text-secondary" style={{ textAlign: 'center' }}>Nenhuma conta neste lote</td></tr>}
+                        {itens.length === 0 && <tr><td colSpan={6}><EmptyState size="sm" title="Nenhuma conta neste lote" /></td></tr>}
                       </tbody>
                     </table>
                   </td>
@@ -694,7 +695,7 @@ function SicrediTab() {
               )}
               </Fragment>
             ))}
-            {lotes?.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhum lote criado</td></tr>}
+            {lotes?.length === 0 && <tr><td colSpan={6}><EmptyState size="sm" title="Nenhum lote criado" /></td></tr>}
           </tbody>
         </table>
       </div>

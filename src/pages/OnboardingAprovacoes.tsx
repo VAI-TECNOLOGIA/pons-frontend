@@ -3,6 +3,7 @@
 // DIRETOR_FINANCEIRO, CEO e DEV (gate no backend por requireRole).
 import { useEffect, useState } from 'react';
 import { Api } from '../lib/api';
+import { EmptyState } from '../components/EmptyState';
 
 type Pendente = {
   id: number; name: string; email: string; role: string; modalidade: string | null;
@@ -67,7 +68,7 @@ export default function OnboardingAprovacoes() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, alignItems: 'start' }}>
         {/* Lista */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {lista.length === 0 && <p className="muted">Nenhum colaborador em onboarding.</p>}
+          {lista.length === 0 && <EmptyState size="sm" icon="users" title="Nenhum colaborador em onboarding" />}
           {lista.map((p) => (
             <button key={p.id} onClick={() => abrir(p.id)} style={{
               textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',

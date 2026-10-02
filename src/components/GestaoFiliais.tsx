@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { EmptyState } from './EmptyState';
 
 export function GestaoFiliais() {
   const { data, loading, error, reload } = useApi<any[]>(() => Api.unidadesList());
@@ -106,7 +107,7 @@ export function GestaoFiliais() {
               </tr>
             ))}
             {unidades.length === 0 && (
-              <tr><td colSpan={4} className="text-secondary" style={{ padding: 16 }}>Nenhuma filial cadastrada.</td></tr>
+              <tr><td colSpan={4}><EmptyState size="sm" title="Nenhuma filial cadastrada" /></td></tr>
             )}
           </tbody>
         </table>

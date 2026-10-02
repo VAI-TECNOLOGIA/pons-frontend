@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
+import { EmptyState } from '../components/EmptyState';
 
 // Sprint 2 M19 — Logs de exclusão (auditoria)
 export default function Auditoria() {
@@ -51,7 +52,7 @@ export default function Auditoria() {
               </thead>
               <tbody>
                 {data.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 32 }}>Sem exclusões registradas</td></tr>
+                  <tr><td colSpan={6}><EmptyState size="sm" title="Sem exclusões registradas" /></td></tr>
                 ) : data.map((l) => (
                   <tr key={l.id}>
                     <td><span className="badge badge--neutral">{l.entidade}</span></td>

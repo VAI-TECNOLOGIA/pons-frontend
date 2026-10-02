@@ -20,6 +20,7 @@ import { timeAgo } from '../lib/format';
 import { parseFunil, FUNIL_SETTING_KEY, type Fase } from '../lib/funil';
 
 import './configuracoes.css';
+import { EmptyState } from '../components/EmptyState';
 
 type Tab = 'ia' | 'integracoes' | 'acessos' | 'equipes' | 'gestores' | 'filiais' | 'corretores' | 'construtoras' | 'empreendimentos' | 'politicas' | 'funil' | 'score';
 
@@ -1325,7 +1326,7 @@ function PanelConstrutoras() {
  <h3 className="card__title mb-4">Construtoras cadastradas</h3>
  <div className="list">
  {construtoras.length === 0 ? (
- <div className="text-secondary" style={{ padding: 16 }}>Nenhuma construtora cadastrada.</div>
+ <EmptyState size="sm" icon="building" title="Nenhuma construtora cadastrada" />
  ) : (
  construtoras.map((c: any) => (
  <div className="list__item" key={c.id || c.nome}>

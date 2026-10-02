@@ -9,6 +9,7 @@ import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { Chart, registerables } from 'chart.js';
+import { EmptyState } from '../components/EmptyState';
 
 Chart.register(...registerables);
 
@@ -418,7 +419,7 @@ export default function MinhasComissoes() {
                     );
                   })}
                   {parcelas.length === 0 && (
-                    <tr><td colSpan={6} className="text-secondary" style={{ padding: 14 }}>Nenhuma parcela no filtro selecionado.</td></tr>
+                    <tr><td colSpan={6}><EmptyState size="sm" title="Nenhuma parcela no filtro selecionado" /></td></tr>
                   )}
                 </tbody>
               </table>

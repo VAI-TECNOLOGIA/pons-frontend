@@ -7,6 +7,7 @@ import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Icon } from '../components/Icon';
 import { ReguaCadenciaTab } from './remarketing/ReguaCadenciaTab';
+import { EmptyState } from '../components/EmptyState';
 
 type Tab = 'campanhas' | 'regua';
 
@@ -132,7 +133,7 @@ export default function Remarketing() {
                   </div>
                 </div>
               ))}
-              {data?.length === 0 && <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', gridColumn: '1 / -1' }}>Nenhuma campanha criada</div>}
+              {data?.length === 0 && <div className="card" style={{ gridColumn: '1 / -1' }}><EmptyState size="sm" icon="megafone" title="Nenhuma campanha criada" /></div>}
             </div>
           </>
         )}

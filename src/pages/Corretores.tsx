@@ -500,7 +500,7 @@ function ScoreCorretorModal({ corretor, onClose }: { corretor: any; onClose: () 
  <thead><tr><th>Ação</th><th>Detalhe</th><th>Quando</th><th className="numeric">Pontos</th></tr></thead>
  <tbody>
  {eventos.length === 0 ? (
- <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)' }}>Nenhum evento de score ainda.</td></tr>
+ <tr><td colSpan={4}><EmptyState size="sm" title="Nenhum evento de score ainda" /></td></tr>
  ) : (
  eventos.map((e) => (
  <tr key={e.id}>
@@ -585,7 +585,7 @@ function LeadsCorretorModal({ corretor, onClose }: { corretor: any; onClose: () 
  </tr></thead>
  <tbody>
  {(data || []).length === 0 ? (
- <tr><td colSpan={podeDirecionar ? 5 : 4} style={{ textAlign: 'center', padding: 24, color: 'var(--text-secondary)' }}>Nenhum lead atribuído.</td></tr>
+ <tr><td colSpan={podeDirecionar ? 5 : 4}><EmptyState size="sm" title="Nenhum lead atribuído" /></td></tr>
  ) : (
  (data || []).map((l) => (
  <tr key={l.id}>
@@ -721,7 +721,7 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
             <thead><tr><th>Venda</th><th>Data</th><th className="numeric">Valor</th><th className="numeric">% travado</th><th className="numeric">Comissão corretor</th></tr></thead>
             <tbody>
               {(c.vendasRecentes || []).length === 0 ? (
-                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Nenhuma venda registrada</td></tr>
+                <tr><td colSpan={5}><EmptyState size="sm" title="Nenhuma venda registrada" /></td></tr>
               ) : c.vendasRecentes.map((v: any) => (
                 <tr key={v.id}>
                   <td><div className="font-semibold text-xs">{v.empreendimento}</div><div className="text-xs text-secondary">{v.codigo} · {v.unidade}</div></td>

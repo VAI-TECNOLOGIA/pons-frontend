@@ -13,6 +13,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { exportarXlsxAbas } from '../lib/xlsx-simple';
 import { useToast } from '../lib/toast';
 import { Chart, registerables } from 'chart.js';
+import { EmptyState } from '../components/EmptyState';
 
 Chart.register(...registerables);
 
@@ -543,7 +544,7 @@ export default function AnaliseVendas() {
                       {x0?.aReceber !== undefined && <td className="numeric">{brl(x.aReceber)}</td>}
                     </tr>
                   ))}
-                  {linhas.length === 0 && <tr><td colSpan={10} className="text-secondary" style={{ padding: 12 }}>Sem dados no período.</td></tr>}
+                  {linhas.length === 0 && <tr><td colSpan={10}><EmptyState size="sm" title="Sem dados no período" /></td></tr>}
                 </tbody>
               </table>
             </div>
@@ -594,7 +595,7 @@ export default function AnaliseVendas() {
                     </tr>
                   );
                 })}
-                {porSala.length === 0 && <tr><td colSpan={9} className="text-secondary" style={{ padding: 12 }}>Sem vendas no período.</td></tr>}
+                {porSala.length === 0 && <tr><td colSpan={9}><EmptyState size="sm" title="Sem vendas no período" /></td></tr>}
               </tbody>
             </table>
           </div>

@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { EmptyState } from '../components/EmptyState';
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -67,7 +68,7 @@ export default function TelefoneFormularios() {
           <button className="btn btn--primary btn--sm" onClick={salvar} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</button>
         </div>
         {forms.length === 0 ? (
-          <div className="text-sm text-secondary" style={{ padding: 20 }}>Nenhum formulário encontrado.</div>
+          <EmptyState size="sm" icon="doc" title="Nenhum formulário encontrado" />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {forms.map((f) => {
