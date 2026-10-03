@@ -1,12 +1,13 @@
 {
-  "versao": "2026.10.02.10",
+  "versao": "2026.10.02.11",
   "data": "02/10/2026",
   "novidades": [
     {
       "titulo": "Troca de telas mais leve",
       "itens": [
         "A barra lateral não some mais ao trocar de tela.",
-        "O sistema prepara a tela quando você aponta para o item do menu, sem pesar o computador ou o celular."
+        "O sistema prepara a tela quando você aponta para o item do menu, sem pesar o computador ou o celular.",
+        "Dashboard: em telas de notebook, os quadros 'A corrida do mês' e 'Quadro do pit' ficam um embaixo do outro, sem texto espremido."
       ]
     },
     {
