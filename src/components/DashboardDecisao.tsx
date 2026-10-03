@@ -242,7 +242,7 @@ function PitBoard({ alertas }: { alertas: Alerta[] }) {
           const inner = (
             <>
               <span style={{ width: 8, height: 8, borderRadius: '50%', flex: '0 0 8px', background: DOT[al.tipo] || DOT.info }} />
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{al.titulo}</span>
+              <span style={{ flex: '1 1 180px', minWidth: 0, fontSize: 14, fontWeight: 600 }}>{al.titulo}</span>
               {al.valor ? (
                 <span style={{ fontWeight: 900, fontStyle: 'italic', fontSize: 16, whiteSpace: 'nowrap' }}>
                   {formatCurrencyShort(al.valor)}
@@ -256,7 +256,7 @@ function PitBoard({ alertas }: { alertas: Alerta[] }) {
             </>
           );
           const style: React.CSSProperties = {
-            display: 'flex', alignItems: 'center', gap: 14, padding: '13px 0',
+            display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 4, gap: 14, padding: '13px 0',
             borderTop: i === 0 ? 'none' : '1px solid var(--border-light)',
             textDecoration: 'none', color: 'inherit',
           };
@@ -295,7 +295,7 @@ export function DashboardDecisao({
       <Briefing d={d} a={a} />
 
       {/* ---------- A corrida do mês + quadro do pit ---------- */}
-      <div className="grid-2-1 mb-6">
+      <div className="grid-2-1 mb-6 dd-corrida-pit">
         {r ? (
           <div className="card chart-card">
             <div className="card__header">

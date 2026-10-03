@@ -2926,3 +2926,9 @@ html.statusbar-overlay body::before {
   width: 18px; height: 18px; margin-right: 4px; border-radius: 50%;
   background: var(--bg-elevated); color: var(--text-primary); font-size: 11px;
 }
+
+/* Dashboard: "A corrida do mês" + "Quadro do pit" — em notebook a coluna do
+   pit ficava estreita demais (texto quebrando palavra a palavra e ação cortada). */
+@media (max-width: 1279px) {
+  .dd-corrida-pit { grid-template-columns: 1fr !important; }
+}
