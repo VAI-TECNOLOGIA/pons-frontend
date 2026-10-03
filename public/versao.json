@@ -1,5 +1,5 @@
 {
-  "versao": "2026.10.02.11",
+  "versao": "2026.10.02.12",
   "data": "02/10/2026",
   "novidades": [
     {
@@ -7,7 +7,8 @@
       "itens": [
         "A barra lateral não some mais ao trocar de tela.",
         "O sistema prepara a tela quando você aponta para o item do menu, sem pesar o computador ou o celular.",
-        "Dashboard: em telas de notebook, os quadros 'A corrida do mês' e 'Quadro do pit' ficam um embaixo do outro, sem texto espremido."
+        "Dashboard: em telas de notebook, os quadros 'A corrida do mês' e 'Quadro do pit' ficam um embaixo do outro, sem texto espremido.",
+        "Funil de Vendas abre cerca de 3 vezes mais rápido."
       ]
     },
     {
