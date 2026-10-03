@@ -1088,7 +1088,20 @@ export default function Chat() {
                           ? 'Telefone protegido'
                           // Lead que chegou SEM número (ex.: formulário do Meta sem a pergunta
                           // de telefone): não é bloqueio — não há o que liberar.
-                          : `Sem telefone — o lead veio sem número${(conv as any).email ? ` · e-mail: ${(conv as any).email}` : ''}`))}
+                          : 'Sem telefone — o lead veio sem número'))}
+                      {/* E-mail sempre visível (todos os perfis): é o contato quando o lead veio sem telefone. */}
+                      {(conv as any).email && (
+                        <>
+                          {' · '}
+                          <a
+                            href={`mailto:${(conv as any).email}`}
+                            title="Enviar e-mail para o lead"
+                            style={{ color: 'var(--link-accent, var(--pons-blue))', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            {(conv as any).email}
+                          </a>
+                        </>
+                      )}
                       {conv.origem ? ` · ${conv.origem}` : ''} · {mensagens.length} msg{mensagens.length === 1 ? '' : 's'}
                       {conv.vaiConectado && ' · WhatsApp ativo'}
                     </div>
