@@ -90,7 +90,7 @@ export default function BasesLeads() {
                 <button className="btn btn--secondary btn--sm" onClick={() => abrirEditar(b)}>
                   <Icon name="pencil" size={12} /> Editar
                 </button>
-                <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => excluir(b)}>
+                <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => excluir(b)} aria-label={`Excluir a base ${b.nome}`} title="Excluir base">
                   <Icon name="trash" size={12} />
                 </button>
               </div>

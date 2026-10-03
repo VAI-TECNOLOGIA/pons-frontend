@@ -36,7 +36,8 @@ export default function CamposCustom() {
       opcoes: tipo === 'SELECT' && opcoesRaw ? opcoesRaw.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean) : null,
       obrigatorio: fd.get('obrigatorio') === 'on',
       ordem: Number(fd.get('ordem')) || 0,
-      ativo: fd.get('ativo') !== null ? fd.get('ativo') === 'on' : true,
+      // Checkbox desmarcado não vai no FormData (get = null): isso é "inativo", não "ativo".
+      ativo: fd.get('ativo') === 'on',
     };
     try {
       if (editing) await Api.campoCustomUpdate(editing.id, payload);
