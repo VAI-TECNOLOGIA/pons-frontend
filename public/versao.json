@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.03.2",
+  "versao": "2026.10.03.3",
   "data": "03/10/2026",
   "novidades": [
+    {
+      "titulo": "Atendimento: e-mail do lead",
+      "itens": [
+        "O e-mail do lead agora aparece no topo da conversa para todos (corretor incluso) — é só clicar para escrever. Útil quando o lead chega sem telefone."
+      ]
+    },
     {
       "titulo": "Atendimento: telefone",
       "itens": [
