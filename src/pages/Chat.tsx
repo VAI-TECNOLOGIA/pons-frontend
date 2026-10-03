@@ -284,19 +284,22 @@ export default function Chat() {
   // Por isso: focus + visibilitychange (resume do app) + polling leve de 60s
   // só com a aba visível (barato; a rota do inbox é otimizada).
   useEffect(() => {
-    const onFocus = () => reloadInbox();
-    const onVis = () => { if (document.visibilityState === 'visible') reloadInbox(); };
+    // Ao voltar pro app recarrega o inbox E a conversa aberta — assim o telefone
+    // liberado enquanto o app estava em background aparece sem precisar reabrir.
+    const atualiza = () => { reloadInbox(); if (activeId) reloadConv(); };
+    const onFocus = () => atualiza();
+    const onVis = () => { if (document.visibilityState === 'visible') atualiza(); };
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVis);
     const id = setInterval(() => {
-      if (document.visibilityState === 'visible') reloadInbox();
+      if (document.visibilityState === 'visible') atualiza();
     }, 60_000);
     return () => {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVis);
       clearInterval(id);
     };
-  }, [reloadInbox]);
+  }, [reloadInbox, reloadConv, activeId]);
 
   // SSE — atualizações ao vivo
   useSSE(
@@ -314,6 +317,13 @@ export default function Chat() {
       },
       'conv.created': () => reloadInbox(),
       'conv.messages_ingested': (d: any) => {
+        if (d.leadId === activeId) reloadConv();
+        reloadInbox();
+      },
+      // Telefone liberado (no aceite ou liberação do gestor): recarrega a conversa
+      // aberta pra o número aparecer na hora, sem o corretor/gestor ter que sair e
+      // voltar. Antes a tela ficava presa em "Telefone protegido" (Ademar 03/10).
+      'phone.released': (d: any) => {
         if (d.leadId === activeId) reloadConv();
         reloadInbox();
       },
