@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.03.1",
+  "versao": "2026.10.03.2",
   "data": "03/10/2026",
   "novidades": [
+    {
+      "titulo": "Atendimento: telefone",
+      "itens": [
+        "O telefone aparece na hora em que o corretor aceita o lead (sem precisar recarregar).",
+        "Quando o lead chega sem número (ex.: formulário do Facebook sem a pergunta de telefone), a tela mostra 'Sem telefone — o lead veio sem número' e o e-mail, em vez de 'Telefone protegido'.",
+        "Números de WhatsApp do exterior passam a ser aceitos."
+      ]
+    },
     {
       "titulo": "Correções",
       "itens": [
