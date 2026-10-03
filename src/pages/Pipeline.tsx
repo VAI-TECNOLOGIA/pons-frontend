@@ -35,15 +35,18 @@ export default function Pipeline() {
     if (fDataIni) base.dataInicial = fDataIni;
     if (fDataFim) base.dataFinal = fDataFim;
     if (buscaDeb) base.q = buscaDeb;
-    const out: any[] = [];
-    let totalServidor = 0;
-    for (let page = 1; page <= 5; page++) {
-      const r: any = await Api.leads({ ...base, page, limit: 200 });
-      const lote = Array.isArray(r) ? r : (r.leads || []);
-      out.push(...lote);
-      const total = Array.isArray(r) ? lote.length : (r.total ?? lote.length);
-      if (page === 1) totalServidor = Array.isArray(r) ? 0 : Number(r.total ?? 0);
-      if (lote.length === 0 || out.length >= total) break;
+    // 1ª página diz o total; as demais (até o teto de 5×200) vão EM PARALELO —
+    // antes eram 5 pedidos em fila (~4 s no CEO). Mesmo resultado, mesma ordem.
+    const loteDe = (r: any) => (Array.isArray(r) ? r : (r?.leads || []));
+    const r1: any = await Api.leads({ ...base, page: 1, limit: 200 });
+    const out: any[] = [...loteDe(r1)];
+    const totalServidor = Array.isArray(r1) ? 0 : Number(r1?.total ?? 0);
+    const paginas = Math.min(5, Math.ceil(totalServidor / 200));
+    if (!Array.isArray(r1) && paginas > 1 && out.length === 200) {
+      const resto = await Promise.all(
+        Array.from({ length: paginas - 1 }, (_, i) => Api.leads({ ...base, page: i + 2, limit: 200 })),
+      );
+      for (const r of resto) out.push(...loteDe(r));
     }
     return { leads: out, total: Math.max(totalServidor, out.length) };
   }, [fCampanha.join(','), fEquipe.join(','), fCorretor.join(','), fDataIni, fDataFim, buscaDeb]);
