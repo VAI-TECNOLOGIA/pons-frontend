@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.04.2",
+  "versao": "2026.10.04.3",
   "data": "04/10/2026",
   "novidades": [
+    {
+      "titulo": "Atendimento com as cores do WhatsApp",
+      "itens": [
+        "A tela de Atendimento ganhou as cores e o jeito do WhatsApp, no tema claro e no escuro: balões verdes, horário dentro do balão, topo e campo de mensagem em cinza.",
+        "Na lista e nas mensagens, o horário aparece como no WhatsApp: 14:05 hoje, Ontem ou a data."
+      ]
+    },
     {
       "titulo": "Atendimento novo: mais limpo, no celular e no computador",
       "itens": [

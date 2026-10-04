@@ -5,7 +5,7 @@ import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { CorretorPicker } from '../components/CorretorPicker';
 import { DestinoPicker, type DestinoTransf } from '../components/DestinoPicker';
-import { initials, timeAgo } from '../lib/format';
+import { initials } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -65,6 +65,20 @@ const TEMPERATURAS = [
 ] as const;
 // Sem classificação = NOVO (padrão verde de todo lead que entra).
 const tempInfo = (c?: string) => TEMPERATURAS.find((t) => t.key === c) || TEMPERATURAS[0];
+
+// Hora no estilo WhatsApp: hoje → 14:05 · ontem → Ontem · antes → 03/10.
+// `comHora` (balões) acrescenta a hora também nos dias anteriores: "03/10 14:05".
+function horaCurta(iso?: string | null, comHora = false): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const hm = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const hoje = new Date();
+  const ontem = new Date(); ontem.setDate(hoje.getDate() - 1);
+  if (d.toDateString() === hoje.toDateString()) return hm;
+  if (d.toDateString() === ontem.toDateString()) return comHora ? `Ontem ${hm}` : 'Ontem';
+  const dm = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  return comHora ? `${dm} ${hm}` : dm;
+}
 
 // Como o lead chegou ao corretor atual — calculado no backend (lib/atendimento-info.js).
 const CHEGADA: Record<string, { label: string; cls: string; title: string }> = {
@@ -976,7 +990,7 @@ export default function Chat() {
     <>
       <Topbar title="Atendimento" right={headerRight} />
 
-      <div className={'inbox ' + (activeId ? 'inbox--thread-open' : '')}>
+      <div className={'inbox inbox--wa ' + (activeId ? 'inbox--thread-open' : '')}>
         <div className="inbox__list">
           {/* Topo da lista: abas, busca + botão Filtros (recolhidos), alerta de prazo. */}
           <div className="inbox__top">
@@ -1142,7 +1156,7 @@ export default function Chat() {
                       <ChegadaChip c={c.chegada} />
                     </span>
                     <span className="conv__time">
-                      {c.ultimaMensagem ? timeAgo(c.ultimaMensagem.createdAt) : timeAgo(c.createdAt)}
+                      {horaCurta(c.ultimaMensagem ? c.ultimaMensagem.createdAt : c.createdAt)}
                     </span>
                   </div>
                   <div className="conv__linha">
@@ -2094,22 +2108,20 @@ function MessageBubble({ m }: { m: Mensagem }) {
   if (m.autor === 'NOTA') {
     return (
       <div className="bubble bubble--NOTA">
-        <div className="bubble__nota-tag"><Icon name="pencil" size={10} /></div>
+        <div className="bubble__nota-tag"><Icon name="pencil" size={10} /> Nota interna · o cliente não vê</div>
         {m.texto}
-        <div className="bubble__meta">{timeAgo(m.createdAt)}</div>
+        <div className="bubble__meta" title={new Date(m.createdAt).toLocaleString('pt-BR')}>{horaCurta(m.createdAt, true)}</div>
       </div>
     );
   }
-  const who = m.autor === 'IA' ? 'SDR Pons IA' : m.autor === 'CORRETOR' ? 'Você' : 'Lead';
   const isOutbound = m.direction === 'outbound' || m.autor === 'CORRETOR' || m.autor === 'IA';
   return (
     <div className={`bubble bubble--${m.autor}`}>
+      {m.autor === 'IA' && <div className="bubble__rot-ia">SDR Pons IA</div>}
       <MessageBody m={m} />
       {!isOutbound && (m.contentType || 'text').toLowerCase() === 'text' && !!m.texto?.trim() && <TraduzirRecebida texto={m.texto} />}
-      <div className="bubble__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <span>
-          {who} · {timeAgo(m.createdAt)}
-        </span>
+      <div className="bubble__meta bubble__meta--wa" title={new Date(m.createdAt).toLocaleString('pt-BR')}>
+        <span>{horaCurta(m.createdAt, true)}</span>
         {isOutbound && <StatusTicks m={m} />}
       </div>
     </div>

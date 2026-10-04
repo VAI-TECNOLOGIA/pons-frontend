@@ -1128,3 +1128,95 @@
   .prazo > span { font-size: 12px; }
   .menu-pop--cima { left: -4px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   PALETA DA DEMO (estilo WhatsApp Web) — vale SÓ dentro do Atendimento
+   (.inbox--wa). Redefine os tokens localmente; o resto do sistema não muda.
+   ════════════════════════════════════════════════════════════════════════ */
+.inbox--wa {
+  --wa-lista: #FFFFFF;  --wa-head: #F0F2F5;  --wa-chat: #EFEAE2;  --wa-campo: #FFFFFF;
+  --wa-verde: #00A884;  --wa-verde-txt: #008069; --wa-verde-bg: rgba(0, 168, 132, 0.12);
+  --wa-ativo: #F0F2F5;  --wa-ponto: rgba(17, 27, 33, 0.06);
+  --bg-card: var(--wa-lista);
+  --bg-card-hover: #F5F6F6;
+  --border-light: #E9EDEF;
+  --text-primary: #111B21;
+  --text-secondary: #667781;
+  --field-bg: var(--wa-campo);
+  --chat-thread-bg: var(--wa-chat);
+  --chat-bubble-lead-bg: #FFFFFF;   --chat-bubble-lead-color: #111B21;
+  --chat-bubble-self-bg: #D9FDD3;   --chat-bubble-self-color: #111B21;
+  --wa-ia-bg: #DCEEF7;  --wa-ia-txt: #0B5A73;
+  --wa-nota-bg: #EDE5FB; --wa-nota-txt: #3B2470;
+  --chat-pattern: var(--wa-ponto);
+  --chat-sys-bg: #FFFFFF;
+  --menu-bg: #FFFFFF;
+}
+[data-theme="dark"] .inbox--wa {
+  --wa-lista: #111B21;  --wa-head: #202C33;  --wa-chat: #0B141A;  --wa-campo: #2A3942;
+  --wa-verde: #00A884;  --wa-verde-txt: #25D366; --wa-verde-bg: rgba(0, 168, 132, 0.18);
+  --wa-ativo: #2A3942;  --wa-ponto: rgba(255, 255, 255, 0.035);
+  --bg-card-hover: #202C33;
+  --border-light: #222D34;
+  --text-primary: #E9EDEF;
+  --text-secondary: #8696A0;
+  --chat-bubble-lead-bg: #202C33;   --chat-bubble-lead-color: #E9EDEF;
+  --chat-bubble-self-bg: #005C4B;   --chat-bubble-self-color: #E9EDEF;
+  --wa-ia-bg: #103447;  --wa-ia-txt: #7DD3FC;
+  --wa-nota-bg: #3B2470; --wa-nota-txt: #E9DDFF;
+  --chat-sys-bg: #182229;
+  --menu-bg: #233138;
+}
+.inbox--wa { background: var(--wa-lista); color: var(--text-primary); }
+.inbox--wa .inbox__list, .inbox--wa .inbox__top { background: var(--wa-lista); }
+.inbox--wa .inbox__top { border-bottom: 0; }
+.inbox--wa .inbox__list { border-right-color: var(--border-light); }
+
+/* Abas e contagens em verde, como na demo */
+.inbox--wa .inbox__top .inbox__tab { background: var(--wa-head); color: var(--text-secondary); }
+.inbox--wa .inbox__top .inbox__tab--active { background: var(--wa-verde-bg); color: var(--wa-verde-txt); }
+.inbox--wa .inbox__n { background: var(--wa-ativo); color: var(--text-primary); }
+.inbox--wa .inbox__tab--active .inbox__n { background: var(--wa-verde); color: #0B141A; }
+.inbox--wa .inbox__busca-campo { background: var(--wa-head); border-color: transparent; }
+
+/* Itens da lista */
+.inbox--wa .conv:hover, .inbox--wa .conv--active { background: var(--wa-ativo); }
+.inbox--wa .conv__av .avatar { background: #DFE5E7; color: #54656F; }
+[data-theme="dark"] .inbox--wa .conv__av .avatar { background: #56636E; color: #E9EDEF; }
+.inbox--wa .conv__temp { border-color: var(--wa-lista); }
+.inbox--wa .conv__nome { font-weight: 500; }
+.inbox--wa .conv__name { font-weight: 500; }
+
+/* Topo da conversa e compositor com o fundo cinza do WhatsApp */
+.inbox--wa .thread__header { background: var(--wa-head); border-bottom: 0; }
+.inbox--wa .thread__quem .avatar { background: #DFE5E7; color: #54656F; }
+[data-theme="dark"] .inbox--wa .thread__quem .avatar,
+[data-theme="dark"] .inbox--wa .lead-painel .avatar { background: #56636E; color: #E9EDEF; }
+.inbox--wa .thread__hd-nome { font-weight: 500; }
+.inbox--wa .thread__hd-sub .badge { text-transform: none; letter-spacing: 0; font-size: 11.5px; padding: 3px 9px; }
+.inbox--wa .thread__tel-ok { color: var(--wa-verde-txt); }
+.inbox--wa .composer, .inbox--wa .ia-barra { background: var(--wa-head); border-top-color: var(--wa-head); }
+.inbox--wa .composer.composer--wa textarea { background: var(--wa-campo); border: 0; color: var(--text-primary); }
+.inbox--wa .composer.composer--wa .composer__enviar { background: var(--wa-verde); color: #0B141A; }
+.inbox--wa .composer.composer--wa .composer__enviar.composer__nota-send { background: #7C3AED; color: #fff; }
+
+/* Balões */
+.inbox--wa .thread__messages { background-color: var(--wa-chat); padding-left: 6%; padding-right: 6%; gap: 4px; }
+.inbox--wa .bubble { font-size: 14.2px; line-height: 1.38; padding: 6px 9px 7px; }
+.inbox--wa .bubble--CORRETOR, .inbox--wa .bubble--LEAD { box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13); }
+.inbox--wa .bubble--IA { background: var(--wa-ia-bg); color: var(--text-primary); }
+.inbox--wa .bubble--IA::before { border-left-color: var(--wa-ia-bg); }
+.inbox--wa .bubble--NOTA { background: var(--wa-nota-bg); color: var(--wa-nota-txt); }
+.inbox--wa .bubble__rot-ia { font-size: 12px; font-weight: 700; color: var(--wa-ia-txt); margin-bottom: 1px; }
+.inbox--wa .bubble__meta--wa { display: flex; justify-content: flex-end; align-items: center; gap: 4px; font-size: 11px; opacity: 0.7; margin-top: 2px; }
+.inbox--wa .bubble--SISTEMA { color: var(--text-secondary); }
+.inbox--wa .sys-grupo { background: var(--chat-sys-bg); border-style: solid; border-color: transparent; box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13); }
+.inbox--wa .empty-thread { background: var(--wa-chat); }
+
+/* Painel e menus seguem a paleta */
+.inbox--wa .lead-painel, .inbox--wa .lead-painel__topo { background: var(--wa-lista); }
+.inbox--wa .lead-painel__topo { background: var(--wa-head); }
+@media (max-width: 768px) {
+  .inbox--wa .thread__messages { padding-left: 12px; padding-right: 12px; }
+}
+.inbox--wa .bubble__nota-tag { display: flex; margin-bottom: 2px; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 700; opacity: 0.9; }
