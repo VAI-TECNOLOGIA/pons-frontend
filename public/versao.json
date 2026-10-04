@@ -1,7 +1,16 @@
 {
-  "versao": "2026.10.03.3",
-  "data": "03/10/2026",
+  "versao": "2026.10.04.1",
+  "data": "04/10/2026",
   "novidades": [
+    {
+      "titulo": "Atendimento: IA para escrever e resumir",
+      "itens": [
+        "Ao digitar uma mensagem aparecem os botões Verificar erros de escrita e Melhorar a mensagem. A IA mostra 2 opções em amarelo: toque na que quiser e ela é enviada. Para não usar, toque em Manter o meu texto.",
+        "Resumir conversa (no topo da conversa): a IA mostra o que o cliente já falou e o próximo passo. Não envia nada ao cliente.",
+        "Lead aguardando aceite: botão Aceitar também no topo, à direita.",
+        "Conversa com visual mais parecido com o WhatsApp, e no celular os botões do lead pendente não saem mais da tela."
+      ]
+    },
     {
       "titulo": "Atendimento: e-mail do lead",
       "itens": [

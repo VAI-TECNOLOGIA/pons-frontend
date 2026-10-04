@@ -799,6 +799,13 @@ export const Api = {
   // Tradutor do corretor: PT→en/es (mensagem a enviar) ou →pt (mensagem recebida).
   traduzir: (texto: string, idioma: 'en' | 'es' | 'pt') =>
     request<{ traducao: string; idioma: string }>(`/conversations/traduzir`, { method: 'POST', body: { texto, idioma } }),
+  // IA do corretor no composer: corrigir escrita / melhorar mensagem. Só devolve
+  // 2 opções — NÃO envia; o envio segue o fluxo normal (conversationSend).
+  iaTexto: (texto: string, modo: 'corrigir' | 'melhorar', leadId?: number | null) =>
+    request<{ modo: string; opcoes: Array<{ rotulo: string; texto: string }> }>(`/conversations/ia-texto`, { method: 'POST', body: { texto, modo, leadId } }),
+  // Resumo da conversa pela IA (só leitura).
+  conversationResumo: (leadId: number) =>
+    request<{ itens: string[]; proximo: string }>(`/conversations/${leadId}/resumo`, { method: 'POST', body: {} }),
   // Transcrição de áudio (Whisper/OpenAI). Passa o messageId → o backend cacheia
   // na mensagem e não re-transcreve (nem re-cobra) nas próximas.
   transcreverAudio: (messageId: number) =>

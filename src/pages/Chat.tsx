@@ -169,6 +169,11 @@ export default function Chat() {
   const [traduzOpen, setTraduzOpen] = useState(false); // popover do tradutor (saída)
   const [traduzindo, setTraduzindo] = useState(false);
   const [draftPreTraducao, setDraftPreTraducao] = useState<string | null>(null); // p/ desfazer a tradução
+  // IA do corretor: corrigir/melhorar a mensagem (2 opções em amarelo) e resumir a conversa.
+  const [iaSug, setIaSug] = useState<{ leadId: number; modo: string; opcoes: Array<{ rotulo: string; texto: string }> } | null>(null);
+  const [iaCarregando, setIaCarregando] = useState<'' | 'corrigir' | 'melhorar'>('');
+  const [resumo, setResumo] = useState<{ leadId: number; itens: string[]; proximo: string } | null>(null);
+  const [resumindo, setResumindo] = useState(false);
   const [notaMode, setNotaMode] = useState(false); // composer em modo NOTA interna (não envia pro lead)
   const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
   const [retornoOpen, setRetornoOpen] = useState(false); // popover "agendar retorno"
@@ -257,6 +262,8 @@ export default function Chat() {
   // que scrollIntoView dentro de overflow:auto). Depende do id da última msg pra
   // capturar caso o length não muda mas o conteúdo sim. Sem smooth: smooth chega
   // depois da próxima msg em conversas movimentadas e dá efeito de "quebrar".
+  useEffect(() => { setIaSug(null); setResumo(null); setIaCarregando(''); }, [activeId]);
+
   const lastMsgId = mensagens.length ? mensagens[mensagens.length - 1]?.id : null;
   useEffect(() => {
     const el = messagesContainerRef.current;
@@ -397,9 +404,11 @@ export default function Chat() {
     }
   };
 
-  const enviar = async () => {
+  // textoForcado: envio de uma sugestão da IA (onClick passa o evento — por isso o typeof).
+  const enviar = async (textoForcado?: unknown) => {
     if (!activeId || sending || uploadingAnexo) return;
-    const texto = draft.trim();
+    const texto = (typeof textoForcado === 'string' ? textoForcado : draft).trim();
+    setIaSug(null);
     if (!texto && !anexo) return;
     setDraftPreTraducao(null); // enviou → não faz mais sentido "voltar ao original"
     // Modo NOTA: registra na conversa e NÃO envia nada pro lead.
@@ -445,6 +454,37 @@ export default function Chat() {
     } finally {
       setSending(false);
       setEnviandoBolha(null);
+    }
+  };
+
+  // Corrigir / melhorar: a IA devolve 2 opções; o corretor toca numa e ela é enviada
+  // pelo MESMO enviar() (mesmas travas: aceite, janela 24h, anexo).
+  const pedirIaTexto = async (modo: 'corrigir' | 'melhorar') => {
+    const texto = draft.trim();
+    const id = activeId;
+    if (!id || !texto || iaCarregando) return;
+    setIaSug(null);
+    setIaCarregando(modo);
+    try {
+      const r = await Api.iaTexto(texto, modo, id);
+      setIaSug({ leadId: id, modo, opcoes: r.opcoes || [] });
+    } catch (err: any) {
+      toast.error(err?.message || 'Não consegui agora. Tente de novo.');
+    } finally {
+      setIaCarregando('');
+    }
+  };
+  const resumirConversa = async () => {
+    const id = activeId;
+    if (!id || resumindo) return;
+    setResumindo(true);
+    try {
+      const r = await Api.conversationResumo(id);
+      setResumo({ leadId: id, itens: r.itens || [], proximo: r.proximo || '' });
+    } catch (err: any) {
+      toast.error(err?.message || 'Não consegui resumir agora. Tente de novo.');
+    } finally {
+      setResumindo(false);
     }
   };
 
@@ -1106,6 +1146,13 @@ export default function Chat() {
                       {conv.vaiConectado && ' · WhatsApp ativo'}
                     </div>
                   </div>
+                  {/* Lead aguardando aceite: botão à DIREITA do topo (pedido do cliente),
+                      além do que já existe no rodapé. Mesmo aceitarLead(). */}
+                  {!conv.reservado && (
+                    <button className="btn btn--sm thread__aceitar-topo" onClick={aceitarLead} title="Assumir o atendimento deste lead">
+                      <Icon name="check" size={13} /> Aceitar<span className="thread__aceitar-txt"> lead</span>
+                    </button>
+                  )}
                   <button
                     className="btn btn--ghost btn--sm thread__acoes-toggle"
                     onClick={() => setAcoesOpen((o) => !o)}
@@ -1179,7 +1226,20 @@ export default function Chat() {
                   <button className="btn btn--ghost btn--sm" onClick={abrirStatus} title="Atualizar o status da negociação">
                     <Icon name="flag" size={12} /> {statusLabel(conv.status)}
                   </button>
+                  <button type="button" className="ia-chip" onClick={resumirConversa} disabled={resumindo} title="A IA resume a conversa. Não envia nada ao cliente.">
+                    <IconeIA /> {resumindo ? 'Resumindo…' : 'Resumir conversa'}
+                  </button>
                 </div>
+                {resumo && resumo.leadId === conv.id && (
+                  <div className="ia-card ia-card--resumo" role="status">
+                    <div className="ia-card__topo">
+                      <span className="ia-card__tit"><IconeIA /> Resumo da conversa</span>
+                      <button type="button" className="ia-card__link" onClick={() => setResumo(null)}>Fechar</button>
+                    </div>
+                    <ul>{resumo.itens.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                    {resumo.proximo && <p><b>Próximo passo:</b> {resumo.proximo}</p>}
+                  </div>
+                )}
 
                 {/* Ações (recolhível) — some do fluxo até o usuário abrir.
                     "Aceitar" fica só no rodapé (ComposerPendenteIA) pra não
@@ -1349,6 +1409,34 @@ export default function Chat() {
                       )}
                     </div>
                   )}
+                  {!notaMode && !recording && (iaCarregando || (iaSug && iaSug.leadId === conv.id)) && (
+                    <div className="ia-card ia-card--sug" role="group" aria-label="Sugestões da IA">
+                      {iaCarregando ? (
+                        <span className="ia-card__tit"><IconeIA /> IA analisando sua mensagem…</span>
+                      ) : (
+                        <>
+                          <span className="ia-card__tit"><IconeIA /> {iaSug!.modo === 'corrigir' ? 'Correção' : 'Mensagem melhorada'} · toque numa opção para enviar</span>
+                          {iaSug!.opcoes.map((o, i) => (
+                            <button key={i} type="button" className="ia-op" onClick={() => enviar(o.texto)} disabled={sending}>
+                              <b>{o.rotulo}</b>
+                              <span>{o.texto}</span>
+                            </button>
+                          ))}
+                          <button type="button" className="ia-card__link" onClick={() => setIaSug(null)}>Manter o meu texto</button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {!notaMode && !recording && !!draft.trim() && (
+                    <div className="ia-barra">
+                      <button type="button" className="ia-chip" onClick={() => pedirIaTexto('corrigir')} disabled={!!iaCarregando || sending}>
+                        <IconeIA /> Verificar erros de escrita
+                      </button>
+                      <button type="button" className="ia-chip" onClick={() => pedirIaTexto('melhorar')} disabled={!!iaCarregando || sending}>
+                        <IconeIA /> Melhorar a mensagem
+                      </button>
+                    </div>
+                  )}
                   <div className="composer">
                     <input
                       ref={fileInputRef}
@@ -1448,7 +1536,7 @@ export default function Chat() {
                           className={notaMode ? 'composer__input--nota' : undefined}
                           placeholder={sending ? 'Enviando…' : notaMode ? 'Nota interna — o lead NÃO recebe…' : anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
                           value={draft}
-                          onChange={(e) => setDraft(e.target.value)}
+                          onChange={(e) => { setDraft(e.target.value); if (iaSug) setIaSug(null); }}
                           onKeyDown={(e) => {
                             if (teclaEnterEnvia && e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
@@ -1761,6 +1849,15 @@ export default function Chat() {
         </div>
       </div>
     </>
+  );
+}
+
+// Ícone da IA (brilho) — usado nos botões amarelos de corrigir/melhorar/resumir.
+function IconeIA() {
+  return (
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+      <path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6zM19 14l.9 2.6L22 17.5l-2.1.9L19 21l-.9-2.6L16 17.5l2.1-.9z" />
+    </svg>
   );
 }
 
@@ -2161,15 +2258,16 @@ function ComposerPendenteIA({
       className="composer"
       style={{ background: bg, borderTop: '1px solid ' + border, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}
     >
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: cor }}>
+      {/* flexWrap: no celular os botões descem pra linha de baixo em vez de sair da tela */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: cor, flex: '1 1 220px', minWidth: 0 }}>
         <Icon name={limiteAtingido ? 'warn' : 'bot'} size={18} />
         <div style={{ fontSize: 13, lineHeight: 1.4 }}>
           <div style={{ fontWeight: 700 }}>{titulo}</div>
           <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{sub}</div>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
         {/* Dispara o template Meta com o lead ainda PENDENTE — o corretor pega o
             lead, manda o template e, se o cliente responder, a IA atende. */}
         <button className="btn btn--secondary btn--sm" onClick={onAbrirTemplates} title="Enviar template Meta aprovado (inicia a conversa)">
@@ -2182,10 +2280,10 @@ function ComposerPendenteIA({
       </div>
       {/* Nota interna liberada mesmo com o lead pendente (não vai pro lead). */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
           <Icon name="pencil" size={13} style={{ color: '#7c3aed', flexShrink: 0 }} />
           <input
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
+            style={{ flex: 1, minWidth: 0, width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarNotaLocal(); } }}
@@ -2243,10 +2341,10 @@ function ComposerJanelaFechada({
       </div>
       {/* Nota interna liberada mesmo com a janela fechada (não vai pro lead). */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
           <Icon name="pencil" size={13} style={{ color: '#7c3aed', flexShrink: 0 }} />
           <input
-            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
+            style={{ flex: 1, minWidth: 0, width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvar(); } }}
