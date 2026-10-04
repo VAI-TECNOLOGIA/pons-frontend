@@ -66,6 +66,55 @@ const TEMPERATURAS = [
 // Sem classificação = NOVO (padrão verde de todo lead que entra).
 const tempInfo = (c?: string) => TEMPERATURAS.find((t) => t.key === c) || TEMPERATURAS[0];
 
+// Como o lead chegou ao corretor atual — calculado no backend (lib/atendimento-info.js).
+const CHEGADA: Record<string, { label: string; cls: string; title: string }> = {
+  roleta: { label: 'Roleta', cls: 'chegada--roleta', title: 'Chegou pela roleta (distribuição automática)' },
+  gestor: { label: 'Gestor', cls: 'chegada--gestor', title: 'Direcionado pelo gestor' },
+  bolsao: { label: 'Bolsão', cls: 'chegada--bolsao', title: 'Pego no bolsão' },
+  site: { label: 'Site', cls: 'chegada--site', title: 'Veio direto do site' },
+};
+// Nome legível da origem do lead (gestão). Valor desconhecido aparece como veio.
+const ORIGEM_LABEL: Record<string, string> = {
+  META_ADS: 'Meta Ads', SITE: 'Site', LANDING_PAGE: 'Landing page', IMPORTACAO_MANUAL: 'Importação manual',
+  MANUAL: 'Manual', WHATSAPP: 'WhatsApp', ZAP: 'ZAP Imóveis', SIMULADOR: 'Simulador', AVALIACAO: 'Avaliação',
+};
+const origemLabel = (o?: string | null) => (o ? ORIGEM_LABEL[String(o).toUpperCase()] || o : '');
+
+function ChegadaChip({ c }: { c?: string | null }) {
+  const d = c ? CHEGADA[c] : null;
+  if (!d) return null;
+  return <span className={'chegada ' + d.cls} title={d.title}>{d.label}</span>;
+}
+
+// Contagem até o lead PULAR pra outro corretor (prazo vem do backend: `puloEm`).
+// O worker do pulo roda a cada 60s — ao zerar mostra "pulando…"; fora do horário
+// de pulo da fila o lead fica seguro até a fila abrir.
+function Contagem({ ate, pausado }: { ate: string; pausado?: boolean }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const s = Math.max(0, Math.ceil((new Date(ate).getTime() - Date.now()) / 1000));
+  if (s === 0) return <>{pausado ? 'fora do horário' : 'pulando…'}</>;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = String(s % 60).padStart(2, '0');
+  return <>{h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`}</>;
+}
+
+// Ícones que não existem no <Icon/> do sistema (traço igual ao resto).
+const Svg = ({ d, size = 18, fill }: { d: string; size?: number; fill?: boolean }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill={fill ? 'currentColor' : 'none'} stroke={fill ? 'none' : 'currentColor'} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
+);
+const IcoKebab = () => (
+  <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" /></svg>
+);
+const IcoFiltro = () => <Svg d="M4 6h16M7 12h10M10 18h4" />;
+const IcoCasa = ({ size = 20 }: { size?: number }) => <Svg size={size} d="M3 11 12 4l9 7M5 10v10h14V10" />;
+const IcoMic = () => <Svg size={21} d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" />;
+const IcoInfo = ({ size = 14 }: { size?: number }) => <Svg size={size} d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5h.01" />;
+
 type Mensagem = {
   id: number;
   autor: 'LEAD' | 'IA' | 'CORRETOR' | 'SISTEMA' | 'NOTA';
@@ -174,6 +223,14 @@ export default function Chat() {
   const [iaCarregando, setIaCarregando] = useState<'' | 'corrigir' | 'melhorar'>('');
   const [resumo, setResumo] = useState<{ leadId: number; itens: string[]; proximo: string } | null>(null);
   const [resumindo, setResumindo] = useState(false);
+  // Layout novo do atendimento (demo aprovada 04/10): filtros recolhidos, menu ⋮,
+  // menu + do compositor, seletor de imóvel com busca e painel "Dados do lead".
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  const [painelOpen, setPainelOpen] = useState(false);
+  const [maisOpen, setMaisOpen] = useState(false);
+  const [imovelPickerOpen, setImovelPickerOpen] = useState(false);
+  const [imovelBusca, setImovelBusca] = useState('');
+  const [sysAbertos, setSysAbertos] = useState<Set<string>>(new Set());
   const [notaMode, setNotaMode] = useState(false); // composer em modo NOTA interna (não envia pro lead)
   const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
   const [retornoOpen, setRetornoOpen] = useState(false); // popover "agendar retorno"
@@ -183,8 +240,7 @@ export default function Chat() {
   // Gravação de áudio: liberada na web; no app nativo SÓ a partir dos builds que
   // declaram a permissão de microfone (iOS build 11+ / Android versionCode 7+) —
   // nos anteriores o iOS mata o app ao chamar getUserMedia.
-  const [imoveisOpen, setImoveisOpen] = useState(false);
- const [enviandoBolha, setEnviandoBolha] = useState<{ texto: string; nota: boolean; anexoNome?: string } | null>(null); // bolha otimista "enviando…" // chips de imóvel recolhidos por padrão (muitos empreendimentos poluem)
+  const [enviandoBolha, setEnviandoBolha] = useState<{ texto: string; nota: boolean; anexoNome?: string } | null>(null); // bolha otimista "enviando…"
  const [micDisponivel, setMicDisponivel] = useState(() => !isNativeApp());
   useEffect(() => {
     if (!isNativeApp()) return;
@@ -234,6 +290,14 @@ export default function Chat() {
   const metaConfigured: boolean = !!inbox?.metaConfigured;
   const anyConfigured = vaiConfigured || metaConfigured;
   const lista = tab === 'pendente' ? pendente : atendendo;
+  const nFiltros = (filtroFollowup ? 1 : 0) + (filtroTemp ? 1 : 0) + (filtroEquipe ? 1 : 0) + (filtroCorretor ? 1 : 0);
+  // Alerta do topo: leads ainda NÃO aceitos com prazo de pulo correndo.
+  const alertaPulo = (() => {
+    const comPrazo = pendente.filter((c: any) => c.puloEm);
+    if (!comPrazo.length) return null;
+    const prox = comPrazo.reduce((a: any, b: any) => (new Date(a.puloEm).getTime() <= new Date(b.puloEm).getTime() ? a : b));
+    return { qtd: comPrazo.length, prox };
+  })();
   const mensagens: Mensagem[] = conv?.mensagens || [];
 
   // Janela de 24h derivada AO VIVO do array de mensagens — não do booleano
@@ -262,7 +326,10 @@ export default function Chat() {
   // que scrollIntoView dentro de overflow:auto). Depende do id da última msg pra
   // capturar caso o length não muda mas o conteúdo sim. Sem smooth: smooth chega
   // depois da próxima msg em conversas movimentadas e dá efeito de "quebrar".
-  useEffect(() => { setIaSug(null); setResumo(null); setIaCarregando(''); }, [activeId]);
+  useEffect(() => {
+    setIaSug(null); setResumo(null); setIaCarregando('');
+    setPainelOpen(false); setMaisOpen(false); setAcoesOpen(false); setImovelPickerOpen(false); setSysAbertos(new Set());
+  }, [activeId]);
 
   const lastMsgId = mensagens.length ? mensagens[mensagens.length - 1]?.id : null;
   useEffect(() => {
@@ -672,6 +739,21 @@ export default function Chat() {
     setImovelMsg(`*${emp.nome}*`);
   };
 
+  // Seletor de imóvel (substitui os ~40 botões que ocupavam o topo da conversa).
+  // Mesmas travas dos botões antigos: lead aceito e janela de 24h aberta.
+  const abrirSeletorImovel = () => {
+    if (!conv?.reservado) { toast.error('Aceite o lead antes de enviar imóveis.'); return; }
+    if (!janelaAberta) { toast.error('Janela de 24h fechada — envie um template pra reabrir antes de mandar fotos.'); return; }
+    setImovelBusca('');
+    setImovelPickerOpen(true);
+  };
+  const escolherImovel = (emp: any) => {
+    setImovelPickerOpen(false);
+    setPainelOpen(false);
+    if ((emp.fotos || []).length) abrirImovel(emp);
+    else enviarImovel(emp);
+  };
+
   const enviarFotosImovel = async () => {
     if (!activeId || !imovelSel || enviandoFotos) return;
     const fotos = (imovelSel.fotos || []).filter((f: any) => fotosSel.has(f.id));
@@ -896,101 +978,125 @@ export default function Chat() {
 
       <div className={'inbox ' + (activeId ? 'inbox--thread-open' : '')}>
         <div className="inbox__list">
-          <div className="inbox__tabs">
-            <div
-              className={'inbox__tab ' + (tab === 'atendendo' ? 'inbox__tab--active' : '')}
-              onClick={() => setTab('atendendo')}
-            >
-              Atendendo <span className="badge badge--signed">{atendendo.length}</span>
+          {/* Topo da lista: abas, busca + botão Filtros (recolhidos), alerta de prazo. */}
+          <div className="inbox__top">
+            <div className="inbox__tabs">
+              <button
+                type="button"
+                className={'inbox__tab ' + (tab === 'atendendo' ? 'inbox__tab--active' : '')}
+                onClick={() => setTab('atendendo')}
+              >
+                Atendendo <span className="inbox__n">{atendendo.length}</span>
+              </button>
+              <button
+                type="button"
+                className={'inbox__tab ' + (tab === 'pendente' ? 'inbox__tab--active' : '')}
+                onClick={() => setTab('pendente')}
+              >
+                Pendente <span className="inbox__n">{pendente.length}</span>
+              </button>
             </div>
-            <div
-              className={'inbox__tab ' + (tab === 'pendente' ? 'inbox__tab--active' : '')}
-              onClick={() => setTab('pendente')}
-            >
-              Pendente <span className="badge badge--analysis">{pendente.length}</span>
+            <div className="inbox__busca">
+              <label className="inbox__busca-campo">
+                <Icon name="search" size={15} />
+                <input
+                  placeholder="Buscar nome, telefone ou e-mail"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  aria-label="Buscar conversa"
+                />
+              </label>
+              <button
+                type="button"
+                className="ico-btn inbox__filtro-btn"
+                onClick={() => setFiltrosAbertos((v) => !v)}
+                aria-expanded={filtrosAbertos}
+                title="Filtros"
+                aria-label="Filtros"
+              >
+                <IcoFiltro />
+                {nFiltros > 0 && <span className="inbox__filtro-n">{nFiltros}</span>}
+              </button>
             </div>
-          </div>
-
-          <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-light)' }}>
-            <input
-              className="field__input"
-              style={{ width: '100%', height: 34 }}
-              placeholder="Buscar por nome, telefone ou e-mail…"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
+            {alertaPulo && (
+              <button type="button" className="inbox__alerta" onClick={() => { setTab('pendente'); setActiveId(alertaPulo.prox.id); }}>
+                <Icon name="bell" size={16} />
+                <span>
+                  <b>{alertaPulo.qtd} {alertaPulo.qtd > 1 ? 'leads novos' : 'lead novo'} aguardando aceite</b>
+                  <span>O próximo pula em <b><Contagem ate={alertaPulo.prox.puloEm} pausado={alertaPulo.prox.puloPausado} /></b> · {alertaPulo.prox.nome}</span>
+                </span>
+              </button>
+            )}
+            {filtrosAbertos && (
+              <div className="inbox__filtros">
+                <div className="inbox__filtros-tit">Situação</div>
+                <div className="inbox__chips">
+                  <button
+                    type="button"
+                    className={'fchip' + (filtroFollowup === 'aguardando' ? ' fchip--on' : '')}
+                    onClick={() => setFiltroFollowup(filtroFollowup === 'aguardando' ? '' : 'aguardando')}
+                    title="Leads onde o cliente falou por último e espera sua resposta"
+                  >
+                    <Icon name="clock" size={11} /> Aguardando resposta{inbox?.countAguardando ? ` (${inbox.countAguardando})` : ''}
+                  </button>
+                  <button
+                    type="button"
+                    className={'fchip' + (filtroFollowup === 'parados' ? ' fchip--on' : '')}
+                    onClick={() => setFiltroFollowup(filtroFollowup === 'parados' ? '' : 'parados')}
+                    title="Leads sem nenhuma interação há mais de 1 dia — precisam de retorno"
+                  >
+                    <Icon name="warn" size={11} /> Parados +1d{inbox?.countParados ? ` (${inbox.countParados})` : ''}
+                  </button>
+                </div>
+                <div className="inbox__filtros-tit">Etiqueta</div>
+                <div className="inbox__chips">
+                  <button type="button" className={'fchip' + (filtroTemp === '' ? ' fchip--on' : '')} onClick={() => setFiltroTemp('')}>Todas</button>
+                  {TEMPERATURAS.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      className={'fchip' + (filtroTemp === t.key ? ' fchip--on' : '')}
+                      onClick={() => setFiltroTemp(filtroTemp === t.key ? '' : t.key)}
+                    >
+                      <span className="dot" style={{ background: t.cor }} /> {t.label}
+                    </button>
+                  ))}
+                </div>
+                {ehGestorAtendimento() && (
+                  <>
+                    <div className="inbox__filtros-tit">Equipe e corretor</div>
+                    {/* Filtro por equipe — só pra quem vê MAIS DE UMA equipe. */}
+                    {(equipesFiltro?.length || 0) > 1 && (
+                      <select
+                        className="field__input"
+                        style={{ width: '100%', height: 36 }}
+                        value={filtroEquipe}
+                        onChange={(e) => { setFiltroEquipe(e.target.value ? Number(e.target.value) : ''); setFiltroCorretor(''); }}
+                      >
+                        <option value="">Todas as equipes</option>
+                        {(equipesFiltro || []).map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+                      </select>
+                    )}
+                    <CorretorPicker
+                      corretores={filtroEquipe ? (corretoresFiltro || []).filter((c: any) => (c.equipe?.id ?? c.equipeId) === filtroEquipe) : corretoresFiltro}
+                      value={filtroCorretor}
+                      onChange={(id) => setFiltroCorretor(typeof id === 'number' ? id : '')}
+                      placeholder="Filtrar por corretor…"
+                    />
+                  </>
+                )}
+                {nFiltros > 0 && (
+                  <button type="button" className="link-btn" onClick={() => { setFiltroFollowup(''); setFiltroTemp(''); setFiltroEquipe(''); setFiltroCorretor(''); }}>
+                    Limpar filtros
+                  </button>
+                )}
+              </div>
+            )}
             {inbox?.totalConversas != null && (
-              <div className="text-xs text-secondary" style={{ marginTop: 4 }}>
+              <div className="inbox__contagem">
                 {buscaDeb ? `${inbox.carregadas} resultado(s)` : `${inbox.carregadas} de ${inbox.totalConversas} conversas`}
               </div>
             )}
-            {/* Filtro por equipe — só pra quem vê MAIS DE UMA equipe (some pra quem
-                comanda uma só, tipo Leiken/Vine na 2ª Avenida). */}
-            {ehGestorAtendimento() && (equipesFiltro?.length || 0) > 1 && (
-              <div style={{ marginTop: 8 }}>
-                <select
-                  className="field__input"
-                  style={{ width: '100%', height: 38 }}
-                  value={filtroEquipe}
-                  onChange={(e) => { setFiltroEquipe(e.target.value ? Number(e.target.value) : ''); setFiltroCorretor(''); }}
-                >
-                  <option value="">Todas as equipes</option>
-                  {(equipesFiltro || []).map((eq: any) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
-                </select>
-              </div>
-            )}
-            {/* Só gestor: filtrar o inbox pelos atendimentos de um corretor específico */}
-            {ehGestorAtendimento() && (
-              <div style={{ marginTop: 8 }}>
-                <CorretorPicker
-                  corretores={filtroEquipe ? (corretoresFiltro || []).filter((c: any) => (c.equipe?.id ?? c.equipeId) === filtroEquipe) : corretoresFiltro}
-                  value={filtroCorretor}
-                  onChange={(id) => setFiltroCorretor(typeof id === 'number' ? id : '')}
-                  placeholder="Filtrar por corretor…"
-                />
-              </div>
-            )}
-            {/* Follow-up: aguardando resposta / parados (com contagem) */}
-            <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => setFiltroFollowup(filtroFollowup === 'aguardando' ? '' : 'aguardando')}
-                title="Leads onde o cliente falou por último e espera sua resposta"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${filtroFollowup === 'aguardando' ? '#D97706' : 'var(--border-light)'}`, background: filtroFollowup === 'aguardando' ? 'rgba(245,158,11,0.18)' : 'transparent', color: filtroFollowup === 'aguardando' ? '#D97706' : 'var(--text-secondary)' }}>
-                <Icon name="clock" size={11} /> Aguardando resposta{inbox?.countAguardando ? ` (${inbox.countAguardando})` : ''}
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltroFollowup(filtroFollowup === 'parados' ? '' : 'parados')}
-                title="Leads sem nenhuma interação há mais de 1 dia — precisam de retorno"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${filtroFollowup === 'parados' ? '#DC2626' : 'var(--border-light)'}`, background: filtroFollowup === 'parados' ? 'rgba(220,38,38,0.15)' : 'transparent', color: filtroFollowup === 'parados' ? '#DC2626' : 'var(--text-secondary)' }}>
-                <Icon name="warn" size={11} /> Parados +1d{inbox?.countParados ? ` (${inbox.countParados})` : ''}
-              </button>
-            </div>
-            {/* Filtro por etiqueta de temperatura */}
-            <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => setFiltroTemp('')}
-                style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: '1px solid var(--border-light)', background: filtroTemp === '' ? 'var(--bg-card-hover)' : 'transparent', color: 'var(--text-secondary)' }}
-              >
-                Todas
-              </button>
-              {TEMPERATURAS.map((t) => {
-                const on = filtroTemp === t.key;
-                return (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setFiltroTemp(on ? '' : t.key)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', border: `1px solid ${on ? t.cor : 'var(--border-light)'}`, background: on ? t.bg : 'transparent', color: on ? t.cor : 'var(--text-secondary)' }}
-                  >
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {lista.length === 0 ? (
@@ -1002,7 +1108,7 @@ export default function Chat() {
           ) : (
             lista.map((c: any) => (
               <div
-                className={'conv ' + (c.id === activeId ? 'conv--active' : '')}
+                className={'conv ' + (c.id === activeId ? 'conv--active' : '') + (c.puloEm && !c.reservado ? ' conv--novo' : '')}
                 key={c.id}
                 onClick={() => setActiveId(c.id)}
                 // iOS: o click sintético pós-toque às vezes se perde (hover
@@ -1024,50 +1130,55 @@ export default function Chat() {
                   }
                 }}
               >
-                <div className="avatar avatar--sm">{initials(c.nome)}</div>
+                <div className="conv__av">
+                  <div className="avatar">{initials(c.nome)}</div>
+                  <span className="conv__temp" style={{ background: tempInfo(c.classificacao).cor }} title={`Etiqueta: ${tempInfo(c.classificacao).label}`} />
+                </div>
                 <div className="conv__main">
                   <div className="conv__name">
-                    <span>
-                      <span
-                        title={`Lead ${tempInfo(c.classificacao).label}`}
-                        style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: tempInfo(c.classificacao).cor, marginRight: 6, verticalAlign: 'middle', flexShrink: 0 }}
-                      />
-                      {c.nome}
-                      {c.vip && <Icon name="star" size={11} style={{ marginLeft: 4, color: '#7c3aed', verticalAlign: 'middle' }} />}
-                      {c.vaiConectado && (
-                        <span title="WhatsApp ativo" style={{ marginLeft: 4, color: 'var(--color-success-border)', display: 'inline-flex', alignItems: 'center' }}>
-                          <Icon name="circle" size={8} />
-                        </span>
-                      )}
+                    <span className="conv__nome-l">
+                      <span className="conv__nome">{c.nome}</span>
+                      {c.vip && <Icon name="star" size={11} style={{ color: '#7c3aed', flexShrink: 0 }} />}
+                      <ChegadaChip c={c.chegada} />
                     </span>
                     <span className="conv__time">
                       {c.ultimaMensagem ? timeAgo(c.ultimaMensagem.createdAt) : timeAgo(c.createdAt)}
                     </span>
                   </div>
-                  <div className="conv__last">
-                    {c.ultimaMensagem ? (
-                      <>
-                        {/* Nossa msg (outbound): ticks de entregue/lido igual WhatsApp */}
-                        {(c.ultimaMensagem.direction === 'outbound' || c.ultimaMensagem.autor === 'CORRETOR' || c.ultimaMensagem.autor === 'IA') && (
-                          <span style={{ marginRight: 3, verticalAlign: 'middle' }}><StatusTicks m={c.ultimaMensagem} /></span>
-                        )}
-                        {(c.ultimaMensagem.texto || '').slice(0, 40)}
-                      </>
-                    ) : (
-                      c.origem + ' · ' + (c.interesse || '—')
-                    )}
+                  <div className="conv__linha">
+                    <div className="conv__last">
+                      {c.ultimaMensagem ? (
+                        <>
+                          {/* Nossa msg (outbound): ticks de entregue/lido igual WhatsApp */}
+                          {(c.ultimaMensagem.direction === 'outbound' || c.ultimaMensagem.autor === 'CORRETOR' || c.ultimaMensagem.autor === 'IA') && (
+                            <span style={{ marginRight: 3, verticalAlign: 'middle' }}><StatusTicks m={c.ultimaMensagem} /></span>
+                          )}
+                          {(c.ultimaMensagem.texto || '').slice(0, 60)}
+                        </>
+                      ) : (
+                        c.interesse || '—'
+                      )}
+                    </div>
+                    {c.puloEm && !c.reservado ? (
+                      <span className="mini mini--pula" title="Tempo até o lead pular para outro corretor">pula <Contagem ate={c.puloEm} pausado={c.puloPausado} /></span>
+                    ) : !c.reservado && c.iaAtendendo ? (
+                      <span className={'mini ' + (c.iaLimiteAtingido ? 'mini--esg' : 'mini--ia')}>IA {c.iaLimiteAtingido ? 3 : c.iaRespostasCount || 0}/3</span>
+                    ) : null}
                   </div>
-                  {/* Só gestor: corretor que atende este lead — clica pra abrir a ficha */}
-                  {ehGestorAtendimento() && c.corretor?.nome && (
-                    <button
-                      type="button"
-                      className="text-xs"
-                      onClick={(e) => { e.stopPropagation(); abrirFichaCorretor(c.corretor?.id); }}
-                      title="Abrir ficha do corretor"
-                      style={{ marginTop: 2, color: 'var(--blue-600)', display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                    >
-                      <Icon name="users" size={10} /> {c.corretor.nome}
-                    </button>
+                  {/* Só gestor: corretor que atende (abre a ficha) e a origem do lead */}
+                  {ehGestorAtendimento() && (c.corretor?.nome || c.origem) && (
+                    <div className="conv__quem">
+                      {c.corretor?.nome && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); abrirFichaCorretor(c.corretor?.id); }}
+                          title="Abrir ficha do corretor"
+                        >
+                          <Icon name="users" size={10} /> {c.corretor.nome}
+                        </button>
+                      )}
+                      {c.origem && <span>{c.corretor?.nome ? ' · ' : ''}{origemLabel(c.origem)}</span>}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1097,7 +1208,7 @@ export default function Chat() {
           ) : (
             <>
               <div className="thread__header">
-                {/* Linha 1 — identidade compacta + toggle de ações (padrão mobile) */}
+                {/* Linha 1 — voltar · avatar+nome+contato (abre Dados do lead) · Aceitar · Resumir · ⋮ */}
                 <div className="thread__hd-main">
                   <button
                     className="thread__back"
@@ -1105,81 +1216,119 @@ export default function Chat() {
                     title="Voltar para a lista"
                     aria-label="Voltar"
                   >
-                    <Icon name="arrow_left" size={16} />
+                    <Icon name="arrow_left" size={18} />
                   </button>
-                  <div className="avatar">{initials(conv.nome)}</div>
-                  <div className="thread__hd-id">
-                    <div className="thread__hd-name">
-                      {conv.nome} {conv.vip && <Icon name="star" size={12} style={{ color: '#7c3aed', verticalAlign: 'middle' }} />}
+                  <button type="button" className="thread__quem" onClick={() => setPainelOpen(true)} title="Dados do lead">
+                    <div className="avatar">{initials(conv.nome)}</div>
+                    <div className="thread__hd-id">
+                      <div className="thread__hd-name">
+                        <span className="thread__hd-nome">{conv.nome}</span>
+                        {conv.vip && <Icon name="star" size={12} style={{ color: '#7c3aed', flexShrink: 0 }} />}
+                        <ChegadaChip c={(conv as any).chegada} />
+                      </div>
+                      <div className="thread__hd-meta">
+                        {(conv as any).telefoneLiberado && conv.telefone ? (
+                          <span className="thread__tel-ok">{conv.telefone}</span>
+                        ) : (
+                          <span className="thread__tel-prot">
+                            {conv.telefone
+                              ? (conv as any).liberacaoStatus === 'PENDENTE' ? 'Liberação pedida · aguardando o gestor' : 'Telefone protegido'
+                              // Lead que chegou SEM número: não é bloqueio — não há o que liberar.
+                              : conv.telefoneOculto ? 'Telefone protegido' : 'Sem telefone — o lead veio sem número'}
+                          </span>
+                        )}
+                        {(conv as any).email ? ` · ${(conv as any).email}` : ''}
+                      </div>
                     </div>
-                    <div className="thread__hd-meta">
-                      {(conv as any).telefoneLiberado && conv.telefone ? (
-                        <a
-                          href={`https://wa.me/${conv.telefone.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          title="Abrir conversa no WhatsApp"
-                          style={{ color: 'var(--link-accent, var(--pons-blue))', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                        >
-                          <Icon name="whatsapp" size={13} /> {conv.telefone}
-                        </a>
-                      ) : (conv.telefone
-                        || (conv.telefoneOculto
-                          ? 'Telefone protegido'
-                          // Lead que chegou SEM número (ex.: formulário do Meta sem a pergunta
-                          // de telefone): não é bloqueio — não há o que liberar.
-                          : 'Sem telefone — o lead veio sem número'))}
-                      {/* E-mail sempre visível (todos os perfis): é o contato quando o lead veio sem telefone. */}
-                      {(conv as any).email && (
+                  </button>
+                  <div className="thread__hd-dir">
+                    {!conv.reservado && (
+                      <button className="btn btn--sm thread__aceitar-topo" onClick={aceitarLead} title="Assumir o atendimento deste lead">
+                        <Icon name="check" size={13} /> Aceitar<span className="thread__aceitar-txt"> lead</span>
+                        {(conv as any).puloEm && <> · <Contagem ate={(conv as any).puloEm} pausado={(conv as any).puloPausado} /></>}
+                      </button>
+                    )}
+                    <button type="button" className="ico-btn ico-btn--ia" onClick={resumirConversa} disabled={resumindo} title="Resumir conversa (IA) — não envia nada" aria-label="Resumir conversa">
+                      <IconeIA size={18} />
+                    </button>
+                    <div className="pop-wrap">
+                      <button
+                        type="button"
+                        className="ico-btn"
+                        onClick={() => setAcoesOpen((o) => !o)}
+                        aria-expanded={acoesOpen}
+                        title="Ações do atendimento"
+                        aria-label="Ações do atendimento"
+                      >
+                        <IcoKebab />
+                      </button>
+                      {acoesOpen && (
                         <>
-                          {' · '}
-                          <a
-                            href={`mailto:${(conv as any).email}`}
-                            title="Enviar e-mail para o lead"
-                            style={{ color: 'var(--link-accent, var(--pons-blue))', textDecoration: 'none', fontWeight: 600 }}
-                          >
-                            {(conv as any).email}
-                          </a>
+                          <div className="quick-backdrop" onClick={() => { setAcoesOpen(false); setRetornoOpen(false); }} />
+                          <div className="menu-pop menu-pop--dir" role="menu">
+                            {/* Liberação de contato: corretor SOLICITA (gestor aprova); gestão LIBERA DIRETO. */}
+                            {!(conv as any).telefoneLiberado && conv.telefone && ((conv as any).liberacaoStatus === 'PENDENTE' && !liberaDireto() ? (
+                              <button type="button" className="menu-op" disabled>
+                                <Icon name="clock" size={15} /><span>Liberação pendente<small>Aguardando aprovação do gestor.</small></span>
+                              </button>
+                            ) : (
+                              <button type="button" className="menu-op" onClick={() => { setAcoesOpen(false); liberarContato(); }}>
+                                <Icon name="phone" size={15} /><span>{liberaDireto() ? 'Liberar contato' : 'Solicitar liberação'}<small>{liberaDireto() ? 'Mostra o telefone na hora. Ação auditada.' : 'Vai para o gestor aprovar. Motivo obrigatório.'}</small></span>
+                              </button>
+                            ))}
+                            {conv.reservado && (
+                              <>
+                                <button type="button" className="menu-op" onClick={() => setRetornoOpen((o) => !o)}>
+                                  <Icon name="clock" size={15} /><span>Agendar retorno<small>Lembrete para falar de novo.</small></span>
+                                </button>
+                                {retornoOpen && (
+                                  <div className="menu-sub">
+                                    {[{ h: 3, l: 'Em 3 horas' }, { h: 24, l: 'Amanhã' }, { h: 48, l: 'Em 2 dias' }, { h: 168, l: 'Em 1 semana' }].map((o) => (
+                                      <button key={o.h} type="button" className="btn btn--secondary btn--sm" onClick={() => { setAcoesOpen(false); agendarRetorno(o.h, o.l.toLowerCase()); }}>{o.l}</button>
+                                    ))}
+                                  </div>
+                                )}
+                                <button type="button" className="menu-op" onClick={() => { setAcoesOpen(false); abrirTabular(); }}>
+                                  <Icon name="warn" size={15} /><span>Tabular<small>Registra o desfecho. Conforme o motivo, volta para a base.</small></span>
+                                </button>
+                                <button type="button" className="menu-op" onClick={() => { setAcoesOpen(false); marcarNegociacao(); }}>
+                                  <Icon name="flag" size={15} /><span>Negociação<small>Marca como Em Negociação no funil.</small></span>
+                                </button>
+                              </>
+                            )}
+                            {/* Direcionar: SÓ gestão (nunca corretor), mesmo com lead não-reservado. */}
+                            {podeDirecionar && (
+                              <button type="button" className="menu-op" onClick={() => { setAcoesOpen(false); abrirDirecionar(); }}>
+                                <Icon name="send" size={15} /><span>Direcionar<small>Para outro corretor, equipe, fila ou base.</small></span>
+                              </button>
+                            )}
+                            <button type="button" className="menu-op" onClick={() => { setAcoesOpen(false); resumirConversa(); }}>
+                              <IconeIA size={15} /><span>Resumir conversa<small>A IA resume. Não envia nada.</small></span>
+                            </button>
+                            <button type="button" className="menu-op" onClick={() => { setAcoesOpen(false); setPainelOpen(true); }}>
+                              <IcoInfo size={15} /><span>Dados do lead<small>Contato, interesse{ehGestorAtendimento() ? ', origem, corretor e fila' : ''}.</small></span>
+                            </button>
+                            {conv.reservado && (
+                              <>
+                                <div className="menu-sep" />
+                                <button type="button" className="menu-op menu-op--perigo" onClick={() => { setAcoesOpen(false); rejeitarLead(); }}>
+                                  <Icon name="x" size={15} /><span>Rejeitar<small>Marca como Perdido. Pede confirmação.</small></span>
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </>
                       )}
-                      {conv.origem ? ` · ${conv.origem}` : ''} · {mensagens.length} msg{mensagens.length === 1 ? '' : 's'}
-                      {conv.vaiConectado && ' · WhatsApp ativo'}
                     </div>
                   </div>
-                  {/* Lead aguardando aceite: botão à DIREITA do topo (pedido do cliente),
-                      além do que já existe no rodapé. Mesmo aceitarLead(). */}
-                  {!conv.reservado && (
-                    <button className="btn btn--sm thread__aceitar-topo" onClick={aceitarLead} title="Assumir o atendimento deste lead">
-                      <Icon name="check" size={13} /> Aceitar<span className="thread__aceitar-txt"> lead</span>
-                    </button>
-                  )}
-                  <button
-                    className="btn btn--ghost btn--sm thread__acoes-toggle"
-                    onClick={() => setAcoesOpen((o) => !o)}
-                    aria-expanded={acoesOpen}
-                    title="Ações do atendimento"
-                  >
-                    Ações <Icon name="chevron-down" size={12} style={{ transform: acoesOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-                  </button>
                 </div>
 
-                {/* Linha 2 — status, janela 24h e badges de IA */}
+                {/* Linha 2 — só o essencial: situação, janela 24h, etiqueta, etapa (+ gestão: origem e corretor) */}
                 <div className="thread__hd-sub">
                   <span className={'badge ' + (conv.reservado ? 'badge--signed' : 'badge--analysis')}>
                     {conv.reservado ? 'ATENDENDO' : 'PENDENTE'}
                   </span>
-                  {/* Só gestor: quem atende este lead — clica pra abrir a ficha do corretor */}
-                  {ehGestorAtendimento() && (conv as any).corretor?.nome && (
-                    <button
-                      type="button"
-                      className="badge"
-                      onClick={() => abrirFichaCorretor((conv as any).corretor?.id)}
-                      title="Abrir ficha do corretor"
-                      style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    >
-                      <Icon name="users" size={10} /> {(conv as any).corretor.nome}
-                    </button>
-                  )}
+                  <Janela24h conv={conv} />
                   {/* Etiqueta de temperatura — clicável pra trocar (popover abre pra baixo) */}
                   <div style={{ position: 'relative', display: 'inline-block' }}>
                     <button
@@ -1196,152 +1345,98 @@ export default function Chat() {
                     {tempOpen && (
                       <>
                         <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setTempOpen(false)} />
-                        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, minWidth: 150, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, boxShadow: '0 10px 28px rgba(0,0,0,.18)', padding: 6 }}>
+                        <div className="menu-pop" style={{ top: 'calc(100% + 6px)', left: 0, minWidth: 150 }}>
                           {TEMPERATURAS.map((t) => (
-                            <button
-                              key={t.key}
-                              type="button"
-                              onClick={() => trocarTemperatura(conv.id, t.key)}
-                              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'transparent', border: 0, borderRadius: 7, padding: '7px 10px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}
-                            >
+                            <button key={t.key} type="button" className="menu-op" onClick={() => trocarTemperatura(conv.id, t.key)}>
                               <span style={{ width: 9, height: 9, borderRadius: '50%', background: t.cor, display: 'inline-block' }} />
-                              {t.label}
+                              <span>{t.label}</span>
                             </button>
                           ))}
                         </div>
                       </>
                     )}
                   </div>
-                  {(conv as any).iaAtendendo && !conv.reservado && !(conv as any).iaLimiteAtingido && (
-                    <span className="badge" style={{ background: 'rgba(96,165,250,0.15)', color: 'var(--blue-600)' }}>
-                      <Icon name="bot" size={10} /> IA respondendo · {(conv as any).iaRespostasCount || 0}/3
-                    </span>
-                  )}
-                  {(conv as any).iaLimiteAtingido && !conv.reservado && (
-                    <span className="badge" style={{ background: 'rgba(245,158,11,0.18)', color: 'var(--color-warning-fg)' }}>
-                      <Icon name="warn" size={10} /> IA esgotou (3/3)
-                    </span>
-                  )}
-                  <Janela24h conv={conv} />
-                  <button className="btn btn--ghost btn--sm" onClick={abrirStatus} title="Atualizar o status da negociação">
-                    <Icon name="flag" size={12} /> {statusLabel(conv.status)}
+                  <button type="button" className="badge thread__etapa" onClick={abrirStatus} title="Atualizar o status da negociação">
+                    <Icon name="flag" size={10} /> {statusLabel(conv.status)}
                   </button>
-                  <button type="button" className="ia-chip" onClick={resumirConversa} disabled={resumindo} title="A IA resume a conversa. Não envia nada ao cliente.">
-                    <IconeIA /> {resumindo ? 'Resumindo…' : 'Resumir conversa'}
-                  </button>
+                  {ehGestorAtendimento() && conv.origem && (
+                    <button type="button" className="badge thread__origem" onClick={() => setPainelOpen(true)} title="Ver origem e campanha">
+                      <IcoInfo size={10} /> {origemLabel(conv.origem)}{(conv as any).campanha ? ` · ${(conv as any).campanha}` : ''}
+                    </button>
+                  )}
+                  {/* Só gestor: quem atende este lead — clica pra abrir a ficha do corretor */}
+                  {ehGestorAtendimento() && (conv as any).corretor?.nome && (
+                    <button
+                      type="button"
+                      className="badge thread__corretor"
+                      onClick={() => abrirFichaCorretor((conv as any).corretor?.id)}
+                      title="Abrir ficha do corretor"
+                    >
+                      <Icon name="users" size={10} /> {(conv as any).corretor.nome}
+                    </button>
+                  )}
                 </div>
-                {resumo && resumo.leadId === conv.id && (
-                  <div className="ia-card ia-card--resumo" role="status">
-                    <div className="ia-card__topo">
-                      <span className="ia-card__tit"><IconeIA /> Resumo da conversa</span>
-                      <button type="button" className="ia-card__link" onClick={() => setResumo(null)}>Fechar</button>
-                    </div>
-                    <ul>{resumo.itens.map((x, i) => <li key={i}>{x}</li>)}</ul>
-                    {resumo.proximo && <p><b>Próximo passo:</b> {resumo.proximo}</p>}
-                  </div>
-                )}
-
-                {/* Ações (recolhível) — some do fluxo até o usuário abrir.
-                    "Aceitar" fica só no rodapé (ComposerPendenteIA) pra não
-                    duplicar o botão. */}
-                {acoesOpen && (
-                  <div className="thread__acoes">
-                    {/* Liberação de contato: corretor SOLICITA (vai pro gestor aprovar);
-                        gestor/CEO LIBERA DIRETO — inclusive quando há pendência de um
-                        corretor (o clique aprova e avisa o solicitante). */}
-                    {!(conv as any).telefoneLiberado && (conv as any).liberacaoStatus === 'PENDENTE' && !liberaDireto() ? (
-                      <button className="btn btn--ghost btn--sm" disabled title="Aguardando aprovação do gestor">
-                        <Icon name="clock" size={12} /> Liberação pendente
-                      </button>
-                    ) : !(conv as any).telefoneLiberado ? (
-                      <button
-                        className="btn btn--ghost btn--sm"
-                        onClick={liberarContato}
-                        title={liberaDireto() ? 'Liberar o telefone do lead agora (auditado)' : 'Solicitar liberação do contato ao gestor'}
-                      >
-                        <Icon name="phone" size={12} /> {liberaDireto() ? 'Liberar contato' : 'Solicitar liberação'}
-                      </button>
-                    ) : null}
-                    {conv.reservado && (
-                      <>
-                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                          <button className="btn btn--ghost btn--sm" onClick={() => setRetornoOpen((o) => !o)} title="Me lembrar de dar retorno a este lead">
-                            <Icon name="clock" size={12} /> Agendar retorno
-                          </button>
-                          {retornoOpen && (
-                            <>
-                              <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setRetornoOpen(false)} />
-                              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 50, minWidth: 170, background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, boxShadow: '0 10px 28px rgba(0,0,0,.18)', padding: 6 }}>
-                                {[
-                                  { h: 3, l: 'Em 3 horas' },
-                                  { h: 24, l: 'Amanhã' },
-                                  { h: 48, l: 'Em 2 dias' },
-                                  { h: 168, l: 'Em 1 semana' },
-                                ].map((o) => (
-                                  <button key={o.h} type="button" onClick={() => agendarRetorno(o.h, o.l.toLowerCase())}
-                                    style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, borderRadius: 7, padding: '7px 10px', cursor: 'pointer', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>
-                                    {o.l}
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <button className="btn btn--ghost btn--sm" onClick={abrirTabular} title="Registrar desfecho do lead (motivo). Pode devolver à base.">
-                          <Icon name="warn" size={12} /> Tabular
-                        </button>
-                        <button className="btn btn--ghost btn--sm" onClick={marcarNegociacao} title="Marcar como Negociação">
-                          <Icon name="flag" size={12} /> Negociação
-                        </button>
-                        <button className="btn btn--ghost btn--sm" onClick={rejeitarLead} title="Rejeitar lead (marca como Perdido)">
-                          <Icon name="x" size={12} /> Rejeitar
-                        </button>
-                      </>
-                    )}
-                    {/* Direcionar: SÓ gestão (nunca corretor), disponível mesmo com lead não-reservado. */}
-                    {podeDirecionar && (
-                      <button className="btn btn--ghost btn--sm" onClick={abrirDirecionar} title="Direcionar este lead pra outro corretor, equipe, fila ou base">
-                        <Icon name="send" size={12} /> Direcionar
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
-              <div className="thread__tools">
-                <button
-                  type="button"
-                  className="imovel-chip"
-                  style={{ fontWeight: 700 }}
-                  onClick={() => setImoveisOpen((v) => !v)}
-                  title={imoveisOpen ? 'Recolher imóveis' : 'Mostrar imóveis pra enviar'}
-                >
-                  Enviar imóvel ({(empreendimentos || []).length})
-                  <Icon name="chevron-down" size={11} style={{ marginLeft: 5, verticalAlign: 'middle', transform: imoveisOpen ? 'rotate(180deg)' : 'none' }} />
-                </button>
-                {imoveisOpen && (empreendimentos || []).map((e: any) => (
-                  <button
-                    className="imovel-chip"
-                    key={e.id}
-                    style={!janelaAberta || !conv?.reservado ? { opacity: 0.45 } : undefined}
-                    onClick={() => {
-                      // Mesma regra do composer: fora da janela de 24h (ou lead não
-                      // aceito) o Meta rejeita mídia/texto — bloqueia na origem em
-                      // vez de deixar o envio falhar depois.
-                      if (!conv?.reservado) { toast.error('Aceite o lead antes de enviar imóveis.'); return; }
-                      if (!janelaAberta) { toast.error('Janela de 24h fechada — envie um template pra reabrir antes de mandar fotos.'); return; }
-                      (e.fotos || []).length ? abrirImovel(e) : enviarImovel(e);
-                    }}
-                    title={(e.fotos || []).length ? `Fotos e descrição de ${e.nome}` : `Inserir descrição de ${e.nome}`}
-                  >
-                    {e.nome}{(e.fotos || []).length ? ` (${e.fotos.length})` : ''}
-                  </button>
-                ))}
-              </div>
+              {/* Prazo de aceite: lead ainda não aceito com pulo correndo. */}
+              {!conv.reservado && (conv as any).puloEm ? (
+                <div className="prazo" role="status">
+                  <Icon name="bell" size={18} />
+                  <span>
+                    <b>Lead novo · aguardando seu aceite.</b> Se não aceitar em <b><Contagem ate={(conv as any).puloEm} pausado={(conv as any).puloPausado} /></b>, ele vai para o próximo corretor. WhatsApp pessoal não conta.
+                  </span>
+                  <b className="prazo__relogio"><Contagem ate={(conv as any).puloEm} pausado={(conv as any).puloPausado} /></b>
+                </div>
+              ) : !conv.reservado && (conv as any).chegada === 'gestor' ? (
+                <div className="prazo prazo--calmo">
+                  <IcoInfo size={16} />
+                  <span>Direcionado pelo gestor: <b>sem prazo de 5 minutos</b>, não pula para outro corretor.</span>
+                </div>
+              ) : null}
+              {resumo && resumo.leadId === conv.id && (
+                <div className="ia-card ia-card--resumo" role="status">
+                  <div className="ia-card__topo">
+                    <span className="ia-card__tit"><IconeIA /> Resumo da conversa</span>
+                    <button type="button" className="ia-card__link" onClick={() => setResumo(null)}>Fechar</button>
+                  </div>
+                  <ul>{resumo.itens.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                  {resumo.proximo && <p><b>Próximo passo:</b> {resumo.proximo}</p>}
+                </div>
+              )}
+              {resumindo && (
+                <div className="ia-card ia-card--resumo" role="status"><span className="ia-card__tit"><IconeIA /> IA lendo a conversa…</span></div>
+              )}
               <BannerRedistribuicao info={(conv as any)._redistribution} leadId={conv.id} />
               <div className="thread__messages" ref={messagesContainerRef}>
-                {mensagens.map((m) => (
-                  <MessageBubble key={m.id} m={m} />
-                ))}
+                {/* Avisos do SISTEMA em sequência (só a gestão vê) viram um botão "N avisos". */}
+                {(() => {
+                  const out: React.ReactNode[] = [];
+                  for (let i = 0; i < mensagens.length; i++) {
+                    const m = mensagens[i];
+                    if (m.autor !== 'SISTEMA') { out.push(<MessageBubble key={m.id} m={m} />); continue; }
+                    let j = i;
+                    while (j < mensagens.length && mensagens[j].autor === 'SISTEMA') j++;
+                    const grupo = mensagens.slice(i, j);
+                    const chave = String(grupo[0].id);
+                    if (grupo.length > 1 && !sysAbertos.has(chave)) {
+                      out.push(
+                        <button key={'g' + chave} type="button" className="sys-grupo" onClick={() => setSysAbertos((s) => new Set(s).add(chave))}>
+                          {grupo.length} avisos do sistema · ver
+                        </button>,
+                      );
+                    } else {
+                      grupo.forEach((g) => out.push(<MessageBubble key={g.id} m={g} />));
+                      if (grupo.length > 1) {
+                        out.push(
+                          <button key={'h' + chave} type="button" className="sys-grupo" onClick={() => setSysAbertos((s) => { const n = new Set(s); n.delete(chave); return n; })}>
+                            ocultar avisos
+                          </button>,
+                        );
+                      }
+                    }
+                    i = j - 1;
+                  }
+                  return out;
+                })()}
                 {enviandoBolha && (
                   <div className={'bubble ' + (enviandoBolha.nota ? 'bubble--NOTA' : 'bubble--CORRETOR')} style={{ opacity: 0.7 }}>
                     {enviandoBolha.anexoNome && <div style={{ fontSize: 12, fontWeight: 700 }}>{enviandoBolha.anexoNome}</div>}
@@ -1356,14 +1451,15 @@ export default function Chat() {
               {!conv?.reservado ? (
                 <ComposerPendenteIA
                   onAceitar={aceitarLead}
-                  onAbrirTemplates={abrirTemplates}
+                  onAbrirTemplates={podeTemplate ? abrirTemplates : undefined}
                   onSalvarNota={salvarNota}
                   respostasUsadas={(conv as any).iaRespostasCount || 0}
                   limiteAtingido={!!(conv as any).iaLimiteAtingido}
                 />
               ) : !janelaAberta ? (
                 <ComposerJanelaFechada
-                  onAbrirTemplates={abrirTemplates}
+                  onAbrirTemplates={podeTemplate ? abrirTemplates : undefined}
+                  temEmail={!!(conv as any).email}
                   onSalvarNota={salvarNota}
                   onAceitar={aceitarLead}
                   mostrarAceitar={!(conv as any).assumido}
@@ -1427,17 +1523,51 @@ export default function Chat() {
                       )}
                     </div>
                   )}
-                  {!notaMode && !recording && !!draft.trim() && (
-                    <div className="ia-barra">
-                      <button type="button" className="ia-chip" onClick={() => pedirIaTexto('corrigir')} disabled={!!iaCarregando || sending}>
-                        <IconeIA /> Verificar erros de escrita
-                      </button>
-                      <button type="button" className="ia-chip" onClick={() => pedirIaTexto('melhorar')} disabled={!!iaCarregando || sending}>
-                        <IconeIA /> Melhorar a mensagem
-                      </button>
+                  {notaMode && !recording && (
+                    <div className="nota-faixa">
+                      <span><Icon name="pencil" size={13} /> Nota interna — o cliente não recebe</span>
+                      <button type="button" className="ia-card__link" onClick={() => setNotaMode(false)}>Voltar para mensagem</button>
                     </div>
                   )}
-                  <div className="composer">
+                  {!notaMode && !recording && (!!draft.trim() || draftPreTraducao != null) && (
+                    <div className="ia-barra">
+                      {!!draft.trim() && (
+                        <>
+                          <button type="button" className="ia-chip" onClick={() => pedirIaTexto('corrigir')} disabled={!!iaCarregando || sending}>
+                            <IconeIA /> Corrigir escrita
+                          </button>
+                          <button type="button" className="ia-chip" onClick={() => pedirIaTexto('melhorar')} disabled={!!iaCarregando || sending}>
+                            <IconeIA /> Melhorar
+                          </button>
+                        </>
+                      )}
+                      <div className="quick-wrap">
+                        <button
+                          type="button"
+                          className="ia-chip ia-chip--neutro"
+                          title="Traduzir a mensagem antes de enviar (inglês/espanhol)"
+                          onClick={() => setTraduzOpen((o) => !o)}
+                          disabled={sending || traduzindo}
+                        >
+                          <Icon name="globe" size={12} /> {traduzindo ? 'Traduzindo…' : 'Traduzir'}
+                        </button>
+                        {traduzOpen && (
+                          <>
+                            <div className="quick-backdrop" onClick={() => setTraduzOpen(false)} />
+                            <div className="quick-pop">
+                              <div className="quick-pop__head">Traduzir mensagem</div>
+                              {!!draft.trim() && <button className="quick-item" onClick={() => traduzirDraft('en')}>Inglês (EN)</button>}
+                              {!!draft.trim() && <button className="quick-item" onClick={() => traduzirDraft('es')}>Espanhol (ES)</button>}
+                              {draftPreTraducao != null && (
+                                <button className="quick-item" onClick={desfazerTraducao}>Voltar ao original</button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className={'composer composer--wa' + (notaMode ? ' composer--nota' : '')}>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1461,24 +1591,43 @@ export default function Chat() {
                       </div>
                     ) : (
                       <>
-                        <button
-                          className="btn btn--secondary btn--sm"
-                          title="Anexar imagem"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={sending || uploadingAnexo}
-                        >
-                          <Icon name="paperclip" size={14} />
-                        </button>
+                        {/* Botão + : anexo, imóvel, respostas rápidas, template (gestão), nota interna */}
                         <div className="quick-wrap">
                           <button
-                            className="btn btn--secondary btn--sm"
-                            title="Respostas rápidas"
-                            onClick={() => setQuickOpen((o) => !o)}
+                            type="button"
+                            className="ico-btn"
+                            title="Anexar, imóvel, respostas rápidas, nota"
+                            aria-label="Mais opções"
+                            aria-expanded={maisOpen || quickOpen}
+                            onClick={() => { setQuickOpen(false); setMaisOpen((o) => !o); }}
                             disabled={sending}
                           >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13l0-8Z" /></svg>
-                            <span className="composer__rotulo">Rápidas</span>
+                            <Icon name="plus" size={20} />
                           </button>
+                          {maisOpen && (
+                            <>
+                              <div className="quick-backdrop" onClick={() => setMaisOpen(false)} />
+                              <div className="menu-pop menu-pop--cima" role="menu">
+                                <button type="button" className="menu-op" onClick={() => { setMaisOpen(false); fileInputRef.current?.click(); }} disabled={uploadingAnexo}>
+                                  <Icon name="paperclip" size={15} /><span>Foto ou arquivo<small>Imagem, vídeo ou documento. Imagem grande é comprimida.</small></span>
+                                </button>
+                                <button type="button" className="menu-op" onClick={() => { setMaisOpen(false); abrirSeletorImovel(); }}>
+                                  <IcoCasa size={15} /><span>Enviar imóvel<small>{(empreendimentos || []).length} empreendimentos, com fotos e descrição.</small></span>
+                                </button>
+                                <button type="button" className="menu-op" onClick={() => { setMaisOpen(false); setQuickOpen(true); }}>
+                                  <Icon name="zap" size={15} /><span>Respostas rápidas<small>Insere o texto para você revisar.</small></span>
+                                </button>
+                                {podeTemplate && (
+                                  <button type="button" className="menu-op" onClick={() => { setMaisOpen(false); setTemplatePickerOpen(true); }}>
+                                    <Icon name="doc" size={15} /><span>Template<small>Mensagem aprovada pela Meta.</small></span>
+                                  </button>
+                                )}
+                                <button type="button" className="menu-op" onClick={() => { setMaisOpen(false); setNotaMode((v) => !v); }}>
+                                  <Icon name="pencil" size={15} /><span>{notaMode ? 'Voltar para mensagem' : 'Nota interna'}<small>{notaMode ? 'Envia ao cliente de novo.' : 'O cliente não recebe.'}</small></span>
+                                </button>
+                              </div>
+                            </>
+                          )}
                           {quickOpen && (
                             <>
                               <div className="quick-backdrop" onClick={() => setQuickOpen(false)} />
@@ -1491,50 +1640,12 @@ export default function Chat() {
                             </>
                           )}
                         </div>
-                        {podeTemplate && (
-                          <button
-                            className="btn btn--secondary btn--sm"
-                            title="Enviar template Meta aprovado"
-                            onClick={() => setTemplatePickerOpen(true)}
-                            disabled={sending}
-                          >
-                            <Icon name="doc" size={14} /> <span className="composer__rotulo">Template</span>
-                          </button>
-                        )}
-                        <div className="quick-wrap">
-                          <button
-                            className="btn btn--secondary btn--sm"
-                            title="Traduzir a mensagem antes de enviar (inglês/espanhol)"
-                            onClick={() => setTraduzOpen((o) => !o)}
-                            disabled={sending || traduzindo || (!draft.trim() && draftPreTraducao == null)}
-                          >
-                            <Icon name="globe" size={14} /> <span className="composer__rotulo">{traduzindo ? 'Traduzindo…' : 'Traduzir'}</span>
-                          </button>
-                          {traduzOpen && (
-                            <>
-                              <div className="quick-backdrop" onClick={() => setTraduzOpen(false)} />
-                              <div className="quick-pop">
-                                <div className="quick-pop__head">Traduzir mensagem</div>
-                                <button className="quick-item" onClick={() => traduzirDraft('en')}>Inglês (EN)</button>
-                                <button className="quick-item" onClick={() => traduzirDraft('es')}>Espanhol (ES)</button>
-                                {draftPreTraducao != null && (
-                                  <button className="quick-item" onClick={desfazerTraducao}>Voltar ao original</button>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <button
-                          className={'btn btn--sm' + (notaMode ? ' composer__nota-btn--on' : ' btn--secondary')}
-                          title={notaMode ? 'Modo nota ativo — o lead NÃO recebe. Clique pra voltar ao envio normal.' : 'Escrever nota interna (o lead não recebe)'}
-                          onClick={() => setNotaMode((v) => !v)}
-                          disabled={sending}
-                        >
-                          <Icon name="pencil" size={14} /> <span className="composer__rotulo">Nota</span>
+                        <button type="button" className="ico-btn" title="Enviar imóvel do portfólio" aria-label="Enviar imóvel do portfólio" onClick={abrirSeletorImovel} disabled={sending}>
+                          <IcoCasa />
                         </button>
                         <textarea
                           className={notaMode ? 'composer__input--nota' : undefined}
-                          placeholder={sending ? 'Enviando…' : notaMode ? 'Nota interna — o lead NÃO recebe…' : anexo ? 'Legenda (opcional)…' : 'Escreva como corretor…'}
+                          placeholder={sending ? 'Enviando…' : notaMode ? 'Nota interna — o lead NÃO recebe…' : anexo ? 'Legenda (opcional)…' : `Mensagem para ${(conv.nome || '').split(' ')[0] || 'o cliente'}`}
                           value={draft}
                           onChange={(e) => { setDraft(e.target.value); if (iaSug) setIaSug(null); }}
                           onKeyDown={(e) => {
@@ -1545,32 +1656,147 @@ export default function Chat() {
                           }}
                           disabled={sending}
                         />
-                        {/* Nos apps nativos publicados falta a permissão de microfone
-                            (NSMicrophoneUsageDescription / RECORD_AUDIO) — no iOS o
-                            getUserMedia MATA o app. micDisponivel reexibe quando o
-                            build nativo instalado já declara a permissão. */}
-                        {micDisponivel && (
-                        <button
-                          className="btn btn--secondary btn--sm composer__mic"
-                          title="Gravar áudio"
-                          onClick={iniciarGravacao}
-                          disabled={sending || uploadingAnexo}
-                        >
-                          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" /></svg>
-                        </button>
+                        {/* Campo vazio → microfone (estilo WhatsApp); com texto/anexo/nota → enviar.
+                            Nos apps nativos antigos falta a permissão de microfone (iOS mata o app):
+                            micDisponivel só libera nos builds que declaram a permissão. */}
+                        {micDisponivel && !draft.trim() && !anexo && !notaMode ? (
+                          <button
+                            className="ico-btn composer__mic"
+                            title="Gravar áudio"
+                            aria-label="Gravar áudio"
+                            onClick={iniciarGravacao}
+                            disabled={sending || uploadingAnexo}
+                          >
+                            <IcoMic />
+                          </button>
+                        ) : (
+                          <button
+                            className={'composer__enviar ' + (notaMode ? 'composer__nota-send' : '')}
+                            onClick={enviar}
+                            title={notaMode ? 'Salvar nota interna' : 'Enviar mensagem'}
+                            aria-label={notaMode ? 'Salvar nota interna' : 'Enviar mensagem'}
+                            disabled={sending || uploadingAnexo || (notaMode ? !draft.trim() : (!draft.trim() && !anexo))}
+                          >
+                            <Icon name={notaMode ? 'check' : 'send'} size={18} />
+                          </button>
                         )}
-                        <button
-                          className={'btn composer__enviar ' + (notaMode ? 'composer__nota-send' : 'btn--primary')}
-                          onClick={enviar}
-                          title={notaMode ? 'Salvar nota interna' : 'Enviar mensagem'}
-                          disabled={sending || uploadingAnexo || (notaMode ? !draft.trim() : (!draft.trim() && !anexo))}
-                        >
-                          <Icon name="send" size={16} />
-                          <span className="composer__rotulo">{sending ? 'Enviando…' : notaMode ? 'Salvar nota' : 'Enviar'}</span>
-                        </button>
                       </>
                     )}
                   </div>
+                </>
+              )}
+              {imovelPickerOpen && (() => {
+                const q = imovelBusca.trim().toLowerCase();
+                const todos = (empreendimentos || []) as any[];
+                const interesse = todos.find((e) => e.nome && (conv as any).interesse && e.nome.toLowerCase() === String((conv as any).interesse).toLowerCase());
+                const lista = q ? todos.filter((e) => String(e.nome || '').toLowerCase().includes(q)) : todos;
+                return (
+                  <Modal
+                    open
+                    onClose={() => setImovelPickerOpen(false)}
+                    title="Enviar imóvel"
+                    subtitle="Escolha o empreendimento. Depois você marca as fotos e edita o texto."
+                    size="sm"
+                  >
+                    <input
+                      className="field__input"
+                      style={{ width: '100%', height: 38, marginBottom: 10 }}
+                      placeholder="Buscar empreendimento"
+                      value={imovelBusca}
+                      onChange={(e) => setImovelBusca(e.target.value)}
+                      autoFocus
+                      aria-label="Buscar empreendimento"
+                    />
+                    {!q && interesse && (
+                      <>
+                        <div className="uppercase-tag" style={{ marginBottom: 6 }}>Sugerido para {(conv.nome || '').split(' ')[0]}</div>
+                        <button type="button" className="emp-card emp-card--int" onClick={() => escolherImovel(interesse)}>
+                          <b>{interesse.nome}</b>
+                          <small>Interesse do cliente{(interesse.fotos || []).length ? ` · ${interesse.fotos.length} fotos` : ''}</small>
+                        </button>
+                        <div className="uppercase-tag" style={{ margin: '12px 0 6px' }}>Todos os empreendimentos ({todos.length})</div>
+                      </>
+                    )}
+                    <div className="emp-lista">
+                      {lista.length ? lista.map((e) => (
+                        <button key={e.id} type="button" onClick={() => escolherImovel(e)}>
+                          <span>{e.nome}</span>
+                          <small>{(e.fotos || []).length ? `${e.fotos.length} fotos` : 'só descrição'}</small>
+                        </button>
+                      )) : <div className="text-xs text-secondary" style={{ padding: 12 }}>Nenhum empreendimento com esse nome.</div>}
+                    </div>
+                  </Modal>
+                );
+              })()}
+              {painelOpen && (
+                <>
+                  <div className="lead-painel__veu" onClick={() => setPainelOpen(false)} />
+                  <aside className="lead-painel" aria-label="Dados do lead">
+                    <div className="lead-painel__topo">
+                      <button type="button" className="ico-btn" onClick={() => setPainelOpen(false)} aria-label="Fechar"><Icon name="x" size={18} /></button>
+                      <b>Dados do lead</b>
+                    </div>
+                    <div className="lead-painel__hero">
+                      <div className="avatar avatar--xl">{initials(conv.nome)}</div>
+                      <b>{conv.nome}</b>
+                      {(conv as any).interesse && <span className="text-secondary">{(conv as any).interesse}</span>}
+                    </div>
+                    <div className="lead-painel__sec">
+                      <h4>Contato</h4>
+                      <div className="lead-painel__lin">
+                        <span>Telefone</span>
+                        <span>
+                          {(conv as any).telefoneLiberado && conv.telefone ? (
+                            <a href={`https://wa.me/${conv.telefone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">{conv.telefone}</a>
+                          ) : conv.telefone ? 'Protegido' : conv.telefoneOculto ? 'Protegido' : 'Veio sem número'}
+                        </span>
+                      </div>
+                      <div className="lead-painel__lin">
+                        <span>E-mail</span>
+                        <span>{(conv as any).email ? <a href={`mailto:${(conv as any).email}`}>{(conv as any).email}</a> : '—'}</span>
+                      </div>
+                      {!(conv as any).telefoneLiberado && conv.telefone && !((conv as any).liberacaoStatus === 'PENDENTE' && !liberaDireto()) && (
+                        <button type="button" className="btn btn--secondary btn--sm" onClick={() => { setPainelOpen(false); liberarContato(); }}>
+                          <Icon name="phone" size={13} /> {liberaDireto() ? 'Liberar contato' : 'Solicitar liberação'}
+                        </button>
+                      )}
+                    </div>
+                    <div className="lead-painel__sec">
+                      <h4>Atendimento</h4>
+                      {(conv as any).interesse && (
+                        <button type="button" className="btn btn--secondary btn--sm" onClick={() => {
+                          const emp = (empreendimentos || []).find((e: any) => String(e.nome || '').toLowerCase() === String((conv as any).interesse).toLowerCase());
+                          if (!emp) { abrirSeletorImovel(); return; }
+                          if (!conv.reservado) { toast.error('Aceite o lead antes de enviar imóveis.'); return; }
+                          if (!janelaAberta) { toast.error('Janela de 24h fechada — envie um template pra reabrir antes de mandar fotos.'); return; }
+                          escolherImovel(emp);
+                        }}>
+                          <IcoCasa size={14} /> Enviar {(conv as any).interesse}
+                        </button>
+                      )}
+                      {(conv as any).chegada && <div className="lead-painel__lin"><span>Como chegou</span><span><ChegadaChip c={(conv as any).chegada} /></span></div>}
+                      <div className="lead-painel__lin"><span>Etiqueta</span><span style={{ color: tempInfo((conv as any).classificacao).cor }}>{tempInfo((conv as any).classificacao).label}</span></div>
+                      <div className="lead-painel__lin"><span>Etapa</span><span>{statusLabel(conv.status)}</span></div>
+                      <div className="lead-painel__lin"><span>Mensagens</span><span>{mensagens.filter((m) => m.autor !== 'SISTEMA').length}</span></div>
+                    </div>
+                    {ehGestorAtendimento() ? (
+                      <div className="lead-painel__sec">
+                        <h4>De onde veio</h4>
+                        <div className="lead-painel__lin"><span>Origem</span><span>{origemLabel(conv.origem) || '—'}</span></div>
+                        <div className="lead-painel__lin"><span>Campanha</span><span>{(conv as any).campanha || '—'}</span></div>
+                        {(conv as any).criativo && <div className="lead-painel__lin"><span>Anúncio</span><span>{(conv as any).criativo}</span></div>}
+                        <div className="lead-painel__lin"><span>Fila</span><span>{(conv as any).roleta || '—'}</span></div>
+                        <div className="lead-painel__lin">
+                          <span>Corretor</span>
+                          <span>{(conv as any).corretor?.nome ? (
+                            <button type="button" className="link-btn" onClick={() => abrirFichaCorretor((conv as any).corretor?.id)}>{(conv as any).corretor.nome}</button>
+                          ) : '—'}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="lead-painel__sec"><span className="text-xs text-secondary">Origem e campanha ficam só com a gestão.</span></div>
+                    )}
+                  </aside>
                 </>
               )}
               {imovelSel && (
@@ -1853,9 +2079,9 @@ export default function Chat() {
 }
 
 // Ícone da IA (brilho) — usado nos botões amarelos de corrigir/melhorar/resumir.
-function IconeIA() {
+function IconeIA({ size = 13 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
       <path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6zM19 14l.9 2.6L22 17.5l-2.1.9L19 21l-.9-2.6L16 17.5l2.1-.9z" />
     </svg>
   );
@@ -2231,7 +2457,7 @@ function ComposerPendenteIA({
   limiteAtingido,
 }: {
   onAceitar: () => void;
-  onAbrirTemplates: () => void;
+  onAbrirTemplates?: () => void; // ausente = papel sem permissão de template (corretor)
   onSalvarNota: (texto: string) => Promise<void> | void;
   respostasUsadas: number;
   limiteAtingido: boolean;
@@ -2270,9 +2496,11 @@ function ComposerPendenteIA({
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
         {/* Dispara o template Meta com o lead ainda PENDENTE — o corretor pega o
             lead, manda o template e, se o cliente responder, a IA atende. */}
-        <button className="btn btn--secondary btn--sm" onClick={onAbrirTemplates} title="Enviar template Meta aprovado (inicia a conversa)">
-          <Icon name="doc" size={14} /> Enviar template
-        </button>
+        {onAbrirTemplates && (
+          <button className="btn btn--secondary btn--sm" onClick={onAbrirTemplates} title="Enviar template Meta aprovado (inicia a conversa)">
+            <Icon name="doc" size={14} /> Enviar template
+          </button>
+        )}
         <button className="btn btn--primary btn--sm" onClick={onAceitar}>
           <Icon name="check" size={14} /> Aceitar lead
         </button>
@@ -2303,8 +2531,10 @@ function ComposerJanelaFechada({
   onSalvarNota,
   onAceitar,
   mostrarAceitar,
+  temEmail,
 }: {
-  onAbrirTemplates: () => void;
+  onAbrirTemplates?: () => void; // ausente = papel sem permissão de template (corretor)
+  temEmail?: boolean;
   onSalvarNota: (texto: string) => Promise<void> | void;
   onAceitar?: () => void;
   mostrarAceitar?: boolean;
@@ -2322,21 +2552,25 @@ function ComposerJanelaFechada({
       className="composer"
       style={{ borderTop: '1px solid var(--border-light)', padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}
     >
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, color: 'var(--text-secondary)', flex: '1 1 220px', minWidth: 0 }}>
           {mostrarAceitar
-            ? 'Aceite o lead pra assumir o atendimento — ou envie um template pra falar agora.'
-            : 'Janela de 24h fechada — envie um template pra falar com o contato.'}
+            ? (onAbrirTemplates ? 'Aceite o lead pra assumir o atendimento — ou envie um template pra falar agora.' : 'Aceite o lead pra assumir o atendimento.')
+            : onAbrirTemplates
+              ? 'Janela de 24h fechada — envie um template pra falar com o contato.'
+              : `Janela de 24h fechada — o WhatsApp só libera texto depois que o cliente responde. Peça um template ao gestor${temEmail ? ' ou use o e-mail' : ''}.`}
         </span>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', marginLeft: 'auto' }}>
           {mostrarAceitar && onAceitar && (
             <button className="btn btn--primary btn--sm" onClick={onAceitar} title="Assumir o atendimento deste lead">
               <Icon name="check" size={14} /> Aceitar lead
             </button>
           )}
-          <button className={`btn btn--sm ${mostrarAceitar ? 'btn--secondary' : 'btn--primary'}`} onClick={onAbrirTemplates}>
-            <Icon name="doc" size={14} /> Enviar template
-          </button>
+          {onAbrirTemplates && (
+            <button className={`btn btn--sm ${mostrarAceitar ? 'btn--secondary' : 'btn--primary'}`} onClick={onAbrirTemplates}>
+              <Icon name="doc" size={14} /> Enviar template
+            </button>
+          )}
         </div>
       </div>
       {/* Nota interna liberada mesmo com a janela fechada (não vai pro lead). */}

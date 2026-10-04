@@ -1,7 +1,17 @@
 {
-  "versao": "2026.10.04.1",
+  "versao": "2026.10.04.2",
   "data": "04/10/2026",
   "novidades": [
+    {
+      "titulo": "Atendimento novo: mais limpo, no celular e no computador",
+      "itens": [
+        "Lista: busca e um botão Filtros (aguardando resposta, parados, etiqueta e, para a gestão, equipe e corretor). Ao lado do nome aparece como o lead chegou: Roleta, Gestor, Bolsão ou Site.",
+        "Lead novo com prazo: alerta amarelo no topo da lista e contagem até pular (Aceitar lead · 4:12). Lead direcionado pelo gestor mostra que não tem prazo.",
+        "Conversa: nome, telefone e e-mail numa linha. Tocar no nome abre os Dados do lead. As ações ficam nos três pontos.",
+        "Escrever: botão + (arquivo, imóvel, respostas rápidas, template e nota interna) e o ícone de casa abre o portfólio com o imóvel de interesse do cliente no topo. Ao digitar: Corrigir, Melhorar e Traduzir.",
+        "Avisos do sistema agrupados num botão, para a conversa ficar limpa."
+      ]
+    },
     {
       "titulo": "Atendimento: IA para escrever e resumir",
       "itens": [
