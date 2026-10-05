@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.05",
+  "versao": "2026.10.05.2",
   "data": "05/10/2026",
   "novidades": [
+    {
+      "titulo": "Sicredi: cada empresa paga pela própria conta",
+      "itens": [
+        "No lançamento, \"Conta que paga (banco)\" agora é uma lista: Matriz, Segunda Avenida, GPI Delas ou Capão. O dinheiro sai da conta da empresa escolhida.",
+        "Pagamentos entre as empresas do grupo (ex.: GPI Delas pagando a Matriz) passam a funcionar pelo sistema quando a conta da filial estiver ligada.",
+        "Em Rateio & Sócios, aba Banco (Sicredi), aparece a situação de cada empresa e o cadastro das credenciais de cada uma. Enquanto a conta de uma filial não estiver ligada, o sistema não envia o pagamento e avisa para fazer pelo Internet Banking."
+      ]
+    },
     {
       "titulo": "Financeiro: Administrativo lança contas a pagar",
       "itens": [

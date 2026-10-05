@@ -94,7 +94,6 @@ export default function Financeiro() {
  const { data: lancamentos, reload: reloadLanc } = useApi<any[]>(() => Api.finLancamentos());
  const { data: unidadesForm } = useApi<any[]>(() => Api.unidadesList());
  const toast = useToast();
- const CONTAS_SUGERIDAS = ['Matriz', 'Segunda Avenida', 'DELAS', 'Capão'];
  const confirm = useConfirm();
 
  const abrirNovo = () => { setEditando(null); setMetodoForm('PIX'); setBoletoLido(''); setFormSeq((n) => n + 1); setOpenNew(true); };
@@ -541,11 +540,12 @@ export default function Financeiro() {
  </select>
  </div>
  <div className="field">
- <label className="field__label">Conta que paga (banco)</label>
- <input name="contaPagadora" className="field__input" list="contasPagadoras" autoComplete="off" placeholder="Ex.: Segunda Avenida" defaultValue={editando?.contaPagadora || ''} title="Conta bancária de onde sai o dinheiro. Pode ser de outra filial — não precisa ser a mesma da conta." />
- <datalist id="contasPagadoras">
- {Array.from(new Set([...CONTAS_SUGERIDAS, ...((lancamentos || []).map((l: any) => l.contaPagadora).filter(Boolean))])).map((c: any) => <option key={c} value={c} />)}
- </datalist>
+ <label className="field__label" htmlFor="lanc-conta-pagadora">Conta que paga (banco)</label>
+ {/* Define de qual conta do Sicredi o dinheiro sai (cada empresa tem a sua). */}
+ <select id="lanc-conta-pagadora" name="contaPagadora" className="field__select" defaultValue={editando?.contaPagadora || 'Matriz'} title="Conta bancária de onde sai o dinheiro. Pode ser de outra filial — não precisa ser a mesma da conta.">
+ {['Matriz', 'Segunda Avenida', 'GPI Delas', 'Capão'].map((c) => <option key={c} value={c}>{c}</option>)}
+ {editando?.contaPagadora && !['Matriz', 'Segunda Avenida', 'GPI Delas', 'Capão'].includes(editando.contaPagadora) && <option value={editando.contaPagadora}>{editando.contaPagadora}</option>}
+ </select>
  </div>
  <div className="field">
  <label className="field__label">Método</label>
