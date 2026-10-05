@@ -88,7 +88,9 @@ export default function Financeiro() {
  const [formSeq, setFormSeq] = useState(0); // muda a cada abertura → força o form a remontar/zerar
  const [filtroBenef, setFiltroBenef] = useState('');
  const [filtroStatus, setFiltroStatus] = useState('');
- const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => Api.finResumo());
+ // Administrativo só lança e acompanha contas a pagar (sem resumo, entradas, aprovação nem banco).
+ const soLanca = Auth.user?.role === 'ADMINISTRATIVO';
+ const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => (soLanca ? Promise.resolve({}) : Api.finResumo()));
  const { data: lancamentos, reload: reloadLanc } = useApi<any[]>(() => Api.finLancamentos());
  const { data: unidadesForm } = useApi<any[]>(() => Api.unidadesList());
  const toast = useToast();
@@ -321,7 +323,7 @@ export default function Financeiro() {
  subtitle="Planejamento, extrato, comissões parceladas e consolidação bancária"
  />
 
- <div className="kpi-grid">
+ {!soLanca && <div className="kpi-grid">
  <div className="kpi kpi--destaque">
  <div className="kpi__label">Saldo realizado</div>
  <div className="kpi__value" style={{ color: (f.saldo || 0) >= 0 ? 'var(--money-positive)' : 'var(--money-negative)' }}>
@@ -340,7 +342,7 @@ export default function Financeiro() {
  <div className="kpi__label">Aguardando aprovação</div>
  <div className="kpi__value">{f.aguardandoAprovacao || 0}</div>
  </div>
- </div>
+ </div>}
 
  <div className="tabs" role="tablist">
  {([
@@ -353,7 +355,7 @@ export default function Financeiro() {
  ['planejamento', 'Planejamento'],
  ['comissoes', 'Comissões & plano'],
  ['importar', 'Importar base'],
- ] as const).map(([key, label]) => (
+ ] as const).filter(([key]) => !soLanca || key === 'extrato').map(([key, label]) => (
  <button
  key={key}
  className={'tab ' + (tab === key ? 'tab--active' : '')} role="tab" aria-selected={!!(tab === key)}
@@ -446,20 +448,20 @@ export default function Financeiro() {
  </td>
  <td>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
- {l.status !== 'CANCELADO' && (
+ {(soLanca ? ['PENDENTE', 'AGUARDANDO_APROVACAO'].includes(l.status) : l.status !== 'CANCELADO') && (
  <button className="btn btn--ghost btn--sm" onClick={() => abrirEdicao(l)}>Editar</button>
  )}
  {l.tipo === 'SAIDA' && ['PENDENTE', 'AGUARDANDO_APROVACAO', 'APROVADO'].includes(l.status) && (!l.sicredi || l.sicredi.status === 'ERRO') && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string) && (
  <button className="btn btn--primary btn--sm" onClick={() => pagarSicredi(l)}>Enviar ao Sicredi</button>
  )}
- {l.status !== 'CANCELADO' && (
+ {!soLanca && l.status !== 'CANCELADO' && (
  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger)' }} onClick={() => cancelar(l)}>Cancelar</button>
  )}
  {/* Ações raras (uso medido em 02/10: Aprovar 0x, Marcar pago 1x em 60 dias) ficam no menu. */}
  <RowMenu
  items={[
  ...(l.status === 'AGUARDANDO_APROVACAO' && Auth.user?.role === 'CEO' ? [{ label: 'Aprovar', onClick: () => aprovar(l.id) }] : []),
- ...(l.status !== 'PAGO' && l.status !== 'CANCELADO' ? [{ label: 'Marcar pago', onClick: () => marcarPago(l.id) }] : []),
+ ...(!soLanca && l.status !== 'PAGO' && l.status !== 'CANCELADO' ? [{ label: 'Marcar pago', onClick: () => marcarPago(l.id) }] : []),
  ...(Auth.user?.role === 'CEO' && l.sicredi && NO_BANCO.includes(l.sicredi.status) ? [{ label: 'Cancelar no banco', danger: true, onClick: () => cancelarNoBanco(l) }] : []),
  ]}
  />
@@ -494,7 +496,7 @@ export default function Financeiro() {
  <label className="field__label">Tipo</label>
  <select name="tipo" className="field__select" defaultValue={editando?.tipo || 'SAIDA'}>
  <option value="SAIDA">Saída</option>
- <option value="ENTRADA">Entrada</option>
+ {!soLanca && <option value="ENTRADA">Entrada</option>}
  </select>
  </div>
  <div className="field">

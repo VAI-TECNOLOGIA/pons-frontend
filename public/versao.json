@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.04.3",
-  "data": "04/10/2026",
+  "versao": "2026.10.05",
+  "data": "05/10/2026",
   "novidades": [
+    {
+      "titulo": "Financeiro: Administrativo lança contas a pagar",
+      "itens": [
+        "O Administrativo agora lança contas a pagar em Caixa & Lançamentos. A conta entra aguardando aprovação; o Financeiro confere e envia ao Sicredi, e o sócio aprova o pagamento no Internet Banking.",
+        "O Administrativo vê só as contas a pagar e pode corrigir enquanto a conta não foi aprovada ou enviada ao banco."
+      ]
+    },
     {
       "titulo": "Atendimento com as cores do WhatsApp",
       "itens": [

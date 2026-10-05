@@ -98,7 +98,7 @@ const GROUPS: NavGroup[] = [
       // Contratações e Custos Meta escondidos por enquanto (roles: [] esconde de
       // TODO perfil). Pra reativar, devolver os roles originais (comentados).
       { to: '/onboarding-aprovacoes', label: 'Contratações', icon: 'users', roles: [] /* era FINANCE */ },
-      { to: '/financeiro', label: 'Caixa & Lançamentos', icon: 'dollar', roles: FINANCE },
+      { to: '/financeiro', label: 'Caixa & Lançamentos', icon: 'dollar', roles: [...FINANCE, 'ADMINISTRATIVO'] },
       { to: '/boletos', label: 'Boletos (Cobrança)', icon: 'doc', roles: [...FINANCE, 'ADMINISTRATIVO'] },
       { to: '/meta-custos', label: 'Custos Meta', icon: 'target', roles: [] /* era ['CEO','DIRETOR_COMERCIAL','DIRETOR_FINANCEIRO','FINANCEIRO','MARKETING'] */ },
       // Relatórios e Painel Executivo removidos do menu (pedido do cliente).
