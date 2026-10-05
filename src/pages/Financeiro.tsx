@@ -560,7 +560,8 @@ export default function Financeiro() {
  <div className="field field--span-2">
  <CampoCnpj
  name="favorecidoDocumento"
- label="Documento do favorecido (CPF/CNPJ)"
+ label="CPF/CNPJ de quem recebe (o banco exige)"
+ defaultValue={editando?.favorecidoDocumento || ''}
  permitirCpf
  onInfo={(info) => {
  // CNPJ consultado na Receita → confirma quem recebe e preenche o beneficiário
