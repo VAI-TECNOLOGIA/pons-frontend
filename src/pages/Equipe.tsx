@@ -605,7 +605,7 @@ function NovoUsuarioModal({ levels, onClose, onSaved }: any) {
               <span>Telefone</span>
               <div className="user-drawer__phone">
                 <div className="user-drawer__phone-ddi">
-                  <span className="user-drawer__flag">🇧🇷</span>
+                  <span className="user-drawer__flag">+55</span>
                   <Icon name="arrow_down" size={10} />
                 </div>
                 <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(00) 00000-0000" />
