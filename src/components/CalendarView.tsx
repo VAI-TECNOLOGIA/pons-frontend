@@ -14,6 +14,7 @@ export interface CalendarEvent {
   executivo?: string;
   notas?: string;
   concluido?: boolean;
+  leadId?: number | null;
 }
 
 type View = 'mes' | 'semana' | 'lista' | 'checklist';

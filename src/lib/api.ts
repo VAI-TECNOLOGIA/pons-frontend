@@ -774,8 +774,12 @@ export const Api = {
       `/conversations${qs(params)}`,
     ),
   // "Me lembra de falar com esse lead depois" — cria tarefa c/ lembrete WhatsApp.
-  agendarRetorno: (leadId: number, horas: number) =>
-    request<{ ok: boolean; tarefaId: number; quando: string }>(`/conversations/${leadId}/agendar-retorno`, { method: 'POST', body: { horas } }),
+  // `quando` (ISO) tem prioridade; `horas` fica só pros atalhos rápidos.
+  agendarRetorno: (leadId: number, arg: number | { quando: string }) =>
+    request<{ ok: boolean; tarefaId: number; eventoId: number | null; quando: string }>(
+      `/conversations/${leadId}/agendar-retorno`,
+      { method: 'POST', body: typeof arg === 'number' ? { horas: arg } : arg },
+    ),
   conversationGet: (leadId: number) => request<any>(`/conversations/${leadId}`),
   // Etiqueta de temperatura do lead (Quente/Morno/Frio) no Atendimento.
   setClassificacao: (leadId: number, classificacao: 'NOVO' | 'QUENTE' | 'MORNO' | 'FRIO') =>

@@ -248,6 +248,7 @@ export default function Chat() {
   const [notaMode, setNotaMode] = useState(false); // composer em modo NOTA interna (não envia pro lead)
   const [acoesOpen, setAcoesOpen] = useState(false); // menu de ações do header (compacto no mobile)
   const [retornoOpen, setRetornoOpen] = useState(false); // popover "agendar retorno"
+  const [retornoQuando, setRetornoQuando] = useState(''); // data/hora escolhida no seletor
   const [recording, setRecording] = useState(false); // gravando áudio
   const [recSecs, setRecSecs] = useState(0);
   const [recSending, setRecSending] = useState(false);
@@ -628,12 +629,12 @@ export default function Chat() {
     }
   };
 
-  const agendarRetorno = async (horas: number, label: string) => {
+  const agendarRetorno = async (arg: number | { quando: string }, label: string) => {
     if (!activeId) return;
     setRetornoOpen(false);
     try {
-      await Api.agendarRetorno(activeId, horas);
-      toast.success(`Retorno agendado ${label}. Você recebe um lembrete no WhatsApp.`);
+      await Api.agendarRetorno(activeId, arg);
+      toast.success(`Retorno agendado ${label}. Entra na sua agenda e você recebe uma notificação no app.`);
       reloadConv();
     } catch (e: any) {
       toast.error('Erro ao agendar: ' + (e?.message || 'falha'));
@@ -1300,6 +1301,30 @@ export default function Chat() {
                                     {[{ h: 3, l: 'Em 3 horas' }, { h: 24, l: 'Amanhã' }, { h: 48, l: 'Em 2 dias' }, { h: 168, l: 'Em 1 semana' }].map((o) => (
                                       <button key={o.h} type="button" className="btn btn--secondary btn--sm" onClick={() => { setAcoesOpen(false); agendarRetorno(o.h, o.l.toLowerCase()); }}>{o.l}</button>
                                     ))}
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', width: '100%', marginTop: 4 }}>
+                                      <input
+                                        type="datetime-local"
+                                        value={retornoQuando}
+                                        onChange={(e) => setRetornoQuando(e.target.value)}
+                                        title="Escolher data e hora"
+                                        style={{ flex: 1, minWidth: 0, background: 'var(--bg-input, var(--bg-card))', border: '1px solid var(--border-light)', borderRadius: 7, padding: '6px 8px', color: 'var(--text-primary)', fontSize: 12 }}
+                                      />
+                                      <button
+                                        type="button"
+                                        className="btn btn--primary btn--sm"
+                                        disabled={!retornoQuando}
+                                        onClick={() => {
+                                          const d = new Date(retornoQuando);
+                                          if (!retornoQuando || isNaN(d.getTime()) || d.getTime() <= Date.now()) { toast.error('Escolha uma data/hora futura.'); return; }
+                                          const label = d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                                          setAcoesOpen(false);
+                                          agendarRetorno({ quando: d.toISOString() }, `para ${label}`);
+                                          setRetornoQuando('');
+                                        }}
+                                      >
+                                        OK
+                                      </button>
+                                    </div>
                                   </div>
                                 )}
                                 <button type="button" className="menu-op" onClick={() => { setAcoesOpen(false); abrirTabular(); }}>

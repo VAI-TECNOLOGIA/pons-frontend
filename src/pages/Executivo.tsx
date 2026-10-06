@@ -55,6 +55,7 @@ export default function Executivo() {
     // batia — a nota nem salvava nem reaparecia (Namita 10/08). Lê os dois.
     notas: ev.descricao ?? ev.notas,
     concluido: ev.concluido === true,
+    leadId: ev.leadId ?? null,
   }));
 
   // Config de auto-limpar (Settings)
@@ -416,9 +417,16 @@ export default function Executivo() {
         subtitle="Agenda dos sócios e diretores"
         footer={
           editing && (
-            <button className="btn btn--ghost btn--sm" onClick={excluir} style={{ color: 'var(--color-danger)' }}>
-              Excluir
-            </button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%' }}>
+              {editing.leadId ? (
+                <button className="btn btn--primary btn--sm" onClick={() => navigate(`/chat?lead=${editing.leadId}`)}>
+                  Abrir conversa
+                </button>
+              ) : null}
+              <button className="btn btn--ghost btn--sm" onClick={excluir} style={{ color: 'var(--color-danger)', marginLeft: 'auto' }}>
+                Excluir
+              </button>
+            </div>
           )
         }
       >
