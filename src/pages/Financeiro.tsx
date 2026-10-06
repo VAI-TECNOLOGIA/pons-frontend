@@ -79,6 +79,16 @@ function statusJornada(l: any): [string, string, string] {
 
 type Tab = 'extrato' | 'previsao' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
 
+// Empresa do grupo a partir do texto "Conta que paga" (espelha empresaDaConta do servidor).
+const CONTAS_PAGADORAS = ['Matriz', 'Segunda Avenida', 'GPI Delas', 'Capão'];
+function empresaDaConta(conta?: string | null): string {
+ const t = String(conta || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+ if (/segunda|2a\.? av|2\s*av/.test(t)) return 'SEGUNDA_AVENIDA';
+ if (/delas|mulher/.test(t)) return 'DELAS';
+ if (/capao/.test(t)) return 'CAPAO';
+ return 'MATRIZ';
+}
+
 export default function Financeiro() {
  const [tab, setTab] = useState<Tab>('extrato');
  const [openNew, setOpenNew] = useState(false);
@@ -93,11 +103,32 @@ export default function Financeiro() {
  const { data: f, loading, error, reload: reloadResumo } = useApi<any>(() => (soLanca ? Promise.resolve({}) : Api.finResumo()));
  const { data: lancamentos, reload: reloadLanc } = useApi<any[]>(() => Api.finLancamentos());
  const { data: unidadesForm } = useApi<any[]>(() => Api.unidadesList());
+ // Contas do Sicredi ligadas ao sistema. Conta não ligada: o envio sai pela Matriz.
+ const { data: contasBanco } = useApi<any[]>(() => (soLanca ? Promise.resolve([]) : Api.multipagEmpresas().catch(() => [])));
+ const [contaForm, setContaForm] = useState('Matriz');
+ const contaLigada = (emp: string) => !!(contasBanco || []).find((c: any) => c.empresa === emp)?.disponivel;
+ const nomeContaDe = (emp: string) => ({ MATRIZ: 'Matriz', SEGUNDA_AVENIDA: 'Segunda Avenida', DELAS: 'GPI Delas', CAPAO: 'Capão' } as Record<string, string>)[emp] || emp;
+ // Aviso antes de enviar: de qual conta o dinheiro sai de verdade. bloqueia = o banco com certeza recusa.
+ const avisoConta = (l: any): { bloqueia: boolean; msg: string } | null => {
+ if (!contasBanco?.length) return null;
+ const pedida = empresaDaConta(l.contaPagadora);
+ const efetiva = pedida !== 'MATRIZ' && !contaLigada(pedida) ? 'MATRIZ' : pedida;
+ const dig = (v: any) => String(v || '').replace(/\D/g, '');
+ const cnpjEf = dig((contasBanco || []).find((c: any) => c.empresa === efetiva)?.cnpj);
+ const paraPropria = String(l.metodo || 'PIX').toUpperCase() !== 'BOLETO' && !!cnpjEf && (dig(l.favorecidoChavePix) === cnpjEf || dig(l.favorecidoDocumento) === cnpjEf);
+ if (paraPropria) {
+ return { bloqueia: true, msg: pedida !== efetiva
+ ? `A conta da ${nomeContaDe(pedida)} ainda não está ligada ao Sicredi pelo sistema. Este PIX sairia da conta da ${nomeContaDe(efetiva)} para a própria ${nomeContaDe(efetiva)}, e o banco recusa. Pague pelo Internet Banking da ${nomeContaDe(pedida)}.`
+ : `Este PIX sairia da conta da ${nomeContaDe(efetiva)} para a própria ${nomeContaDe(efetiva)}. O banco não aceita uma conta pagar para ela mesma.` };
+ }
+ if (pedida !== efetiva) return { bloqueia: false, msg: `Atenção: a conta da ${nomeContaDe(pedida)} ainda não está ligada ao Sicredi pelo sistema. Se enviar agora, o dinheiro sai da conta da MATRIZ.` };
+ return null;
+ };
  const toast = useToast();
  const confirm = useConfirm();
 
- const abrirNovo = () => { setEditando(null); setMetodoForm('PIX'); setBoletoLido(''); setFormSeq((n) => n + 1); setOpenNew(true); };
- const abrirEdicao = (l: any) => { setEditando(l); setMetodoForm(l.metodo || 'PIX'); setBoletoLido(''); setFormSeq((n) => n + 1); setOpenNew(true); };
+ const abrirNovo = () => { setEditando(null); setContaForm('Matriz'); setMetodoForm('PIX'); setBoletoLido(''); setFormSeq((n) => n + 1); setOpenNew(true); };
+ const abrirEdicao = (l: any) => { setEditando(l); setContaForm(l.contaPagadora || 'Matriz'); setMetodoForm(l.metodo || 'PIX'); setBoletoLido(''); setFormSeq((n) => n + 1); setOpenNew(true); };
 
  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
  e.preventDefault();
@@ -156,10 +187,12 @@ export default function Financeiro() {
  reloadLanc();
  reloadResumo();
  // Conta a pagar: oferece mandar pro banco na hora (era o passo esquecido).
- if (tipoLanc === 'SAIDA' && criado?.id && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string)) {
+ const avisoNovo = tipoLanc === 'SAIDA' && criado?.id ? avisoConta(criado) : null;
+ if (avisoNovo?.bloqueia) toast.error(avisoNovo.msg);
+ if (tipoLanc === 'SAIDA' && criado?.id && !avisoNovo?.bloqueia && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string)) {
  const enviar = await confirm({
  title: 'Enviar ao Sicredi agora?',
- message: 'Lançar só registra a conta no sistema. Para pagar, ela precisa ir ao banco — depois o CEO aprova no Internet Banking.',
+ message: `${avisoNovo ? avisoNovo.msg + ' ' : ''}Lançar só registra a conta no sistema. Para pagar, ela precisa ir ao banco — depois o CEO aprova no Internet Banking.`,
  confirmText: 'Enviar ao Sicredi',
  cancelText: 'Depois',
  tone: 'primary',
@@ -198,9 +231,14 @@ export default function Financeiro() {
  };
 
  const pagarSicredi = async (l: any) => {
+ const aviso = avisoConta(l);
+ if (aviso?.bloqueia) {
+ await confirm({ title: 'Este pagamento não passa pelo sistema', message: aviso.msg, confirmText: 'Entendi', cancelText: 'Fechar', tone: 'primary' });
+ return;
+ }
  const ok = await confirm({
  title: 'Enviar ao Sicredi para aprovação?',
- message: `"${l.descricao || l.beneficiario || 'Lançamento'}" · R$ ${(l.valor || 0).toLocaleString('pt-BR')} será enviado ao Sicredi e ficará aguardando a aprovação do CEO no Internet Banking. O dinheiro só sai depois dessa aprovação. Só este lançamento é enviado.`,
+ message: `${aviso ? aviso.msg + ' ' : ''}"${l.descricao || l.beneficiario || 'Lançamento'}" · R$ ${(l.valor || 0).toLocaleString('pt-BR')} será enviado ao Sicredi e ficará aguardando a aprovação do CEO no Internet Banking. O dinheiro só sai depois dessa aprovação. Só este lançamento é enviado.`,
  confirmText: 'Enviar ao Sicredi',
  tone: 'primary',
  });
@@ -543,10 +581,19 @@ export default function Financeiro() {
  <div className="field">
  <label className="field__label" htmlFor="lanc-conta-pagadora">Conta que paga (banco)</label>
  {/* Define de qual conta do Sicredi o dinheiro sai (cada empresa tem a sua). */}
- <select id="lanc-conta-pagadora" name="contaPagadora" className="field__select" defaultValue={editando?.contaPagadora || 'Matriz'} title="Conta bancária de onde sai o dinheiro. Pode ser de outra filial — não precisa ser a mesma da conta.">
- {['Matriz', 'Segunda Avenida', 'GPI Delas', 'Capão'].map((c) => <option key={c} value={c}>{c}</option>)}
- {editando?.contaPagadora && !['Matriz', 'Segunda Avenida', 'GPI Delas', 'Capão'].includes(editando.contaPagadora) && <option value={editando.contaPagadora}>{editando.contaPagadora}</option>}
+ <select id="lanc-conta-pagadora" name="contaPagadora" className="field__select" defaultValue={editando?.contaPagadora || 'Matriz'} onChange={(e) => setContaForm(e.target.value)} title="Conta bancária de onde sai o dinheiro.">
+ {CONTAS_PAGADORAS.map((c) => {
+ const emp = empresaDaConta(c);
+ const naoLigada = !!contasBanco?.length && emp !== 'MATRIZ' && !contaLigada(emp);
+ return <option key={c} value={c}>{naoLigada ? `${c} (ainda não ligada ao sistema)` : c}</option>;
+ })}
+ {editando?.contaPagadora && !CONTAS_PAGADORAS.includes(editando.contaPagadora) && <option value={editando.contaPagadora}>{editando.contaPagadora}</option>}
  </select>
+ {!!contasBanco?.length && empresaDaConta(contaForm) !== 'MATRIZ' && !contaLigada(empresaDaConta(contaForm)) && (
+ <span className="text-secondary" style={{ display: 'block', fontSize: '0.8em', marginTop: 4 }}>
+ A conta da {nomeContaDe(empresaDaConta(contaForm))} ainda não está ligada ao Sicredi pelo sistema. Se enviar, o dinheiro sai da conta da Matriz. Para sair da conta da {nomeContaDe(empresaDaConta(contaForm))}, pague pelo Internet Banking dela.
+ </span>
+ )}
  </div>
  <div className="field">
  <label className="field__label">Método</label>
