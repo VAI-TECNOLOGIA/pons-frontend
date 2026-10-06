@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.05.2",
-  "data": "05/10/2026",
+  "versao": "2026.10.06.1",
+  "data": "06/10/2026",
   "novidades": [
+    {
+      "titulo": "Financeiro: motivo da recusa do banco",
+      "itens": [
+        "Quando o Sicredi recusa um pagamento, o motivo aparece escrito embaixo de ERRO NO BANCO, na própria lista (antes só aparecia 'erro').",
+        "Se a chave PIX for da mesma conta que está pagando (ex.: Matriz pagando para o CNPJ da Matriz), o sistema explica que o banco não aceita e que, para pagar entre empresas do grupo, a conta da empresa que paga precisa estar ligada."
+      ]
+    },
     {
       "titulo": "Sicredi: cada empresa paga pela própria conta",
       "itens": [

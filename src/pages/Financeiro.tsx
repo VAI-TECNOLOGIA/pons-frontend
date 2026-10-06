@@ -444,6 +444,7 @@ export default function Financeiro() {
  <td className="text-sm">{formatDate(l.vencimento)}</td>
  <td>
  <span className={`badge badge--${k}`} title={dica || undefined}>{lbl}</span>
+ {l.sicredi?.status === 'ERRO' && dica ? <span className="text-secondary" style={{ display: 'block', fontSize: '0.78em', marginTop: 4, maxWidth: 260, whiteSpace: 'normal' }}>{dica}</span> : null}
  </td>
  <td>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
