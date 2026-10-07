@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.07.4",
+  "versao": "2026.10.07.5",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Chave PIX no seu perfil",
+      "itens": [
+        "Em Meu perfil, cada um mantém a própria chave PIX onde recebe a comissão. É essa chave que o financeiro vê na hora de pagar.",
+        "Por segurança, toda troca de chave PIX fica registrada e o financeiro recebe um aviso no celular."
+      ]
+    },
     {
       "titulo": "Comissões: chave PIX de cada pessoa",
       "itens": [

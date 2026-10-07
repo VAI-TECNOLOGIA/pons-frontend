@@ -31,6 +31,7 @@ export interface User {
   dataNascimento?: string | null;
   avatarUrl?: string | null;
   creci?: string | null;
+  pix?: string | null; // chave PIX onde recebe comissão (a própria pessoa troca no Perfil)
   onboardingStatus?: string | null; // null/ATIVO = sem gating; PENDENTE_DOCS, AGUARDANDO_* prendem em /onboarding
   statusCadastro?: string | null; // AGUARDANDO_APROVACAO = cadastro aberto pendente → só vê Academia Pons até um Analista liberar
   podeEnviarNotificacao?: boolean; // liberação da tela Enviar notificação (papel OU liberação individual — decide o backend)
@@ -39,6 +40,7 @@ export interface User {
   corretor?: {
     id: number;
     creci?: string | null;
+    pixKey?: string | null;
     scoreAtual?: number;
     scoreMes?: number;
     scoreAno?: number;

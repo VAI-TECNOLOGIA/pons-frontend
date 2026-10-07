@@ -80,6 +80,7 @@ export default function Perfil() {
         dataNascimento: fd.get('dataNascimento') ? String(fd.get('dataNascimento')) : null,
         avatarUrl: avatar,
         creci: fd.get('creci') ? String(fd.get('creci')) : null,
+        pix: fd.get('pix') ? String(fd.get('pix')).trim() : null,
       });
       setUser({ ...user, ...u });
       await reload();
@@ -219,6 +220,18 @@ export default function Perfil() {
                   maxLength={30}
                 />
                 <div className="field__hint">Seu registro no CRECI — necessário pra contratos e protocolos</div>
+              </div>
+              <div className="field">
+                <label className="field__label">Chave PIX (para receber comissão)</label>
+                <input
+                  name="pix"
+                  className="field__input"
+                  defaultValue={user.pix || user.corretor?.pixKey || ''}
+                  placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória"
+                  maxLength={140}
+                  autoComplete="off"
+                />
+                <div className="field__hint">O financeiro paga sua comissão nesta chave. Trocou de chave? Atualize aqui — o financeiro é avisado.</div>
               </div>
             </div>
 
