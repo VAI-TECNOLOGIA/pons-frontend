@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.07.2",
+  "versao": "2026.10.07.3",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissões por contrato: vendas das planilhas antigas",
+      "itens": [
+        "Contratos que vieram das planilhas antigas (código IMP…) agora mostram a cadeia de cada parcela: corretor, gestor, direção e demais, com os valores da planilha.",
+        "A parcela que o cliente já pagou e ainda não teve a comissão repassada aparece em destaque: marque quem foi pago e registre o repasse da parcela. Dá para desfazer.",
+        "A busca ignora acento: \"kora 1106\" acha \"Kóra 1106\"."
+      ]
+    },
     {
       "titulo": "Comissões por contrato e contas divididas entre salas",
       "itens": [

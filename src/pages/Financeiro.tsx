@@ -1026,6 +1026,7 @@ function ComissoesPorContrato() {
                 <div>A pagar <strong style={{ color: 'var(--color-success-fg)' }}>{formatCurrencyExact(v.aReceber)}</strong></div>
               </div>
             </div>
+            {v.parcelasPlanilha ? <ParcelasPlanilha v={v} podePagar={podePagar} onMudou={reload} /> : (<>
             <div className="table-wrap" style={{ overflowX: 'auto' }}>
               <table className="table tabela-compacta" style={{ marginTop: 8 }}>
                 <thead><tr>{podePagar && <th style={{ width: 32 }}></th>}<th>Quem</th><th>Nome</th><th className="text-right">%</th><th className="text-right">Total</th><th className="text-right">Pago</th><th className="text-right">A pagar</th><th></th></tr></thead>
@@ -1052,9 +1053,111 @@ function ComissoesPorContrato() {
                 </button>
               </div>
             )}
+            </>)}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Venda importada das planilhas: a divisão da comissão está em cada parcela.
+// Parcela que o cliente já pagou e com comissão em aberto = liberada para repasse.
+function ParcelasPlanilha({ v, podePagar, onMudou }: { v: any; podePagar: boolean; onMudou: () => void }) {
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
+  const [salvando, setSalvando] = useState<number | null>(null);
+  const chaveM = (p: any, i: any) => `${p.pagamentoId}:${i.chave}`;
+  const marcado = (p: any, i: any) => (chaveM(p, i) in marcados ? marcados[chaveM(p, i)] : i.chave !== 'nf');
+  const parcelas: any[] = v.parcelasPlanilha || [];
+  const liberadas = parcelas.filter((p) => p.liberada);
+  const futuras = parcelas.filter((p) => !p.clientePagou && !p.comissaoPaga);
+  const pagas = parcelas.filter((p) => p.comissaoPaga);
+  const data = (d: any) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—');
+
+  const pagar = async (p: any) => {
+    const itens = p.itens.filter((i: any) => marcado(p, i));
+    if (!itens.length) { toast.error('Marque quem vai receber.'); return; }
+    const total = itens.reduce((s: number, i: any) => s + i.valor, 0);
+    const ok = await confirm({
+      title: `Registrar repasse da parcela ${p.numero}/${p.totalParcelas}?`,
+      message: `${itens.map((i: any) => `${i.label} ${i.nome}: ${formatCurrencyExact(i.valor)}`).join(' · ')}. Total ${formatCurrencyExact(total)}. Confirma que esses pagamentos foram feitos no banco? O sistema só registra — o dinheiro não sai daqui.`,
+      confirmText: 'Registrar como pago',
+      tone: 'primary',
+    });
+    if (!ok) return;
+    setSalvando(p.pagamentoId);
+    try {
+      const r = await Api.finComissaoPagarParcela(p.pagamentoId, itens.map((i: any) => i.chave));
+      toast.success(`Repasse registrado: ${formatCurrencyExact(r.valorTotal)}`);
+      onMudou();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao registrar o repasse');
+    } finally {
+      setSalvando(null);
+    }
+  };
+  const desfazer = async (p: any) => {
+    const ok = await confirm({ title: `Desfazer o repasse da parcela ${p.numero}/${p.totalParcelas}?`, message: 'A comissão desta parcela volta para "em aberto" e os lançamentos do repasse são cancelados. Use só se registrou por engano.', confirmText: 'Desfazer', tone: 'danger' });
+    if (!ok) return;
+    setSalvando(p.pagamentoId);
+    try { await Api.finComissaoEstornarParcela(p.pagamentoId); toast.success('Repasse desfeito.'); onMudou(); }
+    catch (e: any) { toast.error(e?.message || 'Erro ao desfazer'); }
+    finally { setSalvando(null); }
+  };
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <p className="text-sm text-secondary" style={{ margin: '0 0 8px' }}>Venda das planilhas antigas: a comissão é dividida em cada parcela que o cliente paga.</p>
+      {!liberadas.length && <p className="text-sm" style={{ margin: '0 0 8px' }}>Nenhuma parcela liberada para repasse (o cliente ainda não pagou a próxima, ou a comissão já foi paga).</p>}
+      {liberadas.map((p) => {
+        const tot = p.itens.filter((i: any) => marcado(p, i)).reduce((s: number, i: any) => s + i.valor, 0);
+        return (
+          <div key={p.pagamentoId} style={{ background: 'var(--bg-app)', borderRadius: 8, padding: '8px 10px', marginBottom: 8 }}>
+            <div className="text-sm"><strong>Parcela {p.numero}/{p.totalParcelas}</strong> · cliente pagou {formatCurrencyExact(p.valorParcela || 0)}{p.pagoEm ? ` em ${data(p.pagoEm)}` : ''} · <span style={{ color: 'var(--color-success-fg)' }}>comissão a repassar</span></div>
+            <table className="table tabela-compacta" style={{ marginTop: 4 }}>
+              <thead><tr>{podePagar && <th style={{ width: 32 }}></th>}<th>Quem</th><th>Nome</th><th className="text-right">Valor</th></tr></thead>
+              <tbody>
+                {p.itens.map((i: any) => (
+                  <tr key={i.chave}>
+                    {podePagar && <td><input type="checkbox" aria-label={`Pagar ${i.nome}`} checked={marcado(p, i)} onChange={(e) => setMarcados((m) => ({ ...m, [chaveM(p, i)]: e.target.checked }))} /></td>}
+                    <td className="text-sm">{i.label}</td>
+                    <td>{i.nome}</td>
+                    <td className="text-right money">{formatCurrencyExact(i.valor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {podePagar && (
+              <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 6 }}>
+                <button className="btn btn--primary btn--sm" disabled={salvando === p.pagamentoId || tot <= 0} onClick={() => pagar(p)}>
+                  {salvando === p.pagamentoId ? 'Registrando...' : `Registrar repasse da parcela (${formatCurrencyExact(tot)})`}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {(!!pagas.length || !!futuras.length) && (
+        <div className="table-wrap" style={{ overflowX: 'auto' }}>
+          <table className="table tabela-compacta">
+            <thead><tr><th>Parcela</th><th>Vencimento</th><th>Cliente</th><th>Comissão</th><th className="text-right">Valor da cadeia</th><th></th></tr></thead>
+            <tbody>
+              {[...pagas, ...futuras].sort((a, b) => a.numero - b.numero).map((p) => (
+                <tr key={p.pagamentoId}>
+                  <td className="text-sm">{p.numero}/{p.totalParcelas}</td>
+                  <td className="text-sm">{data(p.vencimento)}</td>
+                  <td className="text-sm">{p.clientePagou ? 'Pagou' : 'A pagar'}</td>
+                  <td className="text-sm">{p.comissaoPaga ? 'Repassada' : 'Em aberto'}</td>
+                  <td className="text-right money" title={p.itens.map((i: any) => `${i.label} ${formatCurrencyExact(i.valor)}`).join(' · ')}>{formatCurrencyExact(p.total)}</td>
+                  <td className="text-right">{podePagar && p.repasseSistema && <button className="btn btn--ghost btn--sm" disabled={salvando === p.pagamentoId} onClick={() => desfazer(p)}>Desfazer</button>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

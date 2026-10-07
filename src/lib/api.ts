@@ -681,6 +681,8 @@ export const Api = {
   finComissoesPorContrato: (q: string) => request<any[]>(`/financeiro/comissoes-por-contrato${qs(q ? { q } : {})}`),
   finComissaoPagarItens: (ids: number[]) => request<any>('/financeiro/comissoes/pagar-itens', { method: 'POST', body: { ids } }),
   finComissaoEstornarItens: (ids: number[]) => request<any>('/financeiro/comissoes/estornar-itens', { method: 'POST', body: { ids } }),
+  finComissaoPagarParcela: (pagamentoId: number, chaves: string[]) => request<any>('/financeiro/comissoes/pagar-parcela', { method: 'POST', body: { pagamentoId, chaves } }),
+  finComissaoEstornarParcela: (pagamentoId: number) => request<any>('/financeiro/comissoes/estornar-parcela', { method: 'POST', body: { pagamentoId } }),
   finComissaoPagar: (body: { corretorId: number; from?: string; to?: string; metodo?: string; observacao?: string }) =>
     request<{ pagos: number; valorTotal: number; corretor?: string; message?: string }>('/financeiro/comissoes/pagar', { method: 'POST', body }),
   finComissaoEstornar: (body: { corretorId: number; from?: string; to?: string }) =>
