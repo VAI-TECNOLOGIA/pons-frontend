@@ -1,12 +1,13 @@
 {
-  "versao": "2026.10.07.5",
+  "versao": "2026.10.07.6",
   "data": "07/10/2026",
   "novidades": [
     {
-      "titulo": "Chave PIX no seu perfil",
+      "titulo": "Chave PIX: o financeiro confere e altera",
       "itens": [
-        "Em Meu perfil, cada um mantém a própria chave PIX onde recebe a comissão. É essa chave que o financeiro vê na hora de pagar.",
-        "Por segurança, toda troca de chave PIX fica registrada e o financeiro recebe um aviso no celular."
+        "Na comissão por contrato, o Diretor Financeiro (e o CEO) altera a chave PIX do corretor ou do gestor direto ali: botão Alterar, embaixo do nome.",
+        "O corretor vê a própria chave em Meu perfil e, para trocar, envia a chave nova ao financeiro, que confere com um PIX de teste e atualiza.",
+        "Por segurança, toda troca fica registrada e o corretor recebe um aviso no celular."
       ]
     },
     {

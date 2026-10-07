@@ -683,6 +683,7 @@ export const Api = {
   finComissaoEstornarItens: (ids: number[]) => request<any>('/financeiro/comissoes/estornar-itens', { method: 'POST', body: { ids } }),
   finComissaoPagarParcela: (pagamentoId: number, chaves: string[]) => request<any>('/financeiro/comissoes/pagar-parcela', { method: 'POST', body: { pagamentoId, chaves } }),
   finComissaoEstornarParcela: (pagamentoId: number) => request<any>('/financeiro/comissoes/estornar-parcela', { method: 'POST', body: { pagamentoId } }),
+  finCorretorPix: (corretorId: number, pix: string) => request<any>(`/financeiro/corretores/${corretorId}/pix`, { method: 'PATCH', body: { pix } }),
   finComissaoPagar: (body: { corretorId: number; from?: string; to?: string; metodo?: string; observacao?: string }) =>
     request<{ pagos: number; valorTotal: number; corretor?: string; message?: string }>('/financeiro/comissoes/pagar', { method: 'POST', body }),
   finComissaoEstornar: (body: { corretorId: number; from?: string; to?: string }) =>
@@ -756,7 +757,7 @@ export const Api = {
   // Users
   users: () => request<any[]>('/users'),
   meProfile: () => request<import('./auth').User & { aniversarioHoje?: boolean }>('/users/me'),
-  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null; creci?: string | null; pix?: string | null }) =>
+  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null; creci?: string | null }) =>
     request<any>('/users/me', { method: 'PATCH', body: data }),
   mePassword: (senhaAtual: string, novaSenha: string) =>
     request<{ ok: boolean }>('/users/me/password', { method: 'POST', body: { senhaAtual, novaSenha } }),
