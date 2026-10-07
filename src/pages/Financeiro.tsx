@@ -947,117 +947,163 @@ function ComissoesPorContrato() {
   const [busca, setBusca] = useState('');
   const [q, setQ] = useState('');
   const { data, loading, error, reload } = useApi<any[]>(() => Api.finComissoesPorContrato(q), [q]);
-  const [marcados, setMarcados] = useState<Record<number, boolean>>({});
-  const [salvando, setSalvando] = useState<number | null>(null);
-  const toast = useToast();
-  const confirm = useConfirm();
   const podePagar = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
-  const buscar = (e?: React.FormEvent) => { e?.preventDefault(); setMarcados({}); setQ(busca.trim()); };
-  const marcado = (r: any) => (r.id in marcados ? marcados[r.id] : !PAPEL_DA_CASA.has(r.papel));
-
-  const pagar = async (v: any) => {
-    const itens = (v.rateio || []).filter((r: any) => r.aReceber > 0 && marcado(r));
-    if (!itens.length) { toast.error('Marque quem vai receber.'); return; }
-    const total = itens.reduce((s: number, r: any) => s + r.aReceber, 0);
-    const ok = await confirm({
-      title: `Registrar repasse do contrato ${v.codigo}?`,
-      message: `${itens.map((r: any) => `${r.papelLabel} ${r.nome}: ${formatCurrencyExact(r.aReceber)}`).join(' · ')}. Total ${formatCurrencyExact(total)}. Confirma que esses pagamentos foram feitos no banco? O sistema só registra — o dinheiro não sai daqui.`,
-      confirmText: 'Registrar como pago',
-      tone: 'primary',
-    });
-    if (!ok) return;
-    setSalvando(v.id);
-    try {
-      const r = await Api.finComissaoPagarItens(itens.map((x: any) => x.id));
-      toast.success(r.pagos ? `Repasse registrado: ${formatCurrencyExact(r.valorTotal)} (${r.pagos} ${r.pagos === 1 ? 'pessoa' : 'pessoas'})` : (r.message || 'Nada pendente'));
-      reload();
-    } catch (e: any) {
-      toast.error(e?.message || 'Erro ao registrar o repasse');
-    } finally {
-      setSalvando(null);
-    }
-  };
-
-  const estornar = async (v: any, r: any) => {
-    const ok = await confirm({
-      title: 'Desfazer este repasse?',
-      message: `${r.papelLabel} ${r.nome} · ${formatCurrencyExact(r.valorPago)} (contrato ${v.codigo}) volta para "a pagar" e o lançamento do repasse é cancelado. Use só se marcou por engano.`,
-      confirmText: 'Desfazer',
-      tone: 'danger',
-    });
-    if (!ok) return;
-    setSalvando(v.id);
-    try {
-      await Api.finComissaoEstornarItens([r.id]);
-      toast.success('Repasse desfeito.');
-      reload();
-    } catch (e: any) {
-      toast.error(e?.message || 'Erro ao desfazer');
-    } finally {
-      setSalvando(null);
-    }
-  };
+  const buscar = (e?: React.FormEvent) => { e?.preventDefault(); setQ(busca.trim()); };
 
   return (
     <div className="card">
       <h3 className="card__title" style={{ marginBottom: 4 }}>Comissões por contrato</h3>
-      <p className="text-sm text-secondary" style={{ marginTop: 0 }}>Digite o contrato (ex.: 1106 Core), o código, o cliente ou o corretor. Aparece a cadeia inteira já dividida: marque quem foi pago e registre.</p>
+      <p className="text-sm text-secondary" style={{ marginTop: 0 }}>Digite o contrato (ex.: 1106 Kóra), o código, o cliente ou o corretor. Marque quem vai receber e envie ao Sicredi: vai um PIX para cada pessoa, com a chave do cadastro, para o sócio aprovar no banco.</p>
       <form className="flex gap-2" style={{ margin: '8px 0 16px', flexWrap: 'wrap' }} onSubmit={buscar}>
-        <input className="field__input" style={{ flex: 1, minWidth: 220 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: 1106 Core" aria-label="Buscar contrato" autoFocus />
+        <input className="field__input" style={{ flex: 1, minWidth: 220 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: 1106 Kóra" aria-label="Buscar contrato" autoFocus />
         <button type="submit" className="btn btn--primary">Buscar</button>
-        {q && <button type="button" className="btn btn--ghost" onClick={() => { setBusca(''); setMarcados({}); setQ(''); }}>Limpar</button>}
+        {q && <button type="button" className="btn btn--ghost" onClick={() => { setBusca(''); setQ(''); }}>Limpar</button>}
       </form>
       {loading && <LoadingBlock />}
       {error && <ErrorBlock error={error} />}
       {data && !data.length && <EmptyState size="sm" title={q ? 'Nenhum contrato encontrado' : 'Nenhuma comissão'} description={q ? 'Confira o número da unidade, o empreendimento ou o nome do cliente.' : undefined} />}
       {!q && !!data?.length && <p className="text-sm text-secondary" style={{ marginTop: 0 }}>Últimos contratos. Use a busca para achar um específico.</p>}
-      {(data || []).map((v: any) => {
-        const pend = (v.rateio || []).filter((r: any) => r.aReceber > 0 && marcado(r));
-        const totalMarcado = pend.reduce((s: number, r: any) => s + r.aReceber, 0);
-        return (
-          <div key={v.id} style={{ border: '1px solid var(--color-border, #e5e5e5)', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-            <div className="flex" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <div>
-                <div className="font-semibold">{v.empreendimento} · {v.unidade} <span className="text-secondary text-sm">· contrato {v.codigo}</span></div>
-                <div className="text-sm text-secondary">Cliente {v.cliente} · Corretor {v.corretor}{v.sala ? ` · ${v.sala}` : ''} · Venda {formatCurrencyExact(v.valorVenda || 0)} · Parcelas pagas {v.parcelasPagas}/{v.parcelas}</div>
-              </div>
-              <div className="text-right text-sm">
-                <div>Comissão total <strong>{formatCurrencyExact(v.comissaoTotal)}</strong></div>
-                <div>A pagar <strong style={{ color: 'var(--color-success-fg)' }}>{formatCurrencyExact(v.aReceber)}</strong></div>
-              </div>
+      {(data || []).map((v: any) => (
+        <div key={v.id} style={{ border: '1px solid var(--color-border, #e5e5e5)', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+          <div className="flex" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+            <div>
+              <div className="font-semibold">{v.empreendimento} · {v.unidade} <span className="text-secondary text-sm">· contrato {v.codigo}</span></div>
+              <div className="text-sm text-secondary">Cliente {v.cliente} · Corretor {v.corretor}{v.sala ? ` · ${v.sala}` : ''} · Venda {formatCurrencyExact(v.valorVenda || 0)} · Parcelas pagas {v.parcelasPagas}/{v.parcelas}</div>
             </div>
-            {v.parcelasPlanilha ? <ParcelasPlanilha v={v} podePagar={podePagar} onMudou={reload} /> : (<>
-            <div className="table-wrap" style={{ overflowX: 'auto' }}>
-              <table className="table tabela-compacta" style={{ marginTop: 8 }}>
-                <thead><tr>{podePagar && <th style={{ width: 32 }}></th>}<th>Quem</th><th>Nome</th><th className="text-right">%</th><th className="text-right">Total</th><th className="text-right">Pago</th><th className="text-right">A pagar</th><th></th></tr></thead>
-                <tbody>
-                  {(v.rateio || []).map((r: any) => (
-                    <tr key={r.id}>
-                      {podePagar && <td>{r.aReceber > 0 && <input type="checkbox" aria-label={`Pagar ${r.nome}`} checked={marcado(r)} onChange={(e) => setMarcados((m) => ({ ...m, [r.id]: e.target.checked }))} />}</td>}
-                      <td className="text-sm">{r.papelLabel}</td>
-                      <td>{r.nome}<PixDaPessoa r={r} onMudou={reload} /></td>
-                      <td className="text-right text-sm">{r.percentual != null ? `${Number(r.percentual).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : ''}</td>
-                      <td className="text-right money">{formatCurrencyExact(r.valorTotal)}</td>
-                      <td className="text-right money">{formatCurrencyExact(r.valorPago)}</td>
-                      <td className="text-right money" style={{ color: r.aReceber > 0 ? 'var(--color-success-fg)' : undefined }}>{r.aReceber > 0 ? formatCurrencyExact(r.aReceber) : 'Pago'}</td>
-                      <td className="text-right">{podePagar && r.valorPago > 0 && <button className="btn btn--ghost btn--sm" disabled={salvando === v.id} onClick={() => estornar(v, r)}>Desfazer</button>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="text-right text-sm">
+              <div>Comissão total <strong>{formatCurrencyExact(v.comissaoTotal)}</strong></div>
+              <div>A pagar <strong style={{ color: 'var(--color-success-fg)' }}>{formatCurrencyExact(v.aReceber)}</strong></div>
             </div>
-            {podePagar && v.aReceber > 0 && (
-              <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
-                <button className="btn btn--primary btn--sm" disabled={salvando === v.id || !pend.length} onClick={() => pagar(v)}>
-                  {salvando === v.id ? 'Registrando...' : `Registrar repasse dos marcados (${formatCurrencyExact(totalMarcado)})`}
-                </button>
-              </div>
-            )}
-            </>)}
           </div>
-        );
-      })}
+          {v.parcelasPlanilha
+            ? <ParcelasPlanilha v={v} podePagar={podePagar} onMudou={reload} />
+            : <CadeiaComissao
+                podePagar={podePagar}
+                onMudou={reload}
+                itens={(v.rateio || []).map((r: any) => ({
+                  ...r, label: r.papelLabel, valor: r.aReceber > 0 ? r.aReceber : r.valorTotal,
+                  repassado: r.aReceber <= 0.004, marcaPadrao: !PAPEL_DA_CASA.has(r.papel),
+                }))}
+              />}
+        </div>
+      ))}
     </div>
+  );
+}
+
+// Situação de um item da cadeia (pago, no banco, recusado, a pagar).
+function SituacaoItem({ i }: { i: any }) {
+  if (i.banco?.estado === 'NO_BANCO') return <span className="badge badge--analysis">No banco · aprovar</span>;
+  if (i.repassado || i.banco?.estado === 'PAGO') return <span className="badge badge--paid">{i.banco?.viaBanco ? 'Pago pelo banco' : 'Pago'}</span>;
+  if (i.banco?.estado === 'ERRO') return <span><span className="badge badge--cancelled">Erro no banco</span><span className="text-xs text-secondary" style={{ display: 'block', maxWidth: 240, whiteSpace: 'normal' }}>{i.banco.erro}</span></span>;
+  return <span className="text-sm" style={{ color: 'var(--color-success-fg)' }}>A pagar</span>;
+}
+
+// Cadeia de uma comissão (venda do sistema ou uma parcela da planilha): marcar quem
+// recebe → Enviar ao Sicredi (um PIX por pessoa, chave do cadastro) ou, se já pagou
+// direto no banco, "Já paguei pelo banco" (só registra).
+function CadeiaComissao({ itens, podePagar, onMudou }: { itens: any[]; podePagar: boolean; onMudou: () => void }) {
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
+  const [ocupado, setOcupado] = useState(false);
+  const pendente = (i: any) => !i.repassado && i.banco?.estado !== 'NO_BANCO' && i.banco?.estado !== 'PAGO';
+  const marcado = (i: any) => pendente(i) && (i.ref in marcados ? marcados[i.ref] : !!i.marcaPadrao);
+  const escolhidos = itens.filter(marcado);
+  const total = escolhidos.reduce((s, i) => s + (i.valor || 0), 0);
+
+  const enviar = async () => {
+    if (!escolhidos.length) { toast.error('Marque quem vai receber.'); return; }
+    const semPix = escolhidos.filter((i) => 'pix' in i && !i.pix);
+    const ok = await confirm({
+      title: 'Enviar ao Sicredi para o sócio aprovar?',
+      message: `${escolhidos.map((i) => `${i.label} ${i.nome}: ${formatCurrencyExact(i.valor)}${i.pix ? ` (PIX ${i.pix})` : ''}`).join(' · ')}. Total ${formatCurrencyExact(total)}. Vai um PIX para cada pessoa, para o sócio aprovar no Internet Banking. Quando o banco pagar, o repasse fica registrado sozinho.${semPix.length ? ` Sem chave PIX (não vão): ${semPix.map((i) => i.nome).join(', ')}.` : ''}`,
+      confirmText: 'Enviar ao Sicredi',
+      tone: 'primary',
+    });
+    if (!ok) return;
+    setOcupado(true);
+    try {
+      const r = await Api.finComissaoEnviarSicredi(escolhidos.map((i) => i.ref));
+      const falhas = r.resultado.filter((x) => !x.ok);
+      if (r.enviados) toast.success(`${r.enviados} PIX enviado${r.enviados > 1 ? 's' : ''} ao Sicredi. Falta o sócio aprovar no banco.`);
+      for (const f of falhas) toast.error(f.motivo || `${f.nome || 'Item'}: não enviado.`);
+      setMarcados({});
+      onMudou();
+    } catch (e: any) {
+      toast.error(e?.message || 'O Sicredi não recebeu os pagamentos.');
+      onMudou();
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const registrar = async () => {
+    if (!escolhidos.length) { toast.error('Marque quem você já pagou.'); return; }
+    const ok = await confirm({
+      title: 'Registrar como já pago pelo banco?',
+      message: `${escolhidos.map((i) => `${i.label} ${i.nome}: ${formatCurrencyExact(i.valor)}`).join(' · ')}. Use só se você JÁ pagou direto no Internet Banking. Isto não envia nada ao banco — só registra.`,
+      confirmText: 'Registrar',
+    });
+    if (!ok) return;
+    setOcupado(true);
+    try {
+      const r = await Api.finComissaoRegistrar(escolhidos.map((i) => i.ref));
+      toast.success(r.pagos ? `Registrado: ${formatCurrencyExact(r.valorTotal)}` : 'Nada a registrar.');
+      for (const p of r.pulados || []) toast.error(p);
+      setMarcados({});
+      onMudou();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao registrar');
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const desfazer = async (i: any) => {
+    const ok = await confirm({ title: 'Desfazer este registro?', message: `${i.label} ${i.nome} · ${formatCurrencyExact(i.valor)} volta para "a pagar". Use só se registrou por engano (o que foi pago pelo banco não se desfaz aqui).`, confirmText: 'Desfazer', tone: 'danger' });
+    if (!ok) return;
+    setOcupado(true);
+    try {
+      const r = await Api.finComissaoDesfazer([i.ref]);
+      if (r.desfeitos) toast.success('Registro desfeito.');
+      for (const b of r.bloqueados || []) toast.error(`Não dá para desfazer — ${b}.`);
+      onMudou();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao desfazer');
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="table-wrap" style={{ overflowX: 'auto' }}>
+        <table className="table tabela-compacta" style={{ marginTop: 6 }}>
+          <thead><tr>{podePagar && <th style={{ width: 32 }}></th>}<th>Quem</th><th>Nome</th><th className="text-right">Valor</th><th>Situação</th><th></th></tr></thead>
+          <tbody>
+            {itens.map((i) => (
+              <tr key={i.ref}>
+                {podePagar && <td>{pendente(i) && <input type="checkbox" aria-label={`Pagar ${i.nome}`} checked={marcado(i)} onChange={(e) => setMarcados((m) => ({ ...m, [i.ref]: e.target.checked }))} />}</td>}
+                <td className="text-sm">{i.label}</td>
+                <td>{i.nome}<PixDaPessoa r={i} onMudou={onMudou} /></td>
+                <td className="text-right money">{formatCurrencyExact(i.valor || 0)}</td>
+                <td><SituacaoItem i={i} /></td>
+                <td className="text-right">{podePagar && i.repassado && i.repassadoEm !== 'planilha' && !i.banco?.viaBanco && <button className="btn btn--ghost btn--sm" disabled={ocupado} onClick={() => desfazer(i)}>Desfazer</button>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {podePagar && itens.some(pendente) && (
+        <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn--ghost btn--sm" disabled={ocupado || !escolhidos.length} onClick={registrar}>Já paguei pelo banco</button>
+          <button className="btn btn--primary btn--sm" disabled={ocupado || !escolhidos.length} onClick={enviar}>
+            {ocupado ? 'Enviando...' : `Enviar ao Sicredi (${formatCurrencyExact(total)})`}
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1104,101 +1150,33 @@ function PixDaPessoa({ r, onMudou }: { r: any; onMudou?: () => void }) {
 }
 
 // Venda importada das planilhas: a divisão da comissão está em cada parcela.
-// Parcela que o cliente já pagou e com comissão em aberto = liberada para repasse.
+// Parcela que o cliente já pagou e com comissão a repassar aparece em destaque.
 function ParcelasPlanilha({ v, podePagar, onMudou }: { v: any; podePagar: boolean; onMudou: () => void }) {
-  const toast = useToast();
-  const confirm = useConfirm();
-  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
-  const [salvando, setSalvando] = useState<number | null>(null);
-  const chaveM = (p: any, i: any) => `${p.pagamentoId}:${i.chave}`;
-  const marcado = (p: any, i: any) => (chaveM(p, i) in marcados ? marcados[chaveM(p, i)] : i.chave !== 'nf');
   const parcelas: any[] = v.parcelasPlanilha || [];
   const liberadas = parcelas.filter((p) => p.liberada);
-  const futuras = parcelas.filter((p) => !p.clientePagou && !p.comissaoPaga);
-  const pagas = parcelas.filter((p) => p.comissaoPaga);
+  const outras = parcelas.filter((p) => !p.liberada);
   const data = (d: any) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—');
-
-  const pagar = async (p: any) => {
-    const itens = p.itens.filter((i: any) => marcado(p, i));
-    if (!itens.length) { toast.error('Marque quem vai receber.'); return; }
-    const total = itens.reduce((s: number, i: any) => s + i.valor, 0);
-    const ok = await confirm({
-      title: `Registrar repasse da parcela ${p.numero}/${p.totalParcelas}?`,
-      message: `${itens.map((i: any) => `${i.label} ${i.nome}: ${formatCurrencyExact(i.valor)}`).join(' · ')}. Total ${formatCurrencyExact(total)}. Confirma que esses pagamentos foram feitos no banco? O sistema só registra — o dinheiro não sai daqui.`,
-      confirmText: 'Registrar como pago',
-      tone: 'primary',
-    });
-    if (!ok) return;
-    setSalvando(p.pagamentoId);
-    try {
-      const r = await Api.finComissaoPagarParcela(p.pagamentoId, itens.map((i: any) => i.chave));
-      toast.success(`Repasse registrado: ${formatCurrencyExact(r.valorTotal)}`);
-      onMudou();
-    } catch (e: any) {
-      toast.error(e?.message || 'Erro ao registrar o repasse');
-    } finally {
-      setSalvando(null);
-    }
-  };
-  const desfazer = async (p: any) => {
-    const ok = await confirm({ title: `Desfazer o repasse da parcela ${p.numero}/${p.totalParcelas}?`, message: 'A comissão desta parcela volta para "em aberto" e os lançamentos do repasse são cancelados. Use só se registrou por engano.', confirmText: 'Desfazer', tone: 'danger' });
-    if (!ok) return;
-    setSalvando(p.pagamentoId);
-    try { await Api.finComissaoEstornarParcela(p.pagamentoId); toast.success('Repasse desfeito.'); onMudou(); }
-    catch (e: any) { toast.error(e?.message || 'Erro ao desfazer'); }
-    finally { setSalvando(null); }
-  };
-
+  const itensDe = (p: any) => p.itens.map((i: any) => ({ ...i, repassado: !!i.repassadoEm, marcaPadrao: i.chave !== 'nf' }));
   return (
     <div style={{ marginTop: 8 }}>
       <p className="text-sm text-secondary" style={{ margin: '0 0 8px' }}>Venda das planilhas antigas: a comissão é dividida em cada parcela que o cliente paga.</p>
       {!liberadas.length && <p className="text-sm" style={{ margin: '0 0 8px' }}>Nenhuma parcela liberada para repasse (o cliente ainda não pagou a próxima, ou a comissão já foi paga).</p>}
-      {liberadas.map((p) => {
-        const tot = p.itens.filter((i: any) => marcado(p, i)).reduce((s: number, i: any) => s + i.valor, 0);
-        return (
-          <div key={p.pagamentoId} style={{ background: 'var(--bg-app)', borderRadius: 8, padding: '8px 10px', marginBottom: 8 }}>
-            <div className="text-sm"><strong>Parcela {p.numero}/{p.totalParcelas}</strong> · cliente pagou {formatCurrencyExact(p.valorParcela || 0)}{p.pagoEm ? ` em ${data(p.pagoEm)}` : ''} · <span style={{ color: 'var(--color-success-fg)' }}>comissão a repassar</span></div>
-            <table className="table tabela-compacta" style={{ marginTop: 4 }}>
-              <thead><tr>{podePagar && <th style={{ width: 32 }}></th>}<th>Quem</th><th>Nome</th><th className="text-right">Valor</th></tr></thead>
-              <tbody>
-                {p.itens.map((i: any) => (
-                  <tr key={i.chave}>
-                    {podePagar && <td><input type="checkbox" aria-label={`Pagar ${i.nome}`} checked={marcado(p, i)} onChange={(e) => setMarcados((m) => ({ ...m, [chaveM(p, i)]: e.target.checked }))} /></td>}
-                    <td className="text-sm">{i.label}</td>
-                    <td>{i.nome}<PixDaPessoa r={i} onMudou={onMudou} /></td>
-                    <td className="text-right money">{formatCurrencyExact(i.valor)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {podePagar && (
-              <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 6 }}>
-                <button className="btn btn--primary btn--sm" disabled={salvando === p.pagamentoId || tot <= 0} onClick={() => pagar(p)}>
-                  {salvando === p.pagamentoId ? 'Registrando...' : `Registrar repasse da parcela (${formatCurrencyExact(tot)})`}
-                </button>
-              </div>
-            )}
-          </div>
-        );
-      })}
-      {(!!pagas.length || !!futuras.length) && (
-        <div className="table-wrap" style={{ overflowX: 'auto' }}>
-          <table className="table tabela-compacta">
-            <thead><tr><th>Parcela</th><th>Vencimento</th><th>Cliente</th><th>Comissão</th><th className="text-right">Valor da cadeia</th><th></th></tr></thead>
-            <tbody>
-              {[...pagas, ...futuras].sort((a, b) => a.numero - b.numero).map((p) => (
-                <tr key={p.pagamentoId}>
-                  <td className="text-sm">{p.numero}/{p.totalParcelas}</td>
-                  <td className="text-sm">{data(p.vencimento)}</td>
-                  <td className="text-sm">{p.clientePagou ? 'Pagou' : 'A pagar'}</td>
-                  <td className="text-sm">{p.comissaoPaga ? 'Repassada' : 'Em aberto'}</td>
-                  <td className="text-right money" title={p.itens.map((i: any) => `${i.label} ${formatCurrencyExact(i.valor)}`).join(' · ')}>{formatCurrencyExact(p.total)}</td>
-                  <td className="text-right">{podePagar && p.repasseSistema && <button className="btn btn--ghost btn--sm" disabled={salvando === p.pagamentoId} onClick={() => desfazer(p)}>Desfazer</button>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {liberadas.map((p) => (
+        <div key={p.pagamentoId} style={{ background: 'var(--bg-app)', borderRadius: 8, padding: '8px 10px', marginBottom: 8 }}>
+          <div className="text-sm"><strong>Parcela {p.numero}/{p.totalParcelas}</strong> · cliente pagou {formatCurrencyExact(p.valorParcela || 0)}{p.pagoEm ? ` em ${data(p.pagoEm)}` : ''} · <span style={{ color: 'var(--color-success-fg)' }}>comissão a repassar</span></div>
+          <CadeiaComissao itens={itensDe(p)} podePagar={podePagar} onMudou={onMudou} />
         </div>
+      ))}
+      {!!outras.length && (
+        <details style={{ marginTop: 4 }}>
+          <summary className="text-sm" style={{ cursor: 'pointer' }}>Outras parcelas ({outras.length})</summary>
+          {outras.map((p) => (
+            <div key={p.pagamentoId} style={{ marginTop: 8 }}>
+              <div className="text-sm"><strong>Parcela {p.numero}/{p.totalParcelas}</strong> · vence {data(p.vencimento)} · cliente {p.clientePagou ? 'pagou' : 'ainda não pagou'} · comissão {p.comissaoPaga ? 'repassada' : 'em aberto'}</div>
+              <CadeiaComissao itens={itensDe(p)} podePagar={podePagar && p.clientePagou} onMudou={onMudou} />
+            </div>
+          ))}
+        </details>
       )}
     </div>
   );

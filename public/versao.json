@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.07.6",
+  "versao": "2026.10.07.7",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissões vão para o Sicredi",
+      "itens": [
+        "Na comissão por contrato, marque quem vai receber e clique em Enviar ao Sicredi: vai um PIX para cada pessoa, com a chave do cadastro, para o sócio aprovar no Internet Banking.",
+        "Cada pessoa mostra a situação: A pagar, No banco · aprovar, Pago pelo banco ou Erro no banco (com o motivo). Quando o banco paga, o repasse fica registrado sozinho.",
+        "Pagou direto no banco? Use Já paguei pelo banco (só registra). Registrou por engano? Use Desfazer."
+      ]
+    },
     {
       "titulo": "Chave PIX: o financeiro confere e altera",
       "itens": [
