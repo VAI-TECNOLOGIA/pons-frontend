@@ -79,6 +79,29 @@ function statusJornada(l: any): [string, string, string] {
 
 type Tab = 'extrato' | 'previsao' | 'semana' | 'dre' | 'fluxo' | 'contas' | 'planejamento' | 'comissoes' | 'importar' | 'sicredi';
 
+// Valor em reais digitado de qualquer jeito ("1000", "1.000,00", "R$ 1.000", "1000.50")
+// → número. Ponto é milhar; vírgula é centavo. Ponto com 1–2 casas no fim e sem
+// vírgula ("1000.50") é tratado como centavo.
+function parseValorBR(s: string): number {
+ let t = String(s || '').replace(/[^\d.,]/g, '');
+ if (!t) return 0;
+ if (t.includes(',')) { const i = t.lastIndexOf(','); t = t.slice(0, i).replace(/[.,]/g, '') + '.' + t.slice(i + 1).replace(/[.,]/g, ''); }
+ else if (/^\d+\.\d{1,2}$/.test(t)) { /* ponto decimal */ }
+ else t = t.replace(/\./g, '');
+ const n = Number(t);
+ return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+}
+// Máscara enquanto digita: 1000 → 1.000 · 1000,5 → 1.000,5 (milhar automático, vírgula = centavos).
+function mascaraValorBR(s: string): string {
+ const t = String(s || '').replace(/[^\d,]/g, '');
+ const i = t.indexOf(',');
+ const int = (i >= 0 ? t.slice(0, i) : t).replace(/^0+(?=\d)/, '');
+ const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+ if (i < 0) return intFmt;
+ return `${intFmt || '0'},${t.slice(i + 1).replace(/,/g, '').slice(0, 2)}`;
+}
+const formatarValorBR = (n: number) => (n > 0 ? n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '');
+
 // Empresa do grupo a partir do texto "Conta que paga" (espelha empresaDaConta do servidor).
 const CONTAS_PAGADORAS = ['Matriz', 'Segunda Avenida', 'GPI Delas', 'Capão'];
 function empresaDaConta(conta?: string | null): string {
@@ -141,7 +164,7 @@ export default function Financeiro() {
  ...((!editando && tipoLanc === 'SAIDA') ? { status: 'AGUARDANDO_APROVACAO' } : {}),
  categoria: String(fd.get('categoria') || 'OUTRO'),
  descricao: String(fd.get('descricao') || ''),
- valor: Number(String(fd.get('valor') || '').replace(/[^0-9.,]/g, '').replace(',', '.')) || 0,
+ valor: parseValorBR(String(fd.get('valor') || '')),
  vencimento: fd.get('vencimento') ? String(fd.get('vencimento')) : null,
  beneficiario: fd.get('beneficiario') ? String(fd.get('beneficiario')) : undefined,
  metodo: String(fd.get('metodo') || 'PIX'),
@@ -155,6 +178,7 @@ export default function Financeiro() {
  contaPagadora: fd.get('contaPagadora') ? String(fd.get('contaPagadora')).trim() : (editando ? null : undefined),
  unidadeId: fd.get('unidadeId') ? Number(fd.get('unidadeId')) : (editando ? null : undefined),
  };
+ if (!(payload.valor > 0)) { toast.error('Confira o valor: digite só os números (ex.: 1.000,00).'); return; }
  try {
  if (editando) {
  await Api.finLancamentoUpdate(editando.id, payload);
@@ -560,8 +584,21 @@ export default function Financeiro() {
  <input name="descricao" className="field__input" required defaultValue={editando?.descricao || ''} />
  </div>
  <div className="field">
- <label className="field__label">Valor <span className="field__required">*</span></label>
- <input name="valor" className="field__input" required placeholder="15000" defaultValue={editando ? String(editando.valor).replace('.', ',') : ''} />
+ <label className="field__label">Valor (R$) <span className="field__required">*</span></label>
+ <input
+ name="valor" className="field__input" required inputMode="decimal" autoComplete="off" placeholder="0,00"
+ title="Digite só os números. O ponto de milhar entra sozinho; use vírgula para os centavos."
+ defaultValue={editando ? formatarValorBR(Number(editando.valor) || 0) : ''}
+ onChange={(e) => {
+ const el = e.currentTarget;
+ const ne = e.nativeEvent as InputEvent;
+ let raw = el.value;
+ // Colado com ponto decimal (ex.: 1000.50): o ponto vira vírgula.
+ if (ne?.inputType === 'insertFromPaste' && !raw.includes(',') && /\.\d{1,2}\s*$/.test(raw)) raw = raw.replace(/\.(\d{1,2})\s*$/, ',$1');
+ el.value = mascaraValorBR(raw);
+ }}
+ onBlur={(e) => { const n = parseValorBR(e.currentTarget.value); e.currentTarget.value = formatarValorBR(n); }}
+ />
  </div>
  <div className="field">
  <label className="field__label">Vencimento</label>
@@ -656,7 +693,7 @@ export default function Financeiro() {
   <div className="field field--span-2">
    <label className="field__label">Boleto — código de barras / linha digitável</label>
    <div className="flex gap-2" style={{ alignItems: 'stretch' }}>
-    <input name="linhaDigitavel" id="campoBoleto" className="field__input" style={{ flex: 1 }} inputMode="numeric" autoComplete="off" autoFocus  defaultValue={editando?.linhaDigitavel || ""} placeholder="Clique em Usar leitor e passe o boleto — ou cole/digite os números" title="Leitor de código de barras: escaneie o boleto — preenche valor e vencimento sozinho. O Enter do leitor não envia o formulário." onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => { const raw = e.currentTarget.value; const r = lerBoleto(raw); const f = e.currentTarget.form; if (f) { if (r.valor != null) { const vi = f.querySelector('input[name="valor"]') as HTMLInputElement | null; if (vi) vi.value = r.valor.toFixed(2).replace('.', ','); } if (r.vencimento) { const dt = f.querySelector('input[name="vencimento"]') as HTMLInputElement | null; if (dt) dt.value = r.vencimento; } } if (String(raw).replace(/\D/g, '').length >= 44 && (r.valor != null || r.vencimento)) { setBoletoLido('Boleto lido' + (r.valor != null ? ` · R$ ${r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '') + (r.vencimento ? ` · vence ${r.vencimento.split('-').reverse().join('/')}` : '')); } else { setBoletoLido(''); } }} />
+    <input name="linhaDigitavel" id="campoBoleto" className="field__input" style={{ flex: 1 }} inputMode="numeric" autoComplete="off" autoFocus  defaultValue={editando?.linhaDigitavel || ""} placeholder="Clique em Usar leitor e passe o boleto — ou cole/digite os números" title="Leitor de código de barras: escaneie o boleto — preenche valor e vencimento sozinho. O Enter do leitor não envia o formulário." onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => { const raw = e.currentTarget.value; const r = lerBoleto(raw); const f = e.currentTarget.form; if (f) { if (r.valor != null) { const vi = f.querySelector('input[name="valor"]') as HTMLInputElement | null; if (vi) vi.value = formatarValorBR(r.valor); } if (r.vencimento) { const dt = f.querySelector('input[name="vencimento"]') as HTMLInputElement | null; if (dt) dt.value = r.vencimento; } } if (String(raw).replace(/\D/g, '').length >= 44 && (r.valor != null || r.vencimento)) { setBoletoLido('Boleto lido' + (r.valor != null ? ` · R$ ${r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '') + (r.vencimento ? ` · vence ${r.vencimento.split('-').reverse().join('/')}` : '')); } else { setBoletoLido(''); } }} />
     <button type="button" className="btn btn--secondary" style={{ whiteSpace: 'nowrap' }} onClick={() => { const el = document.getElementById('campoBoleto') as HTMLInputElement | null; if (el) { el.value = ''; setBoletoLido('Aguardando leitura — passe o boleto no leitor…'); el.focus(); } }}>Usar leitor</button>
    </div>
    {boletoLido && (<div className="text-sm" style={{ marginTop: 6, color: boletoLido.startsWith('Boleto lido') ? 'var(--success, #16a34a)' : 'var(--muted, #64748b)' }}>{boletoLido}</div>)}

@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.06.2",
-  "data": "06/10/2026",
+  "versao": "2026.10.07.1",
+  "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Financeiro: valor e data de pagamento",
+      "itens": [
+        "Campo Valor com formato automático: digite só os números e o ponto de milhar entra sozinho (ex.: 1000 vira 1.000); use vírgula para os centavos. Aceita também colar com R$ ou ponto. Não tem mais como o valor ir zerado.",
+        "Conta enviada ao Sicredi é paga no dia do envio, mesmo com vencimento futuro (ex.: boleto que vence dia 10 enviado hoje entra hoje para o sócio aprovar). Não precisa mais trocar o vencimento.",
+        "O sistema não envia ao banco lançamento com valor zerado."
+      ]
+    },
     {
       "titulo": "Conta que paga: clareza sobre de onde o dinheiro sai",
       "itens": [
