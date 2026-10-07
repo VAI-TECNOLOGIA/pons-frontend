@@ -1107,34 +1107,49 @@ function CadeiaComissao({ itens, podePagar, onMudou }: { itens: any[]; podePagar
   );
 }
 
-// Chave PIX da pessoa embaixo do nome, para o financeiro conferir antes de pagar.
-// CEO e Diretor Financeiro alteram aqui (o corretor passa a chave nova, o
-// financeiro testa e grava) — o corretor é avisado no celular.
+// Chave PIX (e CPF) de quem recebe, embaixo do nome — o financeiro confere antes de
+// pagar. CEO e Diretor Financeiro alteram aqui: na pessoa cadastrada (corretor,
+// gestor) grava no cadastro dela; nos papéis que não são pessoa (Direção Adm…)
+// grava quem recebe aquele papel, para todas as vendas.
+const soDig = (v: any) => String(v || '').replace(/\D/g, '');
+const chaveEhDocumento = (pix: any) => !/[@a-z]/i.test(String(pix || '')) && [11, 14].includes(soDig(pix).length) && !String(pix || '').trim().startsWith('+');
+const fmtDoc = (v: any) => { const d = soDig(v); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : String(v || ''); };
 function PixDaPessoa({ r, onMudou }: { r: any; onMudou?: () => void }) {
   const toast = useToast();
   const [editando, setEditando] = useState(false);
-  const [valor, setValor] = useState('');
+  const [pix, setPix] = useState('');
+  const [doc, setDoc] = useState('');
+  const [nome, setNome] = useState('');
   const [salvando, setSalvando] = useState(false);
   if (!('pix' in r)) return null;
-  const podeAlterar = !!r.corretorId && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
+  const ehDestino = !r.corretorId && !!r.destinoPapel;
+  const podeAlterar = (!!r.corretorId || ehDestino) && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
+  const faltaDoc = !!r.pix && !chaveEhDocumento(r.pix) && !r.cpf;
+  const abrir = () => { setPix(r.pix || ''); setDoc(r.cpf ? fmtDoc(r.cpf) : ''); setNome(r.nomeDestino || ''); setEditando(true); };
   const salvar = async () => {
-    if (valor.trim().length < 3) { toast.error('Informe a chave PIX.'); return; }
+    if (pix.trim().length < 3) { toast.error('Informe a chave PIX.'); return; }
+    if (ehDestino && nome.trim().length < 2) { toast.error('Informe o nome de quem recebe.'); return; }
+    if (!chaveEhDocumento(pix) && soDig(doc).length < 11) { toast.error(ehDestino ? 'Informe o CPF ou CNPJ de quem recebe (o banco exige quando a chave não é CPF/CNPJ).' : 'Informe o CPF (o banco exige quando a chave não é CPF).'); return; }
     setSalvando(true);
     try {
-      await Api.finCorretorPix(r.corretorId, valor.trim());
-      toast.success(`Chave PIX de ${r.nome} atualizada.`);
+      if (ehDestino) await Api.finComissaoDestino(r.destinoPapel, { nome: nome.trim(), pix: pix.trim(), documento: doc.trim() || null });
+      else await Api.finCorretorPix(r.corretorId, pix.trim(), doc.trim() || null);
+      toast.success(ehDestino ? `${r.label || 'Destino'}: dados de pagamento salvos.` : `Dados de pagamento de ${r.nome} atualizados.`);
       setEditando(false);
       onMudou?.();
     } catch (e: any) {
-      toast.error(e?.message || 'Não foi possível salvar a chave.');
+      toast.error(e?.message || 'Não foi possível salvar.');
     } finally {
       setSalvando(false);
     }
   };
   if (editando) {
+    const campo = { padding: '4px 8px', fontSize: 13 } as const;
     return (
       <div className="flex gap-2" style={{ marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input className="field__input" style={{ maxWidth: 260, padding: '4px 8px', fontSize: 13 }} value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Chave PIX nova" aria-label={`Chave PIX nova de ${r.nome}`} autoFocus maxLength={140} />
+        {ehDestino && <input className="field__input" style={{ ...campo, maxWidth: 200 }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome de quem recebe" aria-label="Nome de quem recebe" autoFocus maxLength={120} />}
+        <input className="field__input" style={{ ...campo, maxWidth: 230 }} value={pix} onChange={(e) => setPix(e.target.value)} placeholder="Chave PIX" aria-label={`Chave PIX de ${r.nome}`} autoFocus={!ehDestino} maxLength={140} />
+        <input className="field__input" style={{ ...campo, maxWidth: 170 }} value={doc} onChange={(e) => setDoc(e.target.value)} placeholder={ehDestino ? 'CPF ou CNPJ' : 'CPF'} aria-label={ehDestino ? 'CPF ou CNPJ de quem recebe' : `CPF de ${r.nome}`} inputMode="numeric" maxLength={20} />
         <button type="button" className="btn btn--primary btn--sm" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando...' : 'Salvar'}</button>
         <button type="button" className="btn btn--ghost btn--sm" disabled={salvando} onClick={() => setEditando(false)}>Cancelar</button>
       </div>
@@ -1142,9 +1157,11 @@ function PixDaPessoa({ r, onMudou }: { r: any; onMudou?: () => void }) {
   }
   return (
     <div className="text-xs text-secondary">
-      {r.pix ? <span style={{ userSelect: 'all' }}>PIX: {r.pix}</span> : 'PIX não cadastrado'}
+      {ehDestino && r.nomeDestino ? <span>Recebe: {r.nomeDestino} · </span> : null}
+      {r.pix ? <span style={{ userSelect: 'all' }}>PIX: {r.pix}</span> : <span style={{ color: 'var(--color-danger-fg)' }}>PIX não cadastrado</span>}
       {r.pixOutro ? <span> · outra chave no cadastro: {r.pixOutro}</span> : null}
-      {podeAlterar && <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '0 6px', marginLeft: 4, fontSize: 12 }} onClick={() => { setValor(r.pix || ''); setEditando(true); }}>Alterar</button>}
+      {r.pix && !chaveEhDocumento(r.pix) && (r.cpf ? <span> · {ehDestino ? 'Doc.' : 'CPF'} {fmtDoc(r.cpf)}</span> : <span style={{ color: 'var(--color-danger-fg)' }}> · falta {ehDestino ? 'CPF/CNPJ' : 'CPF'}</span>)}
+      {podeAlterar && <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '0 6px', marginLeft: 4, fontSize: 12 }} onClick={abrir}>{!r.pix || faltaDoc ? 'Cadastrar' : 'Alterar'}</button>}
     </div>
   );
 }

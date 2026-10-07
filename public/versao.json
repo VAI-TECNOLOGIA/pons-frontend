@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.07.7",
+  "versao": "2026.10.07.8",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissões: CPF e quem recebe a Direção",
+      "itens": [
+        "Embaixo do nome de cada pessoa da cadeia aparece a chave PIX e o CPF. Quando falta algo, aparece em vermelho e o botão Cadastrar abre para preencher chave e CPF (o banco exige o CPF quando a chave é e-mail, celular ou aleatória).",
+        "Papéis que não são uma pessoa cadastrada (ex.: Direção Adm) agora têm quem recebe: nome, chave PIX e CPF/CNPJ. Cadastre uma vez e vale para todas as vendas."
+      ]
+    },
     {
       "titulo": "Comissões vão para o Sicredi",
       "itens": [

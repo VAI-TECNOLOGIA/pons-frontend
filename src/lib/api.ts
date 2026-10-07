@@ -682,7 +682,8 @@ export const Api = {
   finComissaoEnviarSicredi: (refs: string[]) => request<{ enviados: number; resultado: { ref: string; nome?: string; valor?: number; ok: boolean; motivo?: string }[] }>('/financeiro/comissoes/enviar-sicredi', { method: 'POST', body: { refs } }),
   finComissaoRegistrar: (refs: string[]) => request<any>('/financeiro/comissoes/registrar', { method: 'POST', body: { refs } }),
   finComissaoDesfazer: (refs: string[]) => request<any>('/financeiro/comissoes/desfazer', { method: 'POST', body: { refs } }),
-  finCorretorPix: (corretorId: number, pix: string) => request<any>(`/financeiro/corretores/${corretorId}/pix`, { method: 'PATCH', body: { pix } }),
+  finCorretorPix: (corretorId: number, pix: string, cpf?: string | null) => request<any>(`/financeiro/corretores/${corretorId}/pix`, { method: 'PATCH', body: { pix, cpf: cpf || null } }),
+  finComissaoDestino: (papel: string, dados: { nome: string; pix: string; documento?: string | null }) => request<any>(`/financeiro/comissoes/destino/${papel}`, { method: 'PATCH', body: dados }),
   finComissaoPagar: (body: { corretorId: number; from?: string; to?: string; metodo?: string; observacao?: string }) =>
     request<{ pagos: number; valorTotal: number; corretor?: string; message?: string }>('/financeiro/comissoes/pagar', { method: 'POST', body }),
   finComissaoEstornar: (body: { corretorId: number; from?: string; to?: string }) =>
