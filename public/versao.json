@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.07.8",
+  "versao": "2026.10.07.9",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissões das vendas antigas: gestor da venda",
+      "itens": [
+        "Nas vendas das planilhas antigas, o gestor da comissão é o gestor da época da venda (conforme a planilha), e não o gestor atual do corretor.",
+        "Quando o gestor da venda não está definido, aparece em vermelho com o botão Escolher gestor; o PIX do gestor só vai ao banco depois disso. Dá para trocar com Trocar gestor."
+      ]
+    },
     {
       "titulo": "Comissões: CPF e quem recebe a Direção",
       "itens": [

@@ -1086,7 +1086,7 @@ function CadeiaComissao({ itens, podePagar, onMudou }: { itens: any[]; podePagar
               <tr key={i.ref}>
                 {podePagar && <td>{pendente(i) && <input type="checkbox" aria-label={`Pagar ${i.nome}`} checked={marcado(i)} onChange={(e) => setMarcados((m) => ({ ...m, [i.ref]: e.target.checked }))} />}</td>}
                 <td className="text-sm">{i.label}</td>
-                <td>{i.nome}<PixDaPessoa r={i} onMudou={onMudou} /></td>
+                <td>{i.nome}{i.chave === 'gestor' && <GestorDaVenda i={i} onMudou={onMudou} />}<PixDaPessoa r={i} onMudou={onMudou} /></td>
                 <td className="text-right money">{formatCurrencyExact(i.valor || 0)}</td>
                 <td><SituacaoItem i={i} /></td>
                 <td className="text-right">{podePagar && i.repassado && i.repassadoEm !== 'planilha' && !i.banco?.viaBanco && <button className="btn btn--ghost btn--sm" disabled={ocupado} onClick={() => desfazer(i)}>Desfazer</button>}</td>
@@ -1166,6 +1166,55 @@ function PixDaPessoa({ r, onMudou }: { r: any; onMudou?: () => void }) {
   );
 }
 
+// Gestor de uma venda das planilhas: é o gestor da ÉPOCA da venda (não o líder
+// atual da equipe). O financeiro escolhe/troca aqui; vale para todas as parcelas.
+function GestorDaVenda({ i, onMudou }: { i: any; onMudou: () => void }) {
+  const toast = useToast();
+  const [aberto, setAberto] = useState(false);
+  const [pessoas, setPessoas] = useState<{ id: number; nome: string; lider: boolean }[] | null>(null);
+  const [escolhido, setEscolhido] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const podeAlterar = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
+  const pagamentoId = Number(String(i.ref).split(':')[1]);
+  const abrir = async () => {
+    setAberto(true);
+    if (!pessoas) { try { setPessoas(await Api.finComissaoPessoas()); } catch { setPessoas([]); } }
+  };
+  const salvar = async () => {
+    if (!escolhido) { toast.error('Escolha o gestor.'); return; }
+    setSalvando(true);
+    try {
+      const r = await Api.finComissaoGestorVenda(pagamentoId, Number(escolhido));
+      toast.success(`Gestor da venda: ${r.gestor}.`);
+      setAberto(false);
+      onMudou();
+    } catch (e: any) {
+      toast.error(e?.message || 'Não foi possível salvar o gestor.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+  if (!podeAlterar && !i.semGestor) return null;
+  if (aberto) {
+    return (
+      <div className="flex gap-2" style={{ marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+        <select className="field__select" style={{ maxWidth: 260, padding: '4px 8px', fontSize: 13 }} value={escolhido} onChange={(e) => setEscolhido(e.target.value)} aria-label="Gestor da venda" autoFocus>
+          <option value="">{pessoas ? 'Escolha o gestor da venda' : 'Carregando...'}</option>
+          {(pessoas || []).map((p) => <option key={p.id} value={p.id}>{p.nome}{p.lider ? ' (gestor)' : ''}</option>)}
+        </select>
+        <button type="button" className="btn btn--primary btn--sm" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando...' : 'Salvar'}</button>
+        <button type="button" className="btn btn--ghost btn--sm" disabled={salvando} onClick={() => setAberto(false)}>Cancelar</button>
+      </div>
+    );
+  }
+  return (
+    <div className="text-xs" style={{ color: i.semGestor ? 'var(--color-danger-fg)' : 'var(--text-secondary)' }}>
+      {i.semGestor ? <>Gestor da venda não definido{i.gestorPlanilha ? ` — na planilha: ${i.gestorPlanilha}` : ''}. </> : null}
+      {podeAlterar && <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '0 6px', fontSize: 12 }} onClick={abrir}>{i.semGestor ? 'Escolher gestor' : 'Trocar gestor'}</button>}
+    </div>
+  );
+}
+
 // Venda importada das planilhas: a divisão da comissão está em cada parcela.
 // Parcela que o cliente já pagou e com comissão a repassar aparece em destaque.
 function ParcelasPlanilha({ v, podePagar, onMudou }: { v: any; podePagar: boolean; onMudou: () => void }) {
@@ -1173,7 +1222,7 @@ function ParcelasPlanilha({ v, podePagar, onMudou }: { v: any; podePagar: boolea
   const liberadas = parcelas.filter((p) => p.liberada);
   const outras = parcelas.filter((p) => !p.liberada);
   const data = (d: any) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—');
-  const itensDe = (p: any) => p.itens.map((i: any) => ({ ...i, repassado: !!i.repassadoEm, marcaPadrao: i.chave !== 'nf' }));
+  const itensDe = (p: any) => p.itens.map((i: any) => ({ ...i, repassado: !!i.repassadoEm, marcaPadrao: i.chave !== 'nf' && !i.semGestor }));
   return (
     <div style={{ marginTop: 8 }}>
       <p className="text-sm text-secondary" style={{ margin: '0 0 8px' }}>Venda das planilhas antigas: a comissão é dividida em cada parcela que o cliente paga.</p>
