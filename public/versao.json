@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.07.1",
+  "versao": "2026.10.07.2",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissões por contrato e contas divididas entre salas",
+      "itens": [
+        "Financeiro → Comissões & plano → Por contrato: digite o contrato (ex.: 1106 Core), o código, o cliente ou o corretor e aparece a cadeia inteira já dividida — corretor, gestor, direção, gestor de tráfego e demais. Marque quem foi pago e registre o repasse; dá para desfazer se marcar por engano.",
+        "Lançamento → Filial: novas opções em \"Conta dividida entre salas\": Matriz (divide entre Dallo 604, 703 e 803), GPI BC (3202 e 3203) e GPI Rio Grande do Sul (Capão da Canoa e Tramandaí). No DRE de cada sala entra a parte dela.",
+        "A lista de filiais mostra só as salas ativas (sem os nomes repetidos)."
+      ]
+    },
     {
       "titulo": "Financeiro: valor e data de pagamento",
       "itens": [

@@ -612,7 +612,16 @@ export default function Financeiro() {
  <label className="field__label">Filial (a quem pertence a conta)</label>
  <select name="unidadeId" className="field__select" defaultValue={editando?.unidadeId != null ? String(editando.unidadeId) : ''}>
  <option value="">Geral (todas as filiais)</option>
- {(unidadesForm || []).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+ {/* Salas ativas (unidades inativas/duplicadas ficam de fora, salvo a já gravada). */}
+ {(unidadesForm || []).filter((u: any) => !u.salasDoGrupo && (u.ativo || u.id === editando?.unidadeId)).map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+ {!!(unidadesForm || []).some((u: any) => u.salasDoGrupo) && (
+ <optgroup label="Conta dividida entre salas">
+ {(unidadesForm || []).filter((u: any) => u.salasDoGrupo).map((u: any) => {
+ const nomes = (u.salasDoGrupo as number[]).map((id) => (unidadesForm || []).find((x: any) => x.id === id)?.nome).filter(Boolean);
+ return <option key={u.id} value={u.id}>{`${u.nome.replace(/\s*\(.*\)\s*$/, '')} — divide entre ${nomes.join(', ')}`}</option>;
+ })}
+ </optgroup>
+ )}
  </select>
  </div>
  <div className="field">
@@ -918,15 +927,135 @@ function PrevisaoTab() {
 }
 
 function ComissoesTab() {
-  const [view, setView] = useState<'corretor' | 'plano'>('corretor');
+  const [view, setView] = useState<'contrato' | 'corretor' | 'plano'>('contrato');
   return (
     <>
       <div className="tabs" role="tablist" style={{ marginBottom: 12 }}>
+        <button className={'tab ' + (view === 'contrato' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'contrato')} onClick={() => setView('contrato')}>Por contrato</button>
         <button className={'tab ' + (view === 'corretor' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'corretor')} onClick={() => setView('corretor')}>Por corretor</button>
         <button className={'tab ' + (view === 'plano' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'plano')} onClick={() => setView('plano')}>Plano de recebimento</button>
       </div>
-      {view === 'corretor' ? <ComissoesPorCorretor /> : <ComissoesPlano />}
+      {view === 'contrato' ? <ComissoesPorContrato /> : view === 'corretor' ? <ComissoesPorCorretor /> : <ComissoesPlano />}
     </>
+  );
+}
+
+// ───────────── Comissões por contrato: busca o contrato e paga a cadeia ─────────────
+// Papéis que ficam com a casa (não são repasse a uma pessoa): vêm desmarcados.
+const PAPEL_DA_CASA = new Set(['CASA', 'NOTA_FISCAL']);
+function ComissoesPorContrato() {
+  const [busca, setBusca] = useState('');
+  const [q, setQ] = useState('');
+  const { data, loading, error, reload } = useApi<any[]>(() => Api.finComissoesPorContrato(q), [q]);
+  const [marcados, setMarcados] = useState<Record<number, boolean>>({});
+  const [salvando, setSalvando] = useState<number | null>(null);
+  const toast = useToast();
+  const confirm = useConfirm();
+  const podePagar = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
+  const buscar = (e?: React.FormEvent) => { e?.preventDefault(); setMarcados({}); setQ(busca.trim()); };
+  const marcado = (r: any) => (r.id in marcados ? marcados[r.id] : !PAPEL_DA_CASA.has(r.papel));
+
+  const pagar = async (v: any) => {
+    const itens = (v.rateio || []).filter((r: any) => r.aReceber > 0 && marcado(r));
+    if (!itens.length) { toast.error('Marque quem vai receber.'); return; }
+    const total = itens.reduce((s: number, r: any) => s + r.aReceber, 0);
+    const ok = await confirm({
+      title: `Registrar repasse do contrato ${v.codigo}?`,
+      message: `${itens.map((r: any) => `${r.papelLabel} ${r.nome}: ${formatCurrencyExact(r.aReceber)}`).join(' · ')}. Total ${formatCurrencyExact(total)}. Confirma que esses pagamentos foram feitos no banco? O sistema só registra — o dinheiro não sai daqui.`,
+      confirmText: 'Registrar como pago',
+      tone: 'primary',
+    });
+    if (!ok) return;
+    setSalvando(v.id);
+    try {
+      const r = await Api.finComissaoPagarItens(itens.map((x: any) => x.id));
+      toast.success(r.pagos ? `Repasse registrado: ${formatCurrencyExact(r.valorTotal)} (${r.pagos} ${r.pagos === 1 ? 'pessoa' : 'pessoas'})` : (r.message || 'Nada pendente'));
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao registrar o repasse');
+    } finally {
+      setSalvando(null);
+    }
+  };
+
+  const estornar = async (v: any, r: any) => {
+    const ok = await confirm({
+      title: 'Desfazer este repasse?',
+      message: `${r.papelLabel} ${r.nome} · ${formatCurrencyExact(r.valorPago)} (contrato ${v.codigo}) volta para "a pagar" e o lançamento do repasse é cancelado. Use só se marcou por engano.`,
+      confirmText: 'Desfazer',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setSalvando(v.id);
+    try {
+      await Api.finComissaoEstornarItens([r.id]);
+      toast.success('Repasse desfeito.');
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao desfazer');
+    } finally {
+      setSalvando(null);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h3 className="card__title" style={{ marginBottom: 4 }}>Comissões por contrato</h3>
+      <p className="text-sm text-secondary" style={{ marginTop: 0 }}>Digite o contrato (ex.: 1106 Core), o código, o cliente ou o corretor. Aparece a cadeia inteira já dividida: marque quem foi pago e registre.</p>
+      <form className="flex gap-2" style={{ margin: '8px 0 16px', flexWrap: 'wrap' }} onSubmit={buscar}>
+        <input className="field__input" style={{ flex: 1, minWidth: 220 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: 1106 Core" aria-label="Buscar contrato" autoFocus />
+        <button type="submit" className="btn btn--primary">Buscar</button>
+        {q && <button type="button" className="btn btn--ghost" onClick={() => { setBusca(''); setMarcados({}); setQ(''); }}>Limpar</button>}
+      </form>
+      {loading && <LoadingBlock />}
+      {error && <ErrorBlock error={error} />}
+      {data && !data.length && <EmptyState size="sm" title={q ? 'Nenhum contrato encontrado' : 'Nenhuma comissão'} description={q ? 'Confira o número da unidade, o empreendimento ou o nome do cliente.' : undefined} />}
+      {!q && !!data?.length && <p className="text-sm text-secondary" style={{ marginTop: 0 }}>Últimos contratos. Use a busca para achar um específico.</p>}
+      {(data || []).map((v: any) => {
+        const pend = (v.rateio || []).filter((r: any) => r.aReceber > 0 && marcado(r));
+        const totalMarcado = pend.reduce((s: number, r: any) => s + r.aReceber, 0);
+        return (
+          <div key={v.id} style={{ border: '1px solid var(--color-border, #e5e5e5)', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+            <div className="flex" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+              <div>
+                <div className="font-semibold">{v.empreendimento} · {v.unidade} <span className="text-secondary text-sm">· contrato {v.codigo}</span></div>
+                <div className="text-sm text-secondary">Cliente {v.cliente} · Corretor {v.corretor}{v.sala ? ` · ${v.sala}` : ''} · Venda {formatCurrencyExact(v.valorVenda || 0)} · Parcelas pagas {v.parcelasPagas}/{v.parcelas}</div>
+              </div>
+              <div className="text-right text-sm">
+                <div>Comissão total <strong>{formatCurrencyExact(v.comissaoTotal)}</strong></div>
+                <div>A pagar <strong style={{ color: 'var(--color-success-fg)' }}>{formatCurrencyExact(v.aReceber)}</strong></div>
+              </div>
+            </div>
+            <div className="table-wrap" style={{ overflowX: 'auto' }}>
+              <table className="table tabela-compacta" style={{ marginTop: 8 }}>
+                <thead><tr>{podePagar && <th style={{ width: 32 }}></th>}<th>Quem</th><th>Nome</th><th className="text-right">%</th><th className="text-right">Total</th><th className="text-right">Pago</th><th className="text-right">A pagar</th><th></th></tr></thead>
+                <tbody>
+                  {(v.rateio || []).map((r: any) => (
+                    <tr key={r.id}>
+                      {podePagar && <td>{r.aReceber > 0 && <input type="checkbox" aria-label={`Pagar ${r.nome}`} checked={marcado(r)} onChange={(e) => setMarcados((m) => ({ ...m, [r.id]: e.target.checked }))} />}</td>}
+                      <td className="text-sm">{r.papelLabel}</td>
+                      <td>{r.nome}</td>
+                      <td className="text-right text-sm">{r.percentual != null ? `${Number(r.percentual).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : ''}</td>
+                      <td className="text-right money">{formatCurrencyExact(r.valorTotal)}</td>
+                      <td className="text-right money">{formatCurrencyExact(r.valorPago)}</td>
+                      <td className="text-right money" style={{ color: r.aReceber > 0 ? 'var(--color-success-fg)' : undefined }}>{r.aReceber > 0 ? formatCurrencyExact(r.aReceber) : 'Pago'}</td>
+                      <td className="text-right">{podePagar && r.valorPago > 0 && <button className="btn btn--ghost btn--sm" disabled={salvando === v.id} onClick={() => estornar(v, r)}>Desfazer</button>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {podePagar && v.aReceber > 0 && (
+              <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
+                <button className="btn btn--primary btn--sm" disabled={salvando === v.id || !pend.length} onClick={() => pagar(v)}>
+                  {salvando === v.id ? 'Registrando...' : `Registrar repasse dos marcados (${formatCurrencyExact(totalMarcado)})`}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
