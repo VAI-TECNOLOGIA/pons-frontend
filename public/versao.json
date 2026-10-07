@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.07.3",
+  "versao": "2026.10.07.4",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissões: chave PIX de cada pessoa",
+      "itens": [
+        "Na cadeia da comissão (Por contrato), embaixo do nome do corretor e do gestor aparece a chave PIX atual do cadastro. Se houver outra chave antiga no cadastro, ela também aparece, para conferir antes de pagar."
+      ]
+    },
     {
       "titulo": "Comissões por contrato: vendas das planilhas antigas",
       "itens": [

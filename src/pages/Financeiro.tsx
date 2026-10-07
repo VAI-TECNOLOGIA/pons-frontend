@@ -1035,7 +1035,7 @@ function ComissoesPorContrato() {
                     <tr key={r.id}>
                       {podePagar && <td>{r.aReceber > 0 && <input type="checkbox" aria-label={`Pagar ${r.nome}`} checked={marcado(r)} onChange={(e) => setMarcados((m) => ({ ...m, [r.id]: e.target.checked }))} />}</td>}
                       <td className="text-sm">{r.papelLabel}</td>
-                      <td>{r.nome}</td>
+                      <td>{r.nome}<PixDaPessoa r={r} /></td>
                       <td className="text-right text-sm">{r.percentual != null ? `${Number(r.percentual).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : ''}</td>
                       <td className="text-right money">{formatCurrencyExact(r.valorTotal)}</td>
                       <td className="text-right money">{formatCurrencyExact(r.valorPago)}</td>
@@ -1057,6 +1057,17 @@ function ComissoesPorContrato() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Chave PIX da pessoa embaixo do nome, para o financeiro conferir antes de pagar.
+function PixDaPessoa({ r }: { r: any }) {
+  if (!('pix' in r)) return null;
+  if (!r.pix) return <div className="text-xs text-secondary">PIX não cadastrado</div>;
+  return (
+    <div className="text-xs text-secondary" style={{ userSelect: 'all' }}>
+      PIX: {r.pix}{r.pixOutro ? <span> · outra chave no cadastro: {r.pixOutro}</span> : null}
     </div>
   );
 }
@@ -1123,7 +1134,7 @@ function ParcelasPlanilha({ v, podePagar, onMudou }: { v: any; podePagar: boolea
                   <tr key={i.chave}>
                     {podePagar && <td><input type="checkbox" aria-label={`Pagar ${i.nome}`} checked={marcado(p, i)} onChange={(e) => setMarcados((m) => ({ ...m, [chaveM(p, i)]: e.target.checked }))} /></td>}
                     <td className="text-sm">{i.label}</td>
-                    <td>{i.nome}</td>
+                    <td>{i.nome}<PixDaPessoa r={i} /></td>
                     <td className="text-right money">{formatCurrencyExact(i.valor)}</td>
                   </tr>
                 ))}
