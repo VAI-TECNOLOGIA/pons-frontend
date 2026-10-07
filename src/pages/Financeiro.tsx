@@ -1017,7 +1017,7 @@ function CadeiaComissao({ itens, podePagar, onMudou }: { itens: any[]; podePagar
     const semPix = escolhidos.filter((i) => 'pix' in i && !i.pix);
     const ok = await confirm({
       title: 'Enviar ao Sicredi para o sócio aprovar?',
-      message: `${escolhidos.map((i) => `${i.label} ${i.nome}: ${formatCurrencyExact(i.valor)}${i.pix ? ` (PIX ${i.pix})` : ''}`).join(' · ')}. Total ${formatCurrencyExact(total)}. Vai um PIX para cada pessoa, para o sócio aprovar no Internet Banking. Quando o banco pagar, o repasse fica registrado sozinho.${semPix.length ? ` Sem chave PIX (não vão): ${semPix.map((i) => i.nome).join(', ')}.` : ''}`,
+      message: `${escolhidos.map((i) => `${i.label} ${i.nome}: ${formatCurrencyExact(i.valor)}${i.pix ? ` (PIX ${i.pix}${i.outraPessoa ? ` — CHAVE DE OUTRA PESSOA: ${i.titular}` : i.titular ? ` — titular ${i.titular}` : ''})` : ''}`).join(' · ')}. Total ${formatCurrencyExact(total)}. Vai um PIX para cada pessoa, para o sócio aprovar no Internet Banking. Quando o banco pagar, o repasse fica registrado sozinho.${semPix.length ? ` Sem chave PIX (não vão): ${semPix.map((i) => i.nome).join(', ')}.` : ''}`,
       confirmText: 'Enviar ao Sicredi',
       tone: 'primary',
     });
@@ -1124,16 +1124,16 @@ function PixDaPessoa({ r, onMudou }: { r: any; onMudou?: () => void }) {
   if (!('pix' in r)) return null;
   const ehDestino = !r.corretorId && !!r.destinoPapel;
   const podeAlterar = (!!r.corretorId || ehDestino) && ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
-  const faltaDoc = !!r.pix && !chaveEhDocumento(r.pix) && !r.cpf;
-  const abrir = () => { setPix(r.pix || ''); setDoc(r.cpf ? fmtDoc(r.cpf) : ''); setNome(r.nomeDestino || ''); setEditando(true); };
+  const faltaDoc = !!r.pix && !chaveEhDocumento(r.pix) && !r.documento;
+  const abrir = () => { setPix(r.pix || ''); setDoc(r.documento ? fmtDoc(r.documento) : ''); setNome(ehDestino ? (r.nomeDestino || '') : (r.titular || '')); setEditando(true); };
   const salvar = async () => {
     if (pix.trim().length < 3) { toast.error('Informe a chave PIX.'); return; }
     if (ehDestino && nome.trim().length < 2) { toast.error('Informe o nome de quem recebe.'); return; }
-    if (!chaveEhDocumento(pix) && soDig(doc).length < 11) { toast.error(ehDestino ? 'Informe o CPF ou CNPJ de quem recebe (o banco exige quando a chave não é CPF/CNPJ).' : 'Informe o CPF (o banco exige quando a chave não é CPF).'); return; }
+    if (!chaveEhDocumento(pix) && soDig(doc).length < 11) { toast.error('Informe o CPF ou CNPJ do titular da chave (o banco exige quando a chave não é CPF/CNPJ e confere com a chave).'); return; }
     setSalvando(true);
     try {
       if (ehDestino) await Api.finComissaoDestino(r.destinoPapel, { nome: nome.trim(), pix: pix.trim(), documento: doc.trim() || null });
-      else await Api.finCorretorPix(r.corretorId, pix.trim(), doc.trim() || null);
+      else await Api.finCorretorPix(r.corretorId, { pix: pix.trim(), titular: nome.trim() || null, documento: doc.trim() || null });
       toast.success(ehDestino ? `${r.label || 'Destino'}: dados de pagamento salvos.` : `Dados de pagamento de ${r.nome} atualizados.`);
       setEditando(false);
       onMudou?.();
@@ -1146,12 +1146,15 @@ function PixDaPessoa({ r, onMudou }: { r: any; onMudou?: () => void }) {
   if (editando) {
     const campo = { padding: '4px 8px', fontSize: 13 } as const;
     return (
-      <div className="flex gap-2" style={{ marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-        {ehDestino && <input className="field__input" style={{ ...campo, maxWidth: 200 }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome de quem recebe" aria-label="Nome de quem recebe" autoFocus maxLength={120} />}
-        <input className="field__input" style={{ ...campo, maxWidth: 230 }} value={pix} onChange={(e) => setPix(e.target.value)} placeholder="Chave PIX" aria-label={`Chave PIX de ${r.nome}`} autoFocus={!ehDestino} maxLength={140} />
-        <input className="field__input" style={{ ...campo, maxWidth: 170 }} value={doc} onChange={(e) => setDoc(e.target.value)} placeholder={ehDestino ? 'CPF ou CNPJ' : 'CPF'} aria-label={ehDestino ? 'CPF ou CNPJ de quem recebe' : `CPF de ${r.nome}`} inputMode="numeric" maxLength={20} />
-        <button type="button" className="btn btn--primary btn--sm" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando...' : 'Salvar'}</button>
-        <button type="button" className="btn btn--ghost btn--sm" disabled={salvando} onClick={() => setEditando(false)}>Cancelar</button>
+      <div style={{ marginTop: 4 }}>
+        <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
+          <input className="field__input" style={{ ...campo, maxWidth: 230 }} value={pix} onChange={(e) => setPix(e.target.value)} placeholder="Chave PIX" aria-label={`Chave PIX de ${r.nome}`} autoFocus maxLength={140} />
+          <input className="field__input" style={{ ...campo, maxWidth: 220 }} value={nome} onChange={(e) => setNome(e.target.value)} placeholder={ehDestino ? 'Nome de quem recebe' : `Titular da chave (vazio = ${String(r.nome || '').split(' ')[0]})`} aria-label="Titular da chave PIX" maxLength={120} />
+          <input className="field__input" style={{ ...campo, maxWidth: 170 }} value={doc} onChange={(e) => setDoc(e.target.value)} placeholder="CPF ou CNPJ do titular" aria-label="CPF ou CNPJ do titular da chave" inputMode="numeric" maxLength={20} />
+          <button type="button" className="btn btn--primary btn--sm" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando...' : 'Salvar'}</button>
+          <button type="button" className="btn btn--ghost btn--sm" disabled={salvando} onClick={() => setEditando(false)}>Cancelar</button>
+        </div>
+        <div className="text-xs text-secondary" style={{ marginTop: 2 }}>O CPF/CNPJ tem que ser de quem é dono da chave (ex.: chave da MEI = CNPJ da MEI; chave da mãe = CPF da mãe). O banco confere.</div>
       </div>
     );
   }
@@ -1160,7 +1163,9 @@ function PixDaPessoa({ r, onMudou }: { r: any; onMudou?: () => void }) {
       {ehDestino && r.nomeDestino ? <span>Recebe: {r.nomeDestino} · </span> : null}
       {r.pix ? <span style={{ userSelect: 'all' }}>PIX: {r.pix}</span> : <span style={{ color: 'var(--color-danger-fg)' }}>PIX não cadastrado</span>}
       {r.pixOutro ? <span> · outra chave no cadastro: {r.pixOutro}</span> : null}
-      {r.pix && !chaveEhDocumento(r.pix) && (r.cpf ? <span> · {ehDestino ? 'Doc.' : 'CPF'} {fmtDoc(r.cpf)}</span> : <span style={{ color: 'var(--color-danger-fg)' }}> · falta {ehDestino ? 'CPF/CNPJ' : 'CPF'}</span>)}
+      {!ehDestino && r.titular ? <span> · titular: {r.titular}</span> : null}
+      {r.pix && !chaveEhDocumento(r.pix) && (r.documento ? <span> · {soDig(r.documento).length === 14 ? 'CNPJ' : 'CPF'} {fmtDoc(r.documento)}</span> : <span style={{ color: 'var(--color-danger-fg)' }}> · falta CPF/CNPJ do titular</span>)}
+      {r.outraPessoa && <span style={{ display: 'block', color: 'var(--color-warning-fg, #b45309)', fontWeight: 600 }}>Atenção: chave de outra pessoa ({r.titular}). Confira antes de enviar.</span>}
       {podeAlterar && <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '0 6px', marginLeft: 4, fontSize: 12 }} onClick={abrir}>{!r.pix || faltaDoc ? 'Cadastrar' : 'Alterar'}</button>}
     </div>
   );

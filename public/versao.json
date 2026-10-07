@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.07.9",
+  "versao": "2026.10.07.10",
   "data": "07/10/2026",
   "novidades": [
+    {
+      "titulo": "Chave PIX: de quem é a chave",
+      "itens": [
+        "No Alterar da chave PIX agora tem o titular da chave e o CPF ou CNPJ dele. Serve para chave da MEI do corretor (CNPJ) ou de outra pessoa (mãe, irmão…). O banco confere se a chave é desse documento.",
+        "Quando a chave é de outra pessoa, aparece um aviso em destaque embaixo do nome e na confirmação do envio, para conferir antes de mandar ao banco.",
+        "Quando o banco recusa, o motivo aparece em português claro (ex.: chave não é do CPF/CNPJ informado; boleto já agendado)."
+      ]
+    },
     {
       "titulo": "Comissões das vendas antigas: gestor da venda",
       "itens": [

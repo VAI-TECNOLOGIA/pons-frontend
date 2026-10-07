@@ -684,7 +684,7 @@ export const Api = {
   finComissaoDesfazer: (refs: string[]) => request<any>('/financeiro/comissoes/desfazer', { method: 'POST', body: { refs } }),
   finComissaoPessoas: () => request<{ id: number; nome: string; lider: boolean }[]>('/financeiro/comissoes/pessoas'),
   finComissaoGestorVenda: (pagamentoId: number, corretorId: number) => request<any>('/financeiro/comissoes/gestor-venda', { method: 'PATCH', body: { pagamentoId, corretorId } }),
-  finCorretorPix: (corretorId: number, pix: string, cpf?: string | null) => request<any>(`/financeiro/corretores/${corretorId}/pix`, { method: 'PATCH', body: { pix, cpf: cpf || null } }),
+  finCorretorPix: (corretorId: number, dados: { pix: string; titular?: string | null; documento?: string | null }) => request<any>(`/financeiro/corretores/${corretorId}/pix`, { method: 'PATCH', body: dados }),
   finComissaoDestino: (papel: string, dados: { nome: string; pix: string; documento?: string | null }) => request<any>(`/financeiro/comissoes/destino/${papel}`, { method: 'PATCH', body: dados }),
   finComissaoPagar: (body: { corretorId: number; from?: string; to?: string; metodo?: string; observacao?: string }) =>
     request<{ pagos: number; valorTotal: number; corretor?: string; message?: string }>('/financeiro/comissoes/pagar', { method: 'POST', body }),
