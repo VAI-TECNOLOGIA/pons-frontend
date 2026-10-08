@@ -21,7 +21,7 @@ import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmA
 
 export const STATUS_MAP: Record<string, [string, string]> = {
  PRE_ANALISE: ['analysis', 'Aguardando envio à construtora'],
- AGUARDANDO_APROVACAO_PAULO: ['analysis', 'Aguardando aprovação do Paulo'], // virtual (aguardandoAprovacao)
+ AGUARDANDO_APROVACAO_PAULO: ['analysis', 'Aguardando Paulo'], // virtual (aguardandoAprovacao)
  ANALISE_JURIDICA: ['analysis', 'Análise jurídica'],
  AGUARDANDO_CONSTRUTORA: ['analysis', 'Aguardando construtora'],
  CONTRATO_EM_CONFECCAO: ['analysis', 'Contrato em confecção'],
@@ -1488,7 +1488,10 @@ export default function Vendas() {
  <tr><td colSpan={8}><EmptyState size="sm" icon="sales" title="Nenhuma venda com esses filtros" description="Ajuste os filtros para ver mais resultados." /></td></tr>
  )}
  {vendasPagina.map((v: any) => {
- const [k, lbl] = STATUS_MAP[v.status] || ['neutral', v.status];
+ // Venda esperando o OK do Paulo: mostra "Aguardando Paulo" no lugar do status
+ // cru (PRE_ANALISE = "Aguardando envio à construtora"), igual ao detalhe.
+ const statusKey = v.aguardandoAprovacao ? 'AGUARDANDO_APROVACAO_PAULO' : v.status;
+ const [k, lbl] = STATUS_MAP[statusKey] || ['neutral', v.status];
  const cliente = v.clienteNome || v.cliente || '—';
  const empNome = typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '';
  const construtora = typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome || '';
