@@ -1,4 +1,6 @@
 import { useState, Fragment } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { RowMenu } from '../components/RowMenu';
@@ -602,7 +604,7 @@ export default function Financeiro() {
  </div>
  <div className="field">
  <label className="field__label">Vencimento</label>
- <input name="vencimento" type="date" className="field__input" defaultValue={editando?.vencimento ? String(editando.vencimento).slice(0, 10) : ''} />
+ <CampoData name="vencimento" className="field__input" defaultValue={editando?.vencimento ? String(editando.vencimento).slice(0, 10) : ''} />
  </div>
  <div className="field">
  <label className="field__label">Beneficiário</label>
@@ -1322,11 +1324,11 @@ function ComissoesPorCorretor() {
         <div className="flex gap-2" style={{ alignItems: 'flex-end' }}>
           <div className="field" style={{ margin: 0 }}>
             <label className="field__label">De</label>
-            <input type="date" className="field__input" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <CampoData className="field__input" value={from} onChange={(e) => setFrom(e)} />
           </div>
           <div className="field" style={{ margin: 0 }}>
             <label className="field__label">Até</label>
-            <input type="date" className="field__input" value={to} onChange={(e) => setTo(e.target.value)} />
+            <CampoData className="field__input" value={to} onChange={(e) => setTo(e)} />
           </div>
         </div>
       </div>
@@ -1555,11 +1557,11 @@ function DreTab() {
           </div>
           <div className="field" style={{ margin: 0 }}>
             <label className="field__label">De</label>
-            <input type="date" className="field__input" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <CampoData className="field__input" value={from} onChange={(e) => setFrom(e)} />
           </div>
           <div className="field" style={{ margin: 0 }}>
             <label className="field__label">Até</label>
-            <input type="date" className="field__input" value={to} onChange={(e) => setTo(e.target.value)} />
+            <CampoData className="field__input" value={to} onChange={(e) => setTo(e)} />
           </div>
         </div>
       </div>
@@ -1793,11 +1795,11 @@ function ContasTab() {
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label className="field__label">Venc. de</label>
-          <input type="date" className="field__input" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <CampoData className="field__input" value={from} onChange={(e) => setFrom(e)} />
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label className="field__label">até</label>
-          <input type="date" className="field__input" value={to} onChange={(e) => setTo(e.target.value)} />
+          <CampoData className="field__input" value={to} onChange={(e) => setTo(e)} />
         </div>
         {(categoria || unidadeId || from || to) && (
           <button className="btn btn--secondary btn--sm" onClick={() => { setCategoria(''); setUnidadeId(''); setFrom(''); setTo(''); }}>Limpar</button>

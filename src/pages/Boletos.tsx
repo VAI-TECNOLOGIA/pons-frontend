@@ -2,6 +2,8 @@
 // Financeiro emite o boleto (calcula nosso número/linha digitável no backend),
 // baixa o PDF e, quando quiser, gera o .rem pra enviar ao banco.
 import { useState } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -126,7 +128,7 @@ export default function Boletos() {
           </div>
           <div className="field" style={{ flex: '1 1 160px' }}>
             <label className="field__label">Vencimento</label>
-            <input className="field__input" type="date" value={form.vencimento} onChange={(e) => set('vencimento', e.target.value)} />
+            <CampoData className="field__input" value={form.vencimento} onChange={(e) => set('vencimento', e)} />
           </div>
           <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button className="btn btn--primary" onClick={emitir} disabled={emitindo}>{emitindo ? 'Emitindo…' : 'Emitir boleto'}</button>

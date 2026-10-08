@@ -3,6 +3,8 @@
 // Acesso restrito a admin (CEO + Diretores).
 
 import { useState } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { useApi } from '../lib/useApi';
@@ -407,7 +409,7 @@ function EditarUsuarioModal({ user, onClose, onSaved }: any) {
               </label>
               <label className="user-drawer__field">
                 <span>Data de Nascimento</span>
-                <input type="date" value={form.dataNascimento} onChange={(e) => set('dataNascimento', e.target.value)} />
+                <CampoData className="" value={form.dataNascimento} onChange={(e) => set('dataNascimento', e)} />
               </label>
             </div>
             <div className="user-drawer__row-2">

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -44,8 +46,8 @@ export default function FinanceiroFilial() {
 
         {/* Filtros DRE */}
         <div className="filter-bar" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <label className="text-xs text-secondary">De <input type="date" className="field__input" style={{ width: 150 }} value={from} onChange={(e) => setFrom(e.target.value)} /></label>
-          <label className="text-xs text-secondary">Até <input type="date" className="field__input" style={{ width: 150 }} value={to} onChange={(e) => setTo(e.target.value)} /></label>
+          <label className="text-xs text-secondary">De <CampoData className="field__input" style={{ width: 150 }} value={from} onChange={(e) => setFrom(e)} /></label>
+          <label className="text-xs text-secondary">Até <CampoData className="field__input" style={{ width: 150 }} value={to} onChange={(e) => setTo(e)} /></label>
           <span className="filter-chip" style={{ cursor: 'default' }}>Regime:</span>
           <span className={'filter-chip ' + (regime === 'competencia' ? 'filter-chip--active' : '')} onClick={() => setRegime('competencia')}>Competência</span>
           <span className={'filter-chip ' + (regime === 'caixa' ? 'filter-chip--active' : '')} onClick={() => setRegime('caixa')}>Caixa</span>

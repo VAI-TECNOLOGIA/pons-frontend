@@ -122,3 +122,27 @@ export function idadeEmAnos(dataNasc: string): number | null {
   if (m < 0 || (m === 0 && hoje.getDate() < d.getDate())) anos--;
   return anos;
 }
+
+// ── Datas (digitar dd/mm/aaaa direto, sem caixinha nativa) ──────────────────
+// Máscara progressiva: 27022007 → 27/02/2007; aceita o que o usuário vai digitando.
+export function maskDataBR(v: string): string {
+  const d = String(v || '').replace(/\D/g, '').slice(0, 8);
+  if (d.length <= 2) return d;
+  if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`;
+  return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+}
+// "27/02/2007" → "2007-02-27" (ISO) se for data real; senão ''.
+export function brParaIso(v: string): string {
+  const d = String(v || '').replace(/\D/g, '');
+  if (d.length !== 8) return '';
+  const dia = +d.slice(0, 2), mes = +d.slice(2, 4), ano = +d.slice(4);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31 || ano < 1) return '';
+  const dt = new Date(ano, mes - 1, dia);
+  if (dt.getFullYear() !== ano || dt.getMonth() !== mes - 1 || dt.getDate() !== dia) return '';
+  return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+// "2007-02-27" (ISO) → "27/02/2007". Aceita também data com hora (corta em T).
+export function isoParaBr(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+}

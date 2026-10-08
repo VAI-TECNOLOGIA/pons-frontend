@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { Modal } from '../components/Modal';
@@ -387,7 +389,7 @@ export default function Corretores() {
  </div>
  <div className="field">
  <label className="field__label">Data de Entrada</label>
- <input name="dataAdmissao" type="date" className="field__input" />
+ <CampoData name="dataAdmissao" className="field__input" />
  </div>
  <div className="field">
  <label className="field__label">Rateio de comissão atual (%)</label>
@@ -700,7 +702,7 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
             <div className="form-grid">
               <div className="field">
                 <label className="field__label">Data de Entrada</label>
-                <input name="dataAdmissao" type="date" className="field__input" defaultValue={dataInput} />
+                <CampoData name="dataAdmissao" className="field__input" defaultValue={dataInput} />
               </div>
               <div className="field">
                 <label className="field__label">Rateio de comissão atual (%)</label>

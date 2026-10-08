@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { useSearchParams } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
@@ -17,7 +19,7 @@ import { BuscaSelect } from '../components/BuscaSelect';
 import { MultiFiltro } from '../components/MultiFiltro';
 import { SortTh, Paginacao, type Ordem } from '../components/SortTh';
 import type { CnpjInfo } from '../lib/consultaCnpj';
-import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
+import { maskCPF, validaCPF, maskTelefone, validaTelefone, validaEmail, idadeEmAnos, brParaIso, maskMoedaBR, formatMoedaBR, parseMoedaBR, maskCEP, buscaCEP } from '../lib/mascaras';
 
 export const STATUS_MAP: Record<string, [string, string]> = {
  PRE_ANALISE: ['analysis', 'Aguardando envio à construtora'],
@@ -293,7 +295,7 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
         {campo('Entrada (total, com arras)', money(entradaTotal, setEntradaTotal))}
         {campo('Arras (sinal, no ato)', money(arras, setArras))}
         {campo('Parcelas da entrada', <input type="number" min={1} className="field__input" value={parcelas} onChange={(e) => setParcelas(e.target.value)} />)}
-        {campo('1º vencimento da entrada', <input type="date" className="field__input" value={venc1} onChange={(e) => setVenc1(e.target.value)} />)}
+        {campo('1º vencimento da entrada', <CampoData className="field__input" value={venc1} onChange={(e) => setVenc1(e)} />)}
         <div className="field field--span-2"><div className="field__hint">As parcelas da entrada são divididas igualmente ({'(entrada − arras) ÷ nº de parcelas'}), vencendo mês a mês a partir do 1º vencimento. Acima de 4x vai para aprovação do Paulo.</div></div>
         {campo('Mensais — valor', money(mensaisValor, setMensaisValor))}
         {campo('Mensais — quantidade', <input type="number" min={0} className="field__input" value={mensaisQtd} onChange={(e) => setMensaisQtd(e.target.value)} />)}
@@ -629,9 +631,9 @@ export default function Vendas() {
  };
 
  // ── Validações de campo (plugam no :invalid do form → bloqueiam avançar) ──
- const validaNascimento = (el: HTMLInputElement | null) => {
+ const validaNascimento = (iso: string, el?: HTMLInputElement | null) => {
  if (!el) return;
- const anos = idadeEmAnos(el.value);
+ const anos = idadeEmAnos(iso);
  let msg = '';
  if (anos != null && anos < 16) msg = 'Comprador menor de 16 anos não é permitido.';
  else if (anos != null && anos < 18 && !emancipado) msg = 'Entre 16 e 18 anos só com emancipação — marque a opção abaixo.';
@@ -686,7 +688,7 @@ export default function Vendas() {
  el.setCustomValidity(el.value && !validaEmail(el.value) ? 'E-mail inválido.' : '');
  };
  // Reavalia a idade quando marca/desmarca emancipado.
- useEffect(() => { validaNascimento(nascimentoRef.current); }, [emancipado]);
+ useEffect(() => { const el = nascimentoRef.current; validaNascimento(brParaIso(el?.value || ''), el); }, [emancipado]);
 
  // Backspace fora de campo de texto NÃO pode voltar a página (perde o formulário).
  useEffect(() => {
@@ -1440,9 +1442,9 @@ export default function Vendas() {
  <div className="card" style={{ padding: '10px 12px', marginBottom: 12 }}>
  <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
- <input className="field__input" type="date" title="De" value={filtro.de} onChange={(e) => setF('de', e.target.value)} style={{ width: 145 }} />
+ <CampoData className="field__input" title="De" value={filtro.de} onChange={(e) => setF('de', e)} style={{ width: 145 }} />
  <span className="text-xs text-secondary">até</span>
- <input className="field__input" type="date" title="Até" value={filtro.ate} onChange={(e) => setF('ate', e.target.value)} style={{ width: 145 }} />
+ <CampoData className="field__input" title="Até" value={filtro.ate} onChange={(e) => setF('ate', e)} style={{ width: 145 }} />
  </div>
  <input className="field__input" type="search" placeholder="Buscar contrato: código, cliente, unidade ou empreendimento" value={filtro.busca} onChange={(e) => setF('busca', e.target.value)} style={{ flex: '1 1 280px', minWidth: 220 }} />
  <MultiFiltro label="Equipe" opcoes={filiaisOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.filial} onChange={(v) => setFArr('filial', v)} />
@@ -1798,7 +1800,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento <span className="field__required">*</span></label>
- <input ref={nascimentoRef} name="clienteNascimento" type="date" className="field__input" onChange={(e) => validaNascimento(e.currentTarget)} required />
+ <CampoData inputRef={nascimentoRef} name="clienteNascimento" className="field__input" onChange={(iso, el) => validaNascimento(iso, el)} required />
  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}>
  <input type="checkbox" checked={emancipado} onChange={(e) => setEmancipado(e.target.checked)} />
  Menor emancipado (16–18 anos)
@@ -1889,7 +1891,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento {temConjuge && <span className="field__required">*</span>}</label>
- <input name="conjugeNascimento" type="date" className="field__input" required={temConjuge} />
+ <CampoData name="conjugeNascimento" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
  <label className="field__label">Profissão {temConjuge && <span className="field__required">*</span>}</label>
@@ -1930,7 +1932,7 @@ export default function Vendas() {
  <div className="field field--span-2"><label className="field__label">Nome completo</label><input className="field__input" value={s.nome} onChange={(e) => updSocio(i, 'nome', e.target.value)} /></div>
  <div className="field"><label className="field__label">CPF</label><input className="field__input" inputMode="numeric" placeholder="000.000.000-00" value={s.cpf} onChange={(e) => updSocio(i, 'cpf', e.target.value)} /></div>
  <div className="field"><label className="field__label">RG (c/ órgão expedidor)</label><input className="field__input" placeholder="1234567 SSP/SC" value={s.rg} onChange={(e) => updSocio(i, 'rg', e.target.value)} /></div>
- <div className="field"><label className="field__label">Data de nascimento</label><input type="date" className="field__input" value={s.nascimento} onChange={(e) => updSocio(i, 'nascimento', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Data de nascimento</label><CampoData className="field__input" value={s.nascimento} onChange={(e) => updSocio(i, 'nascimento', e)} /></div>
  <div className="field"><label className="field__label">Profissão</label><input className="field__input" value={s.profissao} onChange={(e) => updSocio(i, 'profissao', e.target.value)} /></div>
  <div className="field"><label className="field__label">Estado civil</label><select className="field__select" value={s.estadoCivil} onChange={(e) => updSocio(i, 'estadoCivil', e.target.value)}><option value="">— Selecionar —</option>{ESTADOS_CIVIS.map((ec) => <option key={ec} value={ec}>{ec}</option>)}</select></div>
  <div className="field"><label className="field__label">Participação (%)</label><input className="field__input" inputMode="numeric" placeholder="50" value={s.participacao} onChange={(e) => updSocio(i, 'participacao', e.target.value.replace(/[^0-9.,]/g, ''))} /></div>
@@ -1991,7 +1993,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Data de nascimento <span className="field__required">*</span></label>
- <input name="socioNascimento" type="date" className="field__input" required />
+ <CampoData name="socioNascimento" className="field__input" required />
  </div>
  <div className="field">
  <label className="field__label">Profissão <span className="field__required">*</span></label>
@@ -2286,7 +2288,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">1º vencimento da entrada</label>
- <input name="entradaData" type="date" className="field__input" value={entradaData} onChange={(e) => setEntradaData(e.target.value)} />
+ <CampoData name="entradaData" className="field__input" value={entradaData} onChange={(e) => setEntradaData(e)} />
  {politicaVigente?.parcelasMensaisMax ? <div className="field__hint">Empreendimento libera até {politicaVigente.parcelasMensaisMax} mensais{politicaVigente.reforcosAnuaisMax ? ` e ${politicaVigente.reforcosAnuaisMax} reforços` : ''}.</div> : null}
  </div>
  {parcelasEntrada.length > 0 && (
@@ -2297,7 +2299,7 @@ export default function Vendas() {
  <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
  <span style={{ width: 30, fontSize: 12, color: 'var(--text-secondary)' }}>{i + 1}ª</span>
  <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" value={p.valor} onChange={(e) => editarParcelaValor(i, maskMoedaBR(e.target.value))} />
- <input type="date" className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e.target.value; setParcelasEntrada((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasTocadas(true); }} />
+ <CampoData className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e; setParcelasEntrada((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasTocadas(true); }} />
  </div>
  ))}
  </div>
@@ -2358,7 +2360,7 @@ export default function Vendas() {
  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>x de</span>
  <input className="field__input" style={{ maxWidth: 140 }} inputMode="numeric" placeholder="R$ 3.990,00" value={f.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· 1º venc</span>
- <input type="date" className="field__input" style={{ maxWidth: 150 }} value={f.venc} title="1º vencimento deste bloco (as parcelas seguem mensalmente a partir daqui)" onChange={(e) => { const v = e.target.value; setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, venc: v } : x))); }} />
+ <CampoData className="field__input" style={{ maxWidth: 150 }} value={f.venc} title="1º vencimento deste bloco (as parcelas seguem mensalmente a partir daqui)" onChange={(e) => { const v = e; setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, venc: v } : x))); }} />
  {faixasMensais.length > 1 && (
  <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasMensais((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>
  )}
@@ -2424,7 +2426,7 @@ export default function Vendas() {
  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>x de</span>
  <input className="field__input" style={{ maxWidth: 150 }} inputMode="numeric" placeholder="R$ 50.000,00" value={f.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· 1º venc</span>
- <input type="date" className="field__input" style={{ maxWidth: 150 }} value={f.venc} title="1º vencimento deste bloco (os reforços seguem a periodicidade a partir daqui)" onChange={(e) => { const v = e.target.value; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, venc: v } : x))); }} />
+ <CampoData className="field__input" style={{ maxWidth: 150 }} value={f.venc} title="1º vencimento deste bloco (os reforços seguem a periodicidade a partir daqui)" onChange={(e) => { const v = e; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, venc: v } : x))); }} />
  {faixasReforcos.length > 1 && (
  <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasReforcos((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>
  )}
@@ -2465,7 +2467,7 @@ export default function Vendas() {
  <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
  <span style={{ width: 30, fontSize: 12, color: 'var(--text-secondary)' }}>{i + 1}º</span>
  <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" value={p.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setParcelasReforco((cur) => cur.map((x, j) => j === i ? { ...x, valor: v } : x)); setParcelasReforcoTocadas(true); }} />
- <input type="date" className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e.target.value; setParcelasReforco((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasReforcoTocadas(true); }} />
+ <CampoData className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e; setParcelasReforco((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasReforcoTocadas(true); }} />
  </div>
  ))}
  </div>

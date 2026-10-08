@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
@@ -391,7 +393,7 @@ export default function Tarefas() {
             )}
             <div className="field">
               <label className="field__label">Data da Solicitação</label>
-              <input name="solicitadoEm" type="date" className="field__input" defaultValue={new Date().toISOString().slice(0, 10)} />
+              <CampoData name="solicitadoEm" className="field__input" defaultValue={new Date().toISOString().slice(0, 10)} />
             </div>
             <div className="field">
               <label className="field__label">Prazo</label>
@@ -488,7 +490,7 @@ export default function Tarefas() {
               )}
               <div className="field">
                 <label className="field__label">Data da Solicitação</label>
-                <input name="solicitadoEm" type="date" className="field__input" defaultValue={editTarefa.solicitadoEm ? String(editTarefa.solicitadoEm).slice(0, 10) : ''} />
+                <CampoData name="solicitadoEm" className="field__input" defaultValue={editTarefa.solicitadoEm ? String(editTarefa.solicitadoEm).slice(0, 10) : ''} />
               </div>
               <div className="field">
                 <label className="field__label">Prazo</label>

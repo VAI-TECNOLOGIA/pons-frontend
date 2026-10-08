@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
@@ -128,9 +130,9 @@ export default function Transferencias() {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
-            <input type="date" className="field__input" style={{ height: 34, fontSize: 13, width: 'auto' }} value={desde} onChange={(e) => setDesde(e.target.value)} title="De" />
+            <CampoData className="field__input" style={{ width: 150 }} value={desde} onChange={(e) => setDesde(e)} title="De" />
             <span className="text-xs text-secondary">–</span>
-            <input type="date" className="field__input" style={{ height: 34, fontSize: 13, width: 'auto' }} value={ate} onChange={(e) => setAte(e.target.value)} title="Até" />
+            <CampoData className="field__input" style={{ width: 150 }} value={ate} onChange={(e) => setAte(e)} title="Até" />
             <CorretorPicker corretores={corretores} value={paraCorretor} onChange={(id) => setParaCorretor(id === 'sem' ? '' : id)} placeholder="Recebido por (corretor)…" />
             {temFiltro && (
               <button className="btn btn--ghost btn--sm" onClick={() => { setMotivo([]); setBusca(''); setBuscaDeb(''); setDesde(''); setAte(''); setParaCorretor(''); }}>

@@ -2,6 +2,8 @@
 // Rota pública (sem auth) → POST /api/grupo-pons/cadastro-colaborador → grava na
 // área de usuários do sistema. Identidade corporativa Grupo Pons (navy/branco).
 import { useState } from 'react';
+import { CampoData } from '../components/CampoData';
+
 
 import './cadastro-colaborador.css';
 
@@ -198,7 +200,7 @@ export default function CadastroColaborador() {
               </div>
               <div className="cad__field">
                 <label className="cad__label">Data de entrada<span className="req">*</span></label>
-                <input type="date" className={inCls('dataEntrada')} value={f.dataEntrada} onChange={(e) => set('dataEntrada', e.target.value)} />
+                <CampoData className={inCls('dataEntrada')} value={f.dataEntrada} onChange={(e) => set('dataEntrada', e)} />
                 {erros.dataEntrada && <div className="cad__err">{erros.dataEntrada}</div>}
               </div>
               <div className="cad__field">

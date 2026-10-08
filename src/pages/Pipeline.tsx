@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Link } from 'react-router-dom';
 import { Icon } from '../components/Icon';
@@ -127,9 +129,9 @@ export default function Pipeline() {
             <MultiFiltro label="Equipe" opcoes={optEquipes} values={fEquipe} onChange={setFEquipe} />
             <MultiFiltro label="Corretor" opcoes={optCorretores} values={fCorretor} onChange={setFCorretor} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <input type="date" className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e.target.value)} title="Data inicial" style={{ width: 145 }} />
+              <CampoData className="field__input" value={fDataIni} onChange={(e) => setFDataIni(e)} title="Data inicial" style={{ width: 145 }} />
               <span className="text-xs text-secondary">até</span>
-              <input type="date" className="field__input" value={fDataFim} onChange={(e) => setFDataFim(e.target.value)} title="Data final" style={{ width: 145 }} />
+              <CampoData className="field__input" value={fDataFim} onChange={(e) => setFDataFim(e)} title="Data final" style={{ width: 145 }} />
             </div>
             {temFiltro && <button className="btn btn--ghost btn--sm" onClick={limparFiltros}>Limpar filtros</button>}
           </div>

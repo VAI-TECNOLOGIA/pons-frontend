@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
@@ -197,12 +199,7 @@ export default function Perfil() {
               </div>
               <div className="field">
                 <label className="field__label">Data de nascimento</label>
-                <input
-                  name="dataNascimento"
-                  type="date"
-                  className="field__input"
-                  defaultValue={dataNascValue}
-                />
+                <CampoData name="dataNascimento" className="field__input" defaultValue={dataNascValue} />
                 <div className="field__hint">Opcional — usamos só pra te desejar parabéns</div>
               </div>
               <div className="field">

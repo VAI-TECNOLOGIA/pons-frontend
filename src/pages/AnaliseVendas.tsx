@@ -4,6 +4,8 @@
 // (status/empreendimento/construtora/corretor), financeiro (recebido/a receber/
 // atrasado/repasse), filtros e exportação em Excel (várias abas).
 import { useEffect, useRef, useState } from 'react';
+import { CampoData } from '../components/CampoData';
+
 import { useNavigate } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
@@ -317,11 +319,11 @@ export default function AnaliseVendas() {
         <>
           <div className="field" style={{ margin: 0, minWidth: 130 }}>
             <label className="field__label">De</label>
-            <input type="date" className="field__input" value={customDe} max={customAte || undefined} onChange={(e) => setCustomDe(e.target.value)} />
+            <CampoData className="field__input" value={customDe} max={customAte || undefined} onChange={(e) => setCustomDe(e)} />
           </div>
           <div className="field" style={{ margin: 0, minWidth: 130 }}>
             <label className="field__label">Até</label>
-            <input type="date" className="field__input" value={customAte} min={customDe || undefined} onChange={(e) => setCustomAte(e.target.value)} />
+            <CampoData className="field__input" value={customAte} min={customDe || undefined} onChange={(e) => setCustomAte(e)} />
           </div>
         </>
       )}

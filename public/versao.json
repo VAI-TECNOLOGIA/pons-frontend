@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.07.10",
-  "data": "07/10/2026",
+  "versao": "2026.10.08.1",
+  "data": "08/10/2026",
   "novidades": [
+    {
+      "titulo": "Datas mais fáceis de digitar",
+      "itens": [
+        "Todos os campos de data agora aceitam você digitar direto no formato dd/mm/aaaa — a barra entra sozinha (ex.: digite 27022007 e vira 27/02/2007). Não precisa mais preencher dia, mês e ano em caixinhas separadas.",
+        "Quem preferir, tem o ícone de calendário ao lado para escolher a data visualmente.",
+        "Vale em todo o sistema: Nova Venda e protocolo, nascimento, vencimentos, filtros de período, cadastro, tarefas, boletos e perfil."
+      ]
+    },
     {
       "titulo": "Chave PIX: de quem é a chave",
       "itens": [

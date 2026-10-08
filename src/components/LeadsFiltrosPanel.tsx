@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { CampoData } from './CampoData';
+
 import { Icon } from './Icon';
 import { MultiFiltro } from './MultiFiltro';
 import { CorretorPicker } from './CorretorPicker';
@@ -70,9 +72,9 @@ export function LeadsFiltrosPanel({ v, onAplicar, statuses, opcoes, corretores, 
  <div className="leads-filtros__grupo">
  <div className="uppercase-tag" style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="calendar" size={13} /> Período</div>
  <div className="leads-filtros__linha">
- <input type="date" className="field__input" value={draft.dataInicial} onChange={(e) => set({ dataInicial: e.target.value })} />
+ <CampoData className="field__input" value={draft.dataInicial} onChange={(e) => set({ dataInicial: e })} />
  <span className="text-xs text-secondary leads-filtros__sep">–</span>
- <input type="date" className="field__input" value={draft.dataFinal} onChange={(e) => set({ dataFinal: e.target.value })} />
+ <CampoData className="field__input" value={draft.dataFinal} onChange={(e) => set({ dataFinal: e })} />
  </div>
  <div className="field__hint" style={{ marginTop: 4 }}>Data de entrada do lead no sistema.</div>
  </div>
