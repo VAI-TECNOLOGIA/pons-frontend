@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.08.1",
-  "data": "08/10/2026",
+  "versao": "2026.10.09.1",
+  "data": "09/10/2026",
   "novidades": [
+    {
+      "titulo": "Vendas: editar dados da venda e histórico de edições",
+      "itens": [
+        "Botão Editar dados na venda (Vendas e Administrativo de Vendas): altera nome do cliente, CPF, contato, endereço, unidade, empreendimento, sala, cônjuge e sócio. Valores continuam em Editar negociação.",
+        "Histórico de edições dentro de cada venda: mostra quem alterou, quando e o que mudou (antes e depois). Esse registro é permanente e ninguém pode apagar.",
+        "Também ficam no histórico: cadastro da venda, mudança de fase e cancelamento (com o motivo)."
+      ]
+    },
     {
       "titulo": "Datas mais fáceis de digitar",
       "itens": [

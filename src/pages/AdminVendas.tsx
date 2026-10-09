@@ -12,7 +12,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { formatCurrencyExact } from '../lib/format';
 import { Auth } from '../lib/auth';
-import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas } from './Vendas';
+import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas, VendaHistorico, EditarDadosVendaModal, EditarNegociacaoModal } from './Vendas';
 import { EmptyState } from '../components/EmptyState';
 
 // Fases na ordem do processo — a fila mostra por fase.
@@ -46,6 +46,11 @@ export default function AdminVendas() {
   // Busca por contrato (Marcelo 08/09): código, cliente, unidade ou empreendimento — dentro da fase.
   const [busca, setBusca] = useState('');
   const [selId, setSelId] = useState<number | null>(null);
+  // Editar dados / negociação + histórico (toda edição fica registrada na venda).
+  const [editDados, setEditDados] = useState<number | null>(null);
+  const [editNeg, setEditNeg] = useState<any>(null);
+  const [histVersao, setHistVersao] = useState(0);
+  const podeEditarVenda = ['ADMINISTRATIVO', 'CEO', 'DIRETOR_FINANCEIRO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'GESTOR'].includes(Auth.user?.role || '');
   // Trava o botão "Confirmar venda" enquanto envia (protocolo leva alguns segundos).
   // PRECISA ficar aqui, ANTES dos returns condicionais abaixo — senão o nº de hooks
   // muda entre renders (loading vs carregado) e o React quebra a tela toda com
@@ -249,6 +254,7 @@ export default function AdminVendas() {
           <VendaDocumentos vendaId={sel.id} podeRemover />
           {/* Comissão parcelada: auditar parcela a parcela — "marcar pago" por parcela (Marcelo 08/09). */}
           <VendaParcelas vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role || '')} rateioCompleto={false} />
+          <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
 
           <div className="flex" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
             <div className="flex gap-2">
@@ -258,6 +264,16 @@ export default function AdminVendas() {
               <button className="btn btn--ghost" onClick={() => window.print()} title="Imprimir esta tela">
                 Imprimir
               </button>
+              {podeEditarVenda && (
+                <button className="btn btn--secondary" onClick={() => setEditDados(sel.id)} title="Cliente, unidade, empreendimento, cônjuge… (fica no histórico)">
+                  <Icon name="pencil" size={14} /> Editar dados
+                </button>
+              )}
+              {podeEditarVenda && sel.status !== 'CANCELADO' && (
+                <button className="btn btn--secondary" onClick={() => setEditNeg(sel)} title="Valor da venda, entrada, parcelas (fica no histórico)">
+                  Editar negociação
+                </button>
+              )}
             </div>
             <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
               {sel.status === 'PRE_ANALISE' && (
@@ -273,6 +289,12 @@ export default function AdminVendas() {
             </div>
           </div>
         </Modal>
+      )}
+      {editDados && (
+        <EditarDadosVendaModal vendaId={editDados} onClose={() => setEditDados(null)} onSaved={() => { setEditDados(null); setHistVersao((v) => v + 1); reload(); }} />
+      )}
+      {editNeg && (
+        <EditarNegociacaoModal venda={editNeg} onClose={() => setEditNeg(null)} onSaved={() => { setEditNeg(null); setHistVersao((v) => v + 1); reload(); }} />
       )}
     </Shell>
   );

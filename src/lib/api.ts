@@ -530,6 +530,10 @@ export const Api = {
   vendaAprovarTrafego: (id: number) => request<any>(`/vendas/${id}/aprovar-trafego`, { method: 'POST' }),
   vendaDecidirTrafego: (id: number, decisao: 'TRAFEGO' | 'NETWORK') => request<any>(`/vendas/${id}/decidir-trafego`, { method: 'POST', body: { decisao } }),
   vendaEditarNegociacao: (id: number, data: any) => request<any>(`/vendas/${id}/negociacao`, { method: 'PUT', body: data }),
+  // Dados da venda (cliente, cônjuge, sócio, unidade, empreendimento…) — toda edição vai pro histórico.
+  vendaEditarDados: (id: number, data: any) => request<{ id: number; ok: boolean; alterados: number }>(`/vendas/${id}/dados`, { method: 'PUT', body: data }),
+  // Histórico de edições da venda (quem, quando, antes → depois). Somente leitura.
+  vendaHistorico: (id: number) => request<Array<{ id: number; acao: string; em: string; quem: string; papel: string | null; campos: Array<{ campo: string; rotulo: string; antes: any; depois: any }>; detalhe: string | null }>>(`/vendas/${id}/historico`),
   unidadeStatus: (empreendimentoId: number, unidade: string) =>
     request<{ ocupada: boolean; codigo: string | null }>(`/vendas/unidade-status${qs({ empreendimentoId, unidade })}`),
   vendaSalaSugerida: (corretorId?: number | string) =>

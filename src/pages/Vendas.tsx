@@ -182,7 +182,7 @@ function EvidenciaTrafego({ v }: { v: any }) {
 
 // Edita a negociação de uma venda (valor, entrada/parcelas, mensais, reforços).
 // Recompõe parcelas da entrada e comissão no backend. Só antes de haver pagamento.
-function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClose: () => void; onSaved: () => void }) {
+export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
   const f = venda.formulario || {};
   const m = (n: any) => (n != null && n !== '' ? maskMoedaBR(String(Math.round(Number(n) * 100))) : '');
@@ -322,6 +322,145 @@ function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClos
         <button type="button" className="btn btn--primary" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando…' : 'Salvar negociação'}</button>
       </div>
     </Modal>
+  );
+}
+
+// ── Editar DADOS da venda (cliente, cônjuge, sócio, imóvel) ─────────────────
+// Gestão edita tudo que não é valor (valor fica em "Editar negociação"). Cada
+// alteração entra no Histórico de edições da venda, com quem fez e antes → depois.
+const GRUPOS_DADOS_VENDA: Array<{ titulo: string; campos: Array<[string, string, ('cpf' | 'tel' | 'texto')?]> }> = [
+  { titulo: 'Cliente', campos: [['clienteNome', 'Nome / razão social *'], ['clienteCpf', 'CPF', 'cpf'], ['clienteCnpj', 'CNPJ'], ['clienteRg', 'RG (c/ órgão expedidor)'], ['clienteNascimento', 'Nascimento'], ['clienteProfissao', 'Profissão'], ['clienteEstadoCivil', 'Estado civil'], ['clienteEmail', 'E-mail'], ['clienteTelefone', 'Telefone', 'tel'], ['clienteEndereco', 'Endereço completo (c/ CEP)']] },
+  { titulo: 'Imóvel', campos: [['unidade', 'Unidade *'], ['tipologia', 'Tipologia'], ['construtora', 'Construtora'], ['campanha', 'Campanha'], ['origemLead', 'Origem do lead']] },
+  { titulo: 'Cônjuge', campos: [['conjugeNome', 'Nome'], ['conjugeCpf', 'CPF', 'cpf'], ['conjugeRg', 'RG'], ['conjugeNascimento', 'Nascimento'], ['conjugeProfissao', 'Profissão'], ['conjugeEmail', 'E-mail'], ['conjugeTelefone', 'Telefone', 'tel']] },
+  { titulo: 'Sócio / 2º comprador', campos: [['socioNome', 'Nome'], ['socioCpf', 'CPF', 'cpf'], ['socioRg', 'RG'], ['socioNascimento', 'Nascimento'], ['socioProfissao', 'Profissão'], ['socioEstadoCivil', 'Estado civil'], ['socioEmail', 'E-mail'], ['socioTelefone', 'Telefone', 'tel'], ['socioEndereco', 'Endereço']] },
+];
+
+export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: number; onClose: () => void; onSaved: () => void }) {
+  const toast = useToast();
+  const { data: venda } = useApi<any>(() => Api.venda(vendaId), [vendaId]);
+  const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
+  const [form, setForm] = useState<Record<string, any> | null>(null);
+  const [salvando, setSalvando] = useState(false);
+  useEffect(() => {
+    if (!venda || form) return;
+    const f: Record<string, any> = { empreendimentoId: venda.empreendimentoId ?? '', salaGpi: venda.salaGpi ?? '' };
+    GRUPOS_DADOS_VENDA.forEach((g) => g.campos.forEach(([k]) => { f[k] = venda[k] ?? ''; }));
+    setForm(f);
+  }, [venda, form]);
+
+  const set = (k: string, v: string, tipo?: string) => setForm((f) => ({ ...(f || {}), [k]: tipo === 'cpf' ? maskCPF(v) : tipo === 'tel' ? maskTelefone(v) : v }));
+
+  const salvar = async () => {
+    if (!form || salvando) return;
+    if (!String(form.clienteNome || '').trim()) { toast.error('Informe o nome do cliente.'); return; }
+    if (!String(form.unidade || '').trim()) { toast.error('Informe a unidade.'); return; }
+    // Manda só o que mudou (o histórico registra campo a campo).
+    const payload: Record<string, any> = {};
+    Object.entries(form).forEach(([k, v]) => {
+      const atual = venda?.[k] ?? '';
+      if (String(atual) !== String(v ?? '')) payload[k] = k === 'empreendimentoId' ? Number(v) : (String(v ?? '').trim() || null);
+    });
+    if (!Object.keys(payload).length) { toast.info('Nada foi alterado.'); return; }
+    setSalvando(true);
+    try {
+      const r = await Api.vendaEditarDados(vendaId, payload);
+      toast.success(`${r.alterados} ${r.alterados === 1 ? 'campo alterado' : 'campos alterados'} — registrado no histórico da venda.`);
+      onSaved();
+    } catch (e: any) {
+      toast.error('Erro ao salvar: ' + (e?.message || 'falha'));
+    } finally { setSalvando(false); }
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Editar dados da venda" subtitle={`${venda?.clienteNome || 'Venda'} · toda alteração fica no histórico da venda, com quem fez`} size="lg">
+      {!form ? <LoadingBlock /> : (
+        <>
+          {GRUPOS_DADOS_VENDA.map((g) => (
+            <div key={g.titulo} style={{ marginBottom: 16 }}>
+              <div className="uppercase-tag" style={{ marginBottom: 8 }}>{g.titulo}</div>
+              <div className="form-grid">
+                {g.titulo === 'Imóvel' && (
+                  <>
+                    <div className="field">
+                      <label className="field__label">Empreendimento</label>
+                      <select className="field__select" value={form.empreendimentoId} onChange={(e) => set('empreendimentoId', e.target.value)}>
+                        {(emps || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label className="field__label">Sala GPI</label>
+                      <select className="field__select" value={form.salaGpi} onChange={(e) => set('salaGpi', e.target.value)}>
+                        <option value="">—</option>
+                        {!ehSalaOficial(form.salaGpi) && form.salaGpi && <option value={form.salaGpi}>{form.salaGpi}</option>}
+                        {SALAS_GPI.map((sala) => <option key={sala.valor} value={sala.valor}>{sala.rotulo}</option>)}
+                      </select>
+                    </div>
+                  </>
+                )}
+                {g.campos.map(([k, label, tipo]) => (
+                  <div className="field" key={k}>
+                    <label className="field__label">{label}</label>
+                    <input className="field__input" value={form[k] ?? ''} onChange={(e) => set(k, e.target.value, tipo)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="field__hint" style={{ marginBottom: 8 }}>Valores (valor da venda, entrada, parcelas) ficam em <strong>Editar negociação</strong>.</div>
+          <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
+            <button type="button" className="btn btn--secondary" onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn btn--primary" disabled={salvando} onClick={salvar}>{salvando ? 'Salvando…' : 'Salvar alterações'}</button>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
+// ── Histórico de edições da venda (log de segurança, ninguém apaga) ─────────
+const ACAO_HISTORICO: Record<string, string> = {
+  VENDA_CRIADA: 'Venda cadastrada', VENDA_DADOS_EDITADOS: 'Dados editados', VENDA_NEGOCIACAO_EDITADA: 'Negociação editada',
+  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada',
+};
+const fmtValorHist = (campo: string, v: any) => {
+  if (v == null || v === '') return '(vazio)';
+  if (typeof v === 'number' && /valor|entrada|arras|chaves|permuta|saldo/i.test(campo) && !/qtd|parcelas|dia/i.test(campo)) return formatCurrencyExact(v);
+  if (campo === 'status') return STATUS_MAP[v]?.[1] || String(v);
+  return String(v);
+};
+
+export function VendaHistorico({ vendaId }: { vendaId: number }) {
+  const { data, loading, error } = useApi(() => Api.vendaHistorico(vendaId), [vendaId]);
+  return (
+    <div className="card" style={{ marginTop: 16, padding: '14px 16px' }}>
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+        <div className="uppercase-tag">Histórico de edições</div>
+        <span className="text-xs text-secondary">Registro permanente: quem alterou, quando e o que mudou. Não pode ser apagado.</span>
+      </div>
+      {loading ? <div className="text-xs text-secondary">Carregando…</div>
+        : error ? <div className="text-xs text-secondary">Não consegui carregar o histórico.</div>
+        : !(data || []).length ? <div className="text-xs text-secondary">Nenhuma edição registrada ainda. As próximas alterações aparecem aqui.</div>
+        : (
+          <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {(data || []).map((e) => (
+              <li key={e.id} style={{ borderLeft: '3px solid var(--border-light)', paddingLeft: 10 }}>
+                <div style={{ fontSize: 13 }}>
+                  <strong>{ACAO_HISTORICO[e.acao] || e.acao}</strong> · {e.quem}{e.papel ? ` (${e.papel})` : ''}
+                  <span className="text-xs text-secondary"> · {new Date(e.em).toLocaleString('pt-BR')}</span>
+                </div>
+                {e.campos.length > 0 && (
+                  <ul style={{ margin: '4px 0 0', paddingLeft: 16, fontSize: 12.5 }}>
+                    {e.campos.map((c, i) => (
+                      <li key={i}><span className="text-secondary">{c.rotulo || c.campo}:</span> {fmtValorHist(c.campo, c.antes)} → <strong>{fmtValorHist(c.campo, c.depois)}</strong></li>
+                    ))}
+                  </ul>
+                )}
+                {e.detalhe && <div className="text-xs text-secondary" style={{ marginTop: 2 }}>{e.detalhe}</div>}
+              </li>
+            ))}
+          </ol>
+        )}
+    </div>
   );
 }
 
@@ -511,6 +650,8 @@ export default function Vendas() {
  // Editar negociação da venda: gestor de equipe (só a própria equipe, travado no backend) + diretoria/adm.
  const podeEditarNegociacao = ['GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'GESTOR', 'CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(role || '');
  const [editNeg, setEditNeg] = useState<any>(null);
+ const [editDados, setEditDados] = useState<number | null>(null);
+ const [histVersao, setHistVersao] = useState(0); // recarrega o histórico após editar
  // Define a origem: TRAFEGO (paga comissão do gestor) ou NETWORK (orgânica, sem comissão de tráfego).
  const decidirTrafego = async (vid: number, decisao: 'TRAFEGO' | 'NETWORK') => {
    try {
@@ -1559,6 +1700,9 @@ export default function Vendas() {
  <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyExact(sel.valorVenda ?? sel.valor)}</strong>
  <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyExact(sel.comissao ?? ((sel.valorVenda ?? sel.valor ?? 0) * (sel.percentualComissao ?? 6)) / 100)}</strong></span>
  </div>
+ {podeEditarNegociacao && (
+ <button className="btn btn--secondary" onClick={() => setEditDados(sel.id)}>Editar dados</button>
+ )}
  {podeEditarNegociacao && sel.status !== 'CANCELADO' && (
  <button className="btn btn--secondary" onClick={() => setEditNeg(sel)}>Editar negociação</button>
  )}
@@ -1670,11 +1814,15 @@ export default function Vendas() {
  <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
+ <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
  </Modal>
  )}
 
  {editNeg && (
- <EditarNegociacaoModal venda={editNeg} onClose={() => setEditNeg(null)} onSaved={() => { setEditNeg(null); reload(); }} />
+ <EditarNegociacaoModal venda={editNeg} onClose={() => setEditNeg(null)} onSaved={() => { setEditNeg(null); setHistVersao((v) => v + 1); reload(); }} />
+ )}
+ {editDados && (
+ <EditarDadosVendaModal vendaId={editDados} onClose={() => setEditDados(null)} onSaved={() => { setEditDados(null); setHistVersao((v) => v + 1); reload(); }} />
  )}
 
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Formulário oficial GPI — preencha etapa por etapa" size="lg">
