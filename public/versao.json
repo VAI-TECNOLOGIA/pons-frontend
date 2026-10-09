@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.09.1",
+  "versao": "2026.10.09.2",
   "data": "09/10/2026",
   "novidades": [
+    {
+      "titulo": "Atendimento: nota interna legível em qualquer aparelho",
+      "itens": [
+        "A nota interna (lead pendente e janela de 24h fechada) virou um campo de várias linhas que cresce conforme você escreve: o texto inteiro fica à vista, com letra maior. No celular o botão Salvar nota fica embaixo, em tamanho de toque.",
+        "O campo de mensagem também cresce com o texto (até umas 6 linhas) — o começo da mensagem não some mais."
+      ]
+    },
     {
       "titulo": "Vendas: editar dados da venda e histórico de edições",
       "itens": [

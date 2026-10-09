@@ -192,6 +192,9 @@ export default function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [draft, setDraft] = useState('');
+  // Campo principal cresce com o texto (antes ficava 1 linha e o começo sumia).
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  useAlturaAuto(composerRef, draft, typeof window !== 'undefined' && window.innerWidth <= 768 ? 140 : 168);
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
@@ -1683,6 +1686,7 @@ export default function Chat() {
                           <IcoCasa />
                         </button>
                         <textarea
+                          ref={composerRef}
                           className={notaMode ? 'composer__input--nota' : undefined}
                           placeholder={sending ? 'Enviando…' : notaMode ? 'Nota interna — o lead NÃO recebe…' : anexo ? 'Legenda (opcional)…' : `Mensagem para ${(conv.nome || '').split(' ')[0] || 'o cliente'}`}
                           value={draft}
@@ -2482,6 +2486,48 @@ function StatusTicks({ m }: { m: Mensagem }) {
 
 // ─── Composer quando janela 24h está fechada ───────────────────────────────
 // Texto livre desabilitado; só template Meta aprovado pode reabrir a conversa.
+// Altura automática do campo de texto: cresce com o conteúdo até `max` px e depois
+// rola. Sem isso o campo ficava com 1 linha e o começo do texto sumia (Vini 09/10).
+function useAlturaAuto(ref: React.RefObject<HTMLTextAreaElement | null>, valor: string, max = 160) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight + 2, max) + 'px';
+    el.style.overflowY = el.scrollHeight + 2 > max ? 'auto' : 'hidden';
+  }, [ref, valor, max]);
+}
+
+// Nota interna (lead pendente / janela fechada): campo de várias linhas, legível
+// em qualquer aparelho (16px no celular = sem zoom do iPhone) e o texto inteiro à
+// vista enquanto digita. Enter salva só no computador; no celular Enter pula linha.
+function CampoNotaInterna({ valor, onChange, onSalvar, salvando }: { valor: string; onChange: (v: string) => void; onSalvar: () => void; salvando: boolean }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useAlturaAuto(ref, valor, 168);
+  return (
+    <div className="nota-interna">
+      <label className="nota-interna__rotulo" htmlFor="nota-interna-campo">
+        <Icon name="pencil" size={12} /> Nota interna <span>· o lead não recebe</span>
+      </label>
+      <div className="nota-interna__linha">
+        <textarea
+          id="nota-interna-campo"
+          ref={ref}
+          rows={2}
+          className="nota-interna__campo"
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => { if (teclaEnterEnvia && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSalvar(); } }}
+          placeholder="Escreva a nota para a equipe…"
+        />
+        <button type="button" className="btn btn--secondary btn--sm nota-interna__salvar" onClick={onSalvar} disabled={!valor.trim() || salvando} title="Salvar nota interna (o lead não recebe)">
+          {salvando ? 'Salvando…' : 'Salvar nota'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Composer quando lead ainda está PENDENTE ──────────────────────────────
 // A IA cuida do atendimento (limite 3 respostas). Corretor só consegue mandar
 // texto após Aceitar. Quando a IA esgota as 3 respostas, o card vira ÂMBAR
@@ -2544,21 +2590,7 @@ function ComposerPendenteIA({
       </div>
       </div>
       {/* Nota interna liberada mesmo com o lead pendente (não vai pro lead). */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
-          <Icon name="pencil" size={13} style={{ color: '#7c3aed', flexShrink: 0 }} />
-          <input
-            style={{ flex: 1, minWidth: 0, width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
-            value={nota}
-            onChange={(e) => setNota(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvarNotaLocal(); } }}
-            placeholder="Nota interna — o lead não recebe…"
-          />
-        </div>
-        <button className="btn btn--secondary btn--sm" onClick={salvarNotaLocal} disabled={!nota.trim() || salvandoNota} title="Salvar nota interna (o lead não recebe)" style={{ borderRadius: 10, whiteSpace: 'nowrap' }}>
-          {salvandoNota ? 'Salvando…' : 'Salvar nota'}
-        </button>
-      </div>
+      <CampoNotaInterna valor={nota} onChange={setNota} onSalvar={salvarNotaLocal} salvando={salvandoNota} />
     </div>
   );
 }
@@ -2611,21 +2643,7 @@ function ComposerJanelaFechada({
         </div>
       </div>
       {/* Nota interna liberada mesmo com a janela fechada (não vai pro lead). */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border-light)', background: 'rgba(124, 58, 237, 0.09)' }}>
-          <Icon name="pencil" size={13} style={{ color: '#7c3aed', flexShrink: 0 }} />
-          <input
-            style={{ flex: 1, minWidth: 0, width: '100%', border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, padding: '9px 0' }}
-            value={nota}
-            onChange={(e) => setNota(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); salvar(); } }}
-            placeholder="Nota interna — o lead não recebe…"
-          />
-        </div>
-        <button className="btn btn--secondary btn--sm" onClick={salvar} disabled={!nota.trim() || salvando} title="Salvar nota interna (o lead não recebe)" style={{ borderRadius: 10, whiteSpace: 'nowrap' }}>
-          {salvando ? 'Salvando…' : 'Salvar nota'}
-        </button>
-      </div>
+      <CampoNotaInterna valor={nota} onChange={setNota} onSalvar={salvar} salvando={salvando} />
     </div>
   );
 }
