@@ -666,6 +666,9 @@ export default function Vendas() {
  // usa o rateio herdado da política — sem editar e sem ver a % do gestor.
  const podeEditarRateio = role === 'CEO' || role === 'DIRETOR_FINANCEIRO' || role === 'FINANCEIRO' || role === 'ADMINISTRATIVO';
  const podeEditarStatus = role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
+ // Marcar parcela como paga: CEO/Financeiro + Administrativo de Vendas (Glaucia),
+ // p/ dar baixa nas parcelas das vendas (inclusive as importadas da planilha).
+ const podeMarcarPago = podeEditarStatus || role === 'ADMINISTRATIVO';
  // Mudança de STATUS da venda (kanban/dropdown): Administrativo de Vendas (Glaucia)
  // e o CEO (Paulo) — pedido 29/07 reabriu pro CEO. Financeiro segue só lendo.
  // Diretor Financeiro (Marcelo) também audita/avança contratos (08/09).
@@ -1811,7 +1814,7 @@ export default function Vendas() {
 
  <FormularioGpi f={sel.formulario} />
 
- <VendaParcelas vendaId={sel.id} podeConfirmar={podeEditarStatus} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
+ <VendaParcelas vendaId={sel.id} podeConfirmar={podeMarcarPago} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
  <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
