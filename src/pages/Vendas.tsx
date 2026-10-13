@@ -180,6 +180,23 @@ function EvidenciaTrafego({ v }: { v: any }) {
   );
 }
 
+// Distribui as parcelas da entrada (em CENTAVOS): cada parcela = entrada ÷ nº; a
+// ARRAS ("sinal, no ato") sai da 1ª parcela e transborda pra 2ª, 3ª… se for maior
+// que uma parcela (evita parcela negativa). As parcelas somam (entrada − arras) —
+// a arras é paga à parte. Ex.: entrada 20.000, arras 2.000, 2x → [8.000, 10.000].
+function distribuirParcelasEntradaCents(entradaCents: number, arrasCents: number, n: number): number[] {
+  n = Math.max(1, Math.floor(n) || 1);
+  const base = Math.floor(entradaCents / n);
+  const slots = Array.from({ length: n }, () => base);
+  slots[n - 1] += entradaCents - slots.reduce((a, b) => a + b, 0); // última absorve o arredondamento → soma = entrada
+  let resto = Math.max(0, arrasCents);
+  for (let i = 0; i < n && resto > 0; i++) {
+    const tira = Math.min(slots[i], resto);
+    slots[i] -= tira; resto -= tira;
+  }
+  return slots; // soma = entrada − arras
+}
+
 // Edita a negociação de uma venda (valor, entrada/parcelas, mensais, reforços).
 // Recompõe parcelas da entrada e comissão no backend. Só antes de haver pagamento.
 export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClose: () => void; onSaved: () => void }) {
@@ -192,6 +209,9 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   const [arras, setArras] = useState(m(f.arrasValor));
   const [parcelas, setParcelas] = useState(String(venda.entradaParcelas ?? 1));
   const [venc1, setVenc1] = useState('');
+  // Parcelas da entrada com valor editável (cliente que não quer parcelas iguais).
+  const [parcelasDet, setParcelasDet] = useState<{ valor: string; venc: string }[]>([]);
+  const [parcTocadas, setParcTocadas] = useState(false); // true = usuário mexeu nos valores
   const [mensaisValor, setMensaisValor] = useState(m(f.mensaisValor));
   const [mensaisQtd, setMensaisQtd] = useState(String(f.mensaisQtd ?? ''));
   const [mensaisDia, setMensaisDia] = useState(String(f.mensaisMelhorDia ?? ''));
@@ -206,6 +226,32 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // ser editável aqui pra fechar o VGV — tanto pra DECLARAR financiamento quanto pra
   // corrigir saldo lançado a mais (vendas que estouravam o VGV).
   const [saldoRem, setSaldoRem] = useState(m(f.saldoRemanescente));
+
+  // Pré-preenche as parcelas da entrada (base = entrada ÷ nº; arras sai da 1ª).
+  // Enquanto o usuário não editar os valores, recalcula ao mudar entrada/arras/nº/1º venc.
+  useEffect(() => {
+    const entradaV = parseMoedaBR(entradaTotal) || 0;
+    const arrasV = parseMoedaBR(arras) || 0;
+    const n = Math.max(1, Number(parcelas) || 1);
+    if (parcTocadas) {
+      setParcelasDet((cur) => {
+        if (cur.length === n) return cur;
+        const arr = cur.slice(0, n);
+        while (arr.length < n) arr.push({ valor: '', venc: '' });
+        return arr;
+      });
+      return;
+    }
+    if (entradaV <= 0) { setParcelasDet([]); return; }
+    const cents = (x: number) => Math.round(x * 100);
+    const slots = distribuirParcelasEntradaCents(cents(entradaV), cents(arrasV), n);
+    const baseDate = venc1 ? new Date(venc1 + 'T00:00:00') : (() => { const dd = new Date(); dd.setMonth(dd.getMonth() + 1); return dd; })();
+    setParcelasDet(slots.map((v, i) => {
+      const dd = new Date(baseDate); dd.setMonth(dd.getMonth() + i);
+      return { valor: formatMoedaBR(Math.max(0, v) / 100), venc: dd.toISOString().slice(0, 10) };
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entradaTotal, arras, parcelas, venc1, parcTocadas]);
 
   const salvar = async () => {
     const vv = parseMoedaBR(valorVenda) || 0;
@@ -232,18 +278,19 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         return;
       }
     }
+    // Parcelas da entrada: usa os valores (editáveis) da tela. A soma tem que
+    // fechar com (entrada − arras) — a arras é paga à parte ("no ato").
     const alvo = Math.max(0, ent - arr);
-    const base = Math.round((alvo / n) * 100) / 100;
-    const detalhe = Array.from({ length: n }, (_, i) => {
-      let venc: string | null = null;
-      if (venc1) { const dt = new Date(venc1 + 'T00:00:00'); dt.setMonth(dt.getMonth() + i); venc = dt.toISOString().slice(0, 10); }
-      return { valor: base, vencimento: venc };
-    });
-    if (detalhe.length) detalhe[detalhe.length - 1].valor = Math.round((base + (alvo - base * n)) * 100) / 100;
+    const detalhe = parcelasDet.map((p) => ({ valor: parseMoedaBR(p.valor) || 0, vencimento: p.venc || null }));
+    const somaP = detalhe.reduce((a, p) => a + p.valor, 0);
+    if (!detalhe.length || Math.abs(somaP - alvo) > 1) {
+      toast.error(`A soma das parcelas da entrada (${formatMoedaBR(somaP)}) precisa fechar com entrada − arras (${formatMoedaBR(alvo)}).`);
+      return;
+    }
     const payload: any = {
       valorVenda: vv,
       entradaTotal: ent,
-      entradaParcelas: n,
+      entradaParcelas: detalhe.length,
       entradaParcelasDetalhe: detalhe,
       arrasValor: arr || null,
       mensaisValor: parseMoedaBR(mensaisValor) || null,
@@ -294,9 +341,34 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         {campo('Valor da venda *', money(valorVenda, setValorVenda, 'R$ 500.000,00'))}
         {campo('Entrada (total, com arras)', money(entradaTotal, setEntradaTotal))}
         {campo('Arras (sinal, no ato)', money(arras, setArras))}
-        {campo('Parcelas da entrada', <input type="number" min={1} className="field__input" value={parcelas} onChange={(e) => setParcelas(e.target.value)} />)}
-        {campo('1º vencimento da entrada', <CampoData className="field__input" value={venc1} onChange={(e) => setVenc1(e)} />)}
-        <div className="field field--span-2"><div className="field__hint">As parcelas da entrada são divididas igualmente ({'(entrada − arras) ÷ nº de parcelas'}), vencendo mês a mês a partir do 1º vencimento. Acima de 4x vai para aprovação do Paulo.</div></div>
+        {campo('Parcelas da entrada', <input type="number" min={1} className="field__input" value={parcelas} onChange={(e) => { setParcTocadas(false); setParcelas(e.target.value); }} />)}
+        {campo('1º vencimento da entrada', <CampoData className="field__input" value={venc1} onChange={(e) => { setParcTocadas(false); setVenc1(e); }} />)}
+        <div className="field field--span-2"><div className="field__hint">Cada parcela = entrada ÷ nº de parcelas; a <strong>arras sai da 1ª parcela</strong> (pode editar os valores abaixo pra parcelas diferentes). A soma tem que fechar com <strong>entrada − arras</strong>. Acima de 4x vai para aprovação do Paulo.</div></div>
+        {parcelasDet.length > 0 && (
+          <div className="field field--span-2">
+            <label className="field__label">Valores das parcelas da entrada</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {parcelasDet.map((p, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 28 }}>{i + 1}ª</span>
+                  <input
+                    className="field__input" inputMode="numeric" placeholder="R$ 0,00" value={p.valor}
+                    onChange={(e) => { const v = maskMoedaBR(e.target.value); setParcTocadas(true); setParcelasDet((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }}
+                    style={{ flex: 1 }}
+                  />
+                  <CampoData className="field__input" value={p.venc} onChange={(e) => { setParcTocadas(true); setParcelasDet((cur) => cur.map((x, j) => (j === i ? { ...x, venc: e } : x))); }} />
+                  {i === 0 && (parseMoedaBR(arras) || 0) > 0 && <span style={{ fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>+ arras {formatMoedaBR(parseMoedaBR(arras) || 0)} no ato</span>}
+                </div>
+              ))}
+            </div>
+            {(() => {
+              const somaP = parcelasDet.reduce((a, p) => a + (parseMoedaBR(p.valor) || 0), 0);
+              const alvoP = Math.max(0, (parseMoedaBR(entradaTotal) || 0) - (parseMoedaBR(arras) || 0));
+              const ok = Math.abs(somaP - alvoP) <= 1;
+              return <div className="field__hint" style={{ marginTop: 6, color: ok ? 'var(--color-success)' : 'var(--color-danger)' }}>{ok ? `✓ Soma ${formatMoedaBR(somaP)} = entrada − arras` : `Soma ${formatMoedaBR(somaP)} · precisa fechar com ${formatMoedaBR(alvoP)} (entrada − arras)`}</div>;
+            })()}
+          </div>
+        )}
         {campo('Mensais — valor', money(mensaisValor, setMensaisValor))}
         {campo('Mensais — quantidade', <input type="number" min={0} className="field__input" value={mensaisQtd} onChange={(e) => setMensaisQtd(e.target.value)} />)}
         {campo('Mensais — melhor dia', <input type="number" min={1} max={31} className="field__input" value={mensaisDia} onChange={(e) => setMensaisDia(e.target.value)} />)}
@@ -983,15 +1055,10 @@ export default function Vendas() {
  // Conta em CENTAVOS — em reais inteiros as parcelas arredondavam e a soma
  // não fechava com a entrada (R$ 62.073,91 em 5x saía R$ 62.074, Glaucia 07/08).
  const cents = (x: number) => Math.round(x * 100);
- // As parcelas somam (entrada − arras) — o arras é o ato, pago à parte. Distribui
- // igual entre as n parcelas (todas >= 0) e a última absorve o arredondamento.
- // Antes tirava o arras só da 1ª parcela: se o arras fosse MAIOR que uma parcela,
- // a 1ª ficava negativa, era cortada pra 0 no display e a soma não fechava → o
- // "Avançar" travava sem motivo aparente (bug reportado pelo Márcio 09/09).
- const alvo = Math.max(0, cents(entradaV) - cents(arrasV));
- const base = Math.floor(alvo / n);
- const vals = Array.from({ length: n }, () => base);
- vals[n - 1] += alvo - vals.reduce((a, b) => a + b, 0);
+ // Cada parcela = entrada ÷ n; a arras sai da 1ª parcela (transborda pra 2ª… se
+ // for maior que uma parcela — evita a 1ª negativa). As parcelas somam (entrada −
+ // arras); a arras é o ato, pago à parte. Pedido do financeiro/Márcio (out/26).
+ const vals = distribuirParcelasEntradaCents(cents(entradaV), cents(arrasV), n);
  const baseDate = entradaData ? new Date(entradaData + 'T00:00:00') : (() => { const dd = new Date(); dd.setMonth(dd.getMonth() + 1); return dd; })();
  const arr = vals.map((v, i) => {
  const dd = new Date(baseDate); dd.setMonth(dd.getMonth() + i);
