@@ -35,15 +35,23 @@ export function CampoData({
   const [iso, setIso] = useState(() => (controlado ? (value || '') : (defaultValue || '')));
   const dateRef = useRef<HTMLInputElement>(null);
 
-  // Controlado: acompanha o value de fora.
+  // Controlado: acompanha o value de fora. O texto digitado fica no estado local —
+  // enquanto a data está incompleta ("15/1") o ISO é '' e o pai devolve value='';
+  // se o campo exibisse isoParaBr(value) direto, cada dígito apagava o anterior
+  // (bug 15/10: Rafael não conseguia digitar o vencimento no app). Só troca o
+  // texto quando o value de fora é OUTRA data (ex.: pré-preenchido, limpar filtro).
   useEffect(() => {
-    if (controlado) { setTexto(isoParaBr(value || '')); setIso(value || ''); }
+    if (!controlado) return;
+    const v = value || '';
+    setTexto((cur) => (brParaIso(cur) === v ? cur : isoParaBr(v)));
+    setIso(v);
   }, [value, controlado]);
 
   const aplicar = (txt: string, el?: HTMLInputElement) => {
     const masked = maskDataBR(txt);
     const novoIso = brParaIso(masked);
-    if (!controlado) { setTexto(masked); setIso(novoIso); }
+    setTexto(masked);
+    setIso(novoIso);
     onChange?.(novoIso, el);
   };
 
@@ -71,10 +79,10 @@ export function CampoData({
         disabled={disabled}
         title={title}
         autoFocus={autoFocus}
-        value={controlado ? isoParaBr(value || '') : texto}
+        value={texto}
         style={{ paddingRight: 34, width: '100%' }}
         onChange={(e) => aplicar(e.target.value, e.currentTarget)}
-        onBlur={(e) => { const m = maskDataBR(e.target.value); if (!controlado) setTexto(m); }}
+        onBlur={(e) => setTexto(maskDataBR(e.target.value))}
       />
       {/* valor em ISO para o formulário (FormData) */}
       {name ? <input type="hidden" name={name} value={iso} /> : null}

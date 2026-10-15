@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.15.2",
+  "versao": "2026.10.15.3",
   "data": "15/10/2026",
   "novidades": [
+    {
+      "titulo": "Datas: digitar funciona em todos os campos",
+      "itens": [
+        "Nos campos de data das telas (vencimentos em Editar negociação, filtros de período e outros) a data volta a entrar digitando os números direto, sem apagar o que já foi digitado. O calendário continua no botão ao lado."
+      ]
+    },
     {
       "titulo": "Administrativo de Vendas: editar e cancelar na auditoria",
       "itens": [
