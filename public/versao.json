@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.09.2",
-  "data": "09/10/2026",
+  "versao": "2026.10.15.1",
+  "data": "15/10/2026",
   "novidades": [
+    {
+      "titulo": "Administrativo de Vendas: editar valores de venda aguardando o Paulo",
+      "itens": [
+        "Venda com parcelamento acima de 4x que está aguardando o Paulo agora tem o botão Editar valores ao lado do cadeado: dá para corrigir valor da venda, entrada e parcelas sem esperar.",
+        "A aprovação continua com o Paulo. Toda edição fica no histórico da venda."
+      ]
+    },
     {
       "titulo": "Atendimento: nota interna legível em qualquer aparelho",
       "itens": [

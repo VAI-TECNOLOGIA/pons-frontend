@@ -180,14 +180,27 @@ export default function AdminVendas() {
                         <Icon name="check" size={13} /> Aprovar (Paulo)
                       </button>
                     ) : (
-                      <button
-                        className="btn btn--secondary btn--sm"
-                        disabled
-                        title="Parcelamento acima de 4x — aguardando aprovação do Paulo. O botão libera assim que ele aprovar."
-                        style={{ opacity: 0.5, cursor: 'not-allowed' }}
-                      >
-                        <Icon name="lock" size={13} /> Aguardando Paulo
-                      </button>
+                      // Aprovação continua só com o Paulo; quem edita venda pode
+                      // corrigir os VALORES enquanto espera (pedido 15/10).
+                      <div className="flex gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          className="btn btn--secondary btn--sm"
+                          disabled
+                          title="Parcelamento acima de 4x — aguardando aprovação do Paulo. O botão libera assim que ele aprovar."
+                          style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                        >
+                          <Icon name="lock" size={13} /> Aguardando Paulo
+                        </button>
+                        {podeEditarVenda && v.status !== 'CANCELADO' && (
+                          <button
+                            className="btn btn--secondary btn--sm"
+                            onClick={() => setEditNeg(v)}
+                            title="Corrigir valor da venda, entrada e parcelas enquanto aguarda o Paulo (fica no histórico). A aprovação continua com ele."
+                          >
+                            <Icon name="pencil" size={13} /> Editar valores
+                          </button>
+                        )}
+                      </div>
                     )
                   ) : (
                     <button className="btn btn--secondary btn--sm" onClick={() => setSelId(v.id)}>
