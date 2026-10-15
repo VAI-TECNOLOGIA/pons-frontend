@@ -746,7 +746,7 @@ export default function Vendas() {
  // Diretor Financeiro (Marcelo) também audita/avança contratos (08/09).
  const podeMudarStatus = role === 'ADMINISTRATIVO' || role === 'CEO' || role === 'DIRETOR_FINANCEIRO';
  // Cancelar venda (o "excluir" da gestão): líder de equipe/gestor. Reversível.
- const podeCancelar = role === 'CEO' || role === 'DIRETOR_COMERCIAL' || role === 'GERENTE_EQUIPE' || role === 'SOCIO_UNIDADE';
+ const podeCancelar = role === 'CEO' || role === 'DIRETOR_COMERCIAL' || role === 'GERENTE_EQUIPE' || role === 'SOCIO_UNIDADE' || role === 'ADMINISTRATIVO';
  const confirm = useConfirm();
  const cancelarVenda = async (v: any) => {
    const ok = await confirm({ title: `Cancelar a venda de ${v.clienteNome || v.cliente || 'cliente'}?`, message: 'A venda vai pra "Cancelado" e sai do fluxo. Pode ser reaberta depois.', tone: 'danger', confirmText: 'Cancelar venda' });

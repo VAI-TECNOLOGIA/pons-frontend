@@ -14,6 +14,7 @@ import { formatCurrencyExact } from '../lib/format';
 import { Auth } from '../lib/auth';
 import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas, VendaHistorico, EditarDadosVendaModal, EditarNegociacaoModal } from './Vendas';
 import { EmptyState } from '../components/EmptyState';
+import { useConfirm } from '../lib/confirm';
 
 // Fases na ordem do processo — a fila mostra por fase.
 // Fluxo novo (Glaucia 29/07): confecção → conferência → alteração → jurídica →
@@ -57,6 +58,22 @@ export default function AdminVendas() {
   // "Rendered more hooks than during the previous render" (crash da aba, 30/09).
   const [confirmando, setConfirmando] = useState<number | null>(null);
   const toast = useToast();
+  const confirm = useConfirm();
+  // Cancelar venda (o "excluir" do sistema: vai pra Cancelado, fica no histórico e
+  // pode ser reaberta). Quem audita (Administrativo) também cancela — 15/10.
+  const podeCancelarVenda = ['ADMINISTRATIVO', 'CEO', 'DIRETOR_COMERCIAL'].includes(Auth.user?.role || '');
+  const cancelarVenda = async (v: any) => {
+    const ok = await confirm({ title: `Cancelar a venda de ${v.clienteNome || 'cliente'}?`, message: 'A venda vai para "Cancelado" e sai do fluxo. Fica no histórico e pode ser reaberta depois.', tone: 'danger', confirmText: 'Cancelar venda', cancelText: 'Voltar' });
+    if (!ok) return;
+    try {
+      await Api.vendaCancelar(v.id);
+      toast.success(`Venda ${v.codigo} cancelada.`);
+      setSelId(null);
+      reload();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    }
+  };
 
   if (loading) return <Shell><LoadingBlock /></Shell>;
   if (error) return <Shell><ErrorBlock error={error} /></Shell>;
@@ -200,6 +217,11 @@ export default function AdminVendas() {
                             <Icon name="pencil" size={13} /> Editar valores
                           </button>
                         )}
+                        {podeCancelarVenda && v.status !== 'CANCELADO' && (
+                          <button className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => cancelarVenda(v)} title="Vai para Cancelado, fica no histórico e pode ser reaberta">
+                            Cancelar
+                          </button>
+                        )}
                       </div>
                     )
                   ) : (
@@ -285,6 +307,11 @@ export default function AdminVendas() {
               {podeEditarVenda && sel.status !== 'CANCELADO' && (
                 <button className="btn btn--secondary" onClick={() => setEditNeg(sel)} title="Valor da venda, entrada, parcelas (fica no histórico)">
                   Editar negociação
+                </button>
+              )}
+              {podeCancelarVenda && sel.status !== 'CANCELADO' && (
+                <button className="btn btn--ghost" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => cancelarVenda(sel)} title="Vai para Cancelado, fica no histórico e pode ser reaberta">
+                  Cancelar venda
                 </button>
               )}
             </div>

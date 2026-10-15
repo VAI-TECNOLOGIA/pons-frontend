@@ -1,12 +1,13 @@
 {
-  "versao": "2026.10.15.1",
+  "versao": "2026.10.15.2",
   "data": "15/10/2026",
   "novidades": [
     {
-      "titulo": "Administrativo de Vendas: editar valores de venda aguardando o Paulo",
+      "titulo": "Administrativo de Vendas: editar e cancelar na auditoria",
       "itens": [
-        "Venda com parcelamento acima de 4x que está aguardando o Paulo agora tem o botão Editar valores ao lado do cadeado: dá para corrigir valor da venda, entrada e parcelas sem esperar.",
-        "A aprovação continua com o Paulo. Toda edição fica no histórico da venda."
+        "Venda aguardando o Paulo (parcelamento acima de 4x) agora tem Editar valores ao lado do cadeado: dá para corrigir valor da venda, entrada e parcelas sem esperar. A aprovação continua com o Paulo.",
+        "Quem audita (Administrativo) pode cancelar a venda: botão Cancelar venda no detalhe da auditoria e na linha da venda aguardando o Paulo. A venda vai para Cancelado, fica no histórico e pode ser reaberta.",
+        "Toda edição e cancelamento ficam registrados no histórico da venda."
       ]
     },
     {
