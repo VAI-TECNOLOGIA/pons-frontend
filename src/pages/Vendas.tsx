@@ -349,14 +349,16 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
             <label className="field__label">Valores das parcelas da entrada</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {parcelasDet.map((p, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 28 }}>{i + 1}ª</span>
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 24 }}>{i + 1}ª</span>
                   <input
                     className="field__input" inputMode="numeric" placeholder="R$ 0,00" value={p.valor}
                     onChange={(e) => { const v = maskMoedaBR(e.target.value); setParcTocadas(true); setParcelasDet((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }}
-                    style={{ flex: 1 }}
+                    style={{ flex: '1 1 130px', minWidth: 120 }}
                   />
-                  <CampoData className="field__input" value={p.venc} onChange={(e) => { setParcTocadas(true); setParcelasDet((cur) => cur.map((x, j) => (j === i ? { ...x, venc: e } : x))); }} />
+                  <div style={{ flex: '1 1 150px', minWidth: 130 }}>
+                    <CampoData className="field__input" value={p.venc} onChange={(e) => { setParcTocadas(true); setParcelasDet((cur) => cur.map((x, j) => (j === i ? { ...x, venc: e } : x))); }} />
+                  </div>
                   {i === 0 && (parseMoedaBR(arras) || 0) > 0 && <span style={{ fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>+ arras {formatMoedaBR(parseMoedaBR(arras) || 0)} no ato</span>}
                 </div>
               ))}
