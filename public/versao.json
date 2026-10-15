@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.15.3",
+  "versao": "2026.10.15.4",
   "data": "15/10/2026",
   "novidades": [
+    {
+      "titulo": "Vendas: Editar negociação abre com as parcelas atuais",
+      "itens": [
+        "A tela Editar negociação agora abre mostrando as parcelas da entrada como estão hoje, com os valores e as datas gravados. Antes ela recalculava tudo ao abrir.",
+        "Mudar o 1º vencimento ajusta só as datas, uma por mês, e mantém os valores. Mudar entrada, arras ou número de parcelas recalcula os valores."
+      ]
+    },
     {
       "titulo": "Datas: digitar funciona em todos os campos",
       "itens": [

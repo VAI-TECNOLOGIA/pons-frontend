@@ -212,6 +212,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // Parcelas da entrada com valor editável (cliente que não quer parcelas iguais).
   const [parcelasDet, setParcelasDet] = useState<{ valor: string; venc: string }[]>([]);
   const [parcTocadas, setParcTocadas] = useState(false); // true = usuário mexeu nos valores
+  const [parcAtuais, setParcAtuais] = useState(false); // true = abriu com as parcelas já gravadas
   const [mensaisValor, setMensaisValor] = useState(m(f.mensaisValor));
   const [mensaisQtd, setMensaisQtd] = useState(String(f.mensaisQtd ?? ''));
   const [mensaisDia, setMensaisDia] = useState(String(f.mensaisMelhorDia ?? ''));
@@ -226,6 +227,39 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // ser editável aqui pra fechar o VGV — tanto pra DECLARAR financiamento quanto pra
   // corrigir saldo lançado a mais (vendas que estouravam o VGV).
   const [saldoRem, setSaldoRem] = useState(m(f.saldoRemanescente));
+
+  // Abre com as parcelas como estão gravadas (valor e vencimento). Antes a tela
+  // recalculava tudo (arras saindo da 1ª, vencimento a partir de hoje + 1 mês) e
+  // quem só queria trocar as datas salvava valores diferentes sem perceber
+  // (venda #00719, 15/10). Se o nº gravado não bate com as parcelas, recalcula.
+  useEffect(() => {
+    let vivo = true;
+    Api.venda(venda.id).then((v: any) => {
+      const pags = [...(v?.pagamentos || [])].sort((a: any, b: any) => (a.numero || 0) - (b.numero || 0));
+      if (!vivo || !pags.length || pags.length !== Number(venda.entradaParcelas ?? pags.length)) return;
+      setParcelasDet(pags.map((p: any) => ({ valor: formatMoedaBR(Number(p.valor) || 0), venc: String(p.vencimento || '').slice(0, 10) })));
+      setVenc1(String(pags[0].vencimento || '').slice(0, 10));
+      setParcTocadas(true);
+      setParcAtuais(true);
+    }).catch(() => { /* sem as parcelas: segue com o cálculo */ });
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venda.id]);
+
+  // Trocar o 1º vencimento com as parcelas já definidas: só reposiciona as datas
+  // (uma por mês a partir dele) e mantém os valores.
+  const mudarVenc1 = (iso: string) => {
+    setVenc1(iso);
+    if (!parcTocadas || !iso) return;
+    const [a, mo, d] = iso.split('-').map(Number);
+    setParcelasDet((cur) => cur.map((x, i) => {
+      const dt = new Date(a, mo - 1 + i, d);
+      return { ...x, venc: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}` };
+    }));
+  };
+  // Mudar entrada ou arras redistribui os valores das parcelas.
+  const mudarEntrada = (v: string) => { setParcTocadas(false); setEntradaTotal(v); };
+  const mudarArras = (v: string) => { setParcTocadas(false); setArras(v); };
 
   // Pré-preenche as parcelas da entrada (base = entrada ÷ nº; arras sai da 1ª).
   // Enquanto o usuário não editar os valores, recalcula ao mudar entrada/arras/nº/1º venc.
@@ -339,10 +373,11 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
     <Modal open onClose={onClose} title="Editar negociação" subtitle={`${venda.clienteNome || 'Venda'} · recalcula parcelas e comissão`}>
       <div className="form-grid">
         {campo('Valor da venda *', money(valorVenda, setValorVenda, 'R$ 500.000,00'))}
-        {campo('Entrada (total, com arras)', money(entradaTotal, setEntradaTotal))}
-        {campo('Arras (sinal, no ato)', money(arras, setArras))}
+        {campo('Entrada (total, com arras)', money(entradaTotal, mudarEntrada))}
+        {campo('Arras (sinal, no ato)', money(arras, mudarArras))}
         {campo('Parcelas da entrada', <input type="number" min={1} className="field__input" value={parcelas} onChange={(e) => { setParcTocadas(false); setParcelas(e.target.value); }} />)}
-        {campo('1º vencimento da entrada', <CampoData className="field__input" value={venc1} onChange={(e) => { setParcTocadas(false); setVenc1(e); }} />)}
+        {campo('1º vencimento da entrada', <CampoData className="field__input" value={venc1} onChange={mudarVenc1} />)}
+        {parcAtuais && <div className="field field--span-2"><div className="field__hint">Mostrando as parcelas <strong>como estão hoje</strong>. Mudar o 1º vencimento ajusta só as datas; mudar entrada, arras ou nº de parcelas recalcula os valores.</div></div>}
         <div className="field field--span-2"><div className="field__hint">Cada parcela = entrada ÷ nº de parcelas; a <strong>arras sai da 1ª parcela</strong> (pode editar os valores abaixo pra parcelas diferentes). A soma tem que fechar com <strong>entrada − arras</strong>. Acima de 4x vai para aprovação do Paulo.</div></div>
         {parcelasDet.length > 0 && (
           <div className="field field--span-2">
