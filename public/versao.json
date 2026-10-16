@@ -1,5 +1,5 @@
 {
-  "versao": "2026.10.16.3",
+  "versao": "2026.10.16.4",
   "data": "16/10/2026",
   "novidades": [
     {
@@ -9,7 +9,8 @@
         "Só dados reais: as vendas contam pela data da venda, igual à Análise de Vendas. Canceladas e lançamentos de teste não entram, e corretor desativado ou conta de teste não aparece nos rankings.",
         "VGV, vendas, ticket, leads recebidos, conversão dos leads e tempo até aceitar, sempre comparados com o período anterior.",
         "Linha do tempo ao vivo (lead recebido, venda lançada, contrato assinado, lead que pulou), alertas da operação, funil, contratos por status, ranking de corretores pelo VGV, equipes, empreendimentos e origens. A tela se atualiza sozinha a cada 30 segundos.",
-        "Modo TV para deixar no telão."
+        "Modo TV para deixar no telão.",
+        "Cores do dashboard nas cores oficiais do Grupo Pons (azul-marinho, azul Pons e ciano)."
       ]
     },
     {

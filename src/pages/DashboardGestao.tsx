@@ -157,7 +157,9 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
     if (!canvasRef.current || !data?.serie) return;
     chartRef.current?.destroy();
     const escuro = document.documentElement.getAttribute('data-theme') === 'dark';
-    const cor = { azul: escuro ? '#2A86F0' : '#1F6FE0', ciano: escuro ? '#52F7FE' : '#0E9FB5', grade: escuro ? 'rgba(159,178,214,0.12)' : 'rgba(19,25,42,0.07)', txt: escuro ? '#9FB2D6' : '#4D5A72' };
+    // Paleta Pons (styles/tokens.css): barras no azul Pons (blue-300 no escuro, para
+    // ler sobre o azul-marinho), linha no ciano (escuro) ou azul-marinho (claro).
+    const cor = { azul: escuro ? '#3FB6D4' : '#0E7C9B', ciano: escuro ? '#52F7FE' : '#263654', grade: escuro ? 'rgba(132,147,180,0.15)' : 'rgba(38,54,84,0.08)', txt: escuro ? '#8893A8' : '#3D5278' };
     const temLeads = data.kpis?.leads != null;
     chartRef.current = new Chart(canvasRef.current, {
       type: 'bar',
