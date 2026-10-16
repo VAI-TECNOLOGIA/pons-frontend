@@ -13,6 +13,7 @@ import { InsightsList } from '../components/InsightsList';
 import { PageSkeleton } from '../components/Skeleton';
 import { PageWrap } from '../components/PageWrap';
 import { Chart, registerables } from 'chart.js';
+import DashboardGestao from './DashboardGestao';
 
 Chart.register(...registerables);
 
@@ -32,7 +33,30 @@ const ALERT_COLOR: Record<string, [string, string, string]> = {
  success: ['var(--color-success-bg)', 'var(--color-success-fg)', 'var(--color-success-border)'],
 };
 
+// Gestão (todo papel que não é corretor) vê o dashboard de gestão à vista
+// (DashboardGestao, dados de /dashboard/gestao). O corretor segue com o pessoal.
+// Se o servidor ainda não tiver o endpoint novo, a gestão cai no legado abaixo.
 export default function Dashboard() {
+ const user = Auth.user!;
+ if (user.role !== 'CORRETOR') {
+ return (
+ <>
+ <Topbar title="Dashboard" />
+ <div className="main__content">
+ <DashboardGestao fallback={<DashboardLegadoConteudo />} />
+ </div>
+ </>
+ );
+ }
+ return <DashboardLegado />;
+}
+
+// Conteúdo do legado sem a Topbar (a Topbar já está na casca acima).
+function DashboardLegadoConteudo() {
+ return <DashboardLegado semTopbar />;
+}
+
+function DashboardLegado({ semTopbar = false }: { semTopbar?: boolean }) {
  const user = Auth.user!;
  const isExec = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO'].includes(user.role);
  const isCorretor = user.role === 'CORRETOR';
@@ -149,8 +173,8 @@ export default function Dashboard() {
  return () => { vendasChartInst.current?.destroy(); };
  }, [isCorretor, data]);
 
- if (loading) return <DashboardShell user={user}><PageSkeleton /></DashboardShell>;
- if (error) return <DashboardShell user={user}><ErrorBlock error={error} label="Erro ao carregar dashboard" /></DashboardShell>;
+ if (loading) return semTopbar ? <PageSkeleton /> : <DashboardShell user={user}><PageSkeleton /></DashboardShell>;
+ if (error) return semTopbar ? <ErrorBlock error={error} label="Erro ao carregar dashboard" /> : <DashboardShell user={user}><ErrorBlock error={error} label="Erro ao carregar dashboard" /></DashboardShell>;
  if (!data) return null;
 
  const a = data.avanco;
@@ -160,9 +184,9 @@ export default function Dashboard() {
 
  return (
  <>
- <Topbar title="Dashboard" />
+ {!semTopbar && <Topbar title="Dashboard" />}
 
- <div className="main__content">
+ <div className={semTopbar ? undefined : 'main__content'}>
  <div className="page-header">
  <div>
  <div className="page-header__breadcrumb">Visão geral</div>

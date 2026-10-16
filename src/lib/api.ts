@@ -305,6 +305,8 @@ export const Api = {
 
   // Dashboard
   dashboard: () => request<any>('/dashboard'),
+  dashboardGestao: (params: Record<string, unknown> = {}) => request<any>(`/dashboard/gestao${qs(params)}`),
+  dashboardGestaoOpcoes: () => request<any>('/dashboard/gestao/opcoes'),
 
   // Equipes
   equipes: () => request<any[]>('/equipes'),

@@ -1,7 +1,17 @@
 {
-  "versao": "2026.10.16.1",
+  "versao": "2026.10.16.2",
   "data": "16/10/2026",
   "novidades": [
+    {
+      "titulo": "Dashboard novo: gestão à vista",
+      "itens": [
+        "Filtros de período (hoje, 7 dias, mês, mês passado, ano ou datas livres), equipe, corretor, empreendimento, origem e campanha. O filtro fica no link: dá para mandar o mesmo recorte para outra pessoa.",
+        "Só dados reais: as vendas contam pela data da venda, igual à Análise de Vendas. Canceladas e lançamentos de teste não entram, e corretor desativado ou conta de teste não aparece nos rankings.",
+        "VGV, vendas, ticket, leads recebidos, conversão dos leads e tempo até aceitar, sempre comparados com o período anterior.",
+        "Linha do tempo ao vivo (lead recebido, venda lançada, contrato assinado, lead que pulou), alertas da operação, funil, contratos por status, ranking de corretores pelo VGV, equipes, empreendimentos e origens. A tela se atualiza sozinha a cada 30 segundos.",
+        "Modo TV para deixar no telão."
+      ]
+    },
     {
       "titulo": "Leads e conexão com o Facebook",
       "itens": [
