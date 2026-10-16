@@ -1,7 +1,17 @@
 {
-  "versao": "2026.10.16.8",
+  "versao": "2026.10.16.9",
   "data": "16/10/2026",
   "novidades": [
+    {
+      "titulo": "Dashboard: visão 360 do corretor e do lead",
+      "itens": [
+        "Clique num corretor do ranking (ou numa venda da linha do tempo) e abre o painel dele: leads recebidos e aceitos no período, tempo até aceitar, leads que deixou passar, vendas, VGV e posição no ranking, tempo de casa, gestor, carteira por etapa, histórico de vendas, últimos leads e trocas de sala.",
+        "Clique num lead da linha do tempo e abre o atendimento: quando chegou, quem recebeu, em quanto tempo aceitou, etapa do funil, conversa (quando ela passa pelo sistema) e o caminho entre corretores.",
+        "Mensagem privada para o corretor direto do painel, com sugestões prontas (parabéns pela venda, cobrar um lead sem aceite). Chega no sino e no celular dele. A diretoria manda para qualquer corretor; gerente e sócio, para os corretores que comandam.",
+        "Clicar numa equipe, empreendimento, origem ou campanha filtra o dashboard por ela.",
+        "As trocas de sala e de filial feitas no cadastro passam a ficar registradas no histórico do corretor."
+      ]
+    },
     {
       "titulo": "Equipes: meta mensal com valor em reais",
       "itens": [

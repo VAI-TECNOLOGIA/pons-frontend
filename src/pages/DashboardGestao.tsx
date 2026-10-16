@@ -10,6 +10,7 @@ import { Api, ApiError } from '../lib/api';
 import { formatCurrency, formatCurrencyShort, timeAgo } from '../lib/format';
 import { Icon } from '../components/Icon';
 import { CampoData } from '../components/CampoData';
+import { Painel360, type Alvo360 } from '../components/Painel360';
 import '../styles/dashboard-gestao.css';
 
 Chart.register(...registerables);
@@ -99,6 +100,20 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
   const [abaOrigem, setAbaOrigem] = useState<'origem' | 'campanha'>('origem');
   const vistos = useRef<Set<string>>(new Set());
   const [novos, setNovos] = useState<Set<string>>(new Set());
+  // Visão 360: ?ver=c12 (corretor) ou ?ver=l345 (lead) — fica no link, dá para compartilhar.
+  const ver = sp.get('ver') || '';
+  const alvo360 = useMemo<Alvo360 | null>(() => {
+    const m = /^([cl])(\d+)$/.exec(ver);
+    return m ? { tipo: m[1] === 'c' ? 'corretor' : 'lead', id: Number(m[2]) } : null;
+  }, [ver]);
+  const abrir360 = (a: Alvo360) => {
+    const n = new URLSearchParams(sp);
+    n.set('ver', `${a.tipo === 'corretor' ? 'c' : 'l'}${a.id}`);
+    setSp(n, { replace: true });
+  };
+  const fechar360 = useCallback(() => {
+    setSp((atual) => { const n = new URLSearchParams(atual); n.delete('ver'); return n; }, { replace: true });
+  }, [setSp]);
 
   const carregar = useCallback(async (silencioso = false) => {
     if (!silencioso) setBuscando(true);
@@ -126,7 +141,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
   useEffect(() => { Api.dashboardGestaoOpcoes().then(setOpcoes).catch(() => setOpcoes(null)); }, []);
   useEffect(() => {
     if (!tv) return;
-    const sair = (e: KeyboardEvent) => { if (e.key === 'Escape') setTv(false); };
+    // Com o painel 360 aberto, o Esc fecha só o painel (o modo TV continua).
+    const sair = (e: KeyboardEvent) => { if (e.key === 'Escape' && !new URLSearchParams(window.location.search).get('ver')) setTv(false); };
     window.addEventListener('keydown', sair);
     return () => window.removeEventListener('keydown', sair);
   }, [tv]);
@@ -149,6 +165,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
   };
   const limpar = () => setSp(new URLSearchParams(), { replace: true });
   const temFiltro = ['equipe', 'corretor', 'emp', 'origem', 'campanha'].some((k) => sp.get(k)) || preset !== 'mes';
+  // Teclado: Enter/espaço num item clicável faz o mesmo que o clique.
+  const tecla = (fn: () => void) => (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } };
 
   // ── gráfico VGV × leads ─────────────────────────────────────────────────
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -297,8 +315,11 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
             {(data.timeline || []).length === 0 && <div className="dg-vazio">Nada aconteceu ainda com esses filtros.</div>}
             {(data.timeline || []).map((e: any) => {
               const id = `${e.tipo}:${e.em}:${e.leadId || e.vendaId || ''}`;
+              const destino: Alvo360 | null = e.leadId ? { tipo: 'lead', id: e.leadId } : e.corretorId ? { tipo: 'corretor', id: e.corretorId } : null;
+              const abrir = () => destino && abrir360(destino);
               return (
-                <div key={id} className={`dg-ev dg-ev--${e.tipo}${novos.has(id) ? ' dg-ev--novo' : ''}`}>
+                <div key={id} className={`dg-ev dg-ev--${e.tipo}${novos.has(id) ? ' dg-ev--novo' : ''}${destino ? ' dg-clicavel' : ''}`}
+                  {...(destino ? { role: 'button', tabIndex: 0, onClick: abrir, onKeyDown: tecla(abrir), title: destino.tipo === 'lead' ? 'Abrir o lead' : 'Abrir o corretor' } : {})}>
                   <span className="dg-ev-ic"><Icon name={ICONE_EVENTO[e.tipo] || 'activity'} size={14} /></span>
                   <div>
                     <div className="dg-ev-quando">{timeAgo(e.em)}</div>
@@ -423,7 +444,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
                   <thead><tr><th style={{ width: 40 }}>#</th><th>Corretor</th><th className="n" style={{ width: 92 }}>VGV</th><th className="n" style={{ width: 62 }}>Vendas</th>{k.leads && <th className="n" style={{ width: 58 }}>Leads</th>}</tr></thead>
                   <tbody>
                     {data.rankingCorretores.map((c: any, i: number) => (
-                      <tr key={c.id}>
+                      <tr key={c.id} className="dg-clicavel" role="button" tabIndex={0} title="Abrir o corretor"
+                        onClick={() => abrir360({ tipo: 'corretor', id: c.id })} onKeyDown={tecla(() => abrir360({ tipo: 'corretor', id: c.id }))}>
                         <td><span className={`dg-pos${i < 3 ? ` dg-pos--${i + 1}` : ''}`}>{i + 1}</span></td>
                         <td>
                           <div className="dg-pessoa">
@@ -447,7 +469,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
             <section className="dg-card">
               <div className="dg-card-topo"><h2 className="dg-card-titulo">Equipes</h2><span className="dg-card-nota">VGV do período</span></div>
               {(data.rankingEquipes || []).length === 0 ? <div className="dg-vazio">Nenhuma venda ou lead nas equipes no período.</div> : data.rankingEquipes.map((e: any) => (
-                <div key={e.id} style={{ marginBottom: 12 }}>
+                <div key={e.id} style={{ marginBottom: 12 }} className="dg-clicavel dg-clicavel--bloco" role="button" tabIndex={0} title={`Filtrar o dashboard pela ${e.nome}`}
+                  onClick={() => setFiltro('equipe', String(e.id))} onKeyDown={tecla(() => setFiltro('equipe', String(e.id)))}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 13 }}>
                     <span className="dg-pessoa-nome" title={e.nome}>{e.nome}</span>
                     <strong className="dg-forte" title={formatCurrency(e.vgv)}>{formatCurrencyShort(e.vgv)}</strong>
@@ -467,7 +490,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
             <section className="dg-card">
               <div className="dg-card-topo"><h2 className="dg-card-titulo">Empreendimentos</h2><span className="dg-card-nota">VGV vendido no período</span></div>
               {(data.empreendimentos || []).length === 0 ? <div className="dg-vazio">Nenhuma venda no período.</div> : data.empreendimentos.map((e: any) => (
-                <div key={e.id} style={{ marginBottom: 12 }}>
+                <div key={e.id} style={{ marginBottom: 12 }} className="dg-clicavel dg-clicavel--bloco" role="button" tabIndex={0} title={`Filtrar o dashboard pelo ${e.nome}`}
+                  onClick={() => setFiltro('emp', String(e.id))} onKeyDown={tecla(() => setFiltro('emp', String(e.id)))}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 13 }}>
                     <span className="dg-pessoa-nome" title={e.nome}>{e.nome}</span>
                     <strong className="dg-forte" title={formatCurrency(e.vgv)}>{formatCurrencyShort(e.vgv)}</strong>
@@ -490,15 +514,18 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
                   <div className="dg-tab-wrap"><table className="dg-tab" style={{ minWidth: 380 }}>
                     <thead><tr><th>{abaOrigem === 'origem' ? 'Origem' : 'Campanha'}</th><th className="n" style={{ width: 58 }}>Leads</th><th className="n" style={{ width: 58 }}>Vendas</th><th className="n" style={{ width: 58 }}>Conv.</th><th className="n" style={{ width: 80 }}>VGV</th></tr></thead>
                     <tbody>
-                      {linhasOrigem.map((o: any) => (
-                        <tr key={o.origem || o.campanha}>
+                      {linhasOrigem.map((o: any) => {
+                        const filtrar = () => (abaOrigem === 'origem' ? setFiltro('origem', o.origem) : setFiltro('campanha', o.campanha));
+                        return (
+                        <tr key={o.origem || o.campanha} className="dg-clicavel" role="button" tabIndex={0} title="Filtrar o dashboard por esta linha" onClick={filtrar} onKeyDown={tecla(filtrar)}>
                           <td><div className="dg-pessoa-nome" style={{ maxWidth: 220 }} title={o.rotulo || o.campanha}>{o.rotulo || o.campanha}</div></td>
                           <td className="n">{inteiro(o.leads)}</td>
                           <td className="n">{o.vendas}</td>
                           <td className="n">{pct(o.conversao)}</td>
                           <td className="n" title={formatCurrency(o.vgv)}>{formatCurrencyShort(o.vgv)}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table></div>
                 )}
@@ -507,6 +534,10 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
           </div>
         </div>
       </div>
+      {alvo360 && (
+        <Painel360 alvo={alvo360} filtros={filtros} onFechar={fechar360}
+          onFiltrarCorretor={(id) => { const n = new URLSearchParams(sp); n.set('corretor', String(id)); n.delete('ver'); setSp(n, { replace: true }); }} />
+      )}
     </div>
   );
 }

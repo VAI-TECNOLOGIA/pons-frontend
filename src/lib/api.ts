@@ -307,6 +307,11 @@ export const Api = {
   dashboard: () => request<any>('/dashboard'),
   dashboardGestao: (params: Record<string, unknown> = {}) => request<any>(`/dashboard/gestao${qs(params)}`),
   dashboardGestaoOpcoes: () => request<any>('/dashboard/gestao/opcoes'),
+  // Visão 360 do dashboard de gestão (painel lateral ao clicar no corretor ou no lead).
+  dashboardCorretor360: (id: number, params: Record<string, unknown> = {}) => request<any>(`/dashboard/gestao/corretor/${id}${qs(params)}`),
+  dashboardLead360: (id: number) => request<any>(`/dashboard/gestao/lead/${id}`),
+  dashboardMensagemCorretor: (id: number, texto: string, leadId?: number | null) =>
+    request<{ ok: boolean; sinoOk: boolean; push: { status: string; success: number } }>(`/dashboard/gestao/corretor/${id}/mensagem`, { method: 'POST', body: { texto, leadId: leadId || null } }),
 
   // Equipes
   equipes: () => request<any[]>('/equipes'),
