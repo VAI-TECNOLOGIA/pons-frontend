@@ -57,6 +57,7 @@ export default function AdminVendas() {
   // muda entre renders (loading vs carregado) e o React quebra a tela toda com
   // "Rendered more hooks than during the previous render" (crash da aba, 30/09).
   const [confirmando, setConfirmando] = useState<number | null>(null);
+  const [abrindoWa, setAbrindoWa] = useState<number | null>(null);
   const toast = useToast();
   const confirm = useConfirm();
   // Cancelar venda (o "excluir" do sistema: vai pra Cancelado, fica no histórico e
@@ -112,17 +113,47 @@ export default function AdminVendas() {
     toast.info('Enviando o protocolo no WhatsApp…');
     try {
       const r = await Api.vendaConfirmar(v.id);
-      if (r?.whatsapp && r.whatsapp.enviado === false) {
-        toast.error('Venda confirmada, mas o protocolo NÃO foi pro WhatsApp: ' + (r.whatsapp.motivo || 'confira o número do protocolo em Configurações'));
-      } else {
-        toast.success(`Venda ${v.codigo} confirmada — protocolo enviado no WhatsApp (os documentos seguem em instantes). Mantida em "Contrato em confecção".`);
+      const w = r?.whatsapp;
+      if (w && w.enviado === false) {
+        // Motivo real (antes a tela sempre mandava conferir o número em Configurações).
+        // 131042 = conta da Meta sem forma de pagamento — só a Pons resolve na Meta.
+        const semPagamento = w.metaCode === 131042 || /payment|billing|pagamento/i.test(w.erro || '');
+        const semDestino = w.motivo === 'sem_destino_configurado_e_corretor_sem_telefone';
+        toast.error(semDestino
+          ? 'Venda confirmada, mas falta o número que recebe o protocolo (cadastre no quadro acima).'
+          : semPagamento
+            ? 'Venda confirmada. O envio automático foi recusado pela Meta: a conta oficial do WhatsApp da Pons está sem forma de pagamento. Use "Enviar pelo meu WhatsApp".'
+            : `Venda confirmada, mas a Meta recusou o envio automático${w.erro ? ` (${w.erro})` : ''}. Use "Enviar pelo meu WhatsApp".`);
+        reload(); // mantém a venda aberta para enviar pelo WhatsApp do Adm
+        return;
       }
+      toast.success(`Venda ${v.codigo} confirmada — protocolo enviado no WhatsApp (os documentos seguem em instantes). Mantida em "Contrato em confecção".`);
       setSelId(null);
       reload();
     } catch (e: any) {
       toast.error(e.message === 'envio_em_andamento' ? 'O protocolo desta venda já está sendo enviado — aguarde.' : 'Erro: ' + (e.message || 'falha'));
     } finally {
       setConfirmando(null);
+    }
+  };
+
+  // Protocolo pelo WhatsApp do próprio Adm, sem a API da Meta: o servidor gera o
+  // PDF e devolve o texto com o link; abre o WhatsApp já com a mensagem pronta.
+  // A janela abre no clique (antes do await) para o navegador não bloquear.
+  const enviarPeloMeuWhatsapp = async (v: any) => {
+    if (abrindoWa) return;
+    setAbrindoWa(v.id);
+    const janela = window.open('', '_blank');
+    try {
+      const r = await Api.vendaProtocoloLink(v.id);
+      const url = `https://wa.me/${r.numero || ''}?text=${encodeURIComponent(r.texto)}`;
+      if (janela) janela.location.href = url; else window.location.href = url;
+      toast.success('WhatsApp aberto com o protocolo. Confira e toque em enviar.');
+    } catch (e: any) {
+      janela?.close();
+      toast.error('Não foi possível gerar o protocolo: ' + (e.message || 'falha'));
+    } finally {
+      setAbrindoWa(null);
     }
   };
 
@@ -295,6 +326,9 @@ export default function AdminVendas() {
             <div className="flex gap-2">
               <button className="btn btn--secondary" onClick={() => baixarProtocolo(sel)}>
                 <Icon name="doc" size={14} /> Protocolo (PDF)
+              </button>
+              <button className="btn btn--secondary" onClick={() => enviarPeloMeuWhatsapp(sel)} disabled={abrindoWa === sel.id} title="Abre o WhatsApp com o protocolo e o link do PDF, para enviar do seu número (não depende da Meta)">
+                <Icon name="whatsapp" size={14} /> {abrindoWa === sel.id ? 'Gerando…' : 'Enviar pelo meu WhatsApp'}
               </button>
               <button className="btn btn--ghost" onClick={() => window.print()} title="Imprimir esta tela">
                 Imprimir

@@ -7,6 +7,8 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { EmptyState } from './EmptyState';
+import { Modal } from './Modal';
+import { Auth } from '../lib/auth';
 
 export function GestaoFiliais() {
   const { data, loading, error, reload } = useApi<any[]>(() => Api.unidadesList());
@@ -24,6 +26,41 @@ export function GestaoFiliais() {
       toast.error('Erro: ' + (err.message || 'falha'));
     } finally {
       setSaving(null);
+    }
+  };
+
+  // Filial sem gestor (o sócio toca direto): venda daqui não tem parcela de gestor.
+  const [previa, setPrevia] = useState<{ unidade: any; vendas: any[] } | null>(null);
+  const [aplicando, setAplicando] = useState(false);
+  const podeAjustarVendas = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role || '');
+  const abrirPrevia = async (unidadeId: number) => {
+    try { setPrevia(await Api.semGestorPrevia(unidadeId)); }
+    catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+  };
+  const mudarGestor = async (unidade: any, semGestor: boolean) => {
+    setSaving(unidade.id);
+    try {
+      await Api.unidadeUpdate(unidade.id, { semGestor });
+      toast.success(semGestor ? `${unidade.nome}: vendas novas sem parcela de gestor` : `${unidade.nome}: volta a ter gestor nas vendas novas`);
+      reload();
+      if (semGestor && podeAjustarVendas) await abrirPrevia(unidade.id);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'falha'));
+    } finally {
+      setSaving(null);
+    }
+  };
+  const aplicarSemGestor = async () => {
+    if (!previa) return;
+    setAplicando(true);
+    try {
+      const r = await Api.semGestorAplicar(previa.unidade.id);
+      toast.success(r.ajustadas ? `${r.ajustadas} venda(s) ajustada(s): a parte do gestor voltou para a imobiliária` : 'Nenhuma venda para ajustar');
+      setPrevia(null);
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'falha'));
+    } finally {
+      setAplicando(false);
     }
   };
 
@@ -82,6 +119,7 @@ export function GestaoFiliais() {
               <th>Filial</th>
               <th>Cidade</th>
               <th className="numeric">Corretores</th>
+              <th style={{ minWidth: 190 }} title="Filial sem gestor: o sócio toca direto e a venda não tem parcela de gestor">Gestor nas vendas</th>
               <th style={{ minWidth: 240 }}>CNPJ (empresa do contrato)</th>
             </tr>
           </thead>
@@ -91,6 +129,22 @@ export function GestaoFiliais() {
                 <td className="font-semibold">{u.nome}{!u.ativo && <span className="text-secondary"> (inativa)</span>}</td>
                 <td>{u.cidade || '—'}</td>
                 <td className="numeric">{u.corretores ?? 0}</td>
+                <td>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <select
+                      className="field__input"
+                      value={u.semGestor ? 'sem' : 'com'}
+                      disabled={saving === u.id}
+                      onChange={(ev) => mudarGestor(u, ev.target.value === 'sem')}
+                    >
+                      <option value="com">Tem gestor (líder da sala)</option>
+                      <option value="sem">Sem gestor (o sócio toca)</option>
+                    </select>
+                    {u.semGestor && podeAjustarVendas && (
+                      <button className="btn btn--ghost btn--sm" onClick={() => abrirPrevia(u.id)} title="Vendas já lançadas desta filial que ainda têm parcela de gestor">Vendas</button>
+                    )}
+                  </div>
+                </td>
                 <td>
                   <select
                     className="field__input"
@@ -107,11 +161,50 @@ export function GestaoFiliais() {
               </tr>
             ))}
             {unidades.length === 0 && (
-              <tr><td colSpan={4}><EmptyState size="sm" title="Nenhuma filial cadastrada" /></td></tr>
+              <tr><td colSpan={5}><EmptyState size="sm" title="Nenhuma filial cadastrada" /></td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <Modal open={!!previa} onClose={() => setPrevia(null)} title={previa ? `${previa.unidade.nome}: vendas com parcela de gestor` : ''} size="lg">
+        {previa && (() => {
+          const ajustaveis = previa.vendas.filter((v: any) => v.podeAjustar);
+          const moeda = (n: number) => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          return (
+            <div style={{ display: 'grid', gap: 12 }}>
+              <p className="text-sm text-secondary" style={{ margin: 0 }}>
+                As vendas novas desta filial já saem sem gestor. Abaixo, as vendas já lançadas que ainda têm parcela de gestor.
+                Ao aplicar, a parte do gestor volta para a imobiliária <strong>só nas vendas em que essa comissão ainda não foi paga</strong>;
+                o resto do rateio não muda e cada venda guarda no histórico o valor de antes.
+              </p>
+              {previa.vendas.length === 0 ? <div className="text-secondary">Nenhuma venda com parcela de gestor nesta filial.</div> : (
+                <table className="table">
+                  <thead><tr><th>Venda</th><th>Corretor</th><th>Gestor</th><th className="numeric">Parcela do gestor</th><th>Situação</th></tr></thead>
+                  <tbody>
+                    {previa.vendas.map((v: any) => (
+                      <tr key={v.id} style={v.podeAjustar ? undefined : { opacity: 0.55 }}>
+                        <td><strong>{v.codigo}</strong><div className="text-xs text-secondary">{v.cliente}{v.sala ? ` · ${v.sala}` : ''}</div></td>
+                        <td>{v.corretor || '—'}</td>
+                        <td>{v.gestor}</td>
+                        <td className="numeric">{moeda(v.valorGestor)}</td>
+                        <td className="text-xs">{v.podeAjustar ? 'Será ajustada' : `Fica como está (${v.motivo})`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <div className="flex-between" style={{ alignItems: 'center' }}>
+                <span className="text-sm">{ajustaveis.length} venda(s) para ajustar · {moeda(ajustaveis.reduce((s: number, v: any) => s + v.valorGestor, 0))} voltam para a imobiliária</span>
+                <div className="flex gap-2">
+                  <button className="btn btn--secondary" onClick={() => setPrevia(null)}>Agora não</button>
+                  <button className="btn btn--primary" disabled={aplicando || ajustaveis.length === 0} onClick={aplicarSemGestor}>{aplicando ? 'Ajustando…' : `Tirar o gestor de ${ajustaveis.length} venda(s)`}</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
 
       <EmpresasEditor empresas={opts} onSalvo={reload} />
       <ParticipacaoUnidades unidades={unidades} />

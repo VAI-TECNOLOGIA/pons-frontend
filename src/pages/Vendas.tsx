@@ -529,7 +529,7 @@ export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: 
 // ── Histórico de edições da venda (log de segurança, ninguém apaga) ─────────
 const ACAO_HISTORICO: Record<string, string> = {
   VENDA_CRIADA: 'Venda cadastrada', VENDA_DADOS_EDITADOS: 'Dados editados', VENDA_NEGOCIACAO_EDITADA: 'Negociação editada',
-  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada',
+  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada', VENDA_RATEIO_SEM_GESTOR: 'Rateio sem gestor', VENDA_ARRAS_CONFIRMADO: 'Arras',
 };
 const fmtValorHist = (campo: string, v: any) => {
   if (v == null || v === '') return '(vazio)';
@@ -1520,7 +1520,8 @@ export default function Vendas() {
  // splitVariante só na negociação especial — sem ela o motor usa o rateio do
  // corretor (negociado no cadastro ou automático por tempo de casa)
  ...(podeEditarRateio && comEspecial && fd.get('splitVariante') ? { splitVariante: String(fd.get('splitVariante')) } : {}),
- percentualGestor: podeEditarRateio && comEspecial ? Number(fd.get('percentualGestorPons') || 10) : 10,
+ // % do gestor: vazio = automático (cadastro do gestor; 0 em filial sem gestor).
+ ...(podeEditarRateio && comEspecial && fd.get('percentualGestorPons') ? { percentualGestor: Number(fd.get('percentualGestorPons')) } : {}),
  aplicarGestorTrafego: false,
  // Formulário oficial GPI (protocolo PF/PJ)
  tipoComprador,
@@ -2821,9 +2822,11 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">% Gestor</label>
- <select name="percentualGestorPons" className="field__select" defaultValue="10">
- <option value="10">10%</option><option value="13">13%</option>
+ <select name="percentualGestorPons" className="field__select" defaultValue="">
+ <option value="">Automático (cadastro do gestor)</option>
+ <option value="0">0% (sem gestor)</option><option value="10">10%</option><option value="13">13%</option><option value="15">15%</option>
  </select>
+ <div className="field__hint">Automático usa o % do gestor da sala; filial sem gestor fica 0%.</div>
  </div>
  <div className="field">
  <label className="field__label">Origem (override)</label>
@@ -3331,12 +3334,22 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const [parcelas, setParcelas] = useState<any[]>([]);
  const [busy, setBusy] = useState<number | null>(null);
  const [rateioMotor, setRateioMotor] = useState<any>(null); // vendas do sistema (sem planilha): rateio calculado
+ // Arras faz parte da entrada mas não é parcela — entra como linha própria para
+ // o plano de recebimento fechar com a entrada (pedido Marcelo 16/10).
+ const [arras, setArras] = useState<{ valor: number; venc: string; pago: boolean; incluso: boolean } | null>(null);
 
  const load = async () => {
  try {
  const v = await Api.venda(vendaId);
  const pags = v?.pagamentos || [];
  setParcelas(pags);
+ const av = Number(v?.arrasValor) || 0;
+ const venc = String(v?.arrasVencimento || '');
+ // Venda antiga sem parcelas detalhadas: a entrada foi dividida igual e o arras
+ // já está DENTRO das parcelas — aí a linha aparece só como informação.
+ const somaParcelas = pags.reduce((s: number, p: any) => s + (Number(p.valor) || 0), 0);
+ const incluso = av > 0 && Number(v?.entradaTotal) > 0 && Math.abs(somaParcelas - Number(v.entradaTotal)) < 1;
+ setArras(av > 0 ? { valor: av, venc: /^\d{4}-\d{2}-\d{2}/.test(venc) ? venc.slice(0, 10).split('-').reverse().join('/') : (venc || '—'), pago: !!v?.arrasPagoEm, incluso } : null);
  if (rateioCompleto && !pags.some((p: any) => p.rateioPlanilha)) {
  try { setRateioMotor(await Api.rateioVenda(vendaId)); } catch { /* sem rateio calculável */ }
  }
@@ -3357,10 +3370,26 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  }
  };
 
- if (parcelas.length === 0 && !rateioMotor) return null;
+ const mudarArras = async (pago: boolean) => {
+ setBusy(-1);
+ try {
+ await Api.vendaArras(vendaId, pago);
+ toast.success(pago ? 'Arras confirmado.' : 'Confirmação do arras desfeita.');
+ await load();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setBusy(null);
+ }
+ };
+
+ if (parcelas.length === 0 && !rateioMotor && !arras) return null;
  const pagas = parcelas.filter((p) => p.status === 'PAGO');
- const totalEntrada = parcelas.reduce((s, p) => s + (p.valor || 0), 0);
- const totalPago = pagas.reduce((s, p) => s + (p.valor || 0), 0);
+ const arrasConta = !!arras && !arras.incluso;
+ const totalEntrada = parcelas.reduce((s, p) => s + (p.valor || 0), 0) + (arrasConta ? arras!.valor : 0);
+ const totalPago = pagas.reduce((s, p) => s + (p.valor || 0), 0) + (arrasConta && arras!.pago ? arras!.valor : 0);
+ const nItens = parcelas.length + (arrasConta ? 1 : 0);
+ const nPagos = pagas.length + (arrasConta && arras!.pago ? 1 : 0);
  // Rateio da planilha por parcela — colunas que têm valor em pelo menos uma linha
  const rateios = parcelas.map((p) => { try { return p.rateioPlanilha ? JSON.parse(p.rateioPlanilha) : null; } catch { return null; } });
  const temPlanilha = rateios.some(Boolean);
@@ -3373,10 +3402,30 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <div className="flex-between" style={{ alignItems: 'baseline', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
  <div className="uppercase-tag">Parcelas / plano de recebimento</div>
  <div className="text-xs text-secondary">
- {pagas.length}/{parcelas.length} pagas · {moeda(totalPago)} de {moeda(totalEntrada)}
+ {nPagos}/{nItens} pagas · {moeda(totalPago)} de {moeda(totalEntrada)}{arrasConta ? ' (com arras)' : ''}
  </div>
  </div>
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
+ {arras && (
+ <div className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0, boxShadow: 'inset 3px 0 0 var(--pons-blue)' }}>
+ <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title="Arras (sinal) — faz parte da entrada">
+ <strong>Arras</strong> · {moeda(arras.valor)} · {arras.venc}{arras.incluso ? ' · já dentro das parcelas' : ''}
+ </div>
+ <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
+ {(!podeConfirmar || arras.pago) && <span className={`badge badge--${arras.pago ? 'signed' : 'analysis'}`} style={{ fontSize: 10 }}>{arras.pago ? 'Pago' : 'Aberto'}</span>}
+ {podeConfirmar && !arras.pago && (
+ <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === -1} onClick={() => mudarArras(true)}>
+ {busy === -1 ? '…' : 'Confirmar'}
+ </button>
+ )}
+ {podeConfirmar && arras.pago && (
+ <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === -1} onClick={() => mudarArras(false)} title="Desfazer">
+ Desfazer
+ </button>
+ )}
+ </div>
+ </div>
+ )}
  {parcelas.map((p) => {
  const [k, lbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
  const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';

@@ -328,6 +328,9 @@ export const Api = {
     request<{ ok: boolean }>(`/equipes/${equipeId}/lider`, { method: 'POST', body: { userId } }),
   // Painel admin: quais equipes cada gestor enxerga (relação Equipe.gestores)
   gestoresEquipes: () => request<any[]>('/equipes/gestores'),
+  // % do gestor (líder de sala) nas vendas novas; null = padrão 10%.
+  gestorPercentual: (userId: number, percentualGestor: number | null) =>
+    request<{ ok: boolean; percentualGestor: number | null }>(`/equipes/gestores/${userId}/percentual`, { method: 'PATCH', body: { percentualGestor } }),
   gestorEquipesSalvar: (userId: number, equipeIds: number[]) =>
     request<{ ok: boolean; equipeIds: number[] }>(`/equipes/gestores/${userId}`, { method: 'PUT', body: { equipeIds } }),
   equipeUpdate: (id: number, data: any) => request<any>(`/equipes/${id}`, { method: 'PATCH', body: data }),
@@ -534,7 +537,10 @@ export const Api = {
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
   vendaCancelar: (id: number, motivo?: string) => request<any>(`/vendas/${id}/cancelar`, { method: 'POST', body: { motivo } }),
   vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
-  vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; motivo?: string } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
+  vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; motivo?: string; erro?: string; metaCode?: number } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
+  // Protocolo pelo WhatsApp do próprio Adm (sem a API da Meta): link do PDF + texto pronto.
+  vendaProtocoloLink: (id: number) => request<{ ok: boolean; url: string; numero: string | null; texto: string }>(`/vendas/${id}/protocolo-link`, { method: 'POST' }),
+  vendaArras: (id: number, pago: boolean) => request<{ ok: boolean; arrasPagoEm: string | null }>(`/vendas/${id}/arras`, { method: 'PATCH', body: { pago } }),
   vendaAprovarTrafego: (id: number) => request<any>(`/vendas/${id}/aprovar-trafego`, { method: 'POST' }),
   vendaDecidirTrafego: (id: number, decisao: 'TRAFEGO' | 'NETWORK') => request<any>(`/vendas/${id}/decidir-trafego`, { method: 'POST', body: { decisao } }),
   vendaEditarNegociacao: (id: number, data: any) => request<any>(`/vendas/${id}/negociacao`, { method: 'PUT', body: data }),
@@ -1111,6 +1117,9 @@ export const Api = {
   participacaoSet: (unidadeId: number, itens: any[]) => request<{ itens: any[] }>(`/unidades/${unidadeId}/participacao`, { method: 'PUT', body: { itens } }),
   unidadeCreate: (data: any) => request<any>('/unidades', { method: 'POST', body: data }),
   unidadeUpdate: (id: number, data: any) => request<any>(`/unidades/${id}`, { method: 'PATCH', body: data }),
+  // Filial sem gestor: vendas já lançadas que ainda têm parcela de gestor (prévia) e o ajuste.
+  semGestorPrevia: (unidadeId: number) => request<{ unidade: any; vendas: any[] }>(`/rateio/sem-gestor/${unidadeId}/previa`),
+  semGestorAplicar: (unidadeId: number) => request<{ ok: boolean; ajustadas: number; vendas: any[] }>(`/rateio/sem-gestor/${unidadeId}/aplicar`, { method: 'POST' }),
   unidadeDelete: (id: number) => request<{ ok: boolean }>(`/unidades/${id}`, { method: 'DELETE' }),
 
   fechamentoList: () => request<any[]>('/fechamento'),

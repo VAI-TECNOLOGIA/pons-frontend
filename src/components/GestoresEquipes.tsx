@@ -16,11 +16,14 @@ export function GestoresEquipes() {
  const [editing, setEditing] = useState<any | null>(null);
  const [marcadas, setMarcadas] = useState<number[]>([]);
  const [salvando, setSalvando] = useState(false);
+ // % do gestor (sobre a parte da imobiliária) nas vendas NOVAS da sala dele.
+ const [pct, setPct] = useState('');
  const toast = useToast();
 
  const abrir = (g: any) => {
  setEditing(g);
  setMarcadas(g.equipeIds || []);
+ setPct(g.percentualGestor == null ? '' : String(g.percentualGestor).replace('.', ','));
  };
 
  const toggle = (id: number) => {
@@ -32,6 +35,11 @@ export function GestoresEquipes() {
  setSalvando(true);
  try {
  await Api.gestorEquipesSalvar(editing.id, marcadas);
+ if ((editing.lideradas || []).length) {
+ const novo = pct.trim() === '' ? null : Number(pct.replace(',', '.'));
+ if (novo !== null && (!Number.isFinite(novo) || novo < 0 || novo > 100)) throw new Error('% do gestor inválido');
+ if (novo !== (editing.percentualGestor ?? null)) await Api.gestorPercentual(editing.id, novo);
+ }
  toast.success(`Equipes de ${editing.nome} atualizadas`);
  setEditing(null);
  reload();
@@ -66,7 +74,7 @@ export function GestoresEquipes() {
  <span className="gest-card__avatar">{g.initials || g.nome.slice(0, 2).toUpperCase()}</span>
  <span className="gest-card__id">
  <span className="gest-card__nome">{g.nome}</span>
- <span className="gest-card__role">{ROLE_LABEL[g.role] || g.role}</span>
+ <span className="gest-card__role">{ROLE_LABEL[g.role] || g.role}{g.lideradas.length > 0 && ` · gestor ${g.percentualGestor ?? 10}%${g.percentualGestor == null ? ' (padrão)' : ''}`}</span>
  </span>
  <span className="gest-card__edit"><Icon name="pencil" size={14} /></span>
  </div>
@@ -107,6 +115,13 @@ export function GestoresEquipes() {
  );
  })}
  </div>
+ {(editing.lideradas || []).length > 0 && (
+ <label className="field" style={{ margin: '12px 0 4px' }}>
+ <span className="field__label">% do gestor nas vendas da sala</span>
+ <input className="field__input" inputMode="decimal" value={pct} onChange={(e) => setPct(e.target.value.replace(/[^\d,.]/g, ''))} placeholder="10 (padrão)" style={{ maxWidth: 160 }} />
+ <span className="field__hint">Sobre a parte da imobiliária. Vale para as vendas novas; venda já lançada fica com o % de quando fechou. Vazio = padrão de 10%.</span>
+ </label>
+ )}
  <div className="gest-modal__foot">
  <span className="gest-modal__count">
  {(editing.lideradas || []).length + marcadas.filter((id: number) => !(editing.lideradas || []).some((l: any) => l.id === id)).length} equipe(s) selecionada(s)
