@@ -8,21 +8,32 @@ import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { maskMoedaBR, parseMoedaBR, formatMoedaBR } from '../lib/mascaras';
 import './equipes.css';
 import { EmptyState } from '../components/EmptyState';
 
 // Editor inline da meta mensal (R$) da equipe. A soma das metas das equipes vira a
-// meta geral da casa (alimenta a corrida do mês no Financeiro).
-function MetaEquipeEditor({ eq, admin, onSaved }: { eq: any; admin: boolean; onSaved: () => void }) {
+// meta geral da casa (dashboard de gestão e corrida do mês). Campo com máscara de
+// R$ — antes era número solto e as equipes ficaram com "20" (= R$ 20, 16/10).
+// Editam: CEO, Diretor Comercial e Diretor Financeiro (rota PATCH /equipes/:id/meta).
+const PAPEIS_META_EQUIPE = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO'];
+const META_MINIMA = 10000; // abaixo disto o dashboard não considera meta de VGV
+const metaParaMascara = (n: any) => (n != null && n !== '' ? maskMoedaBR(String(Math.round(Number(n) * 100))) : '');
+
+function MetaEquipeEditor({ eq, onSaved }: { eq: any; onSaved: () => void }) {
   const toast = useToast();
-  const [valor, setValor] = useState<string>(eq.metaMensal != null ? String(eq.metaMensal) : '');
+  const podeEditar = PAPEIS_META_EQUIPE.includes(Auth.user?.role as string);
+  const original = metaParaMascara(eq.metaMensal);
+  const [valor, setValor] = useState<string>(original);
   const [saving, setSaving] = useState(false);
-  const mudou = String(valor) !== (eq.metaMensal != null ? String(eq.metaMensal) : '');
+  const mudou = valor !== original;
+  const reais = valor.trim() ? Math.round(parseMoedaBR(valor) || 0) : null;
+  const baixa = reais != null && reais > 0 && reais < META_MINIMA;
   const salvar = async () => {
     setSaving(true);
     try {
-      await Api.equipeUpdate(eq.id, { metaMensal: valor.trim() === '' ? null : Number(valor) });
-      toast.success('Meta da equipe salva');
+      await Api.equipeMeta(eq.id, reais);
+      toast.success(reais ? `Meta da equipe salva: ${formatMoedaBR(reais)}` : 'Meta da equipe removida');
       onSaved();
     } catch (e: any) {
       toast.error('Erro: ' + (e?.message || 'falha'));
@@ -32,19 +43,24 @@ function MetaEquipeEditor({ eq, admin, onSaved }: { eq: any; admin: boolean; onS
   };
   return (
     <div style={{ marginTop: 12 }}>
-      <div className="uppercase-tag">Meta mensal (R$)</div>
+      <div className="uppercase-tag">Meta mensal de VGV (R$)</div>
       <div className="flex gap-2" style={{ alignItems: 'center', marginTop: 4 }}>
         <input
-          type="number" min={0} className="field__input" style={{ maxWidth: 170 }}
-          value={valor} placeholder="Ex: 2000000" disabled={!admin || saving}
-          onChange={(e) => setValor(e.target.value)}
+          type="text" inputMode="numeric" className="field__input" style={{ maxWidth: 190 }}
+          value={valor} placeholder="R$ 2.000.000,00" disabled={!podeEditar || saving}
+          onChange={(e) => setValor(maskMoedaBR(e.target.value))}
         />
-        {admin && (
+        {podeEditar && (
           <button className="btn btn--primary btn--sm" onClick={salvar} disabled={saving || !mudou} style={{ flexShrink: 0 }}>
             {saving ? 'Salvando…' : 'Salvar'}
           </button>
         )}
       </div>
+      {baixa && (
+        <div className="text-xs" style={{ marginTop: 4, color: 'var(--color-warning-fg)' }}>
+          Valor muito baixo para meta de VGV (o dashboard só considera a partir de R$ 10.000,00). Confira se faltaram zeros.
+        </div>
+      )}
     </div>
   );
 }
@@ -168,7 +184,7 @@ export default function Equipes() {
  nome: String(fd.get('nome') || ''),
  descricao: fd.get('descricao') ? String(fd.get('descricao')) : undefined,
  cor: String(fd.get('cor') || '#0E7C9B'),
- metaMensal: fd.get('metaMensal') ? Number(fd.get('metaMensal')) : null,
+ metaMensal: fd.get('metaMensal') ? Math.round(parseMoedaBR(String(fd.get('metaMensal'))) || 0) || null : null,
  });
  toast.success('Equipe criada');
  setOpen(false);
@@ -401,7 +417,7 @@ export default function Equipes() {
  </div>
  </div>
 
- <MetaEquipeEditor eq={eq} admin={!!minhas?.admin} onSaved={reload} />
+ <MetaEquipeEditor eq={eq} onSaved={reload} />
           {(eq.vendasMes != null || eq.volumeMes != null) && (
  <div className="flex-between" style={{ marginTop: 12 }}>
  <div>
@@ -514,8 +530,8 @@ export default function Equipes() {
  <input name="cor" type="color" className="field__input" defaultValue="#0E7C9B" style={{ height: 44, padding: 4 }} />
  </div>
  <div className="field">
- <label className="field__label">Meta mensal (R$)</label>
- <input name="metaMensal" type="number" min={0} className="field__input" placeholder="Ex: 2000000" />
+ <label className="field__label">Meta mensal de VGV (R$)</label>
+ <input name="metaMensal" type="text" inputMode="numeric" className="field__input" placeholder="R$ 2.000.000,00" onChange={(e) => { e.currentTarget.value = maskMoedaBR(e.currentTarget.value); }} />
  </div>
  </div>
  <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 20 }}>

@@ -326,6 +326,7 @@ export const Api = {
   gestorEquipesSalvar: (userId: number, equipeIds: number[]) =>
     request<{ ok: boolean; equipeIds: number[] }>(`/equipes/gestores/${userId}`, { method: 'PUT', body: { equipeIds } }),
   equipeUpdate: (id: number, data: any) => request<any>(`/equipes/${id}`, { method: 'PATCH', body: data }),
+  equipeMeta: (id: number, metaMensal: number | null) => request<{ id: number; metaMensal: number | null }>(`/equipes/${id}/meta`, { method: 'PATCH', body: { metaMensal } }),
   equipeDelete: (id: number) => request<{ ok: boolean }>(`/equipes/${id}`, { method: 'DELETE' }),
   equipesResultados: (params: any = {}) => request<any>(`/equipes/resultados${qs(params)}`),
 

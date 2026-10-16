@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.16.7",
+  "versao": "2026.10.16.8",
   "data": "16/10/2026",
   "novidades": [
+    {
+      "titulo": "Equipes: meta mensal com valor em reais",
+      "itens": [
+        "O campo de meta mensal da equipe agora tem máscara de R$: digite os números e o valor aparece formatado (ex.: R$ 2.000.000,00). Se o valor for baixo demais para uma meta de VGV, aparece um aviso.",
+        "CEO, Diretor Comercial e Diretor Financeiro podem editar e salvar a meta."
+      ]
+    },
     {
       "titulo": "App: sem travar na tela \"Algo deu errado\" depois de atualização",
       "itens": [
