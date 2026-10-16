@@ -301,7 +301,10 @@ export function FichaLeadModal({ leadId, onClose }: { leadId: number; onClose: (
                 </button>
                 {verTransfs && (
                   <div className="card" style={{ padding: '14px 16px', marginTop: 8 }}>
-                    <TrajetoTransferencias transfs={transfs} />
+                    <TrajetoTransferencias
+                      transfs={transfs}
+                      origem={lead.campanha ? `Campanha "${lead.campanha}"` : lead.formularioNome ? `Formulário "${lead.formularioNome}"` : (lead.origem === 'META_ADS' ? 'Meta Ads' : undefined)}
+                    />
                   </div>
                 )}
               </div>

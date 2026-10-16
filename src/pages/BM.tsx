@@ -9,6 +9,9 @@ import './bm-wizard.css';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 
+// Configuração do Login do Facebook para Empresas com token de USUÁRIO (app Grupo Pons).
+const FB_CONFIG_PAGINAS = '36421366917476968';
+
 export default function BMPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -45,6 +48,15 @@ export default function BMPage() {
       return;
     }
     if (!url) { toast.error('Não consegui gerar o link do Facebook.'); return; }
+    // Login com a configuração de TOKEN DE USUÁRIO ("Pons Integracao Marketing"):
+    // a pessoa entra com o Facebook dela e escolhe as páginas, como no Imobilead.
+    // A do servidor (1668407854208261) é de usuário do SISTEMA e exige portfólio
+    // empresarial + BM + catálogo + pixel + conta de anúncios — corretor não
+    // conseguia avançar (Vini 16/10). O servidor troca o code do mesmo jeito.
+    try {
+      const u = new URL(url);
+      if (u.searchParams.has('config_id')) { u.searchParams.set('config_id', FB_CONFIG_PAGINAS); url = u.toString(); }
+    } catch { /* URL inesperada: segue com a do servidor */ }
     const popup = window.open(url, 'fb-oauth', 'width=600,height=720,menubar=no,toolbar=no');
     if (!popup) { toast.error('Libere o popup do navegador (está bloqueado) pra conectar.'); return; }
     setFbBusy(true);

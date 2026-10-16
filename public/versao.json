@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.15.4",
-  "data": "15/10/2026",
+  "versao": "2026.10.16.1",
+  "data": "16/10/2026",
   "novidades": [
+    {
+      "titulo": "Leads e conexão com o Facebook",
+      "itens": [
+        "Histórico do lead: a chegada pela fila mostra de qual campanha ou formulário o lead veio, em vez de \"Sistema\".",
+        "Conectar com Facebook (BM): agora basta entrar com o Facebook e escolher as páginas. Não pede mais portfólio empresarial, catálogo, pixel nem conta de anúncios."
+      ]
+    },
     {
       "titulo": "Vendas: Editar negociação abre com as parcelas atuais",
       "itens": [

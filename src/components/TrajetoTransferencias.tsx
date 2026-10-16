@@ -25,6 +25,7 @@ const MOTIVO_INFO: Record<string, { label: string; desc: string; solo?: boolean;
   SEM_TEMPLATE_SLA: { label: 'Transferência por timer', desc: 'Corretor não atendeu no prazo — o lead passou para o próximo da fila.' },
   SLA_AUTOMATICO: { label: 'Redistribuição por SLA', desc: 'Redistribuído automaticamente por inatividade.' },
   SLA_AUTOMATICO_HISTORICO_LIMPO: { label: 'Redistribuição por SLA', desc: 'Redistribuído por inatividade (histórico anterior limpo — o lead nunca respondeu).' },
+  DISTRIBUICAO_FILA: { label: 'Distribuído pela fila', desc: 'Chegou do anúncio e foi encaminhado pela fila.' },
   DISTRIBUICAO_FILA_RETRY: { label: 'Distribuído pela fila', desc: 'Encaminhado pela distribuição automática da fila.' },
   DIRECIONAMENTO_GESTOR: { label: 'Direcionado pelo gestor', desc: 'Movido manualmente pela gestão.' },
   CAPTURA_BOLSAO: { label: 'Capturado do bolsão', desc: 'O corretor pegou este lead do bolsão.' },
@@ -41,7 +42,11 @@ const dataBR = (s: string) =>
     .toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     .replace(',', ' às');
 
-export function TrajetoTransferencias({ transfs, showLead = false }: { transfs: Transf[]; showLead?: boolean }) {
+// Entrada pela fila sem corretor anterior: o "de" é a ORIGEM do lead (campanha /
+// formulário), não "Sistema" — lead de campanha aparecia como sistema (Vini 16/10).
+const MOTIVO_CHEGADA = new Set(['DISTRIBUICAO_FILA', 'DISTRIBUICAO_FILA_RETRY', 'DISTRIBUICAO_AGENDADA']);
+
+export function TrajetoTransferencias({ transfs, showLead = false, origem }: { transfs: Transf[]; showLead?: boolean; origem?: string }) {
   if (!transfs?.length) {
     return <div className="text-xs text-secondary">Sem transferências registradas.</div>;
   }
@@ -71,7 +76,7 @@ export function TrajetoTransferencias({ transfs, showLead = false }: { transfs: 
               <div style={{ fontSize: 13, marginTop: 3, fontWeight: 600 }}>{t.paraCorretorNome || t.deCorretorNome || '—'}</div>
             ) : (
               <div style={{ fontSize: 13, marginTop: 3, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                <span className="text-secondary">de:</span> {t.deCorretorNome || 'Sistema'}
+                <span className="text-secondary">de:</span> {t.deCorretorNome || (MOTIVO_CHEGADA.has(t.motivo) ? ((t.motivo === 'DISTRIBUICAO_FILA' && t.observacao) || origem || 'Anúncio') : 'Sistema')}
                 <Icon name="arrow_right" size={11} />
                 <span className="text-secondary">para:</span> {t.paraCorretorNome || '—'}
               </div>
