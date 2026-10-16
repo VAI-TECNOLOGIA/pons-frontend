@@ -131,7 +131,9 @@
 .dg-barra-num { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; white-space: nowrap; }
 
 /* ---------- tabela de ranking ---------- */
-.dg-tab { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dg-tab { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.dg-tab-wrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+.dg-forte { white-space: nowrap; flex: 0 0 auto; }
 .dg-tab th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dg-texto-3); padding: 0 8px 8px; }
 .dg-tab td { padding: 9px 8px; border-top: 1px solid var(--dg-borda); vertical-align: middle; }
 .dg-tab td.n, .dg-tab th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }

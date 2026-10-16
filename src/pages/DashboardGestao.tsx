@@ -408,8 +408,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
             <section className="dg-card">
               <div className="dg-card-topo"><h2 className="dg-card-titulo">Ranking de corretores</h2><span className="dg-card-nota">por VGV do período</span></div>
               {(data.rankingCorretores || []).length === 0 ? <div className="dg-vazio">Nenhuma venda de corretor ativo no período.</div> : (
-                <table className="dg-tab">
-                  <thead><tr><th style={{ width: 36 }}>#</th><th>Corretor</th><th className="n">VGV</th><th className="n">Vendas</th>{k.leads && <th className="n">Leads</th>}</tr></thead>
+                <div className="dg-tab-wrap"><table className="dg-tab" style={{ minWidth: 420 }}>
+                  <thead><tr><th style={{ width: 40 }}>#</th><th>Corretor</th><th className="n" style={{ width: 92 }}>VGV</th><th className="n" style={{ width: 62 }}>Vendas</th>{k.leads && <th className="n" style={{ width: 58 }}>Leads</th>}</tr></thead>
                   <tbody>
                     {data.rankingCorretores.map((c: any, i: number) => (
                       <tr key={c.id}>
@@ -430,7 +430,7 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               )}
             </section>
             <section className="dg-card">
@@ -439,7 +439,7 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
                 <div key={e.id} style={{ marginBottom: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 13 }}>
                     <span className="dg-pessoa-nome" title={e.nome}>{e.nome}</span>
-                    <strong title={formatCurrency(e.vgv)}>{formatCurrencyShort(e.vgv)}</strong>
+                    <strong className="dg-forte" title={formatCurrency(e.vgv)}>{formatCurrencyShort(e.vgv)}</strong>
                   </div>
                   <div className="dg-pessoa-sub">
                     {e.vendas} venda(s){k.leads ? ` · ${inteiro(e.leads)} lead(s)` : ''} · {e.corretores} corretor(es) ativo(s)
@@ -459,7 +459,7 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
                 <div key={e.id} style={{ marginBottom: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 13 }}>
                     <span className="dg-pessoa-nome" title={e.nome}>{e.nome}</span>
-                    <strong title={formatCurrency(e.vgv)}>{formatCurrencyShort(e.vgv)}</strong>
+                    <strong className="dg-forte" title={formatCurrency(e.vgv)}>{formatCurrencyShort(e.vgv)}</strong>
                   </div>
                   <div className="dg-pessoa-sub">{[e.construtora, e.cidade ? `${e.cidade}${e.estado ? '/' + e.estado : ''}` : null, `${e.vendas} venda(s)`].filter(Boolean).join(' · ')}</div>
                   <div className="dg-mini"><span style={{ width: `${topoEmp ? (e.vgv / topoEmp) * 100 : 0}%` }} /></div>
@@ -476,8 +476,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
                   </div>
                 </div>
                 {(linhasOrigem || []).length === 0 ? <div className="dg-vazio">Nenhum lead recebido no período.</div> : (
-                  <table className="dg-tab">
-                    <thead><tr><th>{abaOrigem === 'origem' ? 'Origem' : 'Campanha'}</th><th className="n">Leads</th><th className="n">Vendas</th><th className="n">Conv.</th><th className="n">VGV</th></tr></thead>
+                  <div className="dg-tab-wrap"><table className="dg-tab" style={{ minWidth: 380 }}>
+                    <thead><tr><th>{abaOrigem === 'origem' ? 'Origem' : 'Campanha'}</th><th className="n" style={{ width: 58 }}>Leads</th><th className="n" style={{ width: 58 }}>Vendas</th><th className="n" style={{ width: 58 }}>Conv.</th><th className="n" style={{ width: 80 }}>VGV</th></tr></thead>
                     <tbody>
                       {linhasOrigem.map((o: any) => (
                         <tr key={o.origem || o.campanha}>
@@ -489,7 +489,7 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </section>
             )}
