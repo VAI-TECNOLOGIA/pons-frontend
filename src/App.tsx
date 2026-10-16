@@ -11,6 +11,7 @@ import { BotaoReportarErro } from './components/BotaoReportarErro';
 // Login fica eager — é o primeiro hit do usuário, evitamos qualquer flicker.
 import Login from './pages/Login';
 import RedefinirSenha from './pages/RedefinirSenha';
+import { ehErroDeVersaoAntiga, recarregarParaVersaoNova } from './lib/versaoAntiga';
 
 // Wrapper de lazy() com retry + force-reload em erro de chunk.
 // Quando o frontend é redeployado, os hashes dos chunks mudam. Browsers com
@@ -23,21 +24,10 @@ function lazyRetry<T extends ComponentType<any>>(factory: () => Promise<{ defaul
     try {
       return await factory();
     } catch (err: any) {
-      const msg = String(err?.message || err);
-      const looksLikeStaleChunk =
-        msg.includes('Failed to fetch dynamically imported module') ||
-        msg.includes('Loading chunk') ||
-        msg.includes('MIME') ||
-        msg.includes('text/html');
-      if (looksLikeStaleChunk) {
+      if (ehErroDeVersaoAntiga(err)) {
         // Tenta uma vez de novo (rede instável), aí recarrega de fato
         try { return await factory(); } catch {
-          // Flag pra não cair em loop infinito de reload
-          const key = 'pons.chunkReloadAt';
-          const last = Number(sessionStorage.getItem(key) || '0');
-          if (Date.now() - last > 30_000) {
-            sessionStorage.setItem(key, String(Date.now()));
-            window.location.reload();
+          if (recarregarParaVersaoNova()) {
             return new Promise(() => ({ default: (() => null) as any })); // never resolves
           }
         }

@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.16.5",
+  "versao": "2026.10.16.6",
   "data": "16/10/2026",
   "novidades": [
+    {
+      "titulo": "App: sem travar na tela \"Algo deu errado\" depois de atualização",
+      "itens": [
+        "Quando o sistema é atualizado com o app aberto (principalmente no iPhone), ele agora recarrega sozinho para a versão nova, em vez de parar na tela \"Algo deu errado\".",
+        "O botão \"Tentar de novo\" dessa tela passou a recarregar o app de verdade."
+      ]
+    },
     {
       "titulo": "Dashboard novo: gestão à vista",
       "itens": [

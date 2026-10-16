@@ -8,6 +8,7 @@ import { ConfirmProvider } from './lib/confirm';
 import { UserProvider } from './lib/userContext';
 import { awaitAuthHydration } from './lib/auth';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { recarregarParaVersaoNova } from './lib/versaoAntiga';
 import './styles/tokens.css';
 import './styles/components.css';
 import './styles/utilities.css';
@@ -20,6 +21,13 @@ import './styles/theme-overrides.css';
 // renderizar. Sem isso, ao reabrir o app com a WebView tendo zerado o
 // localStorage, a rota "/" leria Auth.token vazio e mandaria o usuário logado
 // pro login/landing. A espera é de poucos ms e fica coberta pela splash nativa.
+// Pedaço do sistema de uma versão anterior que o navegador tentou pré-carregar
+// depois de uma publicação: recarrega para pegar a versão nova.
+window.addEventListener('vite:preloadError', (ev) => {
+  ev.preventDefault();
+  recarregarParaVersaoNova();
+});
+
 function mount() {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { Icon } from './Icon';
+import { ehErroDeVersaoAntiga, recarregarParaVersaoNova } from '../lib/versaoAntiga';
 
 interface State {
   hasError: boolean;
@@ -14,11 +15,17 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   }
 
   componentDidCatch(err: Error, info: { componentStack?: string }) {
-    void reportClientError(err, { componentStack: info.componentStack });
+    void reportClientError(err, { componentStack: info.componentStack, versaoAntiga: ehErroDeVersaoAntiga(err) });
+    // App aberto com a versão anterior depois de uma publicação: recarrega sozinho
+    // em vez de deixar o usuário preso nesta tela (no iPhone, sair e voltar ao app
+    // não recarrega — a tela de erro continuava ali).
+    if (ehErroDeVersaoAntiga(err)) recarregarParaVersaoNova();
   }
 
+  // "Tentar de novo" recarrega a página de verdade: só redesenhar mantinha o
+  // mesmo arquivo velho e o mesmo erro.
   reset = () => {
-    this.setState({ hasError: false, err: undefined });
+    window.location.reload();
   };
 
   render() {
