@@ -178,8 +178,16 @@
 .dg-aba--on { background: var(--dg-azul); color: #fff; }
 
 /* ---------- modo TV (gestão à vista no telão) ---------- */
-.dg--tv { position: fixed; inset: 0; z-index: 1000; border-radius: 0; overflow-y: auto; padding: 22px 26px; }
+.dg--tv { position: fixed; inset: 0; z-index: 2000; border-radius: 0; overflow-y: auto; padding: 22px 26px; }
 .dg--tv .dg-filtros { display: none; }
+/* Modo TV = tela cheia de verdade: esconde a chrome do app que vazava por cima
+   (topbar "Dashboard", sino flutuante, FAB da IA, botão de menu mobile, speed-line). */
+body.dg-tv-ativo .topbar,
+body.dg-tv-ativo .notif-bell--flutuante,
+body.dg-tv-ativo .assistant-fab,
+body.dg-tv-ativo .mobile-menu-btn,
+body.dg-tv-ativo .speed-line { display: none !important; }
+body.dg-tv-ativo { overflow: hidden; }
 .dg--tv .dg-kpi-valor { font-size: 40px; }
 .dg--tv .dg-titulo { font-size: 28px; }
 .dg--tv .dg-ev-tit, .dg--tv .dg-tab { font-size: 15px; }

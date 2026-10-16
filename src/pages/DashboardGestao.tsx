@@ -141,10 +141,13 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
   useEffect(() => { Api.dashboardGestaoOpcoes().then(setOpcoes).catch(() => setOpcoes(null)); }, []);
   useEffect(() => {
     if (!tv) return;
+    // Modo TV = tela cheia: esconde a chrome do app (topbar, sino flutuante, FAB)
+    // via classe no body, senão o topbar "Dashboard" vaza por cima do painel.
+    document.body.classList.add('dg-tv-ativo');
     // Com o painel 360 aberto, o Esc fecha só o painel (o modo TV continua).
     const sair = (e: KeyboardEvent) => { if (e.key === 'Escape' && !new URLSearchParams(window.location.search).get('ver')) setTv(false); };
     window.addEventListener('keydown', sair);
-    return () => window.removeEventListener('keydown', sair);
+    return () => { document.body.classList.remove('dg-tv-ativo'); window.removeEventListener('keydown', sair); };
   }, [tv]);
 
   const setFiltro = (k: string, v: string) => {
