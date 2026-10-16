@@ -82,10 +82,17 @@
 .dg-select { appearance: none; -webkit-appearance: none; background: var(--dg-card-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238493B4' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid var(--dg-borda); color: var(--dg-texto); border-radius: 999px; padding: 7px 28px 7px 12px; font-size: 12.5px; font-weight: 600; max-width: 220px; cursor: pointer; }
 .dg-select--on { border-color: var(--dg-ciano); color: var(--dg-ciano); }
 /* Filtro com BuscaSelect (single-select estilizado, igual ao resto do sistema).
-   Largura fixa pra sentar lado a lado na barra; o dropdown abre abaixo. */
+   Largura fixa pra sentar lado a lado na barra. */
 .dg-filtro-busca { width: 190px; max-width: 100%; position: relative; }
-.dg-filtro-busca .field__input { background: var(--dg-card-2); border: 1px solid var(--dg-borda); color: var(--dg-texto); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; }
+.dg-filtro-busca .field__input { width: 100%; background: var(--dg-card-2); border: 1px solid var(--dg-borda); color: var(--dg-texto); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; }
 .dg-filtro-busca .field__input::placeholder { color: var(--dg-texto-2); font-weight: 600; }
+/* A lista do BuscaSelect abre como OVERLAY (absolute) — não empurra a barra. */
+.dg-filtro-busca > div { position: static; }
+.dg-filtro-busca .field__input + div {
+  position: absolute; z-index: 60; top: calc(100% + 4px); left: 0;
+  min-width: 220px; width: max-content; max-width: 320px; margin-top: 0;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
 @media (max-width: 760px) { .dg-filtro-busca { width: 100%; } }
 .dg-datas { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dg-texto-2); }
 .dg-datas .field__input, .dg-datas input { background: var(--dg-card-2); border: 1px solid var(--dg-borda); color: var(--dg-texto); border-radius: 10px; padding: 6px 8px; font-size: 12.5px; width: 132px; }
