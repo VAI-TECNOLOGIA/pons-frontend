@@ -6,6 +6,7 @@
 //    entre corretores e "cobrar o corretor".
 // Dados: GET /api/dashboard/gestao/corretor/:id e /lead/:id (servidor aplica o escopo).
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Api } from '../lib/api';
 import { formatCurrency, formatCurrencyShort, timeAgo, timeUntil } from '../lib/format';
 import { Icon } from './Icon';
@@ -190,7 +191,7 @@ function PainelCorretor({ d, onLead, onFiltrar, onRecarregar }: { d: any; onLead
         <div className="dg-360-fatos">
           <div><span>Tempo de casa</span><strong>{tempoDeCasa(d.tempoCasa.dias)}</strong><em>desde {dataBR(d.tempoCasa.desde)}{d.tempoCasa.fonte === 'cadastro' ? ' · data do cadastro no sistema, a entrada real não foi informada' : ''}</em></div>
           <div><span>Gestor</span>{gestores.length ? gestores.map((g: any) => <strong key={g.nome + g.papel}>{g.nome} <em>{g.papel.toLowerCase()}</em></strong>) : <strong>Nenhum gestor cadastrado</strong>}</div>
-          <div><span>Contato</span><strong>{d.telefone || 'Sem telefone'}</strong>{d.email && <em>{d.email}</em>}{d.creci && <em>CRECI {d.creci}</em>}</div>
+          <div><span>Contato</span><strong>{d.telefone || 'Sem telefone'}</strong>{d.email && <em>{d.email}</em>}{d.creci && <em>{/^creci/i.test(d.creci) ? d.creci : `CRECI ${d.creci}`}</em>}</div>
           <div><span>Vendas na Pons</span><strong>{d.totais.vendas} · {formatCurrencyShort(d.totais.vgv)}</strong><em>todas as vendas não canceladas</em></div>
         </div>
       </Secao>
@@ -319,7 +320,7 @@ function PainelLead({ d, onCorretor, onRecarregar }: { d: any; onCorretor: (id: 
           <div className="dg-pessoa-sub">{[d.telefone, d.cidade].filter(Boolean).join(' · ') || 'Sem contato'}</div>
           <div className="dg-360-tags">
             <span className={`dg-360-tag dg-360-tag--${d.situacao.tipo === 'ok' ? 'ok' : d.situacao.tipo === 'alerta' ? 'atencao' : 'neutro'}`}>{d.situacao.texto}</span>
-            <span className="dg-360-tag">{d.etapa}</span>
+            {d.etapa !== d.situacao.texto && <span className="dg-360-tag">{d.etapa}</span>}
             {d.vezesRedistribuido > 0 && <span className="dg-360-tag">Passou por {d.vezesRedistribuido + 1} corretores</span>}
           </div>
         </div>
@@ -421,7 +422,9 @@ export function Painel360({ alvo, filtros, onFechar, onFiltrarCorretor }: {
   const abrir = (a: Alvo360) => setPilha((p) => [...p, a]);
   const pronto = dados && dados._tipo === atual.tipo && dados.id === atual.id;
 
-  return (
+  // Portal no <body>: dentro do conteúdo da página o cabeçalho e o menu do app
+  // ficavam por cima do painel (escondiam o Fechar e o Voltar).
+  return createPortal(
     <>
       <div className="dg-gaveta-fundo" onClick={onFechar} />
       <aside className="dg dg-gaveta" role="dialog" aria-modal="true" aria-label={atual.tipo === 'corretor' ? 'Visão do corretor' : 'Visão do lead'}>
@@ -442,6 +445,7 @@ export function Painel360({ alvo, filtros, onFechar, onFiltrarCorretor }: {
           )}
         </div>
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }

@@ -1,5 +1,5 @@
 {
-  "versao": "2026.10.16.9",
+  "versao": "2026.10.16.10",
   "data": "16/10/2026",
   "novidades": [
     {
@@ -9,7 +9,8 @@
         "Clique num lead da linha do tempo e abre o atendimento: quando chegou, quem recebeu, em quanto tempo aceitou, etapa do funil, conversa (quando ela passa pelo sistema) e o caminho entre corretores.",
         "Mensagem privada para o corretor direto do painel, com sugestões prontas (parabéns pela venda, cobrar um lead sem aceite). Chega no sino e no celular dele. A diretoria manda para qualquer corretor; gerente e sócio, para os corretores que comandam.",
         "Clicar numa equipe, empreendimento, origem ou campanha filtra o dashboard por ela.",
-        "As trocas de sala e de filial feitas no cadastro passam a ficar registradas no histórico do corretor."
+        "As trocas de sala e de filial feitas no cadastro passam a ficar registradas no histórico do corretor.",
+        "Leads de teste lançados no sistema (nome começando com \"Teste\") não entram mais nos números nem nas listas do dashboard."
       ]
     },
     {
