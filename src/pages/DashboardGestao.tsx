@@ -157,16 +157,24 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
     if (!canvasRef.current || !data?.serie) return;
     chartRef.current?.destroy();
     const escuro = document.documentElement.getAttribute('data-theme') === 'dark';
-    // Paleta Pons (styles/tokens.css): barras no azul Pons (blue-300 no escuro, para
-    // ler sobre o azul-marinho), linha no ciano (escuro) ou azul-marinho (claro).
-    const cor = { azul: escuro ? '#3FB6D4' : '#0E7C9B', ciano: escuro ? '#52F7FE' : '#263654', grade: escuro ? 'rgba(132,147,180,0.15)' : 'rgba(38,54,84,0.08)', txt: escuro ? '#8893A8' : '#3D5278' };
+    // Identidade Pons: no escuro, barras em degradê azul Pons → ciano (telemetria) e
+    // linha de leads em branco suave; no claro, azul Pons e azul-marinho.
+    const cor = { azul: escuro ? '#52F7FE' : '#0E7C9B', ciano: escuro ? 'rgba(230,234,242,0.85)' : '#263654', grade: escuro ? 'rgba(255,255,255,0.06)' : 'rgba(38,54,84,0.08)', txt: escuro ? '#8893A8' : '#3D5278' };
+    const fundoBarra = (ctx: any) => {
+      const area = ctx.chart.chartArea;
+      if (!escuro || !area) return cor.azul;
+      const g = ctx.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+      g.addColorStop(0, 'rgba(14,124,155,0.75)');
+      g.addColorStop(1, '#52F7FE');
+      return g;
+    };
     const temLeads = data.kpis?.leads != null;
     chartRef.current = new Chart(canvasRef.current, {
       type: 'bar',
       data: {
         labels: data.serie.map((b: any) => b.rotulo),
         datasets: [
-          { type: 'bar', label: 'VGV vendido', data: data.serie.map((b: any) => b.vgv), backgroundColor: cor.azul, borderRadius: 8, maxBarThickness: 34, yAxisID: 'y', order: 2 },
+          { type: 'bar', label: 'VGV vendido', data: data.serie.map((b: any) => b.vgv), backgroundColor: fundoBarra, borderRadius: 8, maxBarThickness: 34, yAxisID: 'y', order: 2 },
           ...(temLeads ? [{ type: 'line' as const, label: 'Leads recebidos', data: data.serie.map((b: any) => b.leads), borderColor: cor.ciano, backgroundColor: cor.ciano, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4, tension: 0.35, yAxisID: 'y1', order: 1 }] : []),
         ] as any,
       },
@@ -221,6 +229,7 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
       {/* ── cabeçalho ── */}
       <div className="dg-topo">
         <div>
+          <div className="dg-eyebrow">Grupo Pons · alta performance</div>
           <h1 className="dg-titulo">Gestão à vista</h1>
           <div className="dg-sub">
             {p.de === p.ate ? dataBR(p.de) : `${dataBR(p.de)} a ${dataBR(p.ate)}`}

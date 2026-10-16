@@ -1,5 +1,5 @@
 {
-  "versao": "2026.10.16.6",
+  "versao": "2026.10.16.7",
   "data": "16/10/2026",
   "novidades": [
     {
@@ -17,7 +17,7 @@
         "VGV, vendas, ticket, leads recebidos, conversão dos leads e tempo até aceitar, sempre comparados com o período anterior.",
         "Linha do tempo ao vivo (lead recebido, venda lançada, contrato assinado, lead que pulou), alertas da operação, funil, contratos por status, ranking de corretores pelo VGV, equipes, empreendimentos e origens. A tela se atualiza sozinha a cada 30 segundos.",
         "Modo TV para deixar no telão.",
-        "Cores do dashboard nas cores oficiais do Grupo Pons (azul-marinho, azul Pons e ciano)."
+        "Visual com a identidade do Grupo Pons: preto profundo, fonte F1 e ciano, no mesmo estilo da tela de entrada."
       ]
     },
     {
