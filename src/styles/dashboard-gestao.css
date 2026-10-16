@@ -26,6 +26,9 @@
   --dg-atencao: var(--color-warning-fg);
   --dg-atencao-bg: var(--color-warning-bg);
   --dg-sombra: 0 1px 2px rgba(38, 54, 84, 0.05), 0 6px 18px rgba(38, 54, 84, 0.06);
+  /* Azul-marinho Pons FIXO para texto sobre ciano/verde/amarelo (no tema escuro
+     o token --pons-navy é redefinido como tom claro de texto). */
+  --dg-tinta: #263654;
   background: var(--dg-bg);
   color: var(--dg-texto);
   border-radius: 18px;
@@ -118,7 +121,7 @@
 .dg-alerta + .dg-alerta { margin-top: 8px; }
 .dg-alerta-ic { flex: 0 0 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 12px; color: #fff; }
 .dg-alerta--danger .dg-alerta-ic { background: var(--pons-accent-red); }
-.dg-alerta--warning .dg-alerta-ic { background: var(--color-warning); color: var(--pons-navy); }
+.dg-alerta--warning .dg-alerta-ic { background: var(--color-warning); color: var(--dg-tinta); }
 .dg-alerta--info .dg-alerta-ic { background: var(--pons-blue); }
 .dg-alerta-tit { font-size: 13px; font-weight: 600; line-height: 1.3; }
 .dg-alerta-val { font-size: 12px; color: var(--dg-texto-2); margin-top: 2px; }
@@ -140,8 +143,8 @@
 .dg-tab td { padding: 9px 8px; border-top: 1px solid var(--dg-borda); vertical-align: middle; }
 .dg-tab td.n, .dg-tab th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dg-pos { width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--dg-card-2); color: var(--dg-texto-2); }
-.dg-pos--1 { background: var(--pons-cyan); color: var(--pons-navy); }
-.dg-pos--2 { background: var(--blue-300); color: var(--pons-navy); }
+.dg-pos--1 { background: var(--pons-cyan); color: var(--dg-tinta); }
+.dg-pos--2 { background: var(--blue-300); color: var(--dg-tinta); }
 .dg-pos--3 { background: var(--navy-300); color: #fff; }
 .dg-pessoa { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .dg-avatar { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px; object-fit: cover; background: var(--dg-card-2); display: grid; place-items: center; font-size: 12px; font-weight: 800; color: var(--dg-ciano); border: 1px solid var(--dg-borda-2); }
@@ -157,9 +160,9 @@
 .dg-ev::before { content: ''; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: var(--dg-borda-2); }
 .dg-ev:last-child::before { display: none; }
 .dg-ev-ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--pons-blue); color: #fff; }
-.dg-ev--venda .dg-ev-ic { background: var(--pons-success); color: var(--pons-navy); }
-.dg-ev--assinatura .dg-ev-ic { background: var(--pons-cyan); color: var(--pons-navy); }
-.dg-ev--pulo .dg-ev-ic { background: var(--color-warning); color: var(--pons-navy); }
+.dg-ev--venda .dg-ev-ic { background: var(--pons-success); color: var(--dg-tinta); }
+.dg-ev--assinatura .dg-ev-ic { background: var(--pons-cyan); color: var(--dg-tinta); }
+.dg-ev--pulo .dg-ev-ic { background: var(--color-warning); color: var(--dg-tinta); }
 .dg-ev-quando { font-size: 11px; color: var(--dg-texto-3); }
 .dg-ev-tit { font-size: 13px; font-weight: 600; line-height: 1.3; word-break: break-word; }
 .dg-ev-det { font-size: 12px; color: var(--dg-texto-2); line-height: 1.35; word-break: break-word; }
