@@ -10,6 +10,7 @@ import { Api, ApiError } from '../lib/api';
 import { formatCurrency, formatCurrencyShort, timeAgo } from '../lib/format';
 import { Icon } from '../components/Icon';
 import { CampoData } from '../components/CampoData';
+import { BuscaSelect } from '../components/BuscaSelect';
 import { Painel360, type Alvo360 } from '../components/Painel360';
 import '../styles/dashboard-gestao.css';
 
@@ -280,29 +281,49 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
             <CampoData value={sp.get('ate') || ''} onChange={(iso) => iso && setFiltro('ate', iso)} />
           </span>
         )}
-        <select className={`dg-select${sp.get('equipe') ? ' dg-select--on' : ''}`} value={sp.get('equipe') || ''} onChange={(e) => setFiltro('equipe', e.target.value)} aria-label="Equipe">
-          <option value="">Todas as equipes</option>
-          {(opcoes?.equipes || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-        </select>
-        <select className={`dg-select${sp.get('corretor') ? ' dg-select--on' : ''}`} value={sp.get('corretor') || ''} onChange={(e) => setFiltro('corretor', e.target.value)} aria-label="Corretor">
-          <option value="">Todos os corretores</option>
-          {corretoresOpc.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-        </select>
-        <select className={`dg-select${sp.get('emp') ? ' dg-select--on' : ''}`} value={sp.get('emp') || ''} onChange={(e) => setFiltro('emp', e.target.value)} aria-label="Empreendimento">
-          <option value="">Todos os empreendimentos</option>
-          {(opcoes?.empreendimentos || []).map((e: any) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-        </select>
+        <div className="dg-filtro-busca">
+          <BuscaSelect
+            itens={(opcoes?.equipes || []).map((e: any) => ({ id: e.id, label: e.nome }))}
+            value={sp.get('equipe') || ''}
+            onChange={(id) => setFiltro('equipe', String(id || ''))}
+            placeholder="Todas as equipes"
+          />
+        </div>
+        <div className="dg-filtro-busca">
+          <BuscaSelect
+            itens={corretoresOpc.map((c: any) => ({ id: c.id, label: c.nome }))}
+            value={sp.get('corretor') || ''}
+            onChange={(id) => setFiltro('corretor', String(id || ''))}
+            placeholder="Todos os corretores"
+          />
+        </div>
+        <div className="dg-filtro-busca">
+          <BuscaSelect
+            itens={(opcoes?.empreendimentos || []).map((e: any) => ({ id: e.id, label: e.nome }))}
+            value={sp.get('emp') || ''}
+            onChange={(id) => setFiltro('emp', String(id || ''))}
+            placeholder="Todos os empreendimentos"
+          />
+        </div>
         {(opcoes?.origens || []).length > 0 && (
-          <select className={`dg-select${sp.get('origem') ? ' dg-select--on' : ''}`} value={sp.get('origem') || ''} onChange={(e) => setFiltro('origem', e.target.value)} aria-label="Origem">
-            <option value="">Todas as origens</option>
-            {opcoes.origens.map((o: any) => <option key={o.valor} value={o.valor}>{o.rotulo}</option>)}
-          </select>
+          <div className="dg-filtro-busca">
+            <BuscaSelect
+              itens={opcoes.origens.map((o: any) => ({ id: o.valor, label: o.rotulo }))}
+              value={sp.get('origem') || ''}
+              onChange={(id) => setFiltro('origem', String(id || ''))}
+              placeholder="Todas as origens"
+            />
+          </div>
         )}
         {(opcoes?.campanhas || []).length > 0 && (
-          <select className={`dg-select${sp.get('campanha') ? ' dg-select--on' : ''}`} value={sp.get('campanha') || ''} onChange={(e) => setFiltro('campanha', e.target.value)} aria-label="Campanha">
-            <option value="">Todas as campanhas</option>
-            {opcoes.campanhas.map((c: string) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="dg-filtro-busca">
+            <BuscaSelect
+              itens={opcoes.campanhas.map((c: string) => ({ id: c, label: c }))}
+              value={sp.get('campanha') || ''}
+              onChange={(id) => setFiltro('campanha', String(id || ''))}
+              placeholder="Todas as campanhas"
+            />
+          </div>
         )}
         {temFiltro && <button className="dg-limpar" onClick={limpar}>Limpar filtros</button>}
       </div>
