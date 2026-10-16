@@ -18,12 +18,34 @@ export function GestoresEquipes() {
  const [salvando, setSalvando] = useState(false);
  // % do gestor (sobre a parte da imobiliária) nas vendas NOVAS da sala dele.
  const [pct, setPct] = useState('');
+ // Vendas já lançadas com o % antigo: prévia + aplicar o % do cadastro.
+ const [vendasPct, setVendasPct] = useState<any | null>(null);
+ const [aplicando, setAplicando] = useState(false);
+ const verVendas = async () => {
+ if (!editing) return;
+ try { setVendasPct(await Api.gestorVendas(editing.id)); }
+ catch (err: any) { toast.error('Erro: ' + (err.message || 'falha')); }
+ };
+ const aplicarVendas = async () => {
+ if (!editing) return;
+ setAplicando(true);
+ try {
+ const r = await Api.gestorAplicarVendas(editing.id);
+ toast.success(r.ajustadas ? `${r.ajustadas} venda(s) ajustada(s) para ${vendasPct?.percentualGestor}%` : 'Nenhuma venda para ajustar');
+ setVendasPct(null);
+ } catch (err: any) {
+ toast.error('Erro: ' + (err.message || 'falha'));
+ } finally {
+ setAplicando(false);
+ }
+ };
  const toast = useToast();
 
  const abrir = (g: any) => {
  setEditing(g);
  setMarcadas(g.equipeIds || []);
  setPct(g.percentualGestor == null ? '' : String(g.percentualGestor).replace('.', ','));
+ setVendasPct(null);
  };
 
  const toggle = (id: number) => {
@@ -121,6 +143,42 @@ export function GestoresEquipes() {
  <input className="field__input" inputMode="decimal" value={pct} onChange={(e) => setPct(e.target.value.replace(/[^\d,.]/g, ''))} placeholder="10 (padrão)" style={{ maxWidth: 160 }} />
  <span className="field__hint">Sobre a parte da imobiliária. Vale para as vendas novas; venda já lançada fica com o % de quando fechou. Vazio = padrão de 10%.</span>
  </label>
+ )}
+ {(editing.lideradas || []).length > 0 && (
+ <div style={{ margin: '4px 0 12px' }}>
+ {!vendasPct ? (
+ <button type="button" className="btn btn--ghost btn--sm" onClick={verVendas} title="Vendas já lançadas com outro % de gestor">
+ Aplicar o % às vendas já lançadas…
+ </button>
+ ) : (() => {
+ const moeda = (n: number) => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+ const lista = vendasPct.vendas.filter((v: any) => v.pctAtual !== v.pctNovo);
+ const ajustaveis = lista.filter((v: any) => v.podeAjustar);
+ return (
+ <div style={{ border: '1px solid var(--border-light)', borderRadius: 10, padding: 10, display: 'grid', gap: 8 }}>
+ <div className="text-sm">
+ Vendas de <strong>{vendasPct.gestor}</strong> com outro % (o cadastro salvo é <strong>{vendasPct.percentualGestor}%</strong>). Só muda onde a comissão do gestor ainda não foi paga; a diferença sai da parte da imobiliária e cada venda guarda o antes no histórico.
+ </div>
+ {lista.length === 0 ? <div className="text-sm text-secondary">Todas as vendas já estão com {vendasPct.percentualGestor}%.</div> : (
+ <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+ {lista.map((v: any) => (
+ <div key={v.id} className="flex-between text-sm" style={{ padding: '4px 0', borderBottom: '1px solid var(--border-light)', opacity: v.podeAjustar ? 1 : 0.55, gap: 8 }}>
+ <span><strong>{v.codigo}</strong> · {v.cliente} <span className="text-xs text-secondary">({v.corretor})</span></span>
+ <span className="text-xs" style={{ whiteSpace: 'nowrap' }}>{v.pctAtual}% → {v.pctNovo}% · {moeda(v.valorAtual)} → {moeda(v.valorNovo)}{v.motivo ? ` · fica (${v.motivo})` : ''}</span>
+ </div>
+ ))}
+ </div>
+ )}
+ <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+ <button type="button" className="btn btn--secondary btn--sm" onClick={() => setVendasPct(null)}>Fechar</button>
+ <button type="button" className="btn btn--primary btn--sm" disabled={aplicando || ajustaveis.length === 0} onClick={aplicarVendas}>
+ {aplicando ? 'Aplicando…' : `Aplicar ${vendasPct.percentualGestor}% em ${ajustaveis.length} venda(s)`}
+ </button>
+ </div>
+ </div>
+ );
+ })()}
+ </div>
  )}
  <div className="gest-modal__foot">
  <span className="gest-modal__count">

@@ -529,7 +529,7 @@ export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: 
 // ── Histórico de edições da venda (log de segurança, ninguém apaga) ─────────
 const ACAO_HISTORICO: Record<string, string> = {
   VENDA_CRIADA: 'Venda cadastrada', VENDA_DADOS_EDITADOS: 'Dados editados', VENDA_NEGOCIACAO_EDITADA: 'Negociação editada',
-  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada', VENDA_RATEIO_SEM_GESTOR: 'Rateio sem gestor', VENDA_ARRAS_CONFIRMADO: 'Arras',
+  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada', VENDA_RATEIO_SEM_GESTOR: 'Rateio sem gestor', VENDA_RATEIO_GESTOR_PCT: '% do gestor', VENDA_ARRAS_CONFIRMADO: 'Arras',
 };
 const fmtValorHist = (campo: string, v: any) => {
   if (v == null || v === '') return '(vazio)';

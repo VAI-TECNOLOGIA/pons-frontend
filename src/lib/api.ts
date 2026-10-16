@@ -329,6 +329,8 @@ export const Api = {
   // Painel admin: quais equipes cada gestor enxerga (relação Equipe.gestores)
   gestoresEquipes: () => request<any[]>('/equipes/gestores'),
   // % do gestor (líder de sala) nas vendas novas; null = padrão 10%.
+  gestorVendas: (userId: number) => request<{ gestor: string; percentualGestor: number; vendas: any[] }>(`/equipes/gestores/${userId}/vendas`),
+  gestorAplicarVendas: (userId: number) => request<{ ok: boolean; ajustadas: number; vendas: any[] }>(`/equipes/gestores/${userId}/aplicar-vendas`, { method: 'POST' }),
   gestorPercentual: (userId: number, percentualGestor: number | null) =>
     request<{ ok: boolean; percentualGestor: number | null }>(`/equipes/gestores/${userId}/percentual`, { method: 'PATCH', body: { percentualGestor } }),
   gestorEquipesSalvar: (userId: number, equipeIds: number[]) =>

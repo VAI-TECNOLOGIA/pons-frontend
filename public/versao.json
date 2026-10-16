@@ -1,5 +1,5 @@
 {
-  "versao": "2026.10.16.11",
+  "versao": "2026.10.16.12",
   "data": "16/10/2026",
   "novidades": [
     {
@@ -7,6 +7,7 @@
       "itens": [
         "Filial sem gestor: em Rateio & Sócios, cada filial pode ser marcada como \"Sem gestor (o sócio toca)\". Venda de corretor dessa filial sai sem a parcela do gestor, e esse valor fica com a imobiliária. Ao marcar, aparece a lista das vendas já lançadas com parcela de gestor, e dá para tirar o gestor das que ainda não tiveram essa comissão paga (cada venda guarda no histórico o valor de antes).",
         "Percentual por gestor: em Gestores, cada líder de sala tem o seu % (ex.: 15%). Venda nova já nasce com o % dele; venda já lançada fica com o % de quando fechou. No cadastro da venda, o % do gestor passa a ser automático, e o financeiro ainda pode trocar.",
+        "Gestores: botão \"Aplicar o % às vendas já lançadas\" mostra as vendas do gestor com outro % e ajusta, de uma vez, as que ainda não tiveram a comissão do gestor paga (a diferença sai da parte da imobiliária e cada venda guarda o valor de antes).",
         "Arras no plano de recebimento: a venda mostra a linha do arras com valor, vencimento e o botão Confirmar, e o total passa a fechar com a entrada.",
         "Protocolo: quando o envio automático pelo WhatsApp falha, a tela diz o motivo real. Novo botão \"Enviar pelo meu WhatsApp\" abre o WhatsApp com o resumo e o link do PDF do protocolo, sem depender da Meta.",
         "Diretor Financeiro passa a ver Usuários e hierarquia (desativar usuário) e a desativar e reativar corretores."
