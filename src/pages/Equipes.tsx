@@ -104,6 +104,8 @@ export default function Equipes() {
  const normaliza = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
  const soDigitos = (s: string) => (s || '').replace(/\D/g, '');
  const corretoresFiltrados = (corretores || []).filter((c: any) => {
+ // Só quem está ativo entra na transferência (cadastros desativados e de teste ficam de fora).
+ if (c.ativo === false || c.status === 'INATIVO') return false;
  if (!comando(c.equipe?.id)) return false;
  if (transfFiltroEquipe && String(c.equipe?.id || '') !== transfFiltroEquipe) return false;
  if (!transfBusca.trim()) return true;
