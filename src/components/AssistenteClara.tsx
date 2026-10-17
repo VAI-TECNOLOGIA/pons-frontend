@@ -191,17 +191,17 @@ export function AssistenteClara() {
   return (
     <>
       {!aberta && !ocultarBotao && (
-        <button className="clara-fab" onClick={() => setAberta(true)} aria-label="Falar com a Clara, sua assistente">
-          <span className="clara-fab__avatar">C</span>
-          <span className="clara-fab__txt">Falar com a Clara</span>
+        <button className="clara-fab" onClick={() => setAberta(true)} aria-label="Falar com a Ellen, sua assistente">
+          <span className="clara-fab__avatar">E</span>
+          <span className="clara-fab__txt">Falar com a Ellen</span>
         </button>
       )}
       {aberta && (
-        <div className="clara" role="dialog" aria-label="Clara, sua assistente">
+        <div className="clara" role="dialog" aria-label="Ellen, sua assistente">
           <header className="clara__topo">
-            <span className="clara__avatar">C</span>
+            <span className="clara__avatar">E</span>
             <div className="clara__id">
-              <strong>Clara</strong>
+              <strong>Ellen</strong>
               <span>{pensando === 'ouvindo' ? 'ouvindo seu áudio…' : pensando ? 'pensando…' : gravando ? 'gravando…' : 'sua assistente · agenda, equipe e números'}</span>
             </div>
             <button className="clara__acao" onClick={novaConversa} title="Nova conversa"><Icon name="plus" size={16} /></button>
@@ -211,8 +211,8 @@ export function AssistenteClara() {
           <div className="clara__corpo">
             {carregou && msgs.length === 0 && (
               <div className="clara__vazio">
-                <span className="clara__avatar clara__avatar--g">C</span>
-                <h3>Oi! Eu sou a Clara.</h3>
+                <span className="clara__avatar clara__avatar--g">E</span>
+                <h3>Oi! Eu sou a Ellen.</h3>
                 <p>Fale ou escreva: eu agendo, lembro, passo demandas para a equipe e te conto como estão os números.</p>
                 <div className="clara__sugestoes">
                   {SUGESTOES.map((s) => <button key={s} onClick={() => enviarTexto(s)}>{s}</button>)}
@@ -249,14 +249,14 @@ export function AssistenteClara() {
                   ref={inputRef}
                   rows={1}
                   value={rascunho}
-                  placeholder="Escreva para a Clara…"
+                  placeholder="Escreva para a Ellen…"
                   onChange={(e) => { setRascunho(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(140, e.target.scrollHeight)}px`; }}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarTexto(); } }}
                 />
                 {rascunho.trim() ? (
                   <button className="clara__botao" onClick={() => enviarTexto()} disabled={!!pensando} aria-label="Enviar"><Icon name="send" size={18} /></button>
                 ) : (
-                  <button className="clara__botao clara__botao--mic" onClick={comecarGravacao} disabled={!!pensando || !micOk} aria-label="Falar com a Clara" title={micOk ? 'Toque para falar' : 'Atualize o app para usar o microfone'}>
+                  <button className="clara__botao clara__botao--mic" onClick={comecarGravacao} disabled={!!pensando || !micOk} aria-label="Falar com a Ellen" title={micOk ? 'Toque para falar' : 'Atualize o app para usar o microfone'}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10a7 7 0 0 0 14 0" /><line x1="12" y1="17" x2="12" y2="22" /></svg>
                   </button>
                 )}

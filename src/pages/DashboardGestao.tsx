@@ -263,7 +263,7 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
         </div>
         <div className="dg-acoes">
           <span className="dg-vivo"><i /> Ao vivo · atualizado {timeAgo(data.geradoEm)}</span>
-          {temClara && <button className="dg-btn dg-btn--forte" onClick={abrirClara} title="Falar com a Clara, sua assistente"><Icon name="chat" size={14} /> Falar com a Clara</button>}
+          {temClara && <button className="dg-btn dg-btn--forte" onClick={abrirClara} title="Falar com a Ellen, sua assistente"><Icon name="chat" size={14} /> Falar com a Ellen</button>}
           <button className="dg-btn" onClick={() => carregar()} title="Atualizar agora"><Icon name="refresh" size={14} /> Atualizar</button>
           <button className="dg-btn dg-btn--forte" onClick={() => setTv((x) => !x)}>
             <Icon name="tv" size={14} /> {tv ? 'Sair do modo TV' : 'Modo TV'}
