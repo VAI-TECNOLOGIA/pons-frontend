@@ -69,3 +69,5 @@
   .clara-fab__txt { display: none; }
   .clara-fab { padding: 8px; }
 }
+
+body.clara-aberta .botao-reportar-erro { display: none !important; }

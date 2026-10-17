@@ -53,6 +53,8 @@ export function AssistenteClara() {
     }).catch(() => {});
   }, []);
   useEffect(() => aoAbrirClara(() => setAberta(true)), []);
+  // Com a Clara aberta, o botão flutuante de reportar erro sai da frente do campo.
+  useEffect(() => { document.body.classList.toggle('clara-aberta', aberta); return () => document.body.classList.remove('clara-aberta'); }, [aberta]);
   useEffect(() => {
     if (!aberta || carregou) return;
     Api.claraConversa().then((ms) => {

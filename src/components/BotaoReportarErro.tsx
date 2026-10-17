@@ -18,6 +18,7 @@ export function BotaoReportarErro() {
     <>
       <button
         type="button"
+        className="botao-reportar-erro"
         onClick={() => setOpen(true)}
         title="Reportar um erro desta tela (tira o print sozinho)"
         aria-label="Reportar erro"
