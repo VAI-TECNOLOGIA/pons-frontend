@@ -307,6 +307,14 @@ export const Api = {
   dashboard: () => request<any>('/dashboard'),
   dashboardGestao: (params: Record<string, unknown> = {}) => request<any>(`/dashboard/gestao${qs(params)}`),
   dashboardGestaoOpcoes: () => request<any>('/dashboard/gestao/opcoes'),
+  // Assessor no WhatsApp (CEO e diretoria): conexão, quem usa e conversas.
+  assessorSituacao: () => request<any>('/assessor/situacao'),
+  assessorConectar: (numero?: string) => request<{ qr: string | null; codigo: string | null; estado: string | null }>('/assessor/conectar', { method: 'POST', body: numero ? { numero } : {} }),
+  assessorDesconectar: () => request<{ ok: boolean }>('/assessor/desconectar', { method: 'POST' }),
+  assessorLiberar: (userId: number) => request<{ ok: boolean; boasVindas: boolean }>(`/assessor/pessoas/${userId}`, { method: 'POST', body: {} }),
+  assessorRemover: (userId: number) => request<{ ok: boolean }>(`/assessor/pessoas/${userId}`, { method: 'DELETE' }),
+  assessorConversas: () => request<any[]>('/assessor/conversas'),
+  assessorTestar: (texto: string) => request<{ resposta: string }>('/assessor/testar', { method: 'POST', body: { texto } }),
   // Visão 360 do dashboard de gestão (painel lateral ao clicar no corretor ou no lead).
   dashboardCorretor360: (id: number, params: Record<string, unknown> = {}) => request<any>(`/dashboard/gestao/corretor/${id}${qs(params)}`),
   dashboardLead360: (id: number) => request<any>(`/dashboard/gestao/lead/${id}`),

@@ -1,7 +1,16 @@
 {
-  "versao": "2026.10.16.12",
-  "data": "16/10/2026",
+  "versao": "2026.10.17.1",
+  "data": "17/10/2026",
   "novidades": [
+    {
+      "titulo": "Assessor no WhatsApp",
+      "itens": [
+        "Nova tela Sistema → Assessor no WhatsApp (CEO e diretoria): conecta o número do assessor por QR Code ou código, libera quem pode usar (CEO, diretoria e sócios) e mostra as conversas.",
+        "O sócio manda áudio ou texto: o assessor coloca o compromisso na agenda do sistema (e no Google, se a conta estiver conectada), agenda o lembrete no aplicativo, passa demandas para outra pessoa com aviso no aplicativo dela, avisa os corretores (só depois do SIM) e responde sobre vendas, ranking, agenda e contas a pagar.",
+        "Lembrete de compromisso agora também no aplicativo (sino e celular) e no WhatsApp de quem usa o assessor.",
+        "Campo \"Testar o assessor\" na própria tela, para experimentar antes do WhatsApp."
+      ]
+    },
     {
       "titulo": "Rateio, arras e protocolo (pedido do Financeiro)",
       "itens": [

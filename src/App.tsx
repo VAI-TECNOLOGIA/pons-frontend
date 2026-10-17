@@ -99,6 +99,7 @@ const PainelFinanceiro = lazyRetry(() => import('./pages/PainelFinanceiro'));
 const ContasBancarias = lazyRetry(() => import('./pages/ContasBancarias'));
 const AdminVendas     = lazyRetry(() => import('./pages/AdminVendas'));
 const AgenteIA        = lazyRetry(() => import('./pages/AgenteIA'));
+const Assessor        = lazyRetry(() => import('./pages/Assessor'));
 const Reuniao         = lazyRetry(() => import('./pages/Reuniao'));
 const Equipe          = lazyRetry(() => import('./pages/Equipe'));
 const Pessoal         = lazyRetry(() => import('./pages/Pessoal'));
@@ -215,6 +216,7 @@ export default function App() {
           <Route path="/admin-vendas" element={<AdminVendas />} />
           <Route path="/onboarding-aprovacoes" element={<OnboardingAprovacoes />} />
           <Route path="/agente-ia" element={<AgenteIA />} />
+          <Route path="/assessor" element={<Assessor />} />
           <Route path="/reuniao" element={<Reuniao />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/pessoal" element={<Pessoal />} />
