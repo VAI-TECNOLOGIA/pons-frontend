@@ -1201,7 +1201,7 @@ function PanelAcessos() {
 }
 
 function PanelEquipes() {
- const { data, loading, error, reload } = useApi<any[]>(() => Api.equipes());
+ const { data, loading, error, reload } = useApi<any[]>(() => Api.equipes(true));
  const [editing, setEditing] = useState<any | null>(null);
  const toast = useToast();
  const confirm = useConfirm();

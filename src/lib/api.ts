@@ -336,7 +336,7 @@ export const Api = {
     request<{ ok: boolean; sinoOk: boolean; push: { status: string; success: number } }>(`/dashboard/gestao/corretor/${id}/mensagem`, { method: 'POST', body: { texto, leadId: leadId || null } }),
 
   // Equipes
-  equipes: () => request<any[]>('/equipes'),
+  equipes: (todas = false) => request<any[]>(`/equipes${todas ? '?todas=1' : ''}`),
   equipeCreate: (data: any) => request<any>('/equipes', { method: 'POST', body: data }),
   // Transferência de corretor entre equipes (gestores): direta entre equipes do
   // mesmo gestor; senão pende aprovação do gestor da equipe de destino.
