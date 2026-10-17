@@ -12,6 +12,7 @@ import { Icon } from '../components/Icon';
 import { CampoData } from '../components/CampoData';
 import { BuscaSelect } from '../components/BuscaSelect';
 import { Painel360, type Alvo360 } from '../components/Painel360';
+import { claraPermitida, abrirClara } from '../lib/clara';
 import '../styles/dashboard-gestao.css';
 
 Chart.register(...registerables);
@@ -98,6 +99,8 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
   const [buscando, setBuscando] = useState(false);
   const [opcoes, setOpcoes] = useState<any>(null);
   const [tv, setTv] = useState(false);
+  const [temClara, setTemClara] = useState(false);
+  useEffect(() => { claraPermitida().then(setTemClara).catch(() => {}); }, []);
   const [abaOrigem, setAbaOrigem] = useState<'origem' | 'campanha'>('origem');
   const vistos = useRef<Set<string>>(new Set());
   const [novos, setNovos] = useState<Set<string>>(new Set());
@@ -260,6 +263,7 @@ export default function DashboardGestao({ fallback }: { fallback: React.ReactNod
         </div>
         <div className="dg-acoes">
           <span className="dg-vivo"><i /> Ao vivo · atualizado {timeAgo(data.geradoEm)}</span>
+          {temClara && <button className="dg-btn dg-btn--forte" onClick={abrirClara} title="Falar com a Clara, sua assistente"><Icon name="chat" size={14} /> Falar com a Clara</button>}
           <button className="dg-btn" onClick={() => carregar()} title="Atualizar agora"><Icon name="refresh" size={14} /> Atualizar</button>
           <button className="dg-btn dg-btn--forte" onClick={() => setTv((x) => !x)}>
             <Icon name="tv" size={14} /> {tv ? 'Sair do modo TV' : 'Modo TV'}

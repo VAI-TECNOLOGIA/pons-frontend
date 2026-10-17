@@ -8,12 +8,17 @@ import { Icon } from './Icon';
 import { BirthdayGreeter } from './BirthdayGreeter';
 import { WelcomeSplash } from './WelcomeSplash';
 import { AssistantChat } from './AssistantChat';
+import { AssistenteClara } from './AssistenteClara';
+import { claraPermitida } from '../lib/clara';
 import { VerificarNotificacoes } from './VerificarNotificacoes';
 import { NotificationsBell } from './NotificationsBell';
 import { LoadingBlock } from '../lib/useApi';
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  // Clara (assistente com voz) só para quem está liberado — hoje, o Paulo.
+  const [clara, setClara] = useState(false);
+  useEffect(() => { if (Auth.token) claraPermitida().then(setClara).catch(() => setClara(false)); }, []);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem('pons.sidebarCollapsed') === '1'; } catch { return false; }
   });
@@ -123,7 +128,8 @@ export function AppLayout() {
       </div>
       <WelcomeSplash />
       <BirthdayGreeter />
-      <AssistantChat />
+      {/* Quem tem a Clara (só o Paulo) vê ela no lugar do assistente antigo. */}
+      {clara ? <AssistenteClara /> : <AssistantChat />}
       {/* Android nativo: diagnóstico de permissão/canal de notificação no aparelho */}
       <VerificarNotificacoes />
       {/* Sino fixo no topo direito de toda tela (escondido via CSS onde já há .topbar com sino) */}

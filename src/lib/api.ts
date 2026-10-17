@@ -315,6 +315,20 @@ export const Api = {
   assessorRemover: (userId: number) => request<{ ok: boolean }>(`/assessor/pessoas/${userId}`, { method: 'DELETE' }),
   assessorConversas: () => request<any[]>('/assessor/conversas'),
   assessorTestar: (texto: string) => request<{ resposta: string }>('/assessor/testar', { method: 'POST', body: { texto } }),
+  // Clara no app (chat com texto e voz)
+  claraStatus: () => request<{ permitido: boolean; nome: string }>('/assessor/app/status'),
+  claraConversa: () => request<{ id: number; direcao: 'IN' | 'OUT'; tipo: string; texto: string; createdAt: string }[]>('/assessor/app/conversa'),
+  claraNova: () => request<{ ok: boolean }>('/assessor/app/nova', { method: 'POST' }),
+  claraMensagem: (texto: string) => request<{ resposta: string; audio?: string | null }>('/assessor/app/mensagem', { method: 'POST', body: { texto } }),
+  claraOuvir: (texto: string) => request<{ audio: string }>('/assessor/app/ouvir', { method: 'POST', body: { texto } }),
+  claraAudio: async (blob: Blob, nome: string) => {
+    const fd = new FormData();
+    fd.append('audio', blob, nome);
+    const r = await fetch(`${BASE}/assessor/app/audio`, { method: 'POST', headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined, body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new ApiError(j?.message || 'Não consegui enviar o áudio.', r.status, j);
+    return j as { transcricao?: string; resposta: string; audio?: string | null };
+  },
   // Visão 360 do dashboard de gestão (painel lateral ao clicar no corretor ou no lead).
   dashboardCorretor360: (id: number, params: Record<string, unknown> = {}) => request<any>(`/dashboard/gestao/corretor/${id}${qs(params)}`),
   dashboardLead360: (id: number) => request<any>(`/dashboard/gestao/lead/${id}`),

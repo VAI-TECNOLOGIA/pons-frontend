@@ -10,6 +10,7 @@ import { Api } from '../lib/api';
 import { formatRole } from '../lib/auth';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { TextoWhatsapp } from '../components/TextoWhatsapp';
 
 type Situacao = {
   configurado: boolean; instancia: string; servidor: string;
@@ -24,12 +25,6 @@ const fone = (d?: string | null) => {
   if (n.length === 10) return `(${n.slice(0, 2)}) ${n.slice(2, 6)}-${n.slice(6)}`;
   return d || '—';
 };
-
-// Mostra como no WhatsApp: *negrito* e _itálico_ (sem os símbolos).
-function TextoWhatsapp({ texto }: { texto: string }) {
-  const partes = String(texto || '').split(/(\*[^*\n]+\*|_[^_\n]+_)/g);
-  return <>{partes.map((p, i) => (/^\*[^*]+\*$/.test(p) ? <strong key={i}>{p.slice(1, -1)}</strong> : /^_[^_]+_$/.test(p) ? <em key={i}>{p.slice(1, -1)}</em> : <span key={i}>{p}</span>))}</>;
-}
 
 const EXEMPLOS = [
   '"Amanhã às 15h reunião com a Kóra, me lembra meia hora antes."',

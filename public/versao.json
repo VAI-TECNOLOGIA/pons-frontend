@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.17.2",
+  "versao": "2026.10.17.3",
   "data": "17/10/2026",
   "novidades": [
+    {
+      "titulo": "Clara, sua assistente no aplicativo",
+      "itens": [
+        "Botão \"Falar com a Clara\" (no canto da tela e no topo do Dashboard): conversa no estilo ChatGPT, por texto ou por voz. Ela agenda compromissos (agenda do sistema e Google), lembra no aplicativo, passa demandas para a equipe com aviso no app de quem recebe, avisa os corretores (só depois do SIM) e conta como estão vendas, ranking, agenda e contas a pagar.",
+        "Quando você fala, a Clara responde em voz; toque em Ouvir para escutar qualquer resposta. \"Nova conversa\" começa do zero.",
+        "Disponível para a diretoria liberada (hoje, o Paulo)."
+      ]
+    },
     {
       "titulo": "Assessor no WhatsApp",
       "itens": [
