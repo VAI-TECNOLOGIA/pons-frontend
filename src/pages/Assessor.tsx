@@ -25,6 +25,12 @@ const fone = (d?: string | null) => {
   return d || '—';
 };
 
+// Mostra como no WhatsApp: *negrito* e _itálico_ (sem os símbolos).
+function TextoWhatsapp({ texto }: { texto: string }) {
+  const partes = String(texto || '').split(/(\*[^*\n]+\*|_[^_\n]+_)/g);
+  return <>{partes.map((p, i) => (/^\*[^*]+\*$/.test(p) ? <strong key={i}>{p.slice(1, -1)}</strong> : /^_[^_]+_$/.test(p) ? <em key={i}>{p.slice(1, -1)}</em> : <span key={i}>{p}</span>))}</>;
+}
+
 const EXEMPLOS = [
   '"Amanhã às 15h reunião com a Kóra, me lembra meia hora antes."',
   '"Avisa o Márcio que ele precisa levar o contrato na sexta às 10h."',
@@ -174,7 +180,7 @@ export default function Assessor() {
               {trocas.map((t, i) => (
                 <div key={i} style={{ display: 'grid', gap: 4 }}>
                   <div className="text-sm" style={{ justifySelf: 'end', background: 'var(--bg-card-hover)', borderRadius: 10, padding: '6px 10px', maxWidth: '85%' }}>{t.eu}</div>
-                  <div className="text-sm" style={{ border: '1px solid var(--border-light)', borderRadius: 10, padding: '6px 10px', maxWidth: '85%', whiteSpace: 'pre-wrap' }}>{t.assessor}</div>
+                  <div className="text-sm" style={{ border: '1px solid var(--border-light)', borderRadius: 10, padding: '6px 10px', maxWidth: '85%', whiteSpace: 'pre-wrap' }}><TextoWhatsapp texto={t.assessor} /></div>
                 </div>
               ))}
             </div>
