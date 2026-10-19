@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.17.7",
-  "data": "17/10/2026",
+  "versao": "2026.10.19.1",
+  "data": "19/10/2026",
   "novidades": [
+    {
+      "titulo": "Protocolo da venda com os documentos (pedido do Financeiro)",
+      "itens": [
+        "Ao confirmar a venda, o protocolo e todos os documentos anexados (fotos e PDFs) vão num PDF só, já com as fotos em pé.",
+        "\"Enviar pelo meu WhatsApp\" agora manda o link desse PDF completo, com a documentação junto.",
+        "Com o WhatsApp da Pons conectado por QR Code (Sistema → Assessor), o protocolo sai sozinho por ele, sem depender da conta oficial da Meta."
+      ]
+    },
     {
       "titulo": "Ellen, sua assistente no aplicativo",
       "itens": [

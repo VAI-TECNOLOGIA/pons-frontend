@@ -561,7 +561,7 @@ export const Api = {
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
   vendaCancelar: (id: number, motivo?: string) => request<any>(`/vendas/${id}/cancelar`, { method: 'POST', body: { motivo } }),
   vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
-  vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; motivo?: string; erro?: string; metaCode?: number } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
+  vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; canal?: 'qr' | 'oficial'; motivo?: string; erro?: string; metaCode?: number } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
   // Protocolo pelo WhatsApp do próprio Adm (sem a API da Meta): link do PDF + texto pronto.
   vendaProtocoloLink: (id: number) => request<{ ok: boolean; url: string; numero: string | null; texto: string }>(`/vendas/${id}/protocolo-link`, { method: 'POST' }),
   vendaArras: (id: number, pago: boolean) => request<{ ok: boolean; arrasPagoEm: string | null }>(`/vendas/${id}/arras`, { method: 'PATCH', body: { pago } }),
@@ -697,7 +697,7 @@ export const Api = {
   settings: () => request<Record<string, string>>('/config/settings'),
   settingsSave: (obj: Record<string, string>) => request<any>('/config/settings', { method: 'PUT', body: obj }),
   // WhatsApp que recebe o protocolo da venda aprovada (vazio = vai pro corretor)
-  protocoloWhatsapp: () => request<{ numero: string }>('/config/protocolo-whatsapp'),
+  protocoloWhatsapp: () => request<{ numero: string; qr?: { conectado: boolean; numero: string } | null }>('/config/protocolo-whatsapp'),
   protocoloWhatsappSave: (numero: string) => request<{ numero: string }>('/config/protocolo-whatsapp', { method: 'PUT', body: { numero } }),
   nfAliquota: () => request<{ pct: number }>('/config/nf-aliquota'),
   nfAliquotaSave: (pct: number) => request<{ pct: number }>('/config/nf-aliquota', { method: 'PUT', body: { pct } }),

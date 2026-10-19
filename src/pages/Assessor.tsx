@@ -82,7 +82,7 @@ export default function Assessor() {
     finally { setBusy(null); }
   };
   const desconectar = async () => {
-    const ok = await confirmar({ title: 'Desconectar o WhatsApp do assessor?', message: 'Ninguém consegue falar com o assessor até conectar de novo.', confirmText: 'Desconectar', tone: 'danger' });
+    const ok = await confirmar({ title: 'Desconectar o WhatsApp da Pons?', message: 'O assessor para no WhatsApp e o protocolo das vendas volta a sair pela API oficial (Meta) até conectar de novo.', confirmText: 'Desconectar', tone: 'danger' });
     if (!ok) return;
     setBusy('desconectar');
     try { await Api.assessorDesconectar(); await carregar(); toast.success('Desconectado.'); }
@@ -119,7 +119,8 @@ export default function Assessor() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'start' }}>
           <section className="card">
-            <h3 className="card__title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon name="whatsapp" size={18} /> Número do assessor</h3>
+            <h3 className="card__title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icon name="whatsapp" size={18} /> WhatsApp da Pons (QR Code)</h3>
+            <p className="text-sm text-secondary" style={{ margin: '4px 0 0' }}>Este número também envia o protocolo das vendas (PDF com os documentos) ao Adm, sem depender da Meta.</p>
             {!s ? <div className="text-secondary">Carregando…</div> : !s.configurado ? (
               <p className="text-sm text-secondary">O servidor de WhatsApp ainda não foi configurado para a Pons. Fale com a VAI.</p>
             ) : (

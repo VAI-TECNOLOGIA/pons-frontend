@@ -127,7 +127,9 @@ export default function AdminVendas() {
         reload(); // mantém a venda aberta para enviar pelo WhatsApp do Adm
         return;
       }
-      toast.success(`Venda ${v.codigo} confirmada — protocolo enviado no WhatsApp (os documentos seguem em instantes). Mantida em "Contrato em confecção".`);
+      toast.success(w?.canal === 'qr'
+        ? `Venda ${v.codigo} confirmada — protocolo e documentos enviados num PDF só pelo WhatsApp da Pons. Mantida em "Contrato em confecção".`
+        : `Venda ${v.codigo} confirmada — protocolo e documentos enviados no WhatsApp. Mantida em "Contrato em confecção".`);
       setSelId(null);
       reload();
     } catch (e: any) {
@@ -378,12 +380,13 @@ export default function AdminVendas() {
 // Vazio = desativado: o protocolo vai pro corretor titular, como sempre foi.
 function CardProtocoloWhatsapp() {
   const [numero, setNumero] = useState('');
+  const [qr, setQr] = useState<{ conectado: boolean; numero: string } | null>(null);
   const [carregado, setCarregado] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
-    Api.protocoloWhatsapp().then((r) => { setNumero(r.numero || ''); setCarregado(true); }).catch(() => setCarregado(true));
+    Api.protocoloWhatsapp().then((r) => { setNumero(r.numero || ''); setQr(r.qr || null); setCarregado(true); }).catch(() => setCarregado(true));
   }, []);
 
   const salvar = async () => {
@@ -416,9 +419,16 @@ function CardProtocoloWhatsapp() {
         </button>
       </div>
       <div className="field__hint" style={{ marginTop: 6 }}>
-        Quando uma venda é aprovada, o protocolo (mensagens + PDF) vai pra este número — para confecção do contrato.
+        Ao confirmar a venda, o protocolo e os documentos anexados vão num PDF só para este número — para confecção do contrato.
         Deixe vazio pra desativar: aí o protocolo vai pro corretor titular da venda.
       </div>
+      {qr && (
+        <div className="field__hint" style={{ marginTop: 4 }}>
+          {qr.conectado
+            ? `Envio pelo WhatsApp da Pons conectado por QR Code${qr.numero ? ` (${qr.numero})` : ''}.`
+            : 'Envio pela API oficial do WhatsApp (Meta). O WhatsApp da Pons por QR Code está desconectado.'}
+        </div>
+      )}
     </div>
   );
 }
