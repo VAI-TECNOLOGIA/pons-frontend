@@ -1,7 +1,16 @@
 {
-  "versao": "2026.10.19.1",
+  "versao": "2026.10.19.2",
   "data": "19/10/2026",
   "novidades": [
+    {
+      "titulo": "Editar negociação: datas das parcelas",
+      "itens": [
+        "As datas das parcelas da entrada seguem a ordem certa: dia 31 vira o último dia do mês (31/01, 28/02, 31/03, 30/04...).",
+        "A data mostrada é a mesma em todas as telas e aparelhos.",
+        "Não salva com parcela sem data ou fora de ordem: a tela avisa qual parcela ajustar.",
+        "Venda acima de 4x já aprovada pelo Paulo continua aprovada ao editar, desde que o número de parcelas não aumente."
+      ]
+    },
     {
       "titulo": "Protocolo da venda com os documentos (pedido do Financeiro)",
       "itens": [

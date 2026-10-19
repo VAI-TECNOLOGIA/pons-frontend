@@ -7,7 +7,7 @@ import { EmptyState } from '../components/EmptyState';
 import { Modal } from '../components/Modal';
 import { Auth } from '../lib/auth';
 import { Icon } from '../components/Icon';
-import { formatCurrencyShort, formatCurrencyExact, initials } from '../lib/format';
+import { formatCurrencyShort, formatCurrencyExact, initials, formatDate } from '../lib/format';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -199,6 +199,16 @@ function distribuirParcelasEntradaCents(entradaCents: number, arrasCents: number
 
 // Edita a negociação de uma venda (valor, entrada/parcelas, mensais, reforços).
 // Recompõe parcelas da entrada e comissão no backend. Só antes de haver pagamento.
+// Soma meses a 'AAAA-MM-DD' sem pular de mês: 31/01 + 1 = 28/02 (o Date do JS dava 03/03
+// e as parcelas saíam fora de ordem — venda 2026-32618, 19/10).
+export function somaMesesISO(iso: string, n: number): string {
+  const [a, mo, d] = iso.split('-').map(Number);
+  const ultimo = new Date(a, mo - 1 + n + 1, 0).getDate();
+  const dt = new Date(a, mo - 1 + n, Math.min(d, ultimo));
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+const hojeMais1MesISO = () => { const t = new Date(); return somaMesesISO(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`, 1); };
+
 export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
   const f = venda.formulario || {};
@@ -251,11 +261,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   const mudarVenc1 = (iso: string) => {
     setVenc1(iso);
     if (!parcTocadas || !iso) return;
-    const [a, mo, d] = iso.split('-').map(Number);
-    setParcelasDet((cur) => cur.map((x, i) => {
-      const dt = new Date(a, mo - 1 + i, d);
-      return { ...x, venc: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}` };
-    }));
+    setParcelasDet((cur) => cur.map((x, i) => ({ ...x, venc: somaMesesISO(iso, i) })));
   };
   // Mudar entrada ou arras redistribui os valores das parcelas.
   const mudarEntrada = (v: string) => { setParcTocadas(false); setEntradaTotal(v); };
@@ -279,11 +285,8 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
     if (entradaV <= 0) { setParcelasDet([]); return; }
     const cents = (x: number) => Math.round(x * 100);
     const slots = distribuirParcelasEntradaCents(cents(entradaV), cents(arrasV), n);
-    const baseDate = venc1 ? new Date(venc1 + 'T00:00:00') : (() => { const dd = new Date(); dd.setMonth(dd.getMonth() + 1); return dd; })();
-    setParcelasDet(slots.map((v, i) => {
-      const dd = new Date(baseDate); dd.setMonth(dd.getMonth() + i);
-      return { valor: formatMoedaBR(Math.max(0, v) / 100), venc: dd.toISOString().slice(0, 10) };
-    }));
+    const base = venc1 || hojeMais1MesISO();
+    setParcelasDet(slots.map((v, i) => ({ valor: formatMoedaBR(Math.max(0, v) / 100), venc: somaMesesISO(base, i) })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entradaTotal, arras, parcelas, venc1, parcTocadas]);
 
@@ -316,6 +319,21 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
     // fechar com (entrada − arras) — a arras é paga à parte ("no ato").
     const alvo = Math.max(0, ent - arr);
     const detalhe = parcelasDet.map((p) => ({ valor: parseMoedaBR(p.valor) || 0, vencimento: p.venc || null }));
+    // Toda parcela precisa de data válida e em ordem (antes, data vazia ou 31/04 virava
+    // "hoje + N meses" no servidor e a 4ª parcela caía em 19/02).
+    for (let i = 0; i < detalhe.length; i++) {
+      const v = detalhe[i].vencimento || '';
+      const [a, mo, d] = v.split('-').map(Number);
+      const dt = new Date(a, (mo || 0) - 1, d || 0);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || dt.getFullYear() !== a || dt.getMonth() !== mo - 1 || dt.getDate() !== d) {
+        toast.error(`Informe uma data válida para a ${i + 1}ª parcela da entrada.`);
+        return;
+      }
+      if (i > 0 && v < (detalhe[i - 1].vencimento || '')) {
+        toast.error(`A ${i + 1}ª parcela vence antes da ${i}ª. Ajuste as datas para seguirem a ordem.`);
+        return;
+      }
+    }
     const somaP = detalhe.reduce((a, p) => a + p.valor, 0);
     if (!detalhe.length || Math.abs(somaP - alvo) > 1) {
       toast.error(`A soma das parcelas da entrada (${formatMoedaBR(somaP)}) precisa fechar com entrada − arras (${formatMoedaBR(alvo)}).`);
@@ -1061,10 +1079,9 @@ export default function Vendas() {
      const qtd = Number(f.qtd) || 0;
      const valor = parseMoedaBR(f.valor);
      if (qtd <= 0) continue;
-     const base = f.venc ? new Date(f.venc + 'T00:00:00') : null;
+     const base = f.venc && /^\d{4}-\d{2}-\d{2}$/.test(f.venc) ? f.venc : null;
      for (let i = 0; i < qtd; i++) {
-       let venc: string | null = null;
-       if (base && !isNaN(base.getTime())) { const d = new Date(base); d.setMonth(d.getMonth() + i * passo); venc = d.toISOString().slice(0, 10); }
+       const venc: string | null = base ? somaMesesISO(base, i * passo) : null;
        out.push({ valor, vencimento: venc });
      }
    }
@@ -1096,11 +1113,8 @@ export default function Vendas() {
  // for maior que uma parcela — evita a 1ª negativa). As parcelas somam (entrada −
  // arras); a arras é o ato, pago à parte. Pedido do financeiro/Márcio (out/26).
  const vals = distribuirParcelasEntradaCents(cents(entradaV), cents(arrasV), n);
- const baseDate = entradaData ? new Date(entradaData + 'T00:00:00') : (() => { const dd = new Date(); dd.setMonth(dd.getMonth() + 1); return dd; })();
- const arr = vals.map((v, i) => {
- const dd = new Date(baseDate); dd.setMonth(dd.getMonth() + i);
- return { valor: formatMoedaBR(Math.max(0, v) / 100), venc: dd.toISOString().slice(0, 10) };
- });
+ const baseISO = entradaData || hojeMais1MesISO();
+ const arr = vals.map((v, i) => ({ valor: formatMoedaBR(Math.max(0, v) / 100), venc: somaMesesISO(baseISO, i) }));
  setParcelasEntrada(arr);
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [entradaTotal, arrasValor, entradaParcelas, entradaData, parcelasTocadas]);
@@ -2627,7 +2641,7 @@ export default function Vendas() {
    // Encadeia a data: o próximo bloco começa 1 mês após a última parcela do bloco anterior.
    const last = cur[cur.length - 1];
    let venc = '';
-   if (last?.venc && (Number(last.qtd) || 0) > 0) { const d = new Date(last.venc + 'T00:00:00'); d.setMonth(d.getMonth() + Number(last.qtd)); venc = d.toISOString().slice(0, 10); }
+   if (last?.venc && (Number(last.qtd) || 0) > 0) { venc = somaMesesISO(last.venc, Number(last.qtd)); }
    return [...cur, { qtd: '', valor: '', venc }];
  })}>＋ Adicionar faixa</button>
  <div className="field__hint">Cada bloco vence mensalmente a partir do 1º vencimento. Ao adicionar uma faixa, a data já vem encadeada (logo após o bloco anterior) — edite se precisar.</div>
@@ -2694,7 +2708,7 @@ export default function Vendas() {
    const last = cur[cur.length - 1];
    const passo = reforcoPeriodicidade === 'SEMESTRAL' ? 6 : 12;
    let venc = '';
-   if (last?.venc && (Number(last.qtd) || 0) > 0) { const d = new Date(last.venc + 'T00:00:00'); d.setMonth(d.getMonth() + Number(last.qtd) * passo); venc = d.toISOString().slice(0, 10); }
+   if (last?.venc && (Number(last.qtd) || 0) > 0) { venc = somaMesesISO(last.venc, Number(last.qtd) * passo); }
    return [...cur, { qtd: '', valor: '', venc }];
  })}>＋ Adicionar faixa</button>
  <div className="field__hint">Ao adicionar uma faixa, a data já vem encadeada (logo após o bloco anterior) — edite se precisar. Ex.: 5x de 50.000 começando 11/2027 e 5x de 64.800 começando 11/2032.</div>
@@ -3428,7 +3442,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  )}
  {parcelas.map((p) => {
  const [k, lbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
- const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
+ const venc = p.vencimento ? formatDate(p.vencimento) : '—'; // dia gravado à meia-noite UTC não volta 1 dia (Paulo via 27/02 no lugar de 28/02)
  return (
  <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
  <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -3462,7 +3476,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const valorCorretor = r && typeof r.corretor === 'number' ? r.corretor : null;
  if (valorCorretor === null) return null;
  const [bk, blbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
- const venc = p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : '—';
+ const venc = p.vencimento ? formatDate(p.vencimento) : '—'; // dia gravado à meia-noite UTC não volta 1 dia (Paulo via 27/02 no lugar de 28/02)
  return (
  <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
  <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
