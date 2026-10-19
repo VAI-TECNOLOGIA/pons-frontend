@@ -1,7 +1,16 @@
 {
-  "versao": "2026.10.19.2",
+  "versao": "2026.10.19.3",
   "data": "19/10/2026",
   "novidades": [
+    {
+      "titulo": "Ajustes da reunião de 19/10",
+      "itens": [
+        "Corretor novo: ao criar a conta ele escolhe a equipe, e o gestor dela e o sócio da filial recebem o aviso e liberam em Liberações de acesso.",
+        "Depois de liberado, o financeiro é avisado e vê o cadastro completo do corretor em Corretores (dados pessoais, PIX, banco e documentos).",
+        "Corretores: o marketing liga e desliga o envio de WhatsApp de cada corretor (coluna WhatsApp). Bloqueado, o corretor não envia mensagem, template nem lembrete pelo sistema, para não consumir o saldo.",
+        "Perfil → Notificações: cada pessoa da gestão escolhe se recebe avisos de Leads, Vendas e contratos e Financeiro, e liga ou desliga quando quiser."
+      ]
+    },
     {
       "titulo": "Editar negociação: datas das parcelas",
       "itens": [

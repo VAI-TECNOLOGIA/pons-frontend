@@ -13,6 +13,8 @@ type Pendente = {
   createdAt: string;
   origemCadastro?: string | null;
   funcaoCadastro?: string | null;
+  equipe?: string | null;
+  filial?: string | null;
 };
 
 // Tela do ANALISTA: cadastros abertos aguardando liberação. O analista define a
@@ -104,6 +106,9 @@ export default function AcessoPendente() {
                 <div style={{ color: 'var(--muted, #94a3b8)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.email}{p.phone ? ` · ${p.phone}` : ''}
                 </div>
+                {(p.equipe || p.filial) && (
+                  <div style={{ fontSize: 13, marginTop: 2 }}>{[p.equipe, p.filial && p.filial !== p.equipe ? `filial ${p.filial}` : null].filter(Boolean).join(' · ')}</div>
+                )}
                 {p.funcaoCadastro && (
                   <div style={{ color: 'var(--muted, #94a3b8)', fontSize: 12, marginTop: 2 }}>quer entrar como: {p.funcaoCadastro}</div>
                 )}

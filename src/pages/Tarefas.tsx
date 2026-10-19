@@ -417,6 +417,9 @@ export default function Tarefas() {
                 <input type="checkbox" checked={waOn} onChange={(e) => setWaOn(e.target.checked)} />
                 Enviar lembrete pelo WhatsApp (API oficial)
               </label>
+              {Auth.user?.corretor?.envioWhatsappBloqueado && waOn && (
+                <div className="text-xs text-secondary" style={{ marginTop: 4 }}>Seu envio de WhatsApp está bloqueado pelo marketing: o lembrete chega só no aplicativo (celular e sino).</div>
+              )}
             </div>
             {waOn && (
               <>

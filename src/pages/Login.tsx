@@ -329,6 +329,8 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
     setError('');
     // WhatsApp é obrigatório: é por ele que a pessoa recupera a senha sozinha.
     if (telefone.replace(/\D/g, '').length < 10) { setError('Informe o WhatsApp com DDD.'); return; }
+    // A equipe define quem libera o acesso: o gestor dela e o sócio da filial (19/10).
+    if (!equipeId) { setError('Selecione sua equipe: é o gestor dela quem libera o seu acesso.'); return; }
     setBusy(true);
     try {
       const { token, user } = await Api.registrar({ name: nome.trim(), email: email.trim(), password: senha, phone: telefone.trim(), equipeId: equipeId ? Number(equipeId) : null });
@@ -371,7 +373,7 @@ function CriarContaModal({ onClose }: { onClose: () => void }) {
           </label>
           <label className="login-field">
             <span className="login-field__label">Equipe</span>
-            <select className="login-field__input" value={equipeId} onChange={(e) => setEquipeId(e.target.value)}>
+            <select className="login-field__input" required value={equipeId} onChange={(e) => setEquipeId(e.target.value)}>
               <option value="">Selecione sua equipe</option>
               {equipes.map((eq) => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
             </select>

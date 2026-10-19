@@ -4,7 +4,7 @@ import { CampoData } from '../components/CampoData';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { Modal } from '../components/Modal';
-import { formatCurrencyShort } from '../lib/format';
+import { formatCurrencyShort, formatDate } from '../lib/format';
 import { Icon } from '../components/Icon';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -34,6 +34,23 @@ export default function Corretores() {
  const { data: corretores, loading, error, reload } = useApi<any[]>(() => Api.corretores());
  const { data: equipes } = useApi<any[]>(() => Api.equipes());
  const toast = useToast();
+ // Reunião 19/10: o marketing (Vini) bloqueia o envio de WhatsApp pela API oficial
+ // de quem não deve consumir o saldo. Bloqueado = o corretor não envia nada pelo sistema.
+ const podeBloquearWa = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GESTOR_TRAFEGO', 'GESTOR_MARKETING', 'ASSESSORA_MARKETING'].includes(Auth.user?.role || '');
+ const [trocandoWa, setTrocandoWa] = useState<number | null>(null);
+ const trocarWa = async (c: any) => {
+ const bloquear = !c.envioWhatsappBloqueado;
+ setTrocandoWa(c.id);
+ try {
+ await Api.corretoresEnvioWhatsapp([c.id], bloquear);
+ toast.success(bloquear ? `${c.nome}: envio de WhatsApp bloqueado.` : `${c.nome}: envio de WhatsApp liberado.`);
+ reload();
+ } catch (e: any) {
+ toast.error('Erro: ' + (e.message || 'falha'));
+ } finally {
+ setTrocandoWa(null);
+ }
+ };
  const confirm = useConfirm();
  const exportarCadastrosApp = async () => {
    try { await Api.corretoresAutoCadastroExport(); }
@@ -237,13 +254,14 @@ export default function Corretores() {
  <th className="numeric">Vendas (mês)</th>
  <th className="numeric">Volume</th>
  <th>Status</th>
+ {podeBloquearWa && <th title="Envio de WhatsApp pelo sistema (API oficial, consome saldo)">WhatsApp</th>}
  <th></th>
  </tr>
  </thead>
  <tbody>
  {filtered.length === 0 ? (
  <tr>
- <td colSpan={8}>
+ <td colSpan={podeBloquearWa ? 10 : 9}>
  <EmptyState size="sm" icon="users" title="Nenhum corretor encontrado" description="Ajuste a busca ou os filtros." />
  </td>
  </tr>
@@ -290,10 +308,27 @@ export default function Corretores() {
  <td className="numeric font-semibold">{c.vendasMes ?? 0}</td>
  <td className="numeric money">{formatCurrencyShort(c.volumeMes)}</td>
  <td>
+ {c.aguardandoLiberacao ? (
+ <span className="badge badge--warning" title="Criou a conta pelo app e ainda não foi liberado pelo gestor/sócio">AGUARDANDO LIBERAÇÃO</span>
+ ) : (
  <span className={'badge ' + (isAtivo ? 'badge--signed' : 'badge--cancelled')}>
  {isAtivo ? 'ATIVO' : (c.status || 'INATIVO')}
  </span>
+ )}
  </td>
+ {podeBloquearWa && (
+ <td>
+ <button
+ className={'btn btn--sm ' + (c.envioWhatsappBloqueado ? 'btn--secondary' : 'btn--ghost')}
+ style={{ color: c.envioWhatsappBloqueado ? 'var(--color-danger)' : 'var(--color-success)', fontWeight: 700, whiteSpace: 'nowrap' }}
+ disabled={trocandoWa === c.id}
+ onClick={() => trocarWa(c)}
+ title={c.envioWhatsappBloqueado ? 'Bloqueado: não envia mensagem, template nem régua pelo sistema. Clique para liberar.' : 'Liberado para enviar WhatsApp pelo sistema. Clique para bloquear.'}
+ >
+ {trocandoWa === c.id ? '…' : c.envioWhatsappBloqueado ? 'Bloqueado' : 'Liberado'}
+ </button>
+ </td>
+ )}
  <td>
  {podeTrocarSenha && isAtivo && (
  <button
@@ -714,6 +749,37 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
               <button type="submit" className="btn btn--primary btn--sm" disabled={saving}>{saving ? 'Salvando…' : 'Salvar cadastro'}</button>
             </div>
           </form>
+
+          {c.cadastro && (
+            // Reunião 19/10: liberado pela filial, o financeiro confere o cadastro completo aqui.
+            <div style={{ marginTop: 18 }}>
+              <h4 style={{ fontWeight: 700, fontSize: 13, margin: '0 0 6px' }}>Dados do cadastro</h4>
+              <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>{c.cadastro.situacao}{c.cadastro.origem ? ` · ${c.cadastro.origem}` : ''}{c.cadastro.cadastradoEm ? ` em ${fmtDate(c.cadastro.cadastradoEm)}` : ''}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '6px 16px', fontSize: 13 }}>
+                {([
+                  ['CPF', c.cadastro.cpf], ['RG', c.cadastro.rg], ['Nascimento', c.cadastro.dataNascimento ? formatDate(c.cadastro.dataNascimento) : null],
+                  ['Estado civil', c.cadastro.estadoCivil], ['Naturalidade', c.cadastro.naturalidade], ['CRECI', c.cadastro.creci],
+                  ['Telefone', c.cadastro.telefone], ['E-mail', c.cadastro.email], ['Filial', c.cadastro.filial],
+                  ['Endereço', c.cadastro.endereco], ['Data de entrada', c.cadastro.dataEntrada ? formatDate(c.cadastro.dataEntrada) : null], ['Modalidade', c.cadastro.modalidade],
+                  ['PIX', c.cadastro.pix], ['Titular do PIX', c.cadastro.pixTitular], ['CPF/CNPJ do titular', c.cadastro.pixDocumento],
+                  ['Banco', c.cadastro.banco], ['Agência', c.cadastro.agencia], ['Conta', c.cadastro.conta],
+                ] as [string, any][]).map(([rot, val]) => (
+                  <div key={rot} style={{ minWidth: 0 }}>
+                    <div className="text-xs text-secondary">{rot}</div>
+                    <div style={{ overflowWrap: 'anywhere' }}>{val || <span className="text-secondary">não informado</span>}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 10, fontSize: 13 }}>
+                <div className="text-xs text-secondary">Documentos</div>
+                {(c.cadastro.documentos || []).length === 0 ? (
+                  <span className="text-secondary">Nenhum documento enviado.</span>
+                ) : (c.cadastro.documentos || []).map((d: any) => (
+                  <div key={d.id}><a href={d.url} target="_blank" rel="noreferrer">{d.tipo}{d.nomeArquivo ? ` · ${d.nomeArquivo}` : ''}</a> <span className="text-xs text-secondary">({d.status})</span></div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <h4 style={{ fontWeight: 700, fontSize: 13, margin: '18px 0 6px' }}>Rateio de comissão por venda</h4>
           <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>

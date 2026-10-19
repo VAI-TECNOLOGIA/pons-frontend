@@ -364,6 +364,7 @@ export const Api = {
 
   // Corretores
   corretores: () => request<any[]>('/corretores'),
+  corretoresEnvioWhatsapp: (corretorIds: number[], bloqueado: boolean) => request<{ ok: boolean; alterados: number; bloqueado: boolean }>('/corretores/envio-whatsapp', { method: 'PATCH', body: { corretorIds, bloqueado } }),
   corretor: (id: number) => request<any>(`/corretores/${id}`),
   corretorCreate: (data: any) => request<any>('/corretores', { method: 'POST', body: data }),
   corretorUpdate: (id: number, data: any) => request<any>(`/corretores/${id}`, { method: 'PATCH', body: data }),

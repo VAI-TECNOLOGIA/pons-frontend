@@ -201,7 +201,9 @@ export default function Chat() {
   // Regra (14/08): CORRETOR não dispara template — só gestor e marketing.
   // Mesma allow-list do backend (POST /leads/:id/send-template).
   const ROLES_TEMPLATE = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'DEV', 'GESTOR'];
-  const podeTemplate = ROLES_TEMPLATE.includes(Auth.user?.role || '');
+  // Envio de WhatsApp bloqueado pelo marketing (19/10): sem template nem mensagem pelo sistema.
+  const envioBloqueado = !!Auth.user?.corretor?.envioWhatsappBloqueado;
+  const podeTemplate = ROLES_TEMPLATE.includes(Auth.user?.role || '') && !envioBloqueado;
   const abrirTemplates = () => {
     if (!podeTemplate) { toast.error('Só gestor e marketing podem enviar template.'); return; }
     setTemplatePickerOpen(true);
@@ -1490,7 +1492,11 @@ export default function Chat() {
                 )}
                 <div ref={messagesEndRef} />
               </div>
-              {!conv?.reservado ? (
+              {envioBloqueado && conv?.reservado ? (
+                <div className="card" style={{ margin: 12, padding: 14, fontSize: 14 }}>
+                  <strong>Envio de WhatsApp bloqueado.</strong> O marketing bloqueou o envio de mensagens pelo sistema para o seu usuário. Fale com o marketing para liberar.
+                </div>
+              ) : !conv?.reservado ? (
                 <ComposerPendenteIA
                   onAceitar={aceitarLead}
                   onAbrirTemplates={podeTemplate ? abrirTemplates : undefined}
