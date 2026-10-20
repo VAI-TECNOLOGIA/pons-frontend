@@ -92,6 +92,7 @@ export default function BMPage() {
         ? await Api.bmUpdate(reconectarBm.id, {
             paginaFbId: String(page.id),
             accessToken: page.access_token,
+            origem: 'facebook',
           })
         : await Api.bmCreate({
         nome: page.name || ('Página ' + page.id),
@@ -99,6 +100,7 @@ export default function BMPage() {
         paginaFbId: String(page.id),
         accessToken: page.access_token,
         ativa: true,
+        origem: 'facebook',
       });
       const cx = res?.conexao;
       if (cx?.ok) toast.success(`"${page.name}" conectada — os leads vão entrar automaticamente.`);
@@ -400,7 +402,7 @@ export default function BMPage() {
                       </button>
                     ))}
                     {fbPages && fbPages.length === 0 && (
-                      <div className="fbwiz__desc">Nenhuma Página encontrada nesse login — confira se a conta administra a página dos anúncios.</div>
+                      <div className="fbwiz__desc">Nenhuma Página veio desse login. Na tela da Meta, em "Página", é preciso marcar a página do corretor (as outras opções, como conta de anúncios, catálogo e pixel, podem ficar em branco). Clique em Conectar com o Facebook de novo e marque a página.</div>
                     )}
                   </div>
                 )}
