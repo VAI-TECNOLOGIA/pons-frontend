@@ -231,6 +231,16 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   const [anuaisQtd, setAnuaisQtd] = useState(String(f.anuaisQtd ?? ''));
   const [anuaisInicio, setAnuaisInicio] = useState(String(f.anuaisInicio ?? ''));
   const [anuaisPeriodicidade, setAnuaisPeriodicidade] = useState(String(f.anuaisPeriodicidade ?? 'ANUAL'));
+  // Faixas (parcelas mistas): mensais/reforços com valores diferentes por bloco.
+  // Ex.: mensais 100x de R$ 1.990 + 20x de outro; reforços 3x de 25.000 + 7x de 59.000.
+  const [mensaisPorFaixa, setMensaisPorFaixa] = useState(Array.isArray(f.mensaisDetalhe) && f.mensaisDetalhe.length > 0);
+  const [faixasMensais, setFaixasMensais] = useState<{ qtd: string; valor: string; venc: string }[]>(
+    Array.isArray(f.mensaisDetalhe) && f.mensaisDetalhe.length
+      ? f.mensaisDetalhe.map((x: any) => ({ qtd: String(x.qtd ?? ''), valor: m(x.valor), venc: x.inicio || '' }))
+      : [{ qtd: '', valor: '', venc: '' }],
+  );
+  const [reforcosPorFaixa, setReforcosPorFaixa] = useState(false);
+  const [faixasReforcos, setFaixasReforcos] = useState<{ qtd: string; valor: string; venc: string }[]>([{ qtd: '', valor: '', venc: '' }]);
   const [chaves, setChaves] = useState(m(f.chavesValor));
   const [permuta, setPermuta] = useState(m(f.permutaValor));
   // Parte paga FORA do parcelamento (financiamento / direto com a construtora). Precisa
@@ -300,11 +310,12 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
     // de mensais e saldo remanescente (financiamento) não são editados aqui → usa os
     // já salvos pra não barrar venda que já fechava por eles.
     {
-      const faixas = Array.isArray(f.mensaisDetalhe) ? f.mensaisDetalhe : null;
-      const mensaisT = faixas && faixas.length
-        ? faixas.reduce((a: number, x: any) => a + (Number(x.valor) || 0) * (Number(x.qtd) || 0), 0)
+      const mensaisT = mensaisPorFaixa
+        ? faixasMensais.reduce((a, fx) => a + parseMoedaBR(fx.valor) * (Number(fx.qtd) || 0), 0)
         : (parseMoedaBR(mensaisValor) || 0) * (Number(mensaisQtd) || 0);
-      const anuaisT = (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0);
+      const anuaisT = reforcosPorFaixa
+        ? faixasReforcos.reduce((a, fx) => a + parseMoedaBR(fx.valor) * (Number(fx.qtd) || 0), 0)
+        : (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0);
       const soma = ent + mensaisT + anuaisT + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
       // Tolerância de R$1 (arredondamento de 120x etc.) — igual ao cadastro/backend.
       if (Math.abs(soma - vv) > 1) {
@@ -339,20 +350,44 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
       toast.error(`A soma das parcelas da entrada (${formatMoedaBR(somaP)}) precisa fechar com entrada − arras (${formatMoedaBR(alvo)}).`);
       return;
     }
+    // Reforços por faixa → expande em parcelas individuais (valor + vencimento).
+    const expandirReforcos = () => {
+      const passo = anuaisPeriodicidade === 'SEMESTRAL' ? 6 : 12;
+      const out: { valor: number; vencimento: string | null }[] = [];
+      for (const fx of faixasReforcos) {
+        const qtd = Number(fx.qtd) || 0;
+        const valor = parseMoedaBR(fx.valor) || 0;
+        if (qtd <= 0) continue;
+        const base = fx.venc ? new Date(fx.venc + 'T00:00:00') : null;
+        for (let i = 0; i < qtd; i++) {
+          let venc: string | null = null;
+          if (base && !isNaN(base.getTime())) { const d = new Date(base); d.setMonth(d.getMonth() + i * passo); venc = d.toISOString().slice(0, 10); }
+          out.push({ valor, vencimento: venc });
+        }
+      }
+      return out;
+    };
     const payload: any = {
       valorVenda: vv,
       entradaTotal: ent,
       entradaParcelas: detalhe.length,
       entradaParcelasDetalhe: detalhe,
       arrasValor: arr || null,
-      mensaisValor: parseMoedaBR(mensaisValor) || null,
-      mensaisQtd: Number(mensaisQtd) || null,
+      // Mensais: por faixa → mensaisFaixasDetalhe; simples → valor×qtd. Manda [] pra
+      // limpar faixas quando volta ao simples.
+      mensaisValor: mensaisPorFaixa ? null : (parseMoedaBR(mensaisValor) || null),
+      mensaisQtd: mensaisPorFaixa ? (faixasMensais.reduce((a, fx) => a + (Number(fx.qtd) || 0), 0) || null) : (Number(mensaisQtd) || null),
       mensaisMelhorDia: Number(mensaisDia) || null,
       mensaisInicio: mensaisInicio.trim() || null,
-      anuaisValor: parseMoedaBR(anuaisValor) || null,
-      anuaisQtd: Number(anuaisQtd) || null,
+      mensaisFaixasDetalhe: mensaisPorFaixa
+        ? faixasMensais.filter((fx) => (Number(fx.qtd) || 0) > 0).map((fx) => ({ qtd: Number(fx.qtd), valor: parseMoedaBR(fx.valor), inicio: fx.venc || null }))
+        : [],
+      // Reforços: por faixa → anuaisParcelasDetalhe (expandido); simples → valor×qtd.
+      anuaisValor: reforcosPorFaixa ? null : (parseMoedaBR(anuaisValor) || null),
+      anuaisQtd: reforcosPorFaixa ? (faixasReforcos.reduce((a, fx) => a + (Number(fx.qtd) || 0), 0) || null) : (Number(anuaisQtd) || null),
       anuaisInicio: anuaisInicio.trim() || null,
       anuaisPeriodicidade: anuaisPeriodicidade || null,
+      anuaisParcelasDetalhe: reforcosPorFaixa ? expandirReforcos() : [],
       chavesValor: parseMoedaBR(chaves) || null,
       permutaValor: parseMoedaBR(permuta) || 0,
       saldoRemanescente: parseMoedaBR(saldoRem) || 0,
@@ -376,12 +411,13 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   );
 
   // Conferência ao vivo: soma dos componentes × VGV (mesma regra da trava do backend).
-  const faixasMd = Array.isArray(f.mensaisDetalhe) ? f.mensaisDetalhe : null;
-  const somaAtual = (parseMoedaBR(entradaTotal) || 0)
-    + (faixasMd && faixasMd.length
-      ? faixasMd.reduce((a: number, x: any) => a + (Number(x.valor) || 0) * (Number(x.qtd) || 0), 0)
-      : (parseMoedaBR(mensaisValor) || 0) * (Number(mensaisQtd) || 0))
-    + (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0)
+  const mensaisTotAtual = mensaisPorFaixa
+    ? faixasMensais.reduce((a, fx) => a + parseMoedaBR(fx.valor) * (Number(fx.qtd) || 0), 0)
+    : (parseMoedaBR(mensaisValor) || 0) * (Number(mensaisQtd) || 0);
+  const anuaisTotAtual = reforcosPorFaixa
+    ? faixasReforcos.reduce((a, fx) => a + parseMoedaBR(fx.valor) * (Number(fx.qtd) || 0), 0)
+    : (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0);
+  const somaAtual = (parseMoedaBR(entradaTotal) || 0) + mensaisTotAtual + anuaisTotAtual
     + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
   const vgvAtual = parseMoedaBR(valorVenda) || 0;
   const difAtual = vgvAtual - somaAtual;
@@ -428,10 +464,58 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         {campo('Mensais — quantidade', <input type="number" min={0} className="field__input" value={mensaisQtd} onChange={(e) => setMensaisQtd(e.target.value)} />)}
         {campo('Mensais — melhor dia', <input type="number" min={1} max={31} className="field__input" value={mensaisDia} onChange={(e) => setMensaisDia(e.target.value)} />)}
         {campo('Mensais — início (ex.: Janeiro/2027)', <input className="field__input" value={mensaisInicio} onChange={(e) => setMensaisInicio(e.target.value)} />)}
+        <div className="field field--span-2">
+          <button type="button" className={mensaisPorFaixa ? 'btn btn--secondary btn--sm' : 'btn btn--ghost btn--sm'} style={{ alignSelf: 'flex-start' }} onClick={() => setMensaisPorFaixa((v) => !v)}>
+            {mensaisPorFaixa ? '✕ Voltar aos mensais simples' : '＋ Mensais com valores diferentes por faixa'}
+          </button>
+          <div className="field__hint">Ligue quando as mensais têm blocos de valores diferentes (ex.: 100x de R$ 1.990 + 20x de outro valor). Dia/mês de início acima valem pra todas.</div>
+        </div>
+        {mensaisPorFaixa && (
+          <div className="field field--span-2">
+            <label className="field__label">Faixas de mensais <span className="text-secondary" style={{ fontWeight: 400 }}>— quantidade × valor por bloco</span></label>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {faixasMensais.map((fx, i) => (
+                <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input type="number" min={1} className="field__input" style={{ maxWidth: 90 }} placeholder="100" value={fx.qtd} onChange={(e) => { const v = e.target.value; setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, qtd: v } : x))); }} />
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>x de</span>
+                  <input className="field__input" style={{ maxWidth: 150 }} inputMode="numeric" placeholder="R$ 1.990,00" value={fx.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasMensais((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
+                  {faixasMensais.length > 1 && <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasMensais((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>}
+                </div>
+              ))}
+            </div>
+            <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6, alignSelf: 'flex-start' }} onClick={() => setFaixasMensais((cur) => [...cur, { qtd: '', valor: '', venc: '' }])}>＋ Adicionar faixa</button>
+            <div className="field__hint" style={{ fontWeight: 600 }}>Total mensais: {formatMoedaBR(mensaisTotAtual)} · {faixasMensais.reduce((a, fx) => a + (Number(fx.qtd) || 0), 0)}x parcelas</div>
+          </div>
+        )}
         {campo('Reforços — valor', money(anuaisValor, setAnuaisValor))}
         {campo('Reforços — quantidade', <input type="number" min={0} className="field__input" value={anuaisQtd} onChange={(e) => setAnuaisQtd(e.target.value)} />)}
         {campo('Reforços — início (mês)', <input className="field__input" value={anuaisInicio} onChange={(e) => setAnuaisInicio(e.target.value)} />)}
         {campo('Reforços — periodicidade', <select className="field__select" value={anuaisPeriodicidade} onChange={(e) => setAnuaisPeriodicidade(e.target.value)}><option value="ANUAL">Anual</option><option value="SEMESTRAL">Semestral</option></select>)}
+        <div className="field field--span-2">
+          <button type="button" className={reforcosPorFaixa ? 'btn btn--secondary btn--sm' : 'btn btn--ghost btn--sm'} style={{ alignSelf: 'flex-start' }} onClick={() => setReforcosPorFaixa((v) => !v)}>
+            {reforcosPorFaixa ? '✕ Voltar aos reforços simples' : '＋ Reforços com valores diferentes por faixa'}
+          </button>
+          <div className="field__hint">Ligue quando os reforços têm blocos diferentes (ex.: 3x de R$ 25.000 + 7x de R$ 59.000). O 1º vencimento de cada bloco segue a periodicidade acima.</div>
+        </div>
+        {reforcosPorFaixa && (
+          <div className="field field--span-2">
+            <label className="field__label">Faixas de reforços <span className="text-secondary" style={{ fontWeight: 400 }}>— quantidade × valor × 1º vencimento</span></label>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {faixasReforcos.map((fx, i) => (
+                <div key={i} className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input type="number" min={1} className="field__input" style={{ maxWidth: 80 }} placeholder="3" value={fx.qtd} onChange={(e) => { const v = e.target.value; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, qtd: v } : x))); }} />
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>x de</span>
+                  <input className="field__input" style={{ maxWidth: 150 }} inputMode="numeric" placeholder="R$ 25.000,00" value={fx.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· 1º venc</span>
+                  <div style={{ maxWidth: 150 }}><CampoData className="field__input" value={fx.venc} onChange={(e) => { setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, venc: e } : x))); }} /></div>
+                  {faixasReforcos.length > 1 && <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasReforcos((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>}
+                </div>
+              ))}
+            </div>
+            <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6, alignSelf: 'flex-start' }} onClick={() => setFaixasReforcos((cur) => [...cur, { qtd: '', valor: '', venc: '' }])}>＋ Adicionar faixa</button>
+            <div className="field__hint" style={{ fontWeight: 600 }}>Total reforços: {formatMoedaBR(anuaisTotAtual)} · {faixasReforcos.reduce((a, fx) => a + (Number(fx.qtd) || 0), 0)}x</div>
+          </div>
+        )}
         {campo('Chaves', money(chaves, setChaves))}
         {campo('Permuta', money(permuta, setPermuta))}
         {campo('Saldo remanescente / financiamento', money(saldoRem, setSaldoRem))}
