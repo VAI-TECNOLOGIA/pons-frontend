@@ -303,19 +303,26 @@ export default function BMPage() {
           </>
         }
       >
-        <form id="bm-form" onSubmit={submit}>
+        <form id="bm-form" onSubmit={submit} autoComplete="off">
           <div className="form-grid">
             <div className="field"><label className="field__label">Nome *</label><input name="nome" className="field__input" required defaultValue={editing?.nome} /></div>
             <div className="field"><label className="field__label">BM ID (Meta) *</label><input name="bmId" className="field__input" required defaultValue={editing?.bmId} /></div>
             <div className="field"><label className="field__label">Conta de Anúncios (act_xxx)</label><input name="contaAnuncioId" className="field__input" defaultValue={editing?.contaAnuncioId || ''} /></div>
             <div className="field"><label className="field__label">Página Facebook ID</label><input name="paginaFbId" className="field__input" defaultValue={editing?.paginaFbId || ''} placeholder="ID da Página que roda os anúncios" /></div>
-            <div className="field"><label className="field__label">Instagram ID</label><input name="instagramId" className="field__input" defaultValue={editing?.instagramId || ''} /></div>
+            <div className="field"><label className="field__label">Instagram ID</label><input name="instagramId" className="field__input" autoComplete="off" defaultValue={editing?.instagramId || ''} /></div>
             <div className="field" style={{ gridColumn: '1 / -1' }}>
               <label className="field__label">Token de acesso (System User ou Página)</label>
               <input
                 name="accessToken"
-                type="password"
+                // Texto (não "password"): o navegador preenchia sozinho a senha salva do
+                // login aqui e o e-mail no Instagram ID — ao Salvar, a senha ia como token
+                // e derrubava a página já conectada (vídeo do Vini, 20/10).
+                type="text"
                 autoComplete="off"
+                spellCheck={false}
+                data-lpignore="true"
+                data-1p-ignore="true"
+                style={{ WebkitTextSecurity: 'disc' } as any}
                 className="field__input"
                 placeholder={editing?.temToken ? '•••••• já salvo — deixe vazio pra manter' : 'Cole o token com leads_retrieval + pages_manage_metadata'}
               />
