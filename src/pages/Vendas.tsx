@@ -317,8 +317,8 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         ? faixasReforcos.reduce((a, fx) => a + parseMoedaBR(fx.valor) * (Number(fx.qtd) || 0), 0)
         : (parseMoedaBR(anuaisValor) || 0) * (Number(anuaisQtd) || 0);
       const soma = ent + mensaisT + anuaisT + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
-      // Tolerância de R$1 (arredondamento de 120x etc.) — igual ao cadastro/backend.
-      if (Math.abs(soma - vv) > 1) {
+      // Exato, sem centavo (GPI Admin 21/10) — só meio centavo pra ruído de float. Igual ao cadastro/backend.
+      if (Math.abs(soma - vv) > 0.005) {
         const dif = vv - soma;
         toast.error(dif > 0
           ? `Faltam ${formatMoedaBR(dif)} pra fechar o VGV (soma ${formatMoedaBR(soma)}). Ajuste os valores ou lance a diferença como financiamento/saldo.`
@@ -421,7 +421,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
     + (parseMoedaBR(chaves) || 0) + (parseMoedaBR(permuta) || 0) + (parseMoedaBR(saldoRem) || 0);
   const vgvAtual = parseMoedaBR(valorVenda) || 0;
   const difAtual = vgvAtual - somaAtual;
-  const fechaAtual = vgvAtual > 0 && Math.abs(difAtual) <= 1;
+  const fechaAtual = vgvAtual > 0 && Math.abs(difAtual) <= 0.005;
 
   return (
     <Modal open onClose={onClose} title="Editar negociação" subtitle={`${venda.clienteNome || 'Venda'} · recalcula parcelas e comissão`}>
@@ -1144,11 +1144,12 @@ export default function Vendas() {
  const saldo = vgv - soma; // > 0 = a financiar; < 0 = excede o VGV
  const nParc = Math.max(1, Number(entradaParcelas) || 1);
  const parcela = Math.max(0, (entrada - arras)) / nParc;
- // Tolerância de R$1: uma venda de 120x de valor redondo (ex.: 120× 6.666,67 =
- // 800.000,40) acumula centavos que NUNCA fecham no centavo exato. Mesmo limite
- // das parcelas da entrada e do backend — senão a trava barra venda legítima
- // (Márcio 28/09). Diferença de milhares = quebrada de verdade, aí sim barra.
- const TOL_VGV = 1;
+ // Tolerância ZERO (só meio centavo pra ruído de float): o VGV tem que bater no
+ // centavo com o valor real da unidade (GPI Admin 21/10 — unidade de R$ 300.000 não
+ // pode fechar em R$ 300.000,20 nem R$ 299.999,80). REVERTE a folga de R$1 do Márcio
+ // (28/09): venda de 120× valor quebrado (120× 6.666,67 = 800.000,40) agora precisa
+ // ajustar 1 parcela ou jogar os centavos no Saldo remanescente pra fechar exato.
+ const TOL_VGV = 0.005;
  return { vgv, entrada, arras, mensaisTot, anuaisTot, chaves, permutaTot, soma, saldo, parcela, nParc, excede: saldo < -TOL_VGV, fecha: vgv > 0 && Math.abs(saldo) <= TOL_VGV };
  })();
  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
