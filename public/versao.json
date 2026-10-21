@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.19.3",
-  "data": "19/10/2026",
+  "versao": "2026.10.21.1",
+  "data": "21/10/2026",
   "novidades": [
+    {
+      "titulo": "Menu",
+      "itens": [
+        "Vendas agora fica logo abaixo do Dashboard no menu."
+      ]
+    },
     {
       "titulo": "Ajustes da reunião de 19/10",
       "itens": [

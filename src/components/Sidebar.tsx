@@ -42,6 +42,7 @@ type NavGroup = {
 // ── TOP (sempre visível) ──────────────────────────────────────────────────
 const TOP_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { to: '/vendas', label: 'Vendas', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'ADMINISTRATIVO', SOCIO, 'GESTOR_MARKETING'] }, // logo abaixo do Dashboard (pedido Elison 21/10)
   { to: '/acesso-pendente', label: 'Liberações de acesso', icon: 'shield', roles: ['ANALISTA', 'CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'DIRETOR_JURIDICO', 'ASSESSORA_MARKETING', 'SOCIO_UNIDADE', 'GERENTE_EQUIPE'] }, // gestor/sócio: só os corretores novos da equipe/filial (19/10)
   { to: '/chat', label: 'Atendimento', icon: 'chat', roles: [...COMERCIAL, 'CORRETOR', SOCIO, 'GESTOR_MARKETING'] },
   { to: '/leads', label: 'Leads', icon: 'users', roles: [...COMERCIAL, 'CORRETOR', SOCIO, 'GESTOR_MARKETING'] },
@@ -52,7 +53,6 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/liberacoes', label: 'Liberações', icon: 'phone', roles: ['GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'CEO', 'DIRETOR_COMERCIAL', 'GESTOR_MARKETING'] },
   { to: '/meu-bolsao', label: 'Bolsão', icon: 'database', roles: ['CORRETOR', 'GERENTE_EQUIPE'] },
   { to: '/pipeline', label: 'Funil', icon: 'pipeline', roles: [...COMERCIAL, 'CORRETOR', SOCIO, 'GESTOR_MARKETING'] },
-  { to: '/vendas', label: 'Vendas', icon: 'sales', roles: [...COMERCIAL, 'CORRETOR', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'ADMINISTRATIVO', SOCIO, 'GESTOR_MARKETING'] },
   { to: '/minhas-comissoes', label: 'Minhas Comissões', icon: 'wallet', roles: ['CORRETOR', 'GERENTE_EQUIPE', 'CEO', 'GESTOR_MARKETING'] },
   { to: '/analise-vendas', label: 'Análise de Vendas', icon: 'chart', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'] },
   { to: '/empreendimentos', label: 'Empreendimentos', icon: 'building' },
