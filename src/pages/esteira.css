@@ -1,0 +1,100 @@
+/* Minha esteira (21/10) — quadro de tarefas M-077 com os tokens do app. */
+.esteira { --est-raio: 16px; }
+
+.esteira-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.esteira-kpi {
+  position: relative; overflow: hidden; text-align: left;
+  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--est-raio);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; color: var(--text-primary, inherit); font: inherit;
+}
+.esteira-kpi::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--k); }
+.esteira-kpi span { font-size: 12px; color: var(--text-secondary); }
+.esteira-kpi strong { font-size: 26px; line-height: 1; font-weight: 800; color: var(--k); }
+.esteira-kpi--botao { cursor: pointer; }
+.esteira-kpi--botao.is-on { box-shadow: 0 0 0 2px var(--k) inset; }
+.esteira-filtro { font-size: 13px; margin: -4px 0 12px; color: var(--text-secondary); }
+.esteira-filtro button { background: none; border: 0; color: var(--color-info); font-weight: 600; cursor: pointer; padding: 0 4px; }
+
+.esteira-abas { display: none; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+.esteira-abas::-webkit-scrollbar { display: none; }
+.esteira-aba {
+  flex: 0 0 auto; border: 1px solid var(--border-light); background: var(--bg-card); color: inherit;
+  border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.esteira-aba span { margin-left: 6px; font-size: 12px; opacity: .7; }
+.esteira-aba.is-on { background: var(--gray-900, #292A2D); color: #fff; border-color: transparent; }
+
+.esteira-quadro { display: grid; grid-template-columns: repeat(5, minmax(200px, 1fr)); gap: 12px; align-items: start; overflow-x: auto; padding-bottom: 8px; }
+.esteira-col { background: var(--bg-app, var(--gray-50)); border: 1px solid var(--border-light); border-radius: var(--est-raio); padding: 10px; min-height: 120px; }
+.esteira-col__topo { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 4px 4px 10px; }
+.esteira-col__topo strong { font-size: 14px; }
+.esteira-col__topo small { flex-basis: 100%; color: var(--text-secondary); font-size: 12px; padding-left: 16px; }
+.esteira-col__ponto { width: 10px; height: 10px; border-radius: 50%; }
+.esteira-col__qtd { margin-left: auto; font-size: 12px; font-weight: 700; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 999px; padding: 1px 8px; }
+.esteira-col__lista { display: flex; flex-direction: column; gap: 10px; }
+.esteira-vazio { font-size: 13px; color: var(--text-secondary); text-align: center; padding: 18px 6px; }
+
+.esteira-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+.esteira-card--atencao { border-color: color-mix(in srgb, var(--color-warning) 70%, transparent); }
+.esteira-card--parado { border-color: var(--color-danger); box-shadow: 0 0 0 1px var(--color-danger) inset; }
+.esteira-card__corpo { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 12px 12px 8px; color: inherit; font: inherit; cursor: pointer; }
+.esteira-card__topo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.esteira-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.esteira-tag--vip { background: rgba(242,181,68,.2); color: #B07A00; }
+.esteira-dias { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+.esteira-dias--medio { color: #B07A00; font-weight: 700; }
+.esteira-dias--alto { color: var(--color-danger); font-weight: 700; }
+.esteira-card__nome { font-size: 16px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.esteira-card__info { font-size: 13px; color: var(--text-secondary); margin-top: 2px; overflow-wrap: anywhere; }
+.esteira-card__obs { font-size: 13px; margin-top: 8px; padding: 6px 8px; border-radius: 8px; background: var(--bg-app, var(--gray-50)); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.esteira-card__alerta { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--color-danger); }
+.esteira-card__acoes { display: flex; gap: 6px; padding: 0 10px 10px; }
+.esteira-card__acoes { display: grid; grid-template-columns: 1fr 1fr; }
+.esteira-card__acoes .esteira-btn { font-size: 13px; padding: 8px 6px; white-space: nowrap; min-width: 0; overflow: hidden; }
+
+.esteira-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px;
+  border-radius: 10px; border: 1px solid transparent; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; padding: 8px 12px;
+}
+.esteira-btn:disabled { opacity: .55; cursor: default; }
+.esteira-btn--whats { background: #25D366; color: #08361b; }
+.esteira-btn--avancar { background: var(--gray-900, #292A2D); color: #fff; }
+.esteira-btn--neutro { background: var(--bg-card); border-color: var(--border-medium); color: inherit; }
+.esteira-btn--perigo { background: var(--color-danger); color: #fff; }
+.esteira-btn--grande { width: 100%; min-height: 48px; font-size: 15px; }
+
+.esteira-ficha__fundo { position: fixed; inset: 0; z-index: 1000; background: rgba(15,17,20,.45); display: flex; justify-content: flex-end; }
+.esteira-ficha {
+  width: min(440px, 100%); height: 100%; overflow-y: auto; background: var(--bg-card); color: var(--text-primary, inherit);
+  padding: 20px 18px 28px; display: flex; flex-direction: column; gap: 16px; box-shadow: -8px 0 30px rgba(0,0,0,.18);
+}
+.esteira-ficha__topo { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.esteira-ficha__topo h2 { font-size: 20px; margin: 8px 0 2px; overflow-wrap: anywhere; }
+.esteira-ficha__topo p { margin: 0; color: var(--text-secondary); font-size: 14px; }
+.esteira-ficha__fechar { background: none; border: 0; color: inherit; cursor: pointer; padding: 4px; }
+.esteira-ficha__alerta { background: rgba(199,10,26,.08); color: var(--color-danger); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 600; }
+.esteira-ficha__dados { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.esteira-ficha__dados div { min-width: 0; }
+.esteira-ficha__dados span { display: block; font-size: 12px; color: var(--text-secondary); }
+.esteira-ficha__dados strong { font-size: 14px; overflow-wrap: anywhere; }
+.esteira-ficha__pedir { display: flex; flex-direction: column; gap: 8px; }
+.esteira-ficha__pedir p { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.esteira-ficha__pedir textarea, .esteira-ficha__obs { font-size: 16px; min-height: 64px; resize: vertical; }
+.esteira-ficha__bloco { display: flex; flex-direction: column; gap: 8px; }
+.esteira-ficha__rotulo { font-size: 13px; font-weight: 700; }
+.esteira-etapas { display: flex; flex-wrap: wrap; gap: 8px; }
+.esteira-etapa { border: 1px solid var(--border-medium); background: var(--bg-card); color: inherit; border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.esteira-etapa.is-on { background: var(--k); border-color: var(--k); color: #fff; }
+.esteira-link-perdido { background: none; border: 0; color: var(--color-danger); font: inherit; font-weight: 600; cursor: pointer; text-align: left; padding: 0; }
+.esteira-perdido { display: flex; flex-direction: column; gap: 8px; }
+.esteira-perdido__acoes { display: flex; gap: 8px; }
+
+/* Celular: abas por etapa, uma coluna por vez. */
+@media (max-width: 1023px) {
+  .esteira-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .esteira-abas { display: flex; }
+  .esteira-quadro { display: block; overflow: visible; }
+  .esteira-col { display: none; background: none; border: 0; padding: 0; }
+  .esteira-col.is-on { display: block; }
+  .esteira-col__topo { display: none; }
+}

@@ -1,7 +1,16 @@
 {
-  "versao": "2026.10.21.1",
+  "versao": "2026.10.21.2",
   "data": "21/10/2026",
   "novidades": [
+    {
+      "titulo": "Minha esteira (corretor)",
+      "itens": [
+        "Tela nova no menu: os seus leads em 5 etapas (Novo, Em atendimento, Visita, Negociando, Venda).",
+        "Em cada lead: botão para chamar no WhatsApp do celular e botão Avançar, que leva o lead para a próxima etapa.",
+        "Toque no lead para ver os dados, escrever a observação, escolher a etapa ou marcar como perdido.",
+        "Lead parado há 5 dias ou mais na mesma etapa fica em vermelho, e chega um aviso no celular todo dia de manhã."
+      ]
+    },
     {
       "titulo": "Menu",
       "itens": [

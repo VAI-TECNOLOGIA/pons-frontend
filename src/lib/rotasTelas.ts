@@ -52,6 +52,7 @@ export const ROTA_TELA: Record<string, () => Promise<unknown>> = {
   '/meta-custos': () => import('../pages/MetaCustos'),
   '/meu-bolsao': () => import('../pages/MeuBolsao'),
   '/meus-leads': () => import('../pages/MeusLeads'),
+  '/minha-esteira': () => import('../pages/MinhaEsteira'),
   '/minhas-comissoes': () => import('../pages/MinhasComissoes'),
   '/minhas-filas': () => import('../pages/MinhasFilas'),
   '/nova-contratacao': () => import('../pages/NovaContratacao'),
