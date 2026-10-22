@@ -102,3 +102,7 @@
 .esteira-ver { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 .esteira-ver label { font-size: 13px; font-weight: 700; }
 .esteira-ver select { min-width: 240px; max-width: 100%; height: 40px; font-size: 16px; }
+
+/* Botão escuro fixo (o --gray-900 inverte no tema escuro e o texto sumia, 22/10). */
+.esteira-btn--avancar, .esteira-aba.is-on { background: #16181D; color: #fff; }
+[data-theme="dark"] .esteira-btn--avancar, [data-theme="dark"] .esteira-aba.is-on { background: #E9ECF1; color: #16181D; }
