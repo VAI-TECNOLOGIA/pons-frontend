@@ -36,6 +36,8 @@ export const STATUS_MAP: Record<string, [string, string]> = {
  INADIMPLENTE: ['cancelled', 'Inadimplente'], // legado
  PAGO: ['signed', 'Pago'],
  AGUARDANDO_REPASSE: ['analysis', 'Aguardando repasse de comissão da construtora'],
+ AGUARDANDO_REPASSE_CORRETOR: ['analysis', 'Aguardando repasse para o corretor'],
+ CONTRATO_QUITADO: ['signed', 'Contrato Quitado'],
  CANCELADO: ['cancelled', 'Cancelado'],
 };
 
@@ -54,6 +56,8 @@ export const STATUS_DROPDOWN = [
  'VENCIDO',
  'PAGO',
  'AGUARDANDO_REPASSE',
+ 'AGUARDANDO_REPASSE_CORRETOR',
+ 'CONTRATO_QUITADO',
  'CANCELADO',
 ];
 
@@ -1943,16 +1947,15 @@ export default function Vendas() {
  <span className={`badge badge--${(STATUS_MAP[sel.status] || ['neutral'])[0]}`}>{(STATUS_MAP[sel.status] || [, sel.status])[1]}</span>
  <div className="uppercase-tag">Status da venda</div>
  {podeMudarStatus ? (
- <select
- className="field__select"
+ <div className="filtro-busca" style={{ width: 260 }}>
+ <BuscaSelect
+ limpavel={false}
+ itens={(STATUS_DROPDOWN.includes(sel.status) ? STATUS_DROPDOWN : [sel.status, ...STATUS_DROPDOWN]).map((val) => ({ id: val, label: (STATUS_MAP[val] || ['neutral', val])[1] }))}
  value={sel.status}
- onChange={(e) => atualizarStatus(sel.id, e.target.value)}
- style={{ width: 'auto', minWidth: 200, height: 34 }}
- >
- {(STATUS_DROPDOWN.includes(sel.status) ? STATUS_DROPDOWN : [sel.status, ...STATUS_DROPDOWN]).map((val) => (
- <option key={val} value={val}>{(STATUS_MAP[val] || ['neutral', val])[1]}</option>
- ))}
- </select>
+ onChange={(id) => id && atualizarStatus(sel.id, String(id))}
+ placeholder="Mudar status…"
+ />
+ </div>
  ) : (
  <div className="text-xs text-secondary">Somente o Administrativo de Vendas, o Financeiro (diretoria) e o CEO alteram o status.</div>
  )}
