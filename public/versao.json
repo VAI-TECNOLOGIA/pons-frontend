@@ -1,7 +1,14 @@
 {
-  "versao": "2026.10.22.3",
+  "versao": "2026.10.22.4",
   "data": "22/10/2026",
   "novidades": [
+    {
+      "titulo": "Reforço trimestral",
+      "itens": [
+        "Nova venda e Editar negociação: a periodicidade dos reforços ganhou a opção Trimestral (de 3 em 3 meses), além de Anual e Semestral.",
+        "Na Nova venda, a opção aparece assim que a atualização do servidor entrar no ar."
+      ]
+    },
     {
       "titulo": "Venda com permuta",
       "itens": [

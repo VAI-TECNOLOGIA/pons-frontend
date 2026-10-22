@@ -16,6 +16,14 @@ const BASE = envBase
     ? '/api'         // dev: Vite proxy /api → :3030
     : `${PROD_API}/api`; // prod: vai direto na Railway (skip Vercel rewrite)
 
+// Recursos que o servidor publicado já aceita (/api/version.recursos). Serve para
+// o front só mostrar uma opção nova depois que o servidor dela estiver no ar.
+let recursosServidor: Promise<string[]> | null = null;
+export function recursosDoServidor(): Promise<string[]> {
+  recursosServidor ??= fetch(`${BASE}/version`).then((r) => r.json()).then((j) => (Array.isArray(j?.recursos) ? j.recursos : [])).catch(() => { recursosServidor = null; return []; });
+  return recursosServidor;
+}
+
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 interface RequestOptions {

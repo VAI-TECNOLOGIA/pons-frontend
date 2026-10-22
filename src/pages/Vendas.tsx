@@ -8,7 +8,7 @@ import { Modal } from '../components/Modal';
 import { Auth } from '../lib/auth';
 import { Icon } from '../components/Icon';
 import { formatCurrencyShort, formatCurrencyExact, initials, formatDate } from '../lib/format';
-import { Api } from '../lib/api';
+import { Api, recursosDoServidor } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
@@ -352,7 +352,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
     }
     // Reforços por faixa → expande em parcelas individuais (valor + vencimento).
     const expandirReforcos = () => {
-      const passo = anuaisPeriodicidade === 'SEMESTRAL' ? 6 : 12;
+      const passo = passoReforco(anuaisPeriodicidade);
       const out: { valor: number; vencimento: string | null }[] = [];
       for (const fx of faixasReforcos) {
         const qtd = Number(fx.qtd) || 0;
@@ -490,7 +490,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         {campo('Reforços — valor', money(anuaisValor, setAnuaisValor))}
         {campo('Reforços — quantidade', <input type="number" min={0} className="field__input" value={anuaisQtd} onChange={(e) => setAnuaisQtd(e.target.value)} />)}
         {campo('Reforços — início (mês)', <input className="field__input" value={anuaisInicio} onChange={(e) => setAnuaisInicio(e.target.value)} />)}
-        {campo('Reforços — periodicidade', <select className="field__select" value={anuaisPeriodicidade} onChange={(e) => setAnuaisPeriodicidade(e.target.value)}><option value="ANUAL">Anual</option><option value="SEMESTRAL">Semestral</option></select>)}
+        {campo('Reforços — periodicidade', <select className="field__select" value={anuaisPeriodicidade} onChange={(e) => setAnuaisPeriodicidade(e.target.value)}><option value="ANUAL">Anual</option><option value="SEMESTRAL">Semestral</option><option value="TRIMESTRAL">Trimestral</option></select>)}
         <div className="field field--span-2">
           <button type="button" className={reforcosPorFaixa ? 'btn btn--secondary btn--sm' : 'btn btn--ghost btn--sm'} style={{ alignSelf: 'flex-start' }} onClick={() => setReforcosPorFaixa((v) => !v)}>
             {reforcosPorFaixa ? '✕ Voltar aos reforços simples' : '＋ Reforços com valores diferentes por faixa'}
@@ -736,8 +736,15 @@ function resumoMensaisGpi(f: any, brl: (v: any) => string | null): string | null
   if (!f.mensaisValor) return null;
   return `${f.mensaisQtd ? `${f.mensaisQtd}x de ` : ''}${brl(f.mensaisValor)}${dia}${f.mensaisInicio ? ` · início ${f.mensaisInicio}` : ''}`;
 }
+// Meses entre um reforço e o próximo: anual 12, semestral 6, trimestral 3 (Carol 22/10).
+function passoReforco(per: string | null | undefined): number {
+  return per === 'SEMESTRAL' ? 6 : per === 'TRIMESTRAL' ? 3 : 12;
+}
+function rotuloPeriodicidade(per: string | null | undefined): string {
+  return per === 'SEMESTRAL' ? ' · semestral' : per === 'TRIMESTRAL' ? ' · trimestral' : ' · anual';
+}
 function resumoReforcosGpi(f: any, brl: (v: any) => string | null): string | null {
-  const per = f.anuaisPeriodicidade === 'SEMESTRAL' ? ' · semestral' : ' · anual';
+  const per = rotuloPeriodicidade(f.anuaisPeriodicidade);
   const ini = f.anuaisInicio ? ` · início ${f.anuaisInicio}` : '';
   const det = Array.isArray(f.anuaisDetalhe) ? f.anuaisDetalhe.filter(Boolean) : [];
   if (det.length) {
@@ -1119,7 +1126,10 @@ export default function Vendas() {
  const [reforcosPorFaixa, setReforcosPorFaixa] = useState(false);
  const [faixasReforcos, setFaixasReforcos] = useState<{ qtd: string; valor: string; venc: string }[]>([{ qtd: '', valor: '', venc: '' }]);
  // Periodicidade do reforço: ANUAL (12 em 12 meses) ou SEMESTRAL (6 em 6). Ju Peixera 03/09.
- const [reforcoPeriodicidade, setReforcoPeriodicidade] = useState<'ANUAL' | 'SEMESTRAL'>('ANUAL');
+ const [reforcoPeriodicidade, setReforcoPeriodicidade] = useState<'ANUAL' | 'SEMESTRAL' | 'TRIMESTRAL'>('ANUAL');
+ // Trimestral só aparece quando o servidor publicado já aceita (Railway parado em 22/10).
+ const [temTrimestral, setTemTrimestral] = useState(false);
+ useEffect(() => { recursosDoServidor().then((r) => setTemTrimestral(r.includes('reforco-trimestral'))); }, []);
  // Parte paga FORA do parcelamento Pons (financiamento/direto com a construtora)
  const [saldoRem, setSaldoRem] = useState('');
  // Permuta: parte do VGV paga com imóvel/bem dado como pagamento. Entra na reconciliação. Ju 03/09.
@@ -1158,7 +1168,7 @@ export default function Vendas() {
  // periodicidade (anual/semestral) a partir do 1º venc da faixa. É o que vai pro
  // backend (anuaisParcelasDetalhe); o protocolo reagrupa reforços de mesmo valor.
  const expandirFaixasReforcos = () => {
-   const passo = reforcoPeriodicidade === 'SEMESTRAL' ? 6 : 12;
+   const passo = passoReforco(reforcoPeriodicidade);
    const out: { valor: number; vencimento: string | null }[] = [];
    for (const f of faixasReforcos) {
      const qtd = Number(f.qtd) || 0;
@@ -1226,7 +1236,7 @@ export default function Vendas() {
  if (mesIdx >= 0) base.setMonth(mesIdx);
  base.setDate(1);
  const baseMes = base.getMonth();
- const passoMeses = reforcoPeriodicidade === 'SEMESTRAL' ? 6 : 12;
+ const passoMeses = passoReforco(reforcoPeriodicidade);
  const arr = Array.from({ length: n }, (_, i) => {
  const dd = new Date(base); dd.setMonth(baseMes + i * passoMeses);
  return { valor: valorCada > 0 ? formatMoedaBR(valorCada) : '', venc: dd.toISOString().slice(0, 10) };
@@ -2745,13 +2755,14 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Periodicidade dos reforços</label>
- <select name="anuaisPeriodicidade" className="field__select" value={reforcoPeriodicidade} onChange={(e) => { setReforcoPeriodicidade(e.target.value as 'ANUAL' | 'SEMESTRAL'); setParcelasReforcoTocadas(false); }}>
+ <select name="anuaisPeriodicidade" className="field__select" value={reforcoPeriodicidade} onChange={(e) => { setReforcoPeriodicidade(e.target.value as 'ANUAL' | 'SEMESTRAL' | 'TRIMESTRAL'); setParcelasReforcoTocadas(false); }}>
  <option value="ANUAL">Anual — de 12 em 12 meses</option>
  <option value="SEMESTRAL">Semestral — de 6 em 6 meses</option>
+ {temTrimestral && <option value="TRIMESTRAL">Trimestral — de 3 em 3 meses</option>}
  </select>
  </div>
  <div className="field">
- <label className="field__label">Mês de vencimento {reforcoPeriodicidade === 'SEMESTRAL' ? 'do 1º reforço' : 'dos reforços'}</label>
+ <label className="field__label">Mês de vencimento {reforcoPeriodicidade !== 'ANUAL' ? 'do 1º reforço' : 'dos reforços'}</label>
  <select name="anuaisInicio" className="field__select" value={anuaisMes} onChange={(e) => setAnuaisMes(e.target.value)}>
  <option value="">— Mês —</option>
  {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -2791,7 +2802,7 @@ export default function Vendas() {
  <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 6, alignSelf: 'flex-start' }} onClick={() => setFaixasReforcos((cur) => {
    // Encadeia a data: o próximo bloco começa 1 período após o fim do bloco anterior.
    const last = cur[cur.length - 1];
-   const passo = reforcoPeriodicidade === 'SEMESTRAL' ? 6 : 12;
+   const passo = passoReforco(reforcoPeriodicidade);
    let venc = '';
    if (last?.venc && (Number(last.qtd) || 0) > 0) { venc = somaMesesISO(last.venc, Number(last.qtd) * passo); }
    return [...cur, { qtd: '', valor: '', venc }];
