@@ -2556,7 +2556,7 @@ export default function Vendas() {
  </div>
 
  <div data-step="2" style={{ display: step === 2 ? 'block' : 'none' }} className="fade-in">
- <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Valores e condições de pagamento — arras, mensais, anuais e chaves.</div>
+ <div className="text-xs text-secondary" style={{ marginBottom: 10 }}>Valores e condições de pagamento — arras, mensais, anuais, chaves e permuta.</div>
 
  {/* Referência do imóvel — o corretor preenche o valor negociado livremente */}
  {empSel && (
@@ -2837,7 +2837,7 @@ export default function Vendas() {
  <div className="field">
  <label className="field__label">Permuta (R$)</label>
  <input className="field__input" inputMode="numeric" placeholder="R$ 0,00" value={permuta} onChange={(e) => setPermuta(maskMoedaBR(e.target.value))} onFocus={(e) => e.currentTarget.select()} />
- {recon.permutaTot > 0 && <div className="field__hint">Parte do VGV paga com imóvel/bem em permuta — entra na conferência.</div>}
+ <div className="field__hint">Imóvel, carro ou outro bem dado como parte do pagamento. Informe o valor aceito na negociação e anexe nos documentos da venda o documento do bem (matrícula, CRLV ou avaliação). Entra na conferência do valor total.</div>
  </div>
  <div className="field">
  <label className="field__label">Saldo remanescente (R$)</label>

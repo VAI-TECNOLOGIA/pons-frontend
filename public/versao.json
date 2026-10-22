@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.22.2",
+  "versao": "2026.10.22.3",
   "data": "22/10/2026",
   "novidades": [
+    {
+      "titulo": "Venda com permuta",
+      "itens": [
+        "Nova venda, etapa de valores: o campo Permuta aparece com a explicação de uso (imóvel, carro ou outro bem dado como parte do pagamento)."
+      ]
+    },
     {
       "titulo": "Minha esteira para a gestão",
       "itens": [
