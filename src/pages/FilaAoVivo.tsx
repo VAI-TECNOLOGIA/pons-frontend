@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Topbar } from '../components/PageHeader';
 import { Api } from '../lib/api';
 import { Icon } from '../components/Icon';
+import { BuscaSelect } from '../components/BuscaSelect';
 import './fila-ao-vivo.css';
 
 // Painel AO VIVO da fila (pedido Elison 22/09, mockup de 3 tabelas): o gestor vê
@@ -73,9 +74,15 @@ export default function FilaAoVivo() {
         <div className="flv-head">
           <div className="flv-head__left">
             <span className="flv-live"><span className="flv-live__dot" /> AO VIVO</span>
-            <select className="flv-select" value={filaId ?? ''} onChange={(e) => setFilaId(Number(e.target.value))}>
-              {filas.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
-            </select>
+            <div className="filtro-busca" style={{ width: 240 }}>
+              <BuscaSelect
+                itens={filas.map((f) => ({ id: f.id, label: f.nome }))}
+                value={filaId ?? ''}
+                onChange={(id) => setFilaId(id === '' ? null : Number(id))}
+                placeholder="Escolha uma fila"
+                vazio="Nenhuma fila."
+              />
+            </div>
           </div>
           <div className="flv-head__right">
             {atualizadoEm && <span className="flv-atualizado">atualizado {atualizadoEm.toLocaleTimeString('pt-BR')}</span>}

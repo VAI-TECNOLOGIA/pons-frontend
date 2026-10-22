@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
+import { BuscaSelect } from '../components/BuscaSelect';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { Chart, registerables } from 'chart.js';
@@ -241,7 +242,7 @@ export default function MinhasComissoes() {
   if (loading && !data) return <Shell><LoadingBlock /></Shell>;
   if (error && !data) return <Shell><ErrorBlock error={error} label="Erro ao carregar comissões" /></Shell>;
 
-  const temFiltro = periodo !== 'tudo' || empFiltro || statusFiltro;
+  const temFiltro = (periodo !== 'tudo' && periodo !== '') || empFiltro || statusFiltro;
 
   // parcelas que compõem cada card (pro modal de detalhe)
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
@@ -270,28 +271,37 @@ export default function MinhasComissoes() {
           <div className="card" style={{ padding: '12px 14px', marginBottom: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div className="field" style={{ margin: 0, minWidth: 150 }}>
               <label className="field__label">Período</label>
-              <select className="field__select" value={periodo} onChange={(e) => setPeriodo(e.target.value)}>
-                <option value="tudo">Tudo</option>
-                <option value="mes">Este mês</option>
-                <option value="6m">Últimos 6 meses</option>
-                <option value="ano">Este ano</option>
-              </select>
+              <div className="filtro-busca" style={{ width: 160 }}>
+                <BuscaSelect
+                  itens={[{ id: 'tudo', label: 'Tudo' }, { id: 'mes', label: 'Este mês' }, { id: '6m', label: 'Últimos 6 meses' }, { id: 'ano', label: 'Este ano' }]}
+                  value={periodo}
+                  onChange={(id) => setPeriodo(id === '' ? '' : String(id))}
+                  placeholder="Tudo"
+                />
+              </div>
             </div>
             <div className="field" style={{ margin: 0, minWidth: 170 }}>
               <label className="field__label">Empreendimento</label>
-              <select className="field__select" value={empFiltro} onChange={(e) => setEmpFiltro(e.target.value)}>
-                <option value="">Todos</option>
-                {empreendimentos.map((e) => <option key={e} value={e}>{e}</option>)}
-              </select>
+              <div className="filtro-busca" style={{ width: 220 }}>
+                <BuscaSelect
+                  itens={empreendimentos.map((e) => ({ id: e, label: e }))}
+                  value={empFiltro}
+                  onChange={(id) => setEmpFiltro(id === '' ? '' : String(id))}
+                  placeholder="Todos"
+                  vazio="Nenhum empreendimento."
+                />
+              </div>
             </div>
             <div className="field" style={{ margin: 0, minWidth: 150 }}>
               <label className="field__label">Status</label>
-              <select className="field__select" value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)}>
-                <option value="">Todos</option>
-                <option value="PAGO">Recebido</option>
-                <option value="PENDENTE">A receber</option>
-                <option value="ATRASADO">Atrasado</option>
-              </select>
+              <div className="filtro-busca" style={{ width: 160 }}>
+                <BuscaSelect
+                  itens={[{ id: 'PAGO', label: 'Recebido' }, { id: 'PENDENTE', label: 'A receber' }, { id: 'ATRASADO', label: 'Atrasado' }]}
+                  value={statusFiltro}
+                  onChange={(id) => setStatusFiltro(id === '' ? '' : String(id))}
+                  placeholder="Todos"
+                />
+              </div>
             </div>
             {temFiltro && (
               <button className="btn btn--secondary" onClick={() => { setPeriodo('tudo'); setEmpFiltro(''); setStatusFiltro(''); }}>Limpar</button>

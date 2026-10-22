@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Topbar, PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/Icon';
+import { BuscaSelect } from '../components/BuscaSelect';
 import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
@@ -168,10 +169,15 @@ export default function MinhaEsteira() {
         {gestao && (
           <div className="esteira-ver">
             <label htmlFor="esteira-ver">Ver a esteira de</label>
-            <select id="esteira-ver" className="field__select" value={verCorretor} onChange={(e) => setVerCorretor(e.target.value)}>
-              <option value="">Escolha um corretor</option>
-              {(corretoresLista || []).filter((c: any) => c.status !== 'INATIVO' && c.ativo !== false).sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome))).map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-            </select>
+            <div className="filtro-busca">
+              <BuscaSelect
+                itens={(corretoresLista || []).filter((c: any) => c.status !== 'INATIVO' && c.ativo !== false).sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome))).map((c: any) => ({ id: String(c.id), label: c.nome }))}
+                value={verCorretor}
+                onChange={(id) => setVerCorretor(id === '' ? '' : String(id))}
+                placeholder="Escolha um corretor"
+                vazio="Nenhum corretor encontrado."
+              />
+            </div>
           </div>
         )}
         {semCadastro && !gestao && <div className="esteira-filtro">Seu usuário não tem cadastro de corretor, então não recebe leads na esteira. Use Leads ou Funil para acompanhar a equipe.</div>}
