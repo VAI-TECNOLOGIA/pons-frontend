@@ -119,6 +119,15 @@ export function TourGuiado() {
     return () => { window.removeEventListener('resize', re); window.removeEventListener('scroll', re, true); };
   }, [fase, idx, passo]);
 
+  // A pílula "Tour das novidades" some sozinha após 10s pra não ficar entulhando
+  // a tela (pedido Bello). Vira 'oculto' só nesta sessão — NÃO marca o tour como
+  // feito, então reaparece no próximo login.
+  useEffect(() => {
+    if (fase !== 'pill') return;
+    const t = window.setTimeout(() => setFase('oculto'), 10000);
+    return () => window.clearTimeout(t);
+  }, [fase]);
+
   const iniciar = () => { setIdx(0); setFase('rodando'); };
   const concluir = () => {
     try { localStorage.setItem(chaveFeito, 'done'); } catch { /* ignore */ }

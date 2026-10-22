@@ -45,6 +45,11 @@ export function AvisoAtualizacao() {
   const [temNovidade, setTemNovidade] = useState(false);
   const [buildAtrasado, setBuildAtrasado] = useState(false);
   const [aberto, setAberto] = useState(false);
+  // A pílula "Sistema atualizado" some sozinha após 10s pra não ficar entulhando
+  // a tela (pedido Bello). NÃO marca como visto — reaparece no próximo login até
+  // o usuário abrir e dar "Entendi". Só vale pra pílula; o alerta de build
+  // atrasado (faixa no topo) continua fixo porque é ação obrigatória.
+  const [pilulaOculta, setPilulaOculta] = useState(false);
   const versaoCarregada = useRef<string | null>(null);
   const chunkCarregado = useRef<string | null>(null);
 
@@ -84,6 +89,13 @@ export function AvisoAtualizacao() {
     document.addEventListener('visibilitychange', onVis);
     return () => { window.clearInterval(t); window.removeEventListener('focus', buscar); document.removeEventListener('visibilitychange', onVis); };
   }, [buscar]);
+
+  // Timer de 10s pra esconder a pílula. Reinicia sempre que a novidade aparece.
+  useEffect(() => {
+    if (!temNovidade) { setPilulaOculta(false); return; }
+    const t = window.setTimeout(() => setPilulaOculta(true), 10000);
+    return () => window.clearTimeout(t);
+  }, [temNovidade]);
 
   if (!Auth.token || ROTAS_PUBLICAS.includes(loc.pathname) || loc.pathname.startsWith('/lp')) return null;
   const mostrar = temNovidade || buildAtrasado;
@@ -131,7 +143,7 @@ export function AvisoAtualizacao() {
             Ver o que mudou
           </button>
         </div>
-      ) : (
+      ) : pilulaOculta ? null : (
         <button
           type="button"
           onClick={() => setAberto(true)}
