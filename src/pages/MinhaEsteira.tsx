@@ -47,8 +47,12 @@ const dataBR = (s?: string) => (s ? new Date(s).toLocaleDateString('pt-BR', { da
 
 export default function MinhaEsteira() {
   const toast = useToast();
-  const meuCorretorId = Auth.user?.role !== 'CORRETOR' ? Auth.user?.corretor?.id : undefined;
-  const semCadastro = Auth.user?.role !== 'CORRETOR' && !Auth.user?.corretor?.id;
+  // Gestão (CEO/diretoria) escolhe de qual corretor ver a esteira (22/10).
+  const gestao = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING', 'GESTOR_TRAFEGO'].includes(Auth.user?.role || '');
+  const [verCorretor, setVerCorretor] = useState<string>('');
+  const { data: corretoresLista } = useApi<any[]>(() => (gestao ? Api.corretores() : Promise.resolve([])), [gestao]);
+  const meuCorretorId = gestao ? (verCorretor ? Number(verCorretor) : undefined) : (Auth.user?.role !== 'CORRETOR' ? Auth.user?.corretor?.id : undefined);
+  const semCadastro = gestao ? !verCorretor : (Auth.user?.role !== 'CORRETOR' && !Auth.user?.corretor?.id);
   const { data, loading, error } = useApi<any[]>(async () => {
     if (semCadastro) return []; // gestor/sócio sem cadastro de corretor não tem esteira própria
     if (import.meta.env.DEV && (window as any).__ESTEIRA_DEMO__) return (window as any).__ESTEIRA_DEMO__; // prévia local com dados fictícios
@@ -161,7 +165,17 @@ export default function MinhaEsteira() {
       <div className="main__content esteira">
         <PageHeader breadcrumb="Comercial · Atendimento" title="Minha esteira" subtitle="Seus leads por etapa. Chame no WhatsApp e marque a etapa: o card anda sozinho." />
 
-        {semCadastro && <div className="esteira-filtro">Seu usuário não tem cadastro de corretor, então não recebe leads na esteira. Use Leads ou Funil para acompanhar a equipe.</div>}
+        {gestao && (
+          <div className="esteira-ver">
+            <label htmlFor="esteira-ver">Ver a esteira de</label>
+            <select id="esteira-ver" className="field__select" value={verCorretor} onChange={(e) => setVerCorretor(e.target.value)}>
+              <option value="">Escolha um corretor</option>
+              {(corretoresLista || []).filter((c: any) => c.status !== 'INATIVO' && c.ativo !== false).sort((a: any, b: any) => String(a.nome).localeCompare(String(b.nome))).map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          </div>
+        )}
+        {semCadastro && !gestao && <div className="esteira-filtro">Seu usuário não tem cadastro de corretor, então não recebe leads na esteira. Use Leads ou Funil para acompanhar a equipe.</div>}
+        {semCadastro && gestao && <div className="esteira-filtro">Escolha um corretor acima para ver a esteira dele, do jeito que ele vê.</div>}
         <div className="esteira-kpis">
           <div className="esteira-kpi" style={{ ['--k' as any]: '#0E7C9B' }}><span>Na esteira</span><strong>{ativos.length}</strong></div>
           <button type="button" className={`esteira-kpi esteira-kpi--botao ${soParados ? 'is-on' : ''}`} style={{ ['--k' as any]: '#C70A1A' }} onClick={() => setSoParados((v) => !v)} title="Mostrar só os parados">
