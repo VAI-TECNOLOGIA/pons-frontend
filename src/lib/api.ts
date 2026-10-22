@@ -682,7 +682,13 @@ export const Api = {
   leadsLiberarTelefone: (leadIds: number[]) =>
     request<{ ok: boolean; liberados: number }>('/leads/liberar-telefone', { method: 'POST', body: { leadIds } }),
   // Formulários FB existentes nos leads (distinct + contagem) — popula o multi-select do modal
-  roletaFormularios: (sincronizarPaginas = false) => request<{ nome: string; leads: number }[]>(`/roletas/formularios${sincronizarPaginas ? '?paginas=1' : ''}`),
+  // Tolera os dois formatos: o backend NOVO devolve { formularios, erros }; o
+  // ANTIGO (durante a janela de deploy front-antes-de-back) devolve só o array.
+  // Normaliza pra sempre { formularios, erros } — assim os forms não somem no meio.
+  roletaFormularios: async (sincronizarPaginas = false): Promise<{ formularios: { nome: string; leads: number }[]; erros: { bm: string; pagina: string; motivo: string }[] }> => {
+    const r = await request<any>(`/roletas/formularios${sincronizarPaginas ? '?paginas=1' : ''}`);
+    return Array.isArray(r) ? { formularios: r, erros: [] } : { formularios: r?.formularios || [], erros: r?.erros || [] };
+  },
   roletaCampanhas: () => request<{ nome: string; id: string | null; leads: number }[]>('/roletas/campanhas'),
   // Anúncios ATIVOS direto do Meta (pra configurar a fila antes de entrar lead).
   anunciosMeta: () => request<{ anuncios: { id: string; anuncio: string; campanha: string | null }[]; erro?: string }>('/roletas/anuncios-meta'),

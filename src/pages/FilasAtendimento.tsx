@@ -37,7 +37,8 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
   const ehDisparo = tipo === 'DISPARO';
   const { data: filas, loading, error, reload } = useApi<any[]>(() => Api.roletas(tipo), [tipo]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
-  const { data: formularios } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaFormularios());
+  const { data: formResp } = useApi(() => Api.roletaFormularios());
+  const formularios = formResp?.formularios || [];
   const [filaAtivaId, setFilaAtivaId] = useState<number | null>(null);
   const [modal, setModal] = useState<null | 'nova' | any>(null);
   const [histAberto, setHistAberto] = useState(false);
@@ -328,6 +329,9 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   // inclusive os que ainda não geraram lead. Sob demanda pra não pesar a abertura do modal.
   const [formsPaginas, setFormsPaginas] = useState<{ nome: string; leads: number }[]>([]);
   const [sincForms, setSincForms] = useState(false);
+  // Páginas que falharam no sync (token sem permissão / expirado / não conectada).
+  // Mostradas pro gestor saber POR QUE um formulário não apareceu (pedido Bello 22/10).
+  const [sincErros, setSincErros] = useState<{ bm: string; pagina: string; motivo: string }[]>([]);
   const formulariosLista = (() => {
     const m = new Map((formularios || []).map((f) => [f.nome, f]));
     for (const f of formsPaginas) if (!m.has(f.nome)) m.set(f.nome, f);
@@ -337,9 +341,11 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
     setSincForms(true);
     try {
       const r = await Api.roletaFormularios(true);
-      setFormsPaginas(r);
-      const novos = r.filter((f) => !(formularios || []).some((x) => x.nome === f.nome)).length;
-      toast.success(`Sincronização concluída — ${r.length} formulários das páginas${novos ? ` (${novos} novos)` : ''}.`);
+      setFormsPaginas(r.formularios);
+      setSincErros(r.erros || []);
+      const novos = r.formularios.filter((f) => !(formularios || []).some((x) => x.nome === f.nome)).length;
+      const aviso = r.erros?.length ? ` · ${r.erros.length} página(s) com problema` : '';
+      toast.success(`Sincronização concluída — ${r.formularios.length} formulários${novos ? ` (${novos} novos)` : ''}${aviso}.`);
     } catch {
       toast.error('Falha ao sincronizar formulários das páginas.');
     } finally {
@@ -445,6 +451,14 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
                 {sincForms ? 'Sincronizando…' : '↻ Sincronizar páginas'}
               </button>
             </label>
+            {sincErros.length > 0 && (
+              <div style={{ marginBottom: 8, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--color-warning-border, #b45309)', background: 'var(--color-warning-bg, rgba(180,83,9,0.12))', fontSize: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 4, color: 'var(--color-warning-fg, #f59e0b)' }}>⚠ {sincErros.length} página(s) não listaram os formulários:</div>
+                {sincErros.map((e, i) => (
+                  <div key={i} style={{ lineHeight: 1.45 }}><strong>{e.bm}</strong> — {e.motivo}</div>
+                ))}
+              </div>
+            )}
             {formulariosLista.length === 0 ? (
               <div className="field__hint">Nenhum formulário ainda. Clique em <strong>Sincronizar páginas</strong> pra puxar todos os formulários das páginas do Facebook conectadas (mesmo os sem lead).</div>
             ) : (() => {

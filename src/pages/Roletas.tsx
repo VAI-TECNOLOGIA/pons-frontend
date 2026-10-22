@@ -25,7 +25,8 @@ export default function Roletas() {
  const { data: roletas, loading, error, reload } = useApi<any[]>(() => Api.roletas());
  const { data: funil } = useApi<any>(() => Api.funilEmpresa());
  const { data: corretores } = useApi<any[]>(() => Api.corretores());
- const { data: formularios } = useApi<{ nome: string; leads: number }[]>(() => Api.roletaFormularios());
+ const { data: formResp } = useApi(() => Api.roletaFormularios());
+ const formularios = formResp?.formularios || [];
  const toast = useToast();
  const confirm = useConfirm();
  const [editing, setEditing] = useState<any>(null);
