@@ -331,7 +331,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   const [sincForms, setSincForms] = useState(false);
   // Páginas que falharam no sync (token sem permissão / expirado / não conectada).
   // Mostradas pro gestor saber POR QUE um formulário não apareceu (pedido Bello 22/10).
-  const [sincErros, setSincErros] = useState<{ bm: string; pagina: string; motivo: string }[]>([]);
+  const [sincErros, setSincErros] = useState<{ bm: string; pagina: string; motivo: string; tipo?: string }[]>([]);
   const formulariosLista = (() => {
     const m = new Map((formularios || []).map((f) => [f.nome, f]));
     for (const f of formsPaginas) if (!m.has(f.nome)) m.set(f.nome, f);
@@ -344,7 +344,8 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
       setFormsPaginas(r.formularios);
       setSincErros(r.erros || []);
       const novos = r.formularios.filter((f) => !(formularios || []).some((x) => x.nome === f.nome)).length;
-      const aviso = r.erros?.length ? ` · ${r.erros.length} página(s) com problema` : '';
+      const problemas = (r.erros || []).filter((e) => e.tipo !== 'automatico').length;
+      const aviso = problemas ? ` · ${problemas} página(s) precisam de atenção` : '';
       toast.success(`Sincronização concluída — ${r.formularios.length} formulários${novos ? ` (${novos} novos)` : ''}${aviso}.`);
     } catch {
       toast.error('Falha ao sincronizar formulários das páginas.');
@@ -451,10 +452,20 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
                 {sincForms ? 'Sincronizando…' : '↻ Sincronizar páginas'}
               </button>
             </label>
-            {sincErros.length > 0 && (
+            {/* Avisos de verdade (token morto/errado) — precisam de ação. */}
+            {sincErros.filter((e) => e.tipo !== 'automatico').length > 0 && (
               <div style={{ marginBottom: 8, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--color-warning-border, #b45309)', background: 'var(--color-warning-bg, rgba(180,83,9,0.12))', fontSize: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 4, color: 'var(--color-warning-fg, #f59e0b)' }}>⚠ {sincErros.length} página(s) não listaram os formulários:</div>
-                {sincErros.map((e, i) => (
+                <div style={{ fontWeight: 700, marginBottom: 4, color: 'var(--color-warning-fg, #f59e0b)' }}>⚠ Página(s) que precisam de atenção:</div>
+                {sincErros.filter((e) => e.tipo !== 'automatico').map((e, i) => (
+                  <div key={i} style={{ lineHeight: 1.45 }}><strong>{e.bm}</strong> — {e.motivo}</div>
+                ))}
+              </div>
+            )}
+            {/* Informativo (página que não lista por API, mas os forms entram pelo lead). */}
+            {sincErros.filter((e) => e.tipo === 'automatico').length > 0 && (
+              <div style={{ marginBottom: 8, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--color-info-border, rgba(14,124,155,0.4))', background: 'var(--color-info-bg, rgba(14,124,155,0.1))', fontSize: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 4, color: 'var(--color-info-fg, #0E7C9B)' }}>ℹ Formulários que chegam pelos leads:</div>
+                {sincErros.filter((e) => e.tipo === 'automatico').map((e, i) => (
                   <div key={i} style={{ lineHeight: 1.45 }}><strong>{e.bm}</strong> — {e.motivo}</div>
                 ))}
               </div>

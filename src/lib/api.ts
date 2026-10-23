@@ -685,7 +685,7 @@ export const Api = {
   // Tolera os dois formatos: o backend NOVO devolve { formularios, erros }; o
   // ANTIGO (durante a janela de deploy front-antes-de-back) devolve só o array.
   // Normaliza pra sempre { formularios, erros } — assim os forms não somem no meio.
-  roletaFormularios: async (sincronizarPaginas = false): Promise<{ formularios: { nome: string; leads: number }[]; erros: { bm: string; pagina: string; motivo: string }[] }> => {
+  roletaFormularios: async (sincronizarPaginas = false): Promise<{ formularios: { nome: string; leads: number }[]; erros: { bm: string; pagina: string; motivo: string; tipo?: string }[] }> => {
     const r = await request<any>(`/roletas/formularios${sincronizarPaginas ? '?paginas=1' : ''}`);
     return Array.isArray(r) ? { formularios: r, erros: [] } : { formularios: r?.formularios || [], erros: r?.erros || [] };
   },
