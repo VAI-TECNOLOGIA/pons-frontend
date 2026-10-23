@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.22.4",
+  "versao": "2026.10.23.1",
   "data": "22/10/2026",
   "novidades": [
+    {
+      "titulo": "Reforços pós-chaves",
+      "itens": [
+        "Nova venda e Editar negociação: nas faixas de reforço e no reforço parcelado, marque Pós-chaves nos reforços que vencem depois da entrega das chaves.",
+        "O protocolo mostra separado: reforços antes das chaves e pós-chaves, cada um com o seu valor.",
+        "Reforço trimestral já aparece direto na Nova venda."
+      ]
+    },
     {
       "titulo": "Reforço trimestral",
       "itens": [

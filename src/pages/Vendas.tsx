@@ -244,7 +244,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
       : [{ qtd: '', valor: '', venc: '' }],
   );
   const [reforcosPorFaixa, setReforcosPorFaixa] = useState(false);
-  const [faixasReforcos, setFaixasReforcos] = useState<{ qtd: string; valor: string; venc: string }[]>([{ qtd: '', valor: '', venc: '' }]);
+  const [faixasReforcos, setFaixasReforcos] = useState<{ qtd: string; valor: string; venc: string; posChaves?: boolean }[]>([{ qtd: '', valor: '', venc: '' }]);
   const [chaves, setChaves] = useState(m(f.chavesValor));
   const [permuta, setPermuta] = useState(m(f.permutaValor));
   // Parte paga FORA do parcelamento (financiamento / direto com a construtora). Precisa
@@ -357,7 +357,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
     // Reforços por faixa → expande em parcelas individuais (valor + vencimento).
     const expandirReforcos = () => {
       const passo = passoReforco(anuaisPeriodicidade);
-      const out: { valor: number; vencimento: string | null }[] = [];
+      const out: { valor: number; vencimento: string | null; posChaves?: boolean }[] = [];
       for (const fx of faixasReforcos) {
         const qtd = Number(fx.qtd) || 0;
         const valor = parseMoedaBR(fx.valor) || 0;
@@ -366,7 +366,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         for (let i = 0; i < qtd; i++) {
           let venc: string | null = null;
           if (base && !isNaN(base.getTime())) { const d = new Date(base); d.setMonth(d.getMonth() + i * passo); venc = d.toISOString().slice(0, 10); }
-          out.push({ valor, vencimento: venc });
+          out.push({ valor, vencimento: venc, ...(fx.posChaves ? { posChaves: true } : {}) });
         }
       }
       return out;
@@ -512,6 +512,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
                   <input className="field__input" style={{ maxWidth: 150 }} inputMode="numeric" placeholder="R$ 25.000,00" value={fx.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
                   <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· 1º venc</span>
                   <div style={{ maxWidth: 150 }}><CampoData className="field__input" value={fx.venc} onChange={(e) => { setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, venc: e } : x))); }} /></div>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="checkbox" checked={!!fx.posChaves} onChange={(e) => { const v = e.target.checked; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, posChaves: v } : x))); }} /> Pós-chaves</label>
                   {faixasReforcos.length > 1 && <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasReforcos((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>}
                 </div>
               ))}
@@ -752,9 +753,17 @@ function resumoReforcosGpi(f: any, brl: (v: any) => string | null): string | nul
   const ini = f.anuaisInicio ? ` · início ${f.anuaisInicio}` : '';
   const det = Array.isArray(f.anuaisDetalhe) ? f.anuaisDetalhe.filter(Boolean) : [];
   if (det.length) {
-    const grupos: { valor: number; qtd: number }[] = [];
-    for (const q of det) { const val = Number(q?.valor) || 0; const last = grupos[grupos.length - 1]; if (last && last.valor === val) last.qtd += 1; else grupos.push({ valor: val, qtd: 1 }); }
-    return `${det.length} parcelas: ${grupos.map((g) => `${g.qtd}x de ${brl(g.valor)}`).join(' + ')}${per}${ini}`;
+    const agrupar = (lista: any[]) => {
+      const grupos: { valor: number; qtd: number }[] = [];
+      for (const q of lista) { const val = Number(q?.valor) || 0; const last = grupos[grupos.length - 1]; if (last && last.valor === val) last.qtd += 1; else grupos.push({ valor: val, qtd: 1 }); }
+      return grupos.map((g) => `${g.qtd}x de ${brl(g.valor)}`).join(' + ');
+    };
+    const pos = det.filter((q: any) => q?.posChaves);
+    if (pos.length) {
+      const antes = det.filter((q: any) => !q?.posChaves);
+      return `${det.length} parcelas: ${[antes.length ? `antes das chaves ${agrupar(antes)}` : null, `pós-chaves ${agrupar(pos)}`].filter(Boolean).join(' · ')}${per}${ini}`;
+    }
+    return `${det.length} parcelas: ${agrupar(det)}${per}${ini}`;
   }
   if (!f.anuaisValor) return null;
   return `${f.anuaisQtd ? `${f.anuaisQtd}x de ` : ''}${brl(f.anuaisValor)}${per}${ini}`;
@@ -1122,13 +1131,13 @@ export default function Vendas() {
  const [anuaisMes, setAnuaisMes] = useState('');
  // Reforço parcelado (opcional, via botão): valor+vencimento por reforço, editável.
  const [reforcoParcelado, setReforcoParcelado] = useState(false);
- const [parcelasReforco, setParcelasReforco] = useState<{ valor: string; venc: string }[]>([]);
+ const [parcelasReforco, setParcelasReforco] = useState<{ valor: string; venc: string; posChaves?: boolean }[]>([]);
  const [parcelasReforcoTocadas, setParcelasReforcoTocadas] = useState(false);
  // Reforços por FAIXA (opcional): blocos de valores diferentes (ex.: 5x de 50.000
  // + 5x de 64.800), igual aos mensais por faixa — pedido Gutierre 30/09. Cada faixa
  // tem qtd × valor × 1º vencimento; expande em parcelas individuais no envio.
  const [reforcosPorFaixa, setReforcosPorFaixa] = useState(false);
- const [faixasReforcos, setFaixasReforcos] = useState<{ qtd: string; valor: string; venc: string }[]>([{ qtd: '', valor: '', venc: '' }]);
+ const [faixasReforcos, setFaixasReforcos] = useState<{ qtd: string; valor: string; venc: string; posChaves?: boolean }[]>([{ qtd: '', valor: '', venc: '' }]);
  // Periodicidade do reforço: ANUAL (12 em 12 meses) ou SEMESTRAL (6 em 6). Ju Peixera 03/09.
  const [reforcoPeriodicidade, setReforcoPeriodicidade] = useState<'ANUAL' | 'SEMESTRAL' | 'TRIMESTRAL'>('ANUAL');
  // Trimestral só aparece quando o servidor publicado já aceita (Railway parado em 22/10).
@@ -1173,7 +1182,7 @@ export default function Vendas() {
  // backend (anuaisParcelasDetalhe); o protocolo reagrupa reforços de mesmo valor.
  const expandirFaixasReforcos = () => {
    const passo = passoReforco(reforcoPeriodicidade);
-   const out: { valor: number; vencimento: string | null }[] = [];
+   const out: { valor: number; vencimento: string | null; posChaves?: boolean }[] = [];
    for (const f of faixasReforcos) {
      const qtd = Number(f.qtd) || 0;
      const valor = parseMoedaBR(f.valor);
@@ -1181,7 +1190,7 @@ export default function Vendas() {
      const base = f.venc && /^\d{4}-\d{2}-\d{2}$/.test(f.venc) ? f.venc : null;
      for (let i = 0; i < qtd; i++) {
        const venc: string | null = base ? somaMesesISO(base, i * passo) : null;
-       out.push({ valor, vencimento: venc });
+       out.push({ valor, vencimento: venc, ...(f.posChaves ? { posChaves: true } : {}) });
      }
    }
    return out;
@@ -1684,7 +1693,7 @@ export default function Vendas() {
  : reforcoParcelado ? parcelasReforco.length : (fd.get('anuaisQtd') ? Number(fd.get('anuaisQtd')) : undefined),
  ...(reforcosPorFaixa
  ? (() => { const ps = expandirFaixasReforcos(); return ps.length ? { anuaisParcelasDetalhe: ps } : {}; })()
- : (reforcoParcelado && parcelasReforco.length ? { anuaisParcelasDetalhe: parcelasReforco.map((p) => ({ valor: parseMoedaBR(p.valor), vencimento: p.venc })) } : {})),
+ : (reforcoParcelado && parcelasReforco.length ? { anuaisParcelasDetalhe: parcelasReforco.map((p) => ({ valor: parseMoedaBR(p.valor), vencimento: p.venc, ...(p.posChaves ? { posChaves: true } : {}) })) } : {})),
  anuaisPeriodicidade: (parseMoedaBR(anuaisValor) > 0 || reforcoParcelado || reforcosPorFaixa) ? reforcoPeriodicidade : undefined,
  chavesValor: optNum('chavesValor'),
  permutaValor: parseMoedaBR(permuta) || undefined,
@@ -2796,6 +2805,7 @@ export default function Vendas() {
  <input className="field__input" style={{ maxWidth: 150 }} inputMode="numeric" placeholder="R$ 50.000,00" value={f.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, valor: v } : x))); }} />
  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>· 1º venc</span>
  <CampoData className="field__input" style={{ maxWidth: 150 }} value={f.venc} title="1º vencimento deste bloco (os reforços seguem a periodicidade a partir daqui)" onChange={(e) => { const v = e; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, venc: v } : x))); }} />
+ <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="checkbox" checked={!!f.posChaves} onChange={(e) => { const v = e.target.checked; setFaixasReforcos((cur) => cur.map((x, j) => (j === i ? { ...x, posChaves: v } : x))); }} /> Pós-chaves</label>
  {faixasReforcos.length > 1 && (
  <button type="button" className="btn btn--ghost btn--sm" style={{ color: 'var(--color-danger-fg)' }} onClick={() => setFaixasReforcos((cur) => cur.filter((_, j) => j !== i))} title="Remover faixa">✕</button>
  )}
@@ -2811,6 +2821,7 @@ export default function Vendas() {
    return [...cur, { qtd: '', valor: '', venc }];
  })}>＋ Adicionar faixa</button>
  <div className="field__hint">Ao adicionar uma faixa, a data já vem encadeada (logo após o bloco anterior) — edite se precisar. Ex.: 5x de 50.000 começando 11/2027 e 5x de 64.800 começando 11/2032.</div>
+ <div className="field__hint">Marque Pós-chaves na faixa que vence depois da entrega das chaves: o protocolo mostra os reforços antes e pós-chaves separados.</div>
  <div className="field__hint" style={{ fontWeight: 600 }}>Total reforços: {formatMoedaBR(recon.anuaisTot)} · {faixasReforcos.reduce((a, f) => a + (Number(f.qtd) || 0), 0)}x</div>
  </div>
  )}
@@ -2837,6 +2848,7 @@ export default function Vendas() {
  <span style={{ width: 30, fontSize: 12, color: 'var(--text-secondary)' }}>{i + 1}º</span>
  <input className="field__input" style={{ maxWidth: 160 }} inputMode="numeric" value={p.valor} onChange={(e) => { const v = maskMoedaBR(e.target.value); setParcelasReforco((cur) => cur.map((x, j) => j === i ? { ...x, valor: v } : x)); setParcelasReforcoTocadas(true); }} />
  <CampoData className="field__input" style={{ maxWidth: 170 }} value={p.venc} onChange={(e) => { const v = e; setParcelasReforco((cur) => cur.map((x, j) => j === i ? { ...x, venc: v } : x)); setParcelasReforcoTocadas(true); }} />
+ <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="checkbox" checked={!!p.posChaves} onChange={(e) => { const v = e.target.checked; setParcelasReforco((cur) => cur.map((x, j) => (j === i ? { ...x, posChaves: v } : x))); setParcelasReforcoTocadas(true); }} /> Pós-chaves</label>
  </div>
  ))}
  </div>
