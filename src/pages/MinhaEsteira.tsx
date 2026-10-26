@@ -95,7 +95,7 @@ export default function MinhaEsteira() {
   const ativos = leads.filter((l) => colunaDe(l.status).key !== 'FECHADO');
   const parados = ativos.filter((l) => diasNaEtapa(l) >= DIAS_ALERTA).length;
   const hoje = new Date().toDateString();
-  const chegaramHoje = leads.filter((l) => l.createdAt && new Date(l.createdAt).toDateString() === hoje).length;
+  const chegaramHoje = leads.filter((l) => { const d = l.distribuidoEm || l.createdAt; return d && new Date(d).toDateString() === hoje; }).length;
   const vendas = leads.filter((l) => colunaDe(l.status).key === 'FECHADO').length;
 
   const mover = async (l: any, status: string) => {

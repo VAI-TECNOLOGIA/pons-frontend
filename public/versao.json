@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.23.1",
+  "versao": "2026.10.26.1",
   "data": "22/10/2026",
   "novidades": [
+    {
+      "titulo": "Lead transferido chega como lead novo",
+      "itens": [
+        "Quando um lead muda de corretor (roleta, fila, base, bolsão ou transferência), ele chega para o novo corretor na etapa Novo, sem a observação e a tabulação do corretor anterior, com a data e a hora em que ele recebeu.",
+        "No atendimento, o corretor vê a conversa a partir da chegada do lead (as mensagens do cliente das últimas 24 horas continuam visíveis).",
+        "A gestão continua vendo todo o histórico."
+      ]
+    },
     {
       "titulo": "Reforços pós-chaves",
       "itens": [

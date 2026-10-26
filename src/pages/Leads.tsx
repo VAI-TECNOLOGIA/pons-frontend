@@ -78,7 +78,8 @@ function celulaLead(key: string, l: any) {
     }
     case 'email': return <span className="text-xs">{l.email || '—'}</span>;
     case 'gestor': return <span className="text-xs">{l.gestor || l.equipe || '—'}</span>;
-    case 'dataCriacao': return <span className="text-xs">{l.createdAt ? new Date(l.createdAt).toLocaleDateString('pt-BR') : '—'}</span>;
+    // Para o corretor, lead transferido chega com a data em que ele recebeu (Vini 26/10).
+    case 'dataCriacao': { const d = (Auth.user?.role === 'CORRETOR' && l.distribuidoEm) || l.createdAt; return <span className="text-xs">{d ? new Date(d).toLocaleDateString('pt-BR') : '—'}</span>; }
     case 'origem': return <span className="badge badge--neutral">{l.origem}</span>;
     case 'interesse': return <span className="text-xs">{l.interesse || '—'}</span>;
     case 'campanha': return <span className="text-xs">{l.campanha || '—'}</span>;
