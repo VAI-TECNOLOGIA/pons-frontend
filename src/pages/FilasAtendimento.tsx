@@ -37,7 +37,7 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
   const ehDisparo = tipo === 'DISPARO';
   const { data: filas, loading, error, reload } = useApi<any[]>(() => Api.roletas(tipo), [tipo]);
   const { data: corretores } = useApi<any[]>(() => Api.corretores());
-  const { data: formResp } = useApi(() => Api.roletaFormularios());
+  const { data: formResp, reload: reloadFormularios } = useApi(() => Api.roletaFormularios());
   const formularios = formResp?.formularios || [];
   const [filaAtivaId, setFilaAtivaId] = useState<number | null>(null);
   const [modal, setModal] = useState<null | 'nova' | any>(null);
@@ -211,6 +211,7 @@ export default function FilasAtendimento({ tipo = 'ATENDIMENTO' }: { tipo?: 'ATE
           fila={modal === 'nova' ? null : modal}
           corretores={corretores || []}
           formularios={formularios || []}
+          onFormulariosReload={reloadFormularios}
           ehDisparo={ehDisparo}
           onClose={() => setModal(null)}
           onSaved={() => { setModal(null); reload(); }}
@@ -308,8 +309,8 @@ function Shell({ children, onNova, ehDisparo }: { children: React.ReactNode; onN
 }
 
 // ─────────────────────── Modal Cadastrar/Editar fila (3 abas) ───────────────────────
-function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved }: {
-  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number }[]; ehDisparo?: boolean;
+function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved, onFormulariosReload }: {
+  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number; formId?: string }[]; ehDisparo?: boolean; onFormulariosReload?: () => void;
   onClose: () => void; onSaved: () => void;
 }) {
   const editando = !!fila;
@@ -327,8 +328,25 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
   const [buscaForm, setBuscaForm] = useState(''); // filtro por nome dos formulários
   // "Sincronizar páginas": puxa TODOS os leadgen forms das páginas do Facebook (via Graph),
   // inclusive os que ainda não geraram lead. Sob demanda pra não pesar a abertura do modal.
-  const [formsPaginas, setFormsPaginas] = useState<{ nome: string; leads: number }[]>([]);
+  const [formsPaginas, setFormsPaginas] = useState<{ nome: string; leads: number; formId?: string }[]>([]);
   const [sincForms, setSincForms] = useState(false);
+  // Renomeia o form (apelido): "Formulário 964…" → "Ademar — Casa Própria". Atualiza
+  // o nome na hora na tela e no banco (leads + filtros das filas). Pedido Bello 26/10.
+  const renomearForm = async (item: { nome: string; formId?: string }) => {
+    if (!item.formId) { toast.error('Esse formulário não tem ID pra renomear.'); return; }
+    const atual = /^Formulário \d+$/.test(item.nome) ? '' : item.nome;
+    const novo = window.prompt('Nome do formulário:', atual);
+    if (novo == null) return;
+    const para = novo.trim();
+    if (!para || para === item.nome) return;
+    try {
+      await Api.renomearFormulario(item.formId, item.nome, para);
+      setFormsPaginas((cur) => cur.map((f) => (f.nome === item.nome ? { ...f, nome: para } : f)));
+      setFormsSel((cur) => cur.map((s) => (s === item.nome ? para : s)));
+      onFormulariosReload?.();
+      toast.success('Formulário renomeado.');
+    } catch { toast.error('Não consegui renomear.'); }
+  };
   // Páginas que falharam no sync (token sem permissão / expirado / não conectada).
   // Mostradas pro gestor saber POR QUE um formulário não apareceu (pedido Bello 22/10).
   const [sincErros, setSincErros] = useState<{ bm: string; pagina: string; motivo: string; tipo?: string }[]>([]);
@@ -487,14 +505,23 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved 
                   />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 150, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 8, padding: 10 }}>
                     {visiveis.map((nm) => {
-                      const cnt = formulariosLista.find((f) => f.nome === nm)?.leads ?? 0;
+                      const item = formulariosLista.find((f) => f.nome === nm);
+                      const cnt = item?.leads ?? 0;
                       const on = formsSel.includes(nm);
+                      // Forms sem nome do FB entram como "Formulário 964…" — oferece renomear.
+                      const podeRenomear = /^Formulário \d+$/.test(nm) && !!item?.formId;
                       return (
-                        <button key={nm} type="button" onClick={() => toggleForm(nm)}
-                          className={'badge ' + (on ? 'badge--analysis' : 'badge--neutral')}
-                          style={{ cursor: 'pointer', border: on ? '1px solid var(--pons-cyan, #52f7fe)' : '1px solid transparent', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          {on && <Icon name="check" size={11} />}<Icon name="doc" size={11} /> {nm} <span style={{ opacity: 0.6 }}>({cnt})</span>
-                        </button>
+                        <span key={nm} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                          <button type="button" onClick={() => toggleForm(nm)}
+                            className={'badge ' + (on ? 'badge--analysis' : 'badge--neutral')}
+                            style={{ cursor: 'pointer', border: on ? '1px solid var(--pons-cyan, #52f7fe)' : '1px solid transparent', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            {on && <Icon name="check" size={11} />}<Icon name="doc" size={11} /> {nm} <span style={{ opacity: 0.6 }}>({cnt})</span>
+                          </button>
+                          {podeRenomear && (
+                            <button type="button" title="Dar um nome a este formulário" onClick={() => renomearForm(item!)}
+                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--pons-blue)', fontSize: 12, padding: '0 2px' }}>✎</button>
+                          )}
+                        </span>
                       );
                     })}
                     {visiveis.length === 0 && <span className="text-xs text-secondary">Nenhum formulário com "{buscaForm}".</span>}
