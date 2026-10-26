@@ -777,12 +777,27 @@ function PrevisaoTab() {
   // Baixa/estorno de parcela: o backend (PATCH /vendas/:id/pagamentos/:pid) só aceita CEO e DIRETOR_FINANCEIRO.
   const podeBaixar = ['CEO', 'DIRETOR_FINANCEIRO'].includes(Auth.user?.role as string);
 
+  // Comissão da imobiliária recebida na parcela (Gláucia/Marcelo 26/10): o que entra
+  // para a Pons é a comissão, não o valor que o cliente paga à construtora.
+  const alterarComissao = async (linha: any, recebida: boolean) => {
+    setSalvando(linha.pagamentoId);
+    try {
+      await Api.vendaComissaoRecebida(linha.vendaId, linha.pagamentoId, recebida);
+      toast.success(recebida ? 'Comissão recebida registrada.' : 'Comissão voltou para a receber.');
+      reload();
+    } catch (err: any) {
+      toast.error(err?.message || 'Falha ao atualizar a comissão.');
+    } finally {
+      setSalvando(null);
+    }
+  };
+
   const alterarStatus = async (linha: any, status: string) => {
     if (status === 'PAGO') {
       const ok = await confirm({
-        title: `Confirmar entrada de ${linha.cliente}?`,
-        message: `Parcela ${linha.numero}/${linha.total} da venda ${linha.codigo} — ${formatCurrency(linha.valor)}. Marca como recebida e sai do radar de atraso.`,
-        confirmText: 'Marcar recebido',
+        title: `${linha.cliente} pagou esta parcela?`,
+        message: `Parcela ${linha.numero}/${linha.total} da venda ${linha.codigo} — ${formatCurrency(linha.valor)} pagos à construtora. Sai do radar de atraso. A comissão da imobiliária se marca à parte, em Comissão recebida.`,
+        confirmText: 'Cliente pagou',
       });
       if (!ok) return;
     } else if (status === 'ABERTO') {
@@ -841,16 +856,20 @@ function PrevisaoTab() {
         <>
           <div className="kpi-grid" style={{ marginBottom: 12 }}>
             <div className="kpi">
-              <div className="kpi__label">Previsto no mês</div>
-              <div className="kpi__value money">{formatCurrency(data.totalPrevisto)}</div>
+              <div className="kpi__label">Comissão prevista no mês</div>
+              <div className="kpi__value money">{formatCurrency(data.comissaoPrevista ?? 0)}</div>
             </div>
             <div className="kpi">
-              <div className="kpi__label">Recebido</div>
-              <div className="kpi__value money" style={{ color: 'var(--money-positive)' }}>{formatCurrency(data.totalPago)}</div>
+              <div className="kpi__label">Comissão recebida</div>
+              <div className="kpi__value money" style={{ color: 'var(--money-positive)' }}>{formatCurrency(data.comissaoRecebida ?? 0)}</div>
             </div>
             <div className="kpi">
-              <div className="kpi__label">A receber</div>
-              <div className="kpi__value money" style={{ color: 'var(--money-negative)' }}>{formatCurrency(data.totalAReceber)}</div>
+              <div className="kpi__label">Comissão a receber</div>
+              <div className="kpi__value money" style={{ color: 'var(--money-negative)' }}>{formatCurrency(data.comissaoAReceber ?? 0)}</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi__label">Clientes pagaram à construtora</div>
+              <div className="kpi__value money">{formatCurrency(data.totalPago)} <span className="text-xs text-secondary">de {formatCurrency(data.totalPrevisto)}</span></div>
             </div>
           </div>
 
@@ -864,7 +883,8 @@ function PrevisaoTab() {
                   <th>Corretor</th>
                   <th>Equipe</th>
                   <th className="numeric">Parcela</th>
-                  <th className="numeric">Valor</th>
+                  <th className="numeric">Cliente paga</th>
+                  <th className="numeric">Comissão</th>
                   <th>Vencimento</th>
                   <th>Status</th>
                   <th></th>
@@ -872,7 +892,7 @@ function PrevisaoTab() {
               </thead>
               <tbody>
                 {data.linhas.length === 0 ? (
-                  <tr><td colSpan={10}><EmptyState size="sm" title="Nenhuma entrada prevista para o filtro" /></td></tr>
+                  <tr><td colSpan={11}><EmptyState size="sm" title="Nenhuma entrada prevista para o filtro" /></td></tr>
                 ) : (
                   data.linhas.map((l: any) => {
                     const [k, lbl] = STATUS_BADGE[l.status] || ['neutral', l.status];
@@ -887,6 +907,10 @@ function PrevisaoTab() {
                           <td className="text-sm">{l.equipe}</td>
                           <td className="numeric text-sm">{l.numero}/{l.total}</td>
                           <td className="numeric money">{formatCurrency(l.valor)}</td>
+                          <td className="numeric money">
+                            {formatCurrency(l.comissao ?? 0)}
+                            {l.comissaoRecebidaEm && <div><span className="badge badge--signed" style={{ fontSize: 10 }}>Recebida</span></div>}
+                          </td>
                           <td className="text-sm">{formatDate(l.vencimento)}</td>
                           <td><span className={`badge badge--${k}`}>{lbl}</span></td>
                           <td>
@@ -895,16 +919,21 @@ function PrevisaoTab() {
                                 <button className="btn btn--ghost btn--sm" onClick={() => setExpandido(aberto ? null : l.pagamentoId)}>{aberto ? 'Ocultar' : 'Rateio'}</button>
                               )}
                               {podeBaixar && (l.status !== 'PAGO' ? (
-                                <button className="btn btn--secondary btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'PAGO')}>Marcar recebido</button>
+                                <button className="btn btn--secondary btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'PAGO')}>Cliente pagou</button>
                               ) : (
                                 <button className="btn btn--ghost btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarStatus(l, 'ABERTO')}>Estornar</button>
+                              ))}
+                              {podeBaixar && (l.comissaoRecebidaEm ? (
+                                <button className="btn btn--ghost btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarComissao(l, false)}>Desfazer comissão</button>
+                              ) : (
+                                <button className="btn btn--secondary btn--sm" disabled={salvando === l.pagamentoId} onClick={() => alterarComissao(l, true)}>Comissão recebida</button>
                               ))}
                             </div>
                           </td>
                         </tr>
                         {aberto && (
                           <tr>
-                            <td colSpan={10} style={{ background: 'var(--surface-2, rgba(0,0,0,0.15))', padding: '8px 16px' }}>
+                            <td colSpan={11} style={{ background: 'var(--surface-2, rgba(0,0,0,0.15))', padding: '8px 16px' }}>
                               <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
                                 {l.rateio.map((r: any, i: number) => (
                                   <span key={i} className="badge badge--neutral" style={{ fontWeight: 500 }}>

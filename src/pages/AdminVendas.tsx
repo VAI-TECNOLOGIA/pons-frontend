@@ -12,7 +12,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { formatCurrencyExact } from '../lib/format';
 import { Auth } from '../lib/auth';
-import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas, VendaHistorico, EditarDadosVendaModal, EditarNegociacaoModal } from './Vendas';
+import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas, VendaHistorico, VendaNotas, EditarDadosVendaModal, EditarNegociacaoModal } from './Vendas';
 import { EmptyState } from '../components/EmptyState';
 import { useConfirm } from '../lib/confirm';
 
@@ -322,6 +322,7 @@ export default function AdminVendas() {
           <VendaDocumentos vendaId={sel.id} podeRemover />
           {/* Comissão parcelada: auditar parcela a parcela — "marcar pago" por parcela (Marcelo 08/09). */}
           <VendaParcelas vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} rateioCompleto={false} />
+          <VendaNotas vendaId={sel.id} />
           <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
 
           <div className="flex" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>

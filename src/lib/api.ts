@@ -588,6 +588,11 @@ export const Api = {
   parcelasAtrasadas: () => request<any[]>('/vendas/parcelas/atrasadas'),
   vendaParcelaStatus: (vendaId: number, pagamentoId: number, status: string) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}`, { method: 'PATCH', body: { status } }),
+  // Comissão da imobiliária recebida na parcela (separado do cliente pagar a construtora).
+  vendaComissaoRecebida: (vendaId: number, pagamentoId: number, recebida: boolean) =>
+    request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/comissao`, { method: 'PATCH', body: { recebida } }),
+  vendaNotas: (vendaId: number) => request<Array<{ id: number; texto: string; autorNome: string; autorPapel: string | null; createdAt: string }>>(`/vendas/${vendaId}/notas`),
+  vendaNotaCriar: (vendaId: number, texto: string) => request<any>(`/vendas/${vendaId}/notas`, { method: 'POST', body: { texto } }),
   // Tour guiado das novidades — registra cada "confirmei" e lê o progresso (gestão).
   tourConfirmar: (passoId: string, versao?: string) =>
     request<{ ok: boolean }>(`/tour/confirmar`, { method: 'POST', body: { passoId, versao } }),

@@ -1,7 +1,16 @@
 {
-  "versao": "2026.10.26.1",
+  "versao": "2026.10.26.2",
   "data": "22/10/2026",
   "novidades": [
+    {
+      "titulo": "Vendas: comissão por parcela, observações e edição liberada",
+      "itens": [
+        "Plano de recebimento: cada parcela mostra o valor que o cliente paga à construtora e, logo abaixo, a comissão que a imobiliária recebe nela. Confirmar = o cliente pagou; Comissão recebida = a comissão entrou.",
+        "Financeiro, Previsão de entrada: os totais agora são da comissão (prevista, recebida e a receber), com a coluna Comissão ao lado do valor que o cliente paga.",
+        "Venda com parcela já paga pode ter a negociação editada: as parcelas pagas continuam pagas.",
+        "Nova seção Observações na venda: recado que todos os envolvidos leem, com nome e horário."
+      ]
+    },
     {
       "titulo": "Lead transferido chega como lead novo",
       "itens": [

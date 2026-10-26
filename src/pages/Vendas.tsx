@@ -403,7 +403,8 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
       onSaved();
     } catch (err: any) {
       const msg = err?.message || 'falha';
-      toast.error(msg.includes('ja_pago') || msg.includes('já') ? 'Venda já tem comissão/parcela paga — ajuste com o financeiro.' : 'Erro: ' + msg);
+      // O servidor já explica o motivo (comissão paga, parcela paga que sairia do plano...).
+      toast.error(msg === 'ja_pago' ? 'Esta venda já tem comissão paga a um beneficiário. Ajuste com o financeiro.' : msg);
     } finally { setSalvando(false); }
   };
 
@@ -672,6 +673,61 @@ export function VendaHistorico({ vendaId }: { vendaId: number }) {
                   </ul>
                 )}
                 {e.detalhe && <div className="text-xs text-secondary" style={{ marginTop: 2 }}>{e.detalhe}</div>}
+              </li>
+            ))}
+          </ol>
+        )}
+    </div>
+  );
+}
+
+// ── Observações da venda (Gláucia 26/10): recado que todos os envolvidos leem ──
+export function VendaNotas({ vendaId }: { vendaId: number }) {
+  const toast = useToast();
+  const [notas, setNotas] = useState<Array<{ id: number; texto: string; autorNome: string; autorPapel: string | null; createdAt: string }> | null>(null);
+  const [texto, setTexto] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const carregar = () => Api.vendaNotas(vendaId).then(setNotas).catch(() => setNotas([]));
+  useEffect(() => { carregar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [vendaId]);
+  const salvar = async () => {
+    if (!texto.trim()) return;
+    setSalvando(true);
+    try {
+      await Api.vendaNotaCriar(vendaId, texto.trim());
+      setTexto('');
+      toast.success('Observação registrada.');
+      await carregar();
+    } catch (err: any) {
+      toast.error(err?.message || 'Não consegui registrar a observação.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+  return (
+    <div className="card" style={{ marginTop: 16, padding: '14px 16px' }}>
+      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+        <div className="uppercase-tag">Observações</div>
+        <span className="text-xs text-secondary">Recado para todos os envolvidos nesta venda. Fica registrado com nome e horário.</span>
+      </div>
+      <textarea
+        className="field__input"
+        rows={3}
+        style={{ width: '100%', fontSize: 16, resize: 'vertical', minHeight: 72 }}
+        placeholder="Escreva algo importante que todos precisam ler"
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+      />
+      <div className="flex" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
+        <button className="btn btn--primary btn--sm" disabled={salvando || !texto.trim()} onClick={salvar}>{salvando ? 'Salvando…' : 'Adicionar observação'}</button>
+      </div>
+      {notas === null ? <div className="text-xs text-secondary">Carregando…</div>
+        : notas.length === 0 ? null
+        : (
+          <ol style={{ listStyle: 'none', margin: '10px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {notas.map((n) => (
+              <li key={n.id} style={{ borderLeft: '3px solid var(--pons-blue, var(--border-light))', paddingLeft: 10 }}>
+                <div style={{ fontSize: 13, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{n.texto}</div>
+                <div className="text-xs text-secondary" style={{ marginTop: 2 }}>{n.autorNome} · {new Date(n.createdAt).toLocaleString('pt-BR')}</div>
               </li>
             ))}
           </ol>
@@ -2043,6 +2099,7 @@ export default function Vendas() {
  <VendaParcelas vendaId={sel.id} podeConfirmar={podeMarcarPago} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
+ <VendaNotas vendaId={sel.id} />
  <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
  </Modal>
  )}
@@ -3457,6 +3514,9 @@ const RATEIO_LABELS: Record<string, string> = {
 export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vendaId: number; podeConfirmar?: boolean; rateioCompleto?: boolean }) {
  const toast = useToast();
  const [parcelas, setParcelas] = useState<any[]>([]);
+ // Comissão da imobiliária por parcela = comissão da venda ÷ nº de parcelas (mesma conta
+ // do rateio). O valor da parcela é o que o cliente paga à construtora (Gláucia 26/10).
+ const [comissaoParcela, setComissaoParcela] = useState(0);
  const [busy, setBusy] = useState<number | null>(null);
  const [rateioMotor, setRateioMotor] = useState<any>(null); // vendas do sistema (sem planilha): rateio calculado
  // Arras faz parte da entrada mas não é parcela — entra como linha própria para
@@ -3468,6 +3528,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const v = await Api.venda(vendaId);
  const pags = v?.pagamentos || [];
  setParcelas(pags);
+ setComissaoParcela(pags.length ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / pags.length) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
  const venc = String(v?.arrasVencimento || '');
  // Venda antiga sem parcelas detalhadas: a entrada foi dividida igual e o arras
@@ -3487,6 +3548,19 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  try {
  await Api.vendaParcelaStatus(vendaId, pagamentoId, status);
  toast.success(status === 'PAGO' ? 'Pagamento confirmado.' : 'Parcela atualizada.');
+ await load();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setBusy(null);
+ }
+ };
+
+ const mudarComissao = async (pagamentoId: number, recebida: boolean) => {
+ setBusy(pagamentoId);
+ try {
+ await Api.vendaComissaoRecebida(vendaId, pagamentoId, recebida);
+ toast.success(recebida ? 'Comissão recebida registrada.' : 'Comissão voltou para a receber.');
  await load();
  } catch (err: any) {
  toast.error('Erro: ' + (err?.message || 'falha'));
@@ -3530,6 +3604,11 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  {nPagos}/{nItens} pagas · {moeda(totalPago)} de {moeda(totalEntrada)}{arrasConta ? ' (com arras)' : ''}
  </div>
  </div>
+ {podeConfirmar && comissaoParcela > 0 && (
+ <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
+ Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela ({moeda(comissaoParcela)}); o rateio é feito sobre ela.
+ </div>
+ )}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
  {arras && (
  <div className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0, boxShadow: 'inset 3px 0 0 var(--pons-blue)' }}>
@@ -3555,7 +3634,8 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const [k, lbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
  const venc = p.vencimento ? formatDate(p.vencimento) : '—'; // dia gravado à meia-noite UTC não volta 1 dia (Paulo via 27/02 no lugar de 28/02)
  return (
- <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
+ <div key={p.id} style={{ padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
+ <div className="flex-between" style={{ alignItems: 'center', gap: 8, minWidth: 0 }}>
  <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
  <strong>{p.numero}/{p.total}</strong> · {moeda(p.valor)} · {venc}
  </div>
@@ -3572,6 +3652,22 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  </button>
  )}
  </div>
+ </div>
+ {podeConfirmar && comissaoParcela > 0 && (
+ <div className="flex-between" style={{ alignItems: 'center', gap: 8, marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border-light)' }}>
+ <div className="text-xs text-secondary" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Comissão: <strong>{moeda(comissaoParcela)}</strong></div>
+ <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
+ {p.comissaoRecebidaEm ? (
+ <>
+ <span className="badge badge--signed" style={{ fontSize: 10 }}>Recebida</span>
+ <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => mudarComissao(p.id, false)} title="Desfazer">Desfazer</button>
+ </>
+ ) : (
+ <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarComissao(p.id, true)}>Comissão recebida</button>
+ )}
+ </div>
+ </div>
+ )}
  </div>
  );
  })}
