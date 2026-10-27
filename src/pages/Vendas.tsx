@@ -251,6 +251,15 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // ser editável aqui pra fechar o VGV — tanto pra DECLARAR financiamento quanto pra
   // corrigir saldo lançado a mais (vendas que estouravam o VGV).
   const [saldoRem, setSaldoRem] = useState(m(f.saldoRemanescente));
+  // Porcentagens da venda (Jú 27/10): a venda guarda as do dia do lançamento; mudar o
+  // cadastro do corretor/empreendimento não mexe nela. Só CEO, Dir. financeiro e Adm mudam.
+  const podePct = ['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '');
+  const pctTxt = (n: any) => (n != null && n !== '' && Number.isFinite(Number(n)) ? String(Number(n)).replace('.', ',') : '');
+  const [pctComissao, setPctComissao] = useState(pctTxt(venda.percentualComissao));
+  const [pctCorretor, setPctCorretor] = useState('');
+  const [pctOrig, setPctOrig] = useState<{ com: string; cor: string }>({ com: pctTxt(venda.percentualComissao), cor: '' });
+  const [comissaoPaga, setComissaoPaga] = useState(false);
+  const lerPct = (t: string) => { const n = Number(String(t).replace(/\s|%/g, '').replace(',', '.')); return t.trim() && Number.isFinite(n) ? n : null; };
 
   // Abre com as parcelas como estão gravadas (valor e vencimento). Antes a tela
   // recalculava tudo (arras saindo da 1ª, vencimento a partir de hoje + 1 mês) e
@@ -259,6 +268,12 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   useEffect(() => {
     let vivo = true;
     Api.venda(venda.id).then((v: any) => {
+      if (vivo && v) {
+        setPctComissao(pctTxt(v.percentualComissao));
+        setPctCorretor(pctTxt(v.splitCorretorPct));
+        setPctOrig({ com: pctTxt(v.percentualComissao), cor: pctTxt(v.splitCorretorPct) });
+        setComissaoPaga((v.beneficiarios || []).some((b: any) => (Number(b.valorPago) || 0) > 0));
+      }
       const pags = [...(v?.pagamentos || [])].sort((a: any, b: any) => (a.numero || 0) - (b.numero || 0));
       if (!vivo || !pags.length || pags.length !== Number(venda.entradaParcelas ?? pags.length)) return;
       setParcelasDet(pags.map((p: any) => ({ valor: formatMoedaBR(Number(p.valor) || 0), venc: String(p.vencimento || '').slice(0, 10) })));
@@ -371,7 +386,22 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
       }
       return out;
     };
+    // Porcentagens: só manda o que mudou (quem não pode mudar não manda nada).
+    const pctExtra: any = {};
+    if (podePct && !comissaoPaga) {
+      if (pctComissao !== pctOrig.com) {
+        const n = lerPct(pctComissao);
+        if (n == null || n <= 0 || n > 100) { toast.error('Informe a % de comissão da venda (ex.: 5 ou 5,5).'); return; }
+        pctExtra.percentualComissao = n;
+      }
+      if (pctCorretor !== pctOrig.cor) {
+        const n = lerPct(pctCorretor);
+        if (n == null || n <= 0 || n >= 100) { toast.error('Informe a % do corretor entre 1 e 99 (ex.: 50).'); return; }
+        pctExtra.splitCorretorPct = n;
+      }
+    }
     const payload: any = {
+      ...pctExtra,
       valorVenda: vv,
       entradaTotal: ent,
       entradaParcelas: detalhe.length,
@@ -431,6 +461,15 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   return (
     <Modal open onClose={onClose} title="Editar negociação" subtitle={`${venda.clienteNome || 'Venda'} · recalcula parcelas e comissão`}>
       <div className="form-grid">
+        {podePct && (
+          <>
+            {campo('% de comissão da venda', <input className="field__input" inputMode="decimal" placeholder="5" value={pctComissao} disabled={comissaoPaga} onChange={(e) => setPctComissao(e.target.value.replace(/[^\d,.]/g, ''))} />)}
+            {campo('% do corretor (sobre a comissão)', <input className="field__input" inputMode="decimal" placeholder="50" value={pctCorretor} disabled={comissaoPaga} onChange={(e) => setPctCorretor(e.target.value.replace(/[^\d,.]/g, ''))} />)}
+            <div className="field field--span-2"><div className="field__hint">{comissaoPaga
+              ? 'Esta venda já tem comissão paga, então as porcentagens não mudam aqui. Ajuste com o financeiro.'
+              : <>A venda guarda as porcentagens do dia em que foi lançada. Mudar o cadastro do corretor ou do empreendimento <strong>não muda esta venda</strong>: ajuste aqui e salve para refazer a comissão.</>}</div></div>
+          </>
+        )}
         {campo('Valor da venda *', money(valorVenda, setValorVenda, 'R$ 500.000,00'))}
         {campo('Entrada (total, com arras)', money(entradaTotal, mudarEntrada))}
         {campo('Arras (sinal, no ato)', money(arras, mudarArras))}
