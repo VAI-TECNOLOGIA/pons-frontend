@@ -148,12 +148,17 @@ export default function BMPage() {
   };
 
   const excluirPermanente = async (bm: any) => {
-    const ok = await confirm({ title: 'Excluir permanentemente?', message: `"${bm.nome}" será removida de vez. Esta ação não pode ser desfeita.`, tone: 'danger' });
+    const temLeads = (bm.leadsCaptados || 0) > 0;
+    const ok = await confirm({
+      title: 'Excluir permanentemente?',
+      message: `"${bm.nome}" será removida de vez. Esta ação não pode ser desfeita.${temLeads ? ` Os ${bm.leadsCaptados} leads já captados continuam no sistema (só perdem o vínculo com esta BM).` : ''}`,
+      tone: 'danger',
+    });
     if (!ok) return;
     try {
       await Api.bmDeletePermanente(bm.id); toast.success('BM excluída'); reload();
-    } catch (err: any) {
-      toast.error(err?.message?.includes('tem_leads') ? 'BM tem leads vinculados — desative em vez de excluir.' : 'Erro ao excluir');
+    } catch {
+      toast.error('Erro ao excluir');
     }
   };
 
