@@ -310,7 +310,7 @@ function Shell({ children, onNova, ehDisparo }: { children: React.ReactNode; onN
 
 // ─────────────────────── Modal Cadastrar/Editar fila (3 abas) ───────────────────────
 function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved, onFormulariosReload }: {
-  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number; formId?: string }[]; ehDisparo?: boolean; onFormulariosReload?: () => void;
+  fila: any | null; corretores: any[]; formularios: { nome: string; leads: number; formId?: string; sub?: string }[]; ehDisparo?: boolean; onFormulariosReload?: () => void;
   onClose: () => void; onSaved: () => void;
 }) {
   const editando = !!fila;
@@ -328,7 +328,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved,
   const [buscaForm, setBuscaForm] = useState(''); // filtro por nome dos formulários
   // "Sincronizar páginas": puxa TODOS os leadgen forms das páginas do Facebook (via Graph),
   // inclusive os que ainda não geraram lead. Sob demanda pra não pesar a abertura do modal.
-  const [formsPaginas, setFormsPaginas] = useState<{ nome: string; leads: number; formId?: string }[]>([]);
+  const [formsPaginas, setFormsPaginas] = useState<{ nome: string; leads: number; formId?: string; sub?: string }[]>([]);
   const [sincForms, setSincForms] = useState(false);
   // Renomeia o form (apelido): "Formulário 964…" → "Ademar — Casa Própria". Atualiza
   // o nome na hora na tela e no banco (leads + filtros das filas). Pedido Bello 26/10.
@@ -493,7 +493,10 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved,
             ) : (() => {
               const todos = [...formulariosLista.map((f) => f.nome), ...formsSel.filter((s) => !formulariosLista.some((f) => f.nome === s))];
               const q = buscaForm.trim().toLowerCase();
-              const visiveis = q ? todos.filter((nm) => nm.toLowerCase().includes(q)) : todos;
+              // Busca casa pelo nome do form OU pela origem (BM/corretor) — "Ademar"
+              // acha o form mesmo que o nome seja "Formulário 123…". (Bello 27/10)
+              const subDe = (nm: string) => (formulariosLista.find((f) => f.nome === nm)?.sub || '').toLowerCase();
+              const visiveis = q ? todos.filter((nm) => nm.toLowerCase().includes(q) || subDe(nm).includes(q)) : todos;
               return (
                 <>
                   <input
@@ -516,6 +519,7 @@ function FilaModal({ fila, corretores, formularios, ehDisparo, onClose, onSaved,
                             className={'badge ' + (on ? 'badge--analysis' : 'badge--neutral')}
                             style={{ cursor: 'pointer', border: on ? '1px solid var(--pons-cyan, #52f7fe)' : '1px solid transparent', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                             {on && <Icon name="check" size={11} />}<Icon name="doc" size={11} /> {nm} <span style={{ opacity: 0.6 }}>({cnt})</span>
+                            {item?.sub && <span style={{ opacity: 0.6 }}>· {item.sub}</span>}
                           </button>
                           {podeRenomear && (
                             <button type="button" title="Dar um nome a este formulário" onClick={() => renomearForm(item!)}
