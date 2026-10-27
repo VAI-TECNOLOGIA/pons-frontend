@@ -637,7 +637,7 @@ export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: 
 // ── Histórico de edições da venda (log de segurança, ninguém apaga) ─────────
 const ACAO_HISTORICO: Record<string, string> = {
   VENDA_CRIADA: 'Venda cadastrada', VENDA_DADOS_EDITADOS: 'Dados editados', VENDA_NEGOCIACAO_EDITADA: 'Negociação editada',
-  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada', VENDA_RATEIO_SEM_GESTOR: 'Rateio sem gestor', VENDA_RATEIO_GESTOR_PCT: '% do gestor', VENDA_ARRAS_CONFIRMADO: 'Arras',
+  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_REATIVADA: 'Venda reativada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada', VENDA_RATEIO_SEM_GESTOR: 'Rateio sem gestor', VENDA_RATEIO_GESTOR_PCT: '% do gestor', VENDA_ARRAS_CONFIRMADO: 'Arras',
 };
 const fmtValorHist = (campo: string, v: any) => {
   if (v == null || v === '') return '(vazio)';
@@ -969,6 +969,20 @@ export default function Vendas() {
    try {
      await Api.vendaCancelar(v.id);
      toast.success('Venda cancelada.');
+     setSelected(null);
+     reload();
+   } catch (err: any) {
+     toast.error('Erro: ' + (err?.message || 'falha'));
+   }
+ };
+
+ // Reativar venda cancelada por engano: volta para a fase de antes (27/10).
+ const reativarVenda = async (v: any) => {
+   const ok = await confirm({ title: `Reativar a venda de ${v.clienteNome || v.cliente || 'cliente'}?`, message: 'A venda sai de "Cancelado" e volta para a fase em que estava antes do cancelamento. Fica registrado no histórico.', confirmText: 'Reativar venda' });
+   if (!ok) return;
+   try {
+     await Api.vendaReativar(v.id);
+     toast.success('Venda reativada.');
      setSelected(null);
      reload();
    } catch (err: any) {
@@ -1994,6 +2008,9 @@ export default function Vendas() {
  )}
  {podeCancelar && sel.status !== 'CANCELADO' && (
  <button className="btn btn--ghost" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => cancelarVenda(sel)}>Cancelar venda</button>
+ )}
+ {podeCancelar && sel.status === 'CANCELADO' && (
+ <button className="btn btn--primary" onClick={() => reativarVenda(sel)}>Reativar venda</button>
  )}
  <button className="btn btn--secondary" onClick={() => setSelected(null)}>Fechar</button>
  </>

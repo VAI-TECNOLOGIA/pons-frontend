@@ -569,6 +569,7 @@ export const Api = {
   vendaUpdateStatus: (id: number, status: string) =>
     request<any>(`/vendas/${id}`, { method: 'PATCH', body: { status } }),
   vendaCancelar: (id: number, motivo?: string) => request<any>(`/vendas/${id}/cancelar`, { method: 'POST', body: { motivo } }),
+  vendaReativar: (id: number) => request<{ id: number; status: string }>(`/vendas/${id}/reativar`, { method: 'POST' }),
   vendaAprovar: (id: number) => request<any>(`/vendas/${id}/aprovar`, { method: 'POST' }),
   vendaConfirmar: (id: number) => request<{ ok: boolean; whatsapp?: { enviado?: boolean; canal?: 'qr' | 'oficial'; motivo?: string; erro?: string; metaCode?: number } }>(`/vendas/${id}/confirmar`, { method: 'POST' }),
   // Protocolo pelo WhatsApp do próprio Adm (sem a API da Meta): link do PDF + texto pronto.

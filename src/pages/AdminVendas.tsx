@@ -76,6 +76,19 @@ export default function AdminVendas() {
     }
   };
 
+  const reativarVenda = async (v: any) => {
+    const ok = await confirm({ title: `Reativar a venda de ${v.clienteNome || 'cliente'}?`, message: 'A venda sai de "Cancelado" e volta para a fase em que estava antes do cancelamento. Fica registrado no histórico.', confirmText: 'Reativar venda' });
+    if (!ok) return;
+    try {
+      await Api.vendaReativar(v.id);
+      toast.success(`Venda ${v.codigo} reativada.`);
+      setSelId(null);
+      reload();
+    } catch (err: any) {
+      toast.error('Erro: ' + (err?.message || 'falha'));
+    }
+  };
+
   if (loading) return <Shell><LoadingBlock /></Shell>;
   if (error) return <Shell><ErrorBlock error={error} /></Shell>;
 
@@ -349,6 +362,11 @@ export default function AdminVendas() {
               {podeCancelarVenda && sel.status !== 'CANCELADO' && (
                 <button className="btn btn--ghost" style={{ color: 'var(--color-danger, #e5484d)' }} onClick={() => cancelarVenda(sel)} title="Vai para Cancelado, fica no histórico e pode ser reaberta">
                   Cancelar venda
+                </button>
+              )}
+              {podeCancelarVenda && sel.status === 'CANCELADO' && (
+                <button className="btn btn--primary" onClick={() => reativarVenda(sel)} title="Volta para a fase em que estava antes do cancelamento">
+                  Reativar venda
                 </button>
               )}
             </div>

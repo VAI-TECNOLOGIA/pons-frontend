@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.26.2",
+  "versao": "2026.10.27.1",
   "data": "22/10/2026",
   "novidades": [
+    {
+      "titulo": "Reativar venda cancelada",
+      "itens": [
+        "Venda cancelada por engano: abra a venda e clique em Reativar venda. Ela volta para a fase em que estava antes do cancelamento, e o histórico registra quem reativou."
+      ]
+    },
     {
       "titulo": "Vendas: comissão por parcela, observações e edição liberada",
       "itens": [
