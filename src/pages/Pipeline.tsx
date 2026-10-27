@@ -69,6 +69,26 @@ export default function Pipeline() {
   const fases = parseFunil(settings);          // rótulos editáveis pelo cliente
   const cols = fases.filter((f) => f.key !== 'PERDIDO'); // Perdido é terminal (fica no seletor)
 
+  // Observação do lead no próprio cartão do Funil (Karla 27/10): a mesma da Minha
+  // esteira (observacaoCorretor), para o registro da conversa ficar junto da etapa.
+  const [obsEdit, setObsEdit] = useState<{ id: number; texto: string } | null>(null);
+  const [salvandoObs, setSalvandoObs] = useState(false);
+  const salvarObs = async () => {
+    if (!obsEdit) return;
+    setSalvandoObs(true);
+    try {
+      await Api.leadObservacao(obsEdit.id, obsEdit.texto.trim());
+      setLeads((cur) => cur.map((l) => (l.id === obsEdit.id ? { ...l, observacaoCorretor: obsEdit.texto.trim() } : l)));
+      setObsEdit(null);
+      toast.success('Observação salva.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Não consegui salvar a observação.');
+    } finally {
+      setSalvandoObs(false);
+    }
+  };
+  const pararArrasto = { draggable: false, onMouseDown: (e: any) => e.stopPropagation(), onPointerDown: (e: any) => e.stopPropagation() };
+
   const moveLead = async (id: number, status: string) => {
     const prev = leads;
     setLeads((cur) => cur.map((l) => (l.id === id ? { ...l, status } : l)));
@@ -204,6 +224,38 @@ export default function Pipeline() {
                             ))}
                           </select>
                         </div>
+                        {obsEdit?.id === l.id ? (
+                          <div style={{ marginTop: 8 }} {...pararArrasto}>
+                            <textarea
+                              className="field__input"
+                              rows={3}
+                              autoFocus
+                              style={{ width: '100%', fontSize: 16, resize: 'vertical', minHeight: 72 }}
+                              placeholder="O que foi conversado com o cliente"
+                              value={obsEdit?.texto ?? ""}
+                              onChange={(e) => setObsEdit({ id: l.id, texto: e.target.value })}
+                            />
+                            <div className="u-flex u-gap-2" style={{ marginTop: 6, justifyContent: 'flex-end' }}>
+                              <button className="btn btn--ghost btn--sm" onClick={() => setObsEdit(null)} disabled={salvandoObs}>Cancelar</button>
+                              <button className="btn btn--primary btn--sm" onClick={salvarObs} disabled={salvandoObs}>{salvandoObs ? 'Salvando…' : 'Salvar'}</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="kanban-card__obs"
+                            title={l.observacaoCorretor ? 'Editar observação' : 'Escrever observação'}
+                            onClick={() => setObsEdit({ id: l.id, texto: l.observacaoCorretor || '' })}
+                            {...pararArrasto}
+                            style={{
+                              display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                              width: '100%', textAlign: 'left', marginTop: 8, padding: '6px 8px', borderRadius: 8, border: '1px dashed var(--border-light)',
+                              background: 'var(--bg-app, transparent)', color: l.observacaoCorretor ? 'inherit' : 'var(--text-secondary)', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', overflowWrap: 'anywhere',
+                            }}
+                          >
+                            {l.observacaoCorretor || '+ Observação'}
+                          </button>
+                        )}
                         <Link
                           to={`/chat?lead=${l.id}`}
                           className="btn btn--secondary btn--sm"

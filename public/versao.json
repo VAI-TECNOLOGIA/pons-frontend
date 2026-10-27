@@ -1,7 +1,13 @@
 {
-  "versao": "2026.10.27.1",
+  "versao": "2026.10.27.2",
   "data": "22/10/2026",
   "novidades": [
+    {
+      "titulo": "Observação no Funil",
+      "itens": [
+        "Cada lead do Funil mostra a observação do atendimento (a mesma da Minha esteira). Toque nela para escrever ou editar ali mesmo."
+      ]
+    },
     {
       "titulo": "Reativar venda cancelada",
       "itens": [
