@@ -1,11 +1,11 @@
 {
-  "versao": "2026.10.27.3",
+  "versao": "2026.10.27.4",
   "data": "27/10/2026",
   "novidades": [
     {
       "titulo": "Porcentagens da venda",
       "itens": [
-        "Editar negociação agora tem a % de comissão da venda e a % do corretor (CEO, Diretor financeiro e Administrativo). A venda guarda as porcentagens do dia em que foi lançada: mudar o cadastro do corretor ou do empreendimento não muda vendas que já existem. Ajuste na venda e salve para refazer a comissão. Venda com comissão já paga não muda."
+        "Editar negociação agora tem a % de comissão da venda e a % do corretor (CEO, Diretor financeiro, Administrativo e Sócio da unidade). A venda guarda as porcentagens do dia em que foi lançada: mudar o cadastro do corretor ou do empreendimento não muda vendas que já existem. Ajuste na venda e salve para refazer a comissão. Venda com comissão já paga não muda."
       ]
     },
     {

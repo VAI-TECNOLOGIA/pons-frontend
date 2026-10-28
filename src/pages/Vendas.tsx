@@ -252,8 +252,8 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // corrigir saldo lançado a mais (vendas que estouravam o VGV).
   const [saldoRem, setSaldoRem] = useState(m(f.saldoRemanescente));
   // Porcentagens da venda (Jú 27/10): a venda guarda as do dia do lançamento; mudar o
-  // cadastro do corretor/empreendimento não mexe nela. Só CEO, Dir. financeiro e Adm mudam.
-  const podePct = ['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '');
+  // cadastro do corretor/empreendimento não mexe nela. Só CEO, Dir. financeiro, Adm e Sócio da unidade mudam.
+  const podePct = ['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO', 'SOCIO_UNIDADE'].includes(Auth.user?.role || '');
   const pctTxt = (n: any) => (n != null && n !== '' && Number.isFinite(Number(n)) ? String(Number(n)).replace('.', ',') : '');
   const [pctComissao, setPctComissao] = useState(pctTxt(venda.percentualComissao));
   const [pctCorretor, setPctCorretor] = useState('');
