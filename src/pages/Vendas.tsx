@@ -259,6 +259,9 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   const [pctCorretor, setPctCorretor] = useState('');
   const [pctOrig, setPctOrig] = useState<{ com: string; cor: string }>({ com: pctTxt(venda.percentualComissao), cor: '' });
   const [comissaoPaga, setComissaoPaga] = useState(false);
+  // "Tem nota fiscal" (Márcio 29/10): mesma permissão e mesma trava das porcentagens.
+  const [temNf, setTemNf] = useState(!!venda.temNotaFiscal);
+  const [temNfOrig, setTemNfOrig] = useState(!!venda.temNotaFiscal);
   const lerPct = (t: string) => { const n = Number(String(t).replace(/\s|%/g, '').replace(',', '.')); return t.trim() && Number.isFinite(n) ? n : null; };
 
   // Abre com as parcelas como estão gravadas (valor e vencimento). Antes a tela
@@ -273,6 +276,8 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         setPctCorretor(pctTxt(v.splitCorretorPct));
         setPctOrig({ com: pctTxt(v.percentualComissao), cor: pctTxt(v.splitCorretorPct) });
         setComissaoPaga((v.beneficiarios || []).some((b: any) => (Number(b.valorPago) || 0) > 0));
+        setTemNf(!!v.temNotaFiscal);
+        setTemNfOrig(!!v.temNotaFiscal);
       }
       const pags = [...(v?.pagamentos || [])].sort((a: any, b: any) => (a.numero || 0) - (b.numero || 0));
       if (!vivo || !pags.length || pags.length !== Number(venda.entradaParcelas ?? pags.length)) return;
@@ -399,6 +404,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         if (n == null || n <= 0 || n >= 100) { toast.error('Informe a % do corretor entre 1 e 99 (ex.: 50).'); return; }
         pctExtra.splitCorretorPct = n;
       }
+      if (temNf !== temNfOrig) pctExtra.temNotaFiscal = temNf;
     }
     const payload: any = {
       ...pctExtra,
@@ -465,9 +471,16 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
           <>
             {campo('% de comissão da venda', <input className="field__input" inputMode="decimal" placeholder="5" value={pctComissao} disabled={comissaoPaga} onChange={(e) => setPctComissao(e.target.value.replace(/[^\d,.]/g, ''))} />)}
             {campo('% do corretor (sobre a comissão)', <input className="field__input" inputMode="decimal" placeholder="50" value={pctCorretor} disabled={comissaoPaga} onChange={(e) => setPctCorretor(e.target.value.replace(/[^\d,.]/g, ''))} />)}
+            <div className="field field--span-2">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: comissaoPaga ? 'not-allowed' : 'pointer' }}>
+                <input type="checkbox" checked={temNf} disabled={comissaoPaga} onChange={(e) => setTemNf(e.target.checked)} style={{ width: 'auto' }} />
+                Tem nota fiscal
+              </label>
+              <div className="field__hint">Marcado, a comissão desconta a alíquota da nota fiscal antes da divisão entre corretor, gestor e imobiliária.</div>
+            </div>
             <div className="field field--span-2"><div className="field__hint">{comissaoPaga
-              ? 'Esta venda já tem comissão paga, então as porcentagens não mudam aqui. Ajuste com o financeiro.'
-              : <>A venda guarda as porcentagens do dia em que foi lançada. Mudar o cadastro do corretor ou do empreendimento <strong>não muda esta venda</strong>: ajuste aqui e salve para refazer a comissão.</>}</div></div>
+              ? 'Esta venda já tem comissão paga, então as porcentagens e a nota fiscal não mudam aqui. Ajuste com o financeiro.'
+              : <>A venda guarda as porcentagens e a nota fiscal do dia em que foi lançada. Mudar o cadastro do corretor ou do empreendimento <strong>não muda esta venda</strong>: ajuste aqui e salve para refazer a comissão.</>}</div></div>
           </>
         )}
         {campo('Valor da venda *', money(valorVenda, setValorVenda, 'R$ 500.000,00'))}
