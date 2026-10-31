@@ -1,7 +1,19 @@
 {
-  "versao": "2026.10.29",
-  "data": "29/10/2026",
+  "versao": "2026.10.31",
+  "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Vendas e comissões (pedidos do Administrativo)",
+      "itens": [
+        "Venda cancelada não aparece mais como Aguardando Paulo e sai da lista de vendas. Para ver as canceladas, filtre Status = Cancelado ou busque o contrato.",
+        "Novo filtro Sala na lista de vendas, pela sala da própria venda (a Equipe segue a equipe atual do corretor).",
+        "Plano de recebimento: parcela não paga e vencida aparece como Vencida; parcela que falta no sistema aparece para incluir em Editar negociação; a comissão por parcela divide pelo total de parcelas da venda.",
+        "Rateio por parcela: tabela com quanto cada um recebe em cada parcela da comissão, no Administrativo e no Financeiro.",
+        "Comissão do corretor: confirmar que o cliente pagou a construtora não marca mais a comissão do corretor como paga. Em Minhas comissões a parcela mostra Cliente pagou a construtora, Comissão chegou à Pons ou Recebido.",
+        "Venda lançada pelo corretor sai com nota fiscal (desconto da alíquota antes da divisão), como o formulário já indicava.",
+        "Nova venda: se o Avançar não seguir por um campo obrigatório escondido, o sistema diz qual campo falta."
+      ]
+    },
     {
       "titulo": "Nota fiscal da venda",
       "itens": [

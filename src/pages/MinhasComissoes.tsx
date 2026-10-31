@@ -39,6 +39,9 @@ const STATUS_PARCELA: Record<string, [string, string]> = {
   ABERTO: ['neutral', 'Em aberto'],
   AGENDADO: ['neutral', 'Agendado'],
   ATRASADO: ['cancelled', 'Atrasado'],
+  // O cliente pagar a construtora não é a comissão paga a você (Gláucia 28/10).
+  CLIENTE_PAGOU: ['analysis', 'Cliente pagou a construtora'],
+  COMISSAO_RECEBIDA: ['analysis', 'Comissão chegou à Pons'],
 };
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -70,7 +73,7 @@ function Card({ label, valor, cor, icon, onClick, destaque }: { label: string; v
 
 // meta de cada card pro modal de detalhe
 const CARD_META: Record<string, { label: string; cor: string; def: string }> = {
-  recebido: { label: 'Já recebido', cor: '#16A34A', def: 'Parcelas de comissão que já caíram na sua conta (status pago).' },
+  recebido: { label: 'Já recebido', cor: '#16A34A', def: 'Parcelas de comissão que já foram pagas a você pela Pons.' },
   aReceber: { label: 'A receber', cor: '#0E7C9B', def: 'Parcelas de comissão ainda não pagas — o que ainda vai entrar.' },
   esteMs: { label: 'Entra este mês', cor: '#B45309', def: 'Parcelas a receber com vencimento dentro do mês atual.' },
   proximos: { label: 'Próximos meses', cor: '#64748B', def: 'Parcelas a receber com vencimento a partir do mês que vem.' },
@@ -95,6 +98,7 @@ export default function MinhasComissoes() {
   // Atrasado só a partir do dia SEGUINTE ao vencimento (no dia do vencimento ainda está em dia).
   const statusEfetivo = (p: any) => {
     if (p.status === 'PAGO') return 'PAGO';
+    if (p.status === 'CLIENTE_PAGOU' || p.status === 'COMISSAO_RECEBIDA') return p.status; // a caminho, não atrasada
     return diaLocal(p.vencimento) < inicioHoje ? 'ATRASADO' : (p.status || 'AGENDADO');
   };
 

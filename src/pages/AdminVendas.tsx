@@ -223,7 +223,7 @@ export default function AdminVendas() {
                 <td className="numeric money">{formatCurrencyExact(v.valorVenda)}</td>
                 <td className="text-xs text-secondary">{new Date(v.createdAt).toLocaleDateString('pt-BR')}</td>
                 <td>
-                  {v.aguardandoAprovacao ? (
+                  {v.aguardandoAprovacao && v.status !== 'CANCELADO' ? (
                     Auth.user?.role === 'CEO' ? (
                       // O próprio Paulo aprova DAQUI — antes o CEO via o mesmo
                       // cadeado inerte da adm e não tinha onde clicar (07/08).
@@ -295,7 +295,7 @@ export default function AdminVendas() {
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
                   <span className={'badge badge--' + (STATUS_MAP[sel.status]?.[0] || 'neutral')}>{STATUS_MAP[sel.status]?.[1] || sel.status}</span>
-                  {sel.aguardandoAprovacao && <span className="badge badge--cancelled">Aguardando aprovação do Paulo</span>}
+                  {sel.aguardandoAprovacao && sel.status !== 'CANCELADO' && <span className="badge badge--cancelled">Aguardando aprovação do Paulo</span>}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -334,7 +334,7 @@ export default function AdminVendas() {
           {/* Documentos anexados pelo corretor + anexar contrato da construtora */}
           <VendaDocumentos vendaId={sel.id} podeRemover />
           {/* Comissão parcelada: auditar parcela a parcela — "marcar pago" por parcela (Marcelo 08/09). */}
-          <VendaParcelas vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} rateioCompleto={false} />
+          <VendaParcelas vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} rateioCompleto={['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} />
           <VendaNotas vendaId={sel.id} />
           <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
 

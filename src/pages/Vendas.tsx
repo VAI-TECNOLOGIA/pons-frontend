@@ -798,6 +798,8 @@ const SALAS_GPI: { valor: string; rotulo: string }[] = [
   { valor: 'Capão da Canoa', rotulo: 'Capão da Canoa' }, { valor: 'Tramandaí', rotulo: 'Tramandaí' },
 ];
 const ehSalaOficial = (v: string) => SALAS_GPI.some((s) => s.valor === v);
+// Sala da venda para o filtro: "Sala 3203" e "3203" são a mesma sala.
+const salaChave = (v: any) => String(v || '').trim().replace(/^sala\s+/i, '');
 
 // Rateio da comissão pra exibição: soma TODAS as parcelas (a tela mostrava só a
 // 1ª, que ainda carrega a taxa de marketing — % parecia "incorreta", Adm 29/09) e
@@ -904,12 +906,12 @@ export default function Vendas() {
  // ── Filtros da lista (pedido Jú Beal 02/09): período, filial, status,
  // corretor e empreendimento. Client-side: a lista inteira já vem carregada.
  // Multi-seleção (filial/status/corretor/emp = arrays); período fica string.
- const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; status: string[]; corretorId: string[]; emp: string[]; gestorId: string[]; busca: string }>({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [], busca: '' });
+ const [filtro, setFiltro] = useState<{ de: string; ate: string; filial: string[]; sala: string[]; status: string[]; corretorId: string[]; emp: string[]; gestorId: string[]; busca: string }>({ de: '', ate: '', filial: [], sala: [], status: [], corretorId: [], emp: [], gestorId: [], busca: '' });
  const [ordemLista, setOrdemLista] = useState<Ordem>(null);
  const [paginaLista, setPaginaLista] = useState(1);
  const setF = (k: string, v: string) => setFiltro((f) => ({ ...f, [k]: v }));
- const setFArr = (k: 'filial' | 'status' | 'corretorId' | 'emp' | 'gestorId', v: string[]) => setFiltro((f) => ({ ...f, [k]: v }));
- const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length || filtro.gestorId.length || filtro.busca.trim());
+ const setFArr = (k: 'filial' | 'sala' | 'status' | 'corretorId' | 'emp' | 'gestorId', v: string[]) => setFiltro((f) => ({ ...f, [k]: v }));
+ const temFiltro = !!(filtro.de || filtro.ate || filtro.filial.length || filtro.sala.length || filtro.status.length || filtro.corretorId.length || filtro.emp.length || filtro.gestorId.length || filtro.busca.trim());
  // Busca por contrato (Marcelo 08/09): código, cliente, unidade, empreendimento, construtora.
  const buscaNorm = filtro.busca.trim().toLowerCase();
  // Gestor = líder da equipe. Corretores do gestor = membros das equipes que ele lidera (+ ele mesmo).
@@ -931,10 +933,15 @@ export default function Vendas() {
    }
    if (filtro.de && new Date(v.createdAt) < new Date(filtro.de + 'T00:00:00')) return false;
    if (filtro.ate && new Date(v.createdAt) > new Date(filtro.ate + 'T23:59:59')) return false;
+   // Venda cancelada sai da lista (Gláucia 27/10: a duplicada cancelada seguia "Aguardando Paulo");
+   // volta filtrando Status = Cancelado ou buscando o contrato.
+   if (!filtro.status.length && v.status === 'CANCELADO') return false;
    if (filtro.status.length && !filtro.status.includes(v.status)) return false;
    if (filtro.corretorId.length && !filtro.corretorId.includes(String(v.corretor?.id || ''))) return false;
    if (filtro.emp.length && !filtro.emp.includes(empNomeDe(v))) return false;
    if (filtro.filial.length && !corretoresDaFilial.has(v.corretor?.id)) return false;
+   // Sala da venda (Gláucia 28/10): a Equipe segue a equipe ATUAL do corretor e misturava salas.
+   if (filtro.sala.length && !filtro.sala.includes(salaChave(v.salaGpi))) return false;
    if (filtro.gestorId.length && !corretoresDoGestor.has(v.corretor?.id)) return false;
    return true;
  });
@@ -964,6 +971,13 @@ export default function Vendas() {
  const ultimaPaginaVendas = Math.max(1, Math.ceil(vendasOrdenadas.length / POR_PAGINA_VENDAS));
  const paginaVendas = Math.min(paginaLista, ultimaPaginaVendas);
  const vendasPagina = vendasOrdenadas.slice((paginaVendas - 1) * POR_PAGINA_VENDAS, paginaVendas * POR_PAGINA_VENDAS);
+ // Salas que aparecem nas vendas (oficiais primeiro, com o rótulo da lista; depois as digitadas).
+ const salasOpcoes = (() => {
+   const vistas = new Set((vendas || []).map((v: any) => salaChave(v.salaGpi)).filter(Boolean));
+   const oficiais = SALAS_GPI.filter((s) => vistas.has(s.valor)).map((s) => ({ value: s.valor, label: s.rotulo }));
+   const outras = [...vistas].filter((x) => !ehSalaOficial(x)).sort((a, b) => a.localeCompare(b, 'pt-BR')).map((x) => ({ value: x, label: x }));
+   return [...oficiais, ...outras];
+ })();
  const filiaisOpcoes = Array.from(new Map((corretores || []).filter((c: any) => c.equipe).map((c: any) => [String(c.equipe.id), c.equipe.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
  const empsOpcoes = Array.from(new Set((vendas || []).map(empNomeDe).filter(Boolean))).sort() as string[];
  const gestoresOpcoes = Array.from(new Map((equipes || []).filter((e: any) => e.lider).map((e: any) => [String(e.lider.id), e.lider.nome])).entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
@@ -1647,7 +1661,14 @@ export default function Vendas() {
  const proximaEtapa = () => {
  const cur = formRef.current?.querySelector(`[data-step="${step}"]`);
  const bad = cur?.querySelector(':invalid') as HTMLInputElement | null;
- if (bad) { bad.reportValidity(); return; }
+ if (bad) {
+   // Campo obrigatório escondido (seção recolhida) não mostra o balão do navegador e o Avançar parecia travado
+   // sem motivo (Gláucia 31/10, 1606 do Monvera): avisa qual é o campo.
+   const rotulo = bad.closest('.field, label, div')?.querySelector('label')?.textContent?.trim() || bad.getAttribute('aria-label') || bad.placeholder || bad.name || 'um campo obrigatório';
+   if (bad.offsetParent === null) toast.error(`Falta preencher: ${rotulo}.`);
+   else { bad.reportValidity(); bad.focus(); toast.error(`Falta preencher: ${rotulo}.`); }
+   return;
+ }
  // Unidade já vendida por nós: não deixa avançar (a anterior tem que cair antes).
  if (step === 1 && unidadeOcupadaCod) { toast.error(`Esta unidade já tem uma venda ativa (${unidadeOcupadaCod}). Cancele a anterior para liberá-la.`); return; }
  // Reconciliação: na Negociação, os valores preenchidos têm que FECHAR EXATO com
@@ -1941,6 +1962,7 @@ export default function Vendas() {
  </div>
  <input className="field__input" type="search" placeholder="Buscar contrato: código, cliente, unidade ou empreendimento" value={filtro.busca} onChange={(e) => setF('busca', e.target.value)} style={{ flex: '1 1 280px', minWidth: 220 }} />
  <MultiFiltro label="Equipe" opcoes={filiaisOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.filial} onChange={(v) => setFArr('filial', v)} />
+ <MultiFiltro label="Sala" opcoes={salasOpcoes} values={filtro.sala} onChange={(v) => setFArr('sala', v)} />
  <MultiFiltro label="Status" opcoes={Object.entries(STATUS_MAP).map(([k, [, lbl]]) => ({ value: k, label: String(lbl) }))} values={filtro.status} onChange={(v) => setFArr('status', v)} />
  <MultiFiltro label="Corretor" opcoes={corretoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.corretorId} onChange={(v) => setFArr('corretorId', v)} />
  <MultiFiltro label="Gestor" opcoes={gestoresOpcoes.map(([id, nome]) => ({ value: id, label: String(nome) }))} values={filtro.gestorId} onChange={(v) => setFArr('gestorId', v)} />
@@ -1950,7 +1972,7 @@ export default function Vendas() {
  </button>
  {temFiltro && (
  <button className="btn btn--ghost btn--sm"
- onClick={() => setFiltro({ de: '', ate: '', filial: [], status: [], corretorId: [], emp: [], gestorId: [], busca: '' })}>
+ onClick={() => setFiltro({ de: '', ate: '', filial: [], sala: [], status: [], corretorId: [], emp: [], gestorId: [], busca: '' })}>
  Limpar filtros
  </button>
  )}
@@ -1985,7 +2007,7 @@ export default function Vendas() {
  {vendasPagina.map((v: any) => {
  // Venda esperando o OK do Paulo: mostra "Aguardando Paulo" no lugar do status
  // cru (PRE_ANALISE = "Aguardando envio à construtora"), igual ao detalhe.
- const statusKey = v.aguardandoAprovacao ? 'AGUARDANDO_APROVACAO_PAULO' : v.status;
+ const statusKey = v.aguardandoAprovacao && v.status !== 'CANCELADO' ? 'AGUARDANDO_APROVACAO_PAULO' : v.status;
  const [k, lbl] = STATUS_MAP[statusKey] || ['neutral', v.status];
  const cliente = v.clienteNome || v.cliente || '—';
  const empNome = typeof v.empreendimento === 'string' ? v.empreendimento : v.empreendimento?.nome || '';
@@ -2071,7 +2093,7 @@ export default function Vendas() {
  <div style={{ padding: '12px 16px', background: 'var(--bg-card-hover)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
  {/* Enquanto aguarda o Paulo, o status EFETIVO é "Aguardando aprovação do Paulo"
      (não "Aguardando envio"/"em confecção") — e o dropdown fica travado. */}
- {sel.aguardandoAprovacao ? (
+ {sel.aguardandoAprovacao && sel.status !== 'CANCELADO' ? (
  <>
  <div className="uppercase-tag">Status da venda</div>
  <span className="badge badge--analysis">Aguardando aprovação do Paulo</span>
@@ -2097,7 +2119,7 @@ export default function Vendas() {
  )}
  </div>
 
- {sel.aguardandoAprovacao && (
+ {sel.aguardandoAprovacao && sel.status !== 'CANCELADO' && (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10 }}>
  <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-warning-fg)', marginBottom: 4 }}>
  {sel.aprovacaoMotivo || `Parcelamento ${sel.entradaParcelas}x`} — aguardando aprovação do Paulo
@@ -3571,8 +3593,10 @@ const PARCELA_BADGE: Record<string, [string, string]> = {
  AGENDADO: ['neutral', 'Agendado'],
  ABERTO: ['analysis', 'Aberto'],
  PAGO: ['signed', 'Pago'],
- ATRASADO: ['cancelled', 'Atrasado'],
+ ATRASADO: ['cancelled', 'Vencida'],
 };
+// Parcela não paga com vencimento antes de hoje = Vencida, mesmo antes do vigia diário das 8h (Gláucia 30/10).
+const parcelaVencida = (p: any) => p.status !== 'PAGO' && (p.status === 'ATRASADO' || (!!p.vencimento && String(p.vencimento).slice(0, 10) < new Date().toLocaleDateString('sv-SE')));
 
 const RATEIO_LABELS: Record<string, string> = {
  corretor: 'Corretor', gestor: 'Gestor', trafego: 'Tráfego', gtTrafego: 'Gt de Tráfego',
@@ -3597,7 +3621,9 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const v = await Api.venda(vendaId);
  const pags = v?.pagamentos || [];
  setParcelas(pags);
- setComissaoParcela(pags.length ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / pags.length) * 100) / 100 : 0);
+ // Divide pelo total de parcelas da venda, não pelas linhas gravadas: venda importada com a 4/4 faltando dividia por 3 (Gláucia 28/10).
+ const nParcelas = Math.max(pags.length, ...pags.map((p: any) => Number(p.total) || 0));
+ setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / nParcelas) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
  const venc = String(v?.arrasVencimento || '');
  // Venda antiga sem parcelas detalhadas: a entrada foi dividida igual e o arras
@@ -3657,6 +3683,9 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const totalEntrada = parcelas.reduce((s, p) => s + (p.valor || 0), 0) + (arrasConta ? arras!.valor : 0);
  const totalPago = pagas.reduce((s, p) => s + (p.valor || 0), 0) + (arrasConta && arras!.pago ? arras!.valor : 0);
  const nItens = parcelas.length + (arrasConta ? 1 : 0);
+ // Parcelas do plano que não existem no sistema (venda importada com a 4/4 faltando — Gláucia 28/10)
+ const totalPlano = Math.max(0, ...parcelas.map((p) => Number(p.total) || 0));
+ const faltando = Array.from({ length: totalPlano }, (_, i) => i + 1).filter((n) => !parcelas.some((p) => Number(p.numero) === n));
  const nPagos = pagas.length + (arrasConta && arras!.pago ? 1 : 0);
  // Rateio da planilha por parcela — colunas que têm valor em pelo menos uma linha
  const rateios = parcelas.map((p) => { try { return p.rateioPlanilha ? JSON.parse(p.rateioPlanilha) : null; } catch { return null; } });
@@ -3709,7 +3738,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <strong>{p.numero}/{p.total}</strong> · {moeda(p.valor)} · {venc}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
- {(!podeConfirmar || p.status === 'PAGO') && <span className={`badge badge--${k}`} style={{ fontSize: 10 }}>{lbl}</span>}
+ {(!podeConfirmar || p.status === 'PAGO' || parcelaVencida(p)) && <span className={`badge badge--${parcelaVencida(p) ? 'cancelled' : k}`} style={{ fontSize: 10 }}>{parcelaVencida(p) ? 'Vencida' : lbl}</span>}
  {podeConfirmar && p.status !== 'PAGO' && (
  <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
  {busy === p.id ? '…' : 'Confirmar'}
@@ -3740,6 +3769,12 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  </div>
  );
  })}
+ {faltando.map((n) => (
+ <div key={`faltando-${n}`} style={{ padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0, border: '1px dashed var(--color-warning-fg, #d97706)' }}>
+ <div style={{ fontSize: 13 }}><strong>{n}/{totalPlano}</strong> · não lançada no sistema</div>
+ <div className="text-xs text-secondary">Inclua o valor e a data em Editar negociação; as parcelas pagas continuam pagas.</div>
+ </div>
+ ))}
  </div>
 
  {/* Comissão do corretor por parcela — mesmo formato das parcelas de pagamento */}
@@ -3751,26 +3786,16 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const r = rateios[i];
  const valorCorretor = r && typeof r.corretor === 'number' ? r.corretor : null;
  if (valorCorretor === null) return null;
- const [bk, blbl] = PARCELA_BADGE[p.status] || ['neutral', p.status];
+ // Situação da comissão nesta parcela (não do cliente): os botões daqui mudavam o pagamento do cliente
+ // à construtora e a corretora via "pago" (Gláucia 28/10). Confirmar/Comissão recebida ficam no plano acima.
+ const sit: [string, string] = p.comissaoRecebidaEm ? ['signed', 'Comissão recebida'] : p.status === 'PAGO' ? ['analysis', 'Cliente pagou'] : parcelaVencida(p) ? ['cancelled', 'Vencida'] : ['neutral', 'A receber'];
  const venc = p.vencimento ? formatDate(p.vencimento) : '—'; // dia gravado à meia-noite UTC não volta 1 dia (Paulo via 27/02 no lugar de 28/02)
  return (
  <div key={p.id} className="flex-between" style={{ alignItems: 'center', gap: 8, padding: '5px 10px', background: 'var(--bg-card)', borderRadius: 8, minWidth: 0 }}>
  <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
  <strong>{p.numero}/{p.total}</strong> · {valorCorretor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · {venc}
  </div>
- <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
- {(!podeConfirmar || p.status === 'PAGO') && <span className={`badge badge--${bk}`} style={{ fontSize: 10 }}>{blbl}</span>}
- {podeConfirmar && p.status !== 'PAGO' && (
- <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'PAGO')}>
- {busy === p.id ? '…' : 'Confirmar'}
- </button>
- )}
- {podeConfirmar && p.status === 'PAGO' && (
- <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => mudarStatus(p.id, 'ABERTO')} title="Desfazer">
- Desfazer
- </button>
- )}
- </div>
+ <span className={`badge badge--${sit[0]}`} style={{ fontSize: 10, flexShrink: 0 }}>{sit[1]}</span>
  </div>
  );
  })}
@@ -3827,6 +3852,30 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  Comissão parcelada em {nParc}x — valores somados de todas as parcelas; a taxa de marketing entra só na 1ª.
  </div>
  )}
+ {nParc > 1 && (() => {
+ // Rateio POR PARCELA (Gláucia 30/10): quanto cada um recebe em cada parcela da comissão.
+ const ps: any[] = rateioMotor.parcelas;
+ const papeis = linhas.map((l) => l.papel);
+ const valorDe = (p: any, papel: string) => (p.beneficiarios || []).filter((b: any) => b.papel === papel).reduce((t: number, b: any) => t + (Number(b.valor) || 0), 0);
+ const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+ return (
+ <div style={{ marginTop: 12, overflowX: 'auto' }}>
+ <div className="uppercase-tag" style={{ marginBottom: 6 }}>Rateio por parcela</div>
+ <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 520 }}>
+ <thead><tr><th>Parcela</th><th className="numeric">Comissão</th>{linhas.map((l) => <th key={l.papel} className="numeric">{l.nome}</th>)}</tr></thead>
+ <tbody>
+ {ps.map((p: any, i: number) => (
+ <tr key={i}>
+ <td>{i + 1}/{ps.length}</td>
+ <td className="numeric">{brl(Number(p.valorComissaoBruta) || 0)}</td>
+ {papeis.map((papel) => <td key={papel} className="numeric">{brl(valorDe(p, papel))}</td>)}
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
+ );
+ })()}
  </div>
  );
  })()}
