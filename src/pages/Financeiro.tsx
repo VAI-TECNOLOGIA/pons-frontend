@@ -13,6 +13,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { CampoCnpj } from '../components/CampoCnpj';
+import { exportarXlsx } from '../lib/xlsx-simple';
 
 // Lê um boleto pelo código de barras (44), linha digitável bancária (47) ou de
 // concessionária (48) e extrai VALOR e VENCIMENTO pra preencher sozinho (Marcelo
@@ -961,8 +962,34 @@ function PrevisaoTab() {
 
 function ComissoesTab() {
   const [view, setView] = useState<'contrato' | 'corretor' | 'plano'>('contrato');
+  const toast = useToast();
+  const [baixandoNf, setBaixandoNf] = useState(false);
+  // Vendas gravadas sem nota fiscal por engano (14/07 a 31/10): planilha para conferir
+  // e corrigir uma a uma no Editar negociação. Só lê, não altera nada (02/11).
+  const baixarSemNf = async () => {
+    setBaixandoNf(true);
+    try {
+      const r = await Api.rateioVendasSemNf();
+      const vs: any[] = r?.vendas || [];
+      if (!vs.length) { toast.success('Nenhuma venda sem nota fiscal para corrigir.'); return; }
+      exportarXlsx(`vendas-sem-nota-fiscal-${new Date().toLocaleDateString('sv-SE')}.xlsx`,
+        ['Código', 'Data', 'Cliente', 'Empreendimento', 'Unidade', 'Corretor', 'Lançada por', 'Status', 'Valor da venda', 'Comissão bruta', 'Alíquota NF (%)', 'Corretor hoje (sem NF)', 'Corretor com NF', 'Diferença', 'Já pago ao corretor', 'Pago a mais'],
+        vs.map((v) => [v.codigo, new Date(v.data).toLocaleDateString('pt-BR'), v.cliente, v.empreendimento, v.unidade, v.corretor, v.lancadaPor, v.status, v.valorVenda, v.comissaoBruta, v.aliquotaNf, v.corretorHoje, v.corretorComNf, v.diferenca, v.pagoAoCorretor, v.pagoAMais]),
+        'Vendas sem NF');
+      toast.success(`${vs.length} vendas na planilha.`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Não consegui gerar a planilha.');
+    } finally {
+      setBaixandoNf(false);
+    }
+  };
   return (
     <>
+      <div className="flex" style={{ justifyContent: 'flex-end', marginBottom: 8 }}>
+        <button className="btn btn--secondary btn--sm" disabled={baixandoNf} onClick={baixarSemNf} title="Vendas lançadas de 14/07 a 31/10 que ficaram sem o desconto da nota fiscal">
+          {baixandoNf ? 'Gerando…' : 'Vendas sem nota fiscal (Excel)'}
+        </button>
+      </div>
       <div className="tabs" role="tablist" style={{ marginBottom: 12 }}>
         <button className={'tab ' + (view === 'contrato' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'contrato')} onClick={() => setView('contrato')}>Por contrato</button>
         <button className={'tab ' + (view === 'corretor' ? 'tab--active' : '')} role="tab" aria-selected={!!(view === 'corretor')} onClick={() => setView('corretor')}>Por corretor</button>

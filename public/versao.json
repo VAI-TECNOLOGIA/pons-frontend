@@ -1,7 +1,13 @@
 {
-  "versao": "2026.11.02.1",
+  "versao": "2026.11.02.2",
   "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Vendas sem nota fiscal",
+      "itens": [
+        "Financeiro > Comissões & plano: botão \"Vendas sem nota fiscal (Excel)\" lista as vendas lançadas de 14/07 a 31/10 que ficaram sem o desconto da nota, com a parte do corretor hoje, com nota e o que já foi pago. Para corrigir, abra a venda, Editar negociação, marque \"Tem nota fiscal\" e salve."
+      ]
+    },
     {
       "titulo": "Comissão: valor fechado, parcial e em menos parcelas",
       "itens": [

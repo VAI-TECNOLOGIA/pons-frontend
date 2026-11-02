@@ -758,6 +758,8 @@ export const Api = {
   finComissaoEstornar: (body: { corretorId: number; from?: string; to?: string }) =>
     request<{ estornados: number; lancamentosCancelados?: number; corretor?: string; message?: string }>('/financeiro/comissoes/estornar', { method: 'POST', body }),
   finComissoesPlano: () => request<any>('/financeiro/comissoes-plano'),
+  // Levantamento das vendas gravadas sem nota fiscal de 14/07 a 31/10 (só leitura, 02/11).
+  rateioVendasSemNf: () => request<any>('/rateio/auditoria/vendas-sem-nf'),
   finPrevisaoEntrada: (params: { mes?: string; equipeId?: number; sala?: string } = {}) =>
     request<any>(`/financeiro/previsao-entrada${qs(params)}`),
   finPlanejamento: () => request<any>('/financeiro/planejamento'),
