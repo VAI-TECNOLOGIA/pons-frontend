@@ -1,7 +1,15 @@
 {
-  "versao": "2026.10.31",
+  "versao": "2026.11.02.1",
   "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissão: valor fechado, parcial e em menos parcelas",
+      "itens": [
+        "Editar negociação: dá para digitar a comissão em valor fechado (R$); o sistema calcula a % sobre o valor da venda.",
+        "Editar negociação: \"Comissão recebida em quantas parcelas\". Ex.: entrada em 5x e comissão em 3x. A comissão entra em partes iguais nas 3 primeiras parcelas, e o rateio por parcela acompanha.",
+        "Plano de recebimento: \"Recebida em parte\" registra quanto da comissão a construtora pagou na parcela e mostra quanto falta. O Financeiro soma só o que entrou."
+      ]
+    },
     {
       "titulo": "Vendas e comissões (pedidos do Administrativo)",
       "itens": [

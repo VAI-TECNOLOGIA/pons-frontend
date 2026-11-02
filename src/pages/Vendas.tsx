@@ -262,6 +262,10 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // "Tem nota fiscal" (Márcio 29/10): mesma permissão e mesma trava das porcentagens.
   const [temNf, setTemNf] = useState(!!venda.temNotaFiscal);
   const [temNfOrig, setTemNfOrig] = useState(!!venda.temNotaFiscal);
+  // Comissão em valor fechado e em quantas parcelas ela entra (Gláucia 30/10).
+  const [comValor, setComValor] = useState('');
+  const [comParcelas, setComParcelas] = useState('');
+  const [comParcelasOrig, setComParcelasOrig] = useState('');
   const lerPct = (t: string) => { const n = Number(String(t).replace(/\s|%/g, '').replace(',', '.')); return t.trim() && Number.isFinite(n) ? n : null; };
 
   // Abre com as parcelas como estão gravadas (valor e vencimento). Antes a tela
@@ -278,6 +282,8 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         setComissaoPaga((v.beneficiarios || []).some((b: any) => (Number(b.valorPago) || 0) > 0));
         setTemNf(!!v.temNotaFiscal);
         setTemNfOrig(!!v.temNotaFiscal);
+        setComParcelas(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
+        setComParcelasOrig(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
       }
       const pags = [...(v?.pagamentos || [])].sort((a: any, b: any) => (a.numero || 0) - (b.numero || 0));
       if (!vivo || !pags.length || pags.length !== Number(venda.entradaParcelas ?? pags.length)) return;
@@ -405,6 +411,11 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         pctExtra.splitCorretorPct = n;
       }
       if (temNf !== temNfOrig) pctExtra.temNotaFiscal = temNf;
+      if (comParcelas !== comParcelasOrig) {
+        const n = comParcelas.trim() ? Number(comParcelas) : null;
+        if (n != null && !(Number.isInteger(n) && n >= 1)) { toast.error('Informe em quantas parcelas a comissão entra (ex.: 3) ou deixe em branco.'); return; }
+        pctExtra.comissaoParcelas = n;
+      }
     }
     const payload: any = {
       ...pctExtra,
@@ -470,6 +481,13 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         {podePct && (
           <>
             {campo('% de comissão da venda', <input className="field__input" inputMode="decimal" placeholder="5" value={pctComissao} disabled={comissaoPaga} onChange={(e) => setPctComissao(e.target.value.replace(/[^\d,.]/g, ''))} />)}
+            {campo('Ou comissão em valor fechado (R$)', <input className="field__input" inputMode="numeric" placeholder="R$ 0,00" value={comValor} disabled={comissaoPaga} onChange={(e) => {
+              // Valor negociado à parte: vira a % equivalente sobre o valor da venda.
+              const txt = maskMoedaBR(e.target.value); setComValor(txt);
+              const val = parseMoedaBR(txt); const vv = parseMoedaBR(valorVenda) || 0;
+              if (val > 0 && vv > 0) setPctComissao(String(Number(((val / vv) * 100).toFixed(6))).replace('.', ','));
+            }} />)}
+            {campo('Comissão recebida em quantas parcelas', <input type="number" min={1} className="field__input" placeholder={`Todas (${parcelas || 1})`} value={comParcelas} disabled={comissaoPaga} onChange={(e) => setComParcelas(e.target.value)} />)}
             {campo('% do corretor (sobre a comissão)', <input className="field__input" inputMode="decimal" placeholder="50" value={pctCorretor} disabled={comissaoPaga} onChange={(e) => setPctCorretor(e.target.value.replace(/[^\d,.]/g, ''))} />)}
             <div className="field field--span-2">
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: comissaoPaga ? 'not-allowed' : 'pointer' }}>
@@ -3610,6 +3628,11 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  // Comissão da imobiliária por parcela = comissão da venda ÷ nº de parcelas (mesma conta
  // do rateio). O valor da parcela é o que o cliente paga à construtora (Gláucia 26/10).
  const [comissaoParcela, setComissaoParcela] = useState(0);
+ // Comissão em menos parcelas que a entrada (Gláucia 30/10): parte igual nas N primeiras.
+ const [comissaoN, setComissaoN] = useState(0);
+ const comissaoDa = (p: any) => (comissaoN && Number(p.numero) > comissaoN ? 0 : comissaoParcela);
+ // Recebimento parcial: parcela com o campo de valor aberto.
+ const [parcial, setParcial] = useState<{ id: number; valor: string } | null>(null);
  const [busy, setBusy] = useState<number | null>(null);
  const [rateioMotor, setRateioMotor] = useState<any>(null); // vendas do sistema (sem planilha): rateio calculado
  // Arras faz parte da entrada mas não é parcela — entra como linha própria para
@@ -3623,7 +3646,9 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  setParcelas(pags);
  // Divide pelo total de parcelas da venda, não pelas linhas gravadas: venda importada com a 4/4 faltando dividia por 3 (Gláucia 28/10).
  const nParcelas = Math.max(pags.length, ...pags.map((p: any) => Number(p.total) || 0));
- setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / nParcelas) * 100) / 100 : 0);
+ const nCom = Number(v?.comissaoParcelas) > 0 && Number(v?.comissaoParcelas) < nParcelas ? Number(v.comissaoParcelas) : 0;
+ setComissaoN(nCom);
+ setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / (nCom || nParcelas)) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
  const venc = String(v?.arrasVencimento || '');
  // Venda antiga sem parcelas detalhadas: a entrada foi dividida igual e o arras
@@ -3651,10 +3676,11 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  }
  };
 
- const mudarComissao = async (pagamentoId: number, recebida: boolean) => {
+ const mudarComissao = async (pagamentoId: number, recebida: boolean, valor?: number) => {
  setBusy(pagamentoId);
  try {
- await Api.vendaComissaoRecebida(vendaId, pagamentoId, recebida);
+ await Api.vendaComissaoRecebida(vendaId, pagamentoId, recebida, valor);
+ setParcial(null);
  toast.success(recebida ? 'Comissão recebida registrada.' : 'Comissão voltou para a receber.');
  await load();
  } catch (err: any) {
@@ -3704,7 +3730,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  </div>
  {podeConfirmar && comissaoParcela > 0 && (
  <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
- Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela ({moeda(comissaoParcela)}); o rateio é feito sobre ela.
+ Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela ({moeda(comissaoParcela)}{comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''}); o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
  </div>
  )}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
@@ -3751,19 +3777,34 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  )}
  </div>
  </div>
- {podeConfirmar && comissaoParcela > 0 && (
- <div className="flex-between" style={{ alignItems: 'center', gap: 8, marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border-light)' }}>
- <div className="text-xs text-secondary" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Comissão: <strong>{moeda(comissaoParcela)}</strong></div>
+ {podeConfirmar && comissaoDa(p) > 0 && (
+ <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border-light)' }}>
+ <div className="flex-between" style={{ alignItems: 'center', gap: 8 }}>
+ <div className="text-xs text-secondary" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+ Comissão: <strong>{moeda(comissaoDa(p))}</strong>
+ {p.comissaoRecebidaEm && p.comissaoRecebidaValor != null && Number(p.comissaoRecebidaValor) < comissaoDa(p) - 0.005 ? <> · recebido {moeda(p.comissaoRecebidaValor)}, falta {moeda(comissaoDa(p) - Number(p.comissaoRecebidaValor))}</> : null}
+ </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
  {p.comissaoRecebidaEm ? (
  <>
- <span className="badge badge--signed" style={{ fontSize: 10 }}>Recebida</span>
+ <span className="badge badge--signed" style={{ fontSize: 10 }}>{p.comissaoRecebidaValor != null && Number(p.comissaoRecebidaValor) < comissaoDa(p) - 0.005 ? 'Parcial' : 'Recebida'}</span>
  <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => mudarComissao(p.id, false)} title="Desfazer">Desfazer</button>
  </>
  ) : (
+ <>
+ <button className="btn btn--ghost btn--sm" style={{ padding: '3px 8px' }} disabled={busy === p.id} onClick={() => setParcial(parcial?.id === p.id ? null : { id: p.id, valor: '' })}>Recebida em parte</button>
  <button className="btn btn--secondary btn--sm" style={{ padding: '3px 10px' }} disabled={busy === p.id} onClick={() => mudarComissao(p.id, true)}>Comissão recebida</button>
+ </>
  )}
  </div>
+ </div>
+ {parcial?.id === p.id && (
+ <div className="flex gap-2" style={{ alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
+ <input className="field__input" inputMode="numeric" placeholder="Valor recebido (R$)" style={{ maxWidth: 180, fontSize: 16 }} value={parcial?.valor ?? ""} onChange={(e) => setParcial({ id: p.id, valor: maskMoedaBR(e.target.value) })} />
+ <button className="btn btn--primary btn--sm" disabled={busy === p.id || !(parseMoedaBR(parcial?.valor ?? "") > 0)} onClick={() => mudarComissao(p.id, true, parseMoedaBR(parcial?.valor ?? ""))}>Registrar</button>
+ <button className="btn btn--ghost btn--sm" onClick={() => setParcial(null)}>Cancelar</button>
+ </div>
+ )}
  </div>
  )}
  </div>

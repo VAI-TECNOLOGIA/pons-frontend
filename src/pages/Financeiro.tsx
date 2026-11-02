@@ -909,7 +909,9 @@ function PrevisaoTab() {
                           <td className="numeric money">{formatCurrency(l.valor)}</td>
                           <td className="numeric money">
                             {formatCurrency(l.comissao ?? 0)}
-                            {l.comissaoRecebidaEm && <div><span className="badge badge--signed" style={{ fontSize: 10 }}>Recebida</span></div>}
+                            {l.comissaoRecebidaEm && (l.comissaoRecebidaValor != null && l.comissaoRecebidaValor < (l.comissao ?? 0) - 0.005
+                              ? <div><span className="badge badge--analysis" style={{ fontSize: 10 }}>Parcial: {formatCurrency(l.comissaoRecebidaValor)}</span></div>
+                              : <div><span className="badge badge--signed" style={{ fontSize: 10 }}>Recebida</span></div>)}
                           </td>
                           <td className="text-sm">{formatDate(l.vencimento)}</td>
                           <td><span className={`badge badge--${k}`}>{lbl}</span></td>
