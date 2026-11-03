@@ -722,7 +722,7 @@ export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: 
 // ── Histórico de edições da venda (log de segurança, ninguém apaga) ─────────
 const ACAO_HISTORICO: Record<string, string> = {
   VENDA_CRIADA: 'Venda cadastrada', VENDA_DADOS_EDITADOS: 'Dados editados', VENDA_NEGOCIACAO_EDITADA: 'Negociação editada',
-  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_REATIVADA: 'Venda reativada', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada', VENDA_RATEIO_SEM_GESTOR: 'Rateio sem gestor', VENDA_RATEIO_GESTOR_PCT: '% do gestor', VENDA_ARRAS_CONFIRMADO: 'Arras',
+  VENDA_STATUS_ALTERADO: 'Fase alterada', VENDA_CANCELADA: 'Venda cancelada', VENDA_REATIVADA: 'Venda reativada', VENDA_COMISSAO_PARCELA: 'Comissão da parcela', VENDA_PROTOCOLO_ENVIADO: 'Protocolo enviado', VENDA_APROVADA: 'Venda aprovada', VENDA_RATEIO_SEM_GESTOR: 'Rateio sem gestor', VENDA_RATEIO_GESTOR_PCT: '% do gestor', VENDA_ARRAS_CONFIRMADO: 'Arras',
 };
 const fmtValorHist = (campo: string, v: any) => {
   if (v == null || v === '') return '(vazio)';
@@ -3651,6 +3651,23 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const comissaoDa = (p: any) => (planoCom && planoCom[Number(p.numero)] != null ? planoCom[Number(p.numero)] : (comissaoN && Number(p.numero) > comissaoN ? 0 : comissaoParcela));
  // Recebimento parcial: parcela com o campo de valor aberto.
  const [parcial, setParcial] = useState<{ id: number; valor: string } | null>(null);
+ // Comissão da parcela digitada (Gláucia 03/11): as outras dividem o que falta.
+ const [editCom, setEditCom] = useState<{ id: number; valor: string } | null>(null);
+ const [comManual, setComManual] = useState<Record<number, boolean>>({});
+ const [comTotal, setComTotal] = useState(0);
+ const salvarComValor = async (pagamentoId: number, valor: number | null) => {
+ setBusy(pagamentoId);
+ try {
+ await Api.vendaComissaoValor(vendaId, pagamentoId, valor);
+ setEditCom(null);
+ toast.success(valor == null ? 'Comissão da parcela voltou ao cálculo automático.' : 'Comissão da parcela salva. As outras parcelas mostram o que falta.');
+ await load();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setBusy(null);
+ }
+ };
  const [busy, setBusy] = useState<number | null>(null);
  const [rateioMotor, setRateioMotor] = useState<any>(null); // vendas do sistema (sem planilha): rateio calculado
  // Arras faz parte da entrada mas não é parcela — entra como linha própria para
@@ -3668,6 +3685,8 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  setComissaoN(nCom);
  const plano = v?.comissaoPlano?.parcelas;
  setPlanoCom(Array.isArray(plano) && plano.length ? Object.fromEntries(plano.map((x: any) => [Number(x.numero), Number(x.comissao) || 0])) : null);
+ setComManual(Array.isArray(plano) ? Object.fromEntries(plano.filter((x: any) => x.manual).map((x: any) => [Number(x.numero), true])) : {});
+ setComTotal(Number(v?.comissaoPlano?.total) || 0);
  setRetencaoPct(Number(v?.retencaoInicialPctVgv) > 0 ? Number(v.retencaoInicialPctVgv) : null);
  setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / (nCom || nParcelas)) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
@@ -3749,6 +3768,15 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  {nPagos}/{nItens} pagas · {moeda(totalPago)} de {moeda(totalEntrada)}{arrasConta ? ' (com arras)' : ''}
  </div>
  </div>
+ {podeConfirmar && comTotal > 0 && (() => {
+ // Total da comissão da venda × o que já entrou (Gláucia 03/11).
+ const recebido = parcelas.filter((p) => p.comissaoRecebidaEm).reduce((s, p) => s + (p.comissaoRecebidaValor != null ? Number(p.comissaoRecebidaValor) : comissaoDa(p)), 0);
+ return (
+ <div className="text-xs" style={{ marginBottom: 8 }}>
+ Comissão da venda: <strong>{moeda(comTotal)}</strong> · recebida: <strong>{moeda(recebido)}</strong> · falta: <strong>{moeda(Math.max(0, comTotal - recebido))}</strong>
+ </div>
+ );
+ })()}
  {podeConfirmar && (comissaoParcela > 0 || !!retencaoPct) && (
  <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
  Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela{retencaoPct ? ` (a construtora fica primeiro com ${String(retencaoPct).replace('.', ',')}% do VGV; depois a comissão entra até completar)` : ` (${moeda(comissaoParcela)}${comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''})`}; o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
@@ -3798,11 +3826,12 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  )}
  </div>
  </div>
- {podeConfirmar && comissaoDa(p) > 0 && (
+ {podeConfirmar && (comissaoDa(p) > 0 || comManual[Number(p.numero)]) && (
  <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed var(--border-light)' }}>
- <div className="flex-between" style={{ alignItems: 'center', gap: 8 }}>
- <div className="text-xs text-secondary" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
- Comissão: <strong>{moeda(comissaoDa(p))}</strong>
+ <div className="flex-between" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+ <div className="text-xs text-secondary" style={{ minWidth: 0 }}>
+ Comissão: <strong>{moeda(comissaoDa(p))}</strong>{comManual[Number(p.numero)] ? ' (digitada)' : ''}
+ {' '}<button type="button" className="btn btn--ghost btn--sm" style={{ padding: '0 6px', fontSize: 12 }} disabled={busy === p.id} onClick={() => setEditCom(editCom?.id === p.id ? null : { id: p.id, valor: formatMoedaBR(comissaoDa(p)) })}>Editar</button>
  {p.comissaoRecebidaEm && p.comissaoRecebidaValor != null && Number(p.comissaoRecebidaValor) < comissaoDa(p) - 0.005 ? <> · recebido {moeda(p.comissaoRecebidaValor)}, falta {moeda(comissaoDa(p) - Number(p.comissaoRecebidaValor))}</> : null}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
@@ -3819,6 +3848,15 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  )}
  </div>
  </div>
+ {editCom?.id === p.id && (
+ <div className="flex gap-2" style={{ alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
+ <input className="field__input" inputMode="numeric" placeholder="Comissão desta parcela (R$)" style={{ maxWidth: 200, fontSize: 16 }} value={editCom?.valor ?? ''} onChange={(e) => setEditCom({ id: p.id, valor: maskMoedaBR(e.target.value) })} />
+ <button className="btn btn--primary btn--sm" disabled={busy === p.id || !editCom?.valor} onClick={() => salvarComValor(p.id, parseMoedaBR(editCom?.valor ?? ''))}>Salvar</button>
+ {comManual[Number(p.numero)] && <button className="btn btn--ghost btn--sm" disabled={busy === p.id} onClick={() => salvarComValor(p.id, null)}>Voltar ao automático</button>}
+ <button className="btn btn--ghost btn--sm" onClick={() => setEditCom(null)}>Cancelar</button>
+ <div className="field__hint" style={{ flexBasis: '100%' }}>As parcelas sem valor digitado dividem o que falta para completar a comissão da venda.</div>
+ </div>
+ )}
  {parcial?.id === p.id && (
  <div className="flex gap-2" style={{ alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
  <input className="field__input" inputMode="numeric" placeholder="Valor recebido (R$)" style={{ maxWidth: 180, fontSize: 16 }} value={parcial?.valor ?? ""} onChange={(e) => setParcial({ id: p.id, valor: maskMoedaBR(e.target.value) })} />

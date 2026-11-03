@@ -1,7 +1,15 @@
 {
-  "versao": "2026.11.03.1",
+  "versao": "2026.11.03.2",
   "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Comissão de cada parcela editável",
+      "itens": [
+        "Plano de recebimento: em cada parcela, \"Editar\" ao lado da comissão. Digite o que a construtora repassa naquela parcela; as parcelas sem valor digitado dividem o que falta para completar a comissão da venda.",
+        "No topo do plano: comissão da venda, quanto já foi recebido e quanto falta.",
+        "O rateio da parcela (corretor, imobiliária, nota, gestor, direção) acompanha o valor digitado."
+      ]
+    },
     {
       "titulo": "Nota fiscal do corretor e retenção da construtora",
       "itens": [

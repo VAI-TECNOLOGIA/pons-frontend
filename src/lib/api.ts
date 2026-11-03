@@ -596,6 +596,9 @@ export const Api = {
   // valor: recebimento parcial (Gláucia 30/10); sem valor = a comissão inteira da parcela.
   vendaComissaoRecebida: (vendaId: number, pagamentoId: number, recebida: boolean, valor?: number) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/comissao`, { method: 'PATCH', body: { recebida, ...(valor != null ? { valor } : {}) } }),
+  // Comissão digitada na parcela (Gláucia 03/11); null volta ao cálculo automático.
+  vendaComissaoValor: (vendaId: number, pagamentoId: number, valor: number | null) =>
+    request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/comissao-valor`, { method: 'PATCH', body: { valor } }),
   vendaNotas: (vendaId: number) => request<Array<{ id: number; texto: string; autorNome: string; autorPapel: string | null; createdAt: string }>>(`/vendas/${vendaId}/notas`),
   vendaNotaCriar: (vendaId: number, texto: string) => request<any>(`/vendas/${vendaId}/notas`, { method: 'POST', body: { texto } }),
   // Tour guiado das novidades — registra cada "confirmei" e lê o progresso (gestão).
