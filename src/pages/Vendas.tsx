@@ -262,6 +262,9 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // "Tem nota fiscal" (Márcio 29/10): mesma permissão e mesma trava das porcentagens.
   const [temNf, setTemNf] = useState(!!venda.temNotaFiscal);
   const [temNfOrig, setTemNfOrig] = useState(!!venda.temNotaFiscal);
+  // Quem emite a nota (Gláucia 03/11): a imobiliária (comissão inteira) ou o corretor (a dele).
+  const [nfPor, setNfPor] = useState<string>(venda.nfEmitidaPor === 'CORRETOR' ? 'CORRETOR' : 'IMOBILIARIA');
+  const [nfPorOrig, setNfPorOrig] = useState<string>(venda.nfEmitidaPor === 'CORRETOR' ? 'CORRETOR' : 'IMOBILIARIA');
   // Comissão em valor fechado e em quantas parcelas ela entra (Gláucia 30/10).
   const [comValor, setComValor] = useState('');
   const [comParcelas, setComParcelas] = useState('');
@@ -282,6 +285,8 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         setComissaoPaga((v.beneficiarios || []).some((b: any) => (Number(b.valorPago) || 0) > 0));
         setTemNf(!!v.temNotaFiscal);
         setTemNfOrig(!!v.temNotaFiscal);
+        setNfPor(v.nfEmitidaPor === 'CORRETOR' ? 'CORRETOR' : 'IMOBILIARIA');
+        setNfPorOrig(v.nfEmitidaPor === 'CORRETOR' ? 'CORRETOR' : 'IMOBILIARIA');
         setComParcelas(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
         setComParcelasOrig(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
       }
@@ -411,6 +416,7 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         pctExtra.splitCorretorPct = n;
       }
       if (temNf !== temNfOrig) pctExtra.temNotaFiscal = temNf;
+      if (temNf && nfPor !== nfPorOrig) pctExtra.nfEmitidaPor = nfPor;
       if (comParcelas !== comParcelasOrig) {
         const n = comParcelas.trim() ? Number(comParcelas) : null;
         if (n != null && !(Number.isInteger(n) && n >= 1)) { toast.error('Informe em quantas parcelas a comissão entra (ex.: 3) ou deixe em branco.'); return; }
@@ -490,11 +496,20 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
             {campo('Comissão recebida em quantas parcelas', <input type="number" min={1} className="field__input" placeholder={`Todas (${parcelas || 1})`} value={comParcelas} disabled={comissaoPaga} onChange={(e) => setComParcelas(e.target.value)} />)}
             {campo('% do corretor (sobre a comissão)', <input className="field__input" inputMode="decimal" placeholder="50" value={pctCorretor} disabled={comissaoPaga} onChange={(e) => setPctCorretor(e.target.value.replace(/[^\d,.]/g, ''))} />)}
             <div className="field field--span-2">
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: comissaoPaga ? 'not-allowed' : 'pointer' }}>
-                <input type="checkbox" checked={temNf} disabled={comissaoPaga} onChange={(e) => setTemNf(e.target.checked)} style={{ width: 'auto' }} />
-                Tem nota fiscal
-              </label>
-              <div className="field__hint">Marcado, a comissão desconta a alíquota da nota fiscal antes da divisão entre corretor, gestor e imobiliária.</div>
+              <label className="field__label">Nota fiscal</label>
+              <select className="field__select" disabled={comissaoPaga} value={temNf ? nfPor : 'SEM'} onChange={(e) => {
+                const v = e.target.value;
+                if (v === 'SEM') setTemNf(false); else { setTemNf(true); setNfPor(v); }
+              }}>
+                <option value="IMOBILIARIA">A imobiliária emite a nota da comissão inteira</option>
+                <option value="CORRETOR">O corretor emite a própria nota</option>
+                <option value="SEM">Sem nota fiscal</option>
+              </select>
+              <div className="field__hint">{!temNf
+                ? 'Sem desconto de nota: raro, quando o pagamento é feito direto à imobiliária sem nota.'
+                : nfPor === 'CORRETOR'
+                  ? 'A divisão é sobre a comissão cheia; a nota da imobiliária (alíquota da venda, padrão 16,83%) sai só da parte dela. O corretor emite a nota da parte dele.'
+                  : 'A alíquota da nota (padrão 16,83%) sai da comissão antes da divisão entre corretor, gestor e imobiliária.'}</div>
             </div>
             <div className="field field--span-2"><div className="field__hint">{comissaoPaga
               ? 'Esta venda já tem comissão paga, então as porcentagens e a nota fiscal não mudam aqui. Ajuste com o financeiro.'
@@ -3630,7 +3645,10 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const [comissaoParcela, setComissaoParcela] = useState(0);
  // Comissão em menos parcelas que a entrada (Gláucia 30/10): parte igual nas N primeiras.
  const [comissaoN, setComissaoN] = useState(0);
- const comissaoDa = (p: any) => (comissaoN && Number(p.numero) > comissaoN ? 0 : comissaoParcela);
+ // Plano da comissão calculado no servidor (inclui a retenção inicial da construtora — Tetto, 03/11).
+ const [planoCom, setPlanoCom] = useState<Record<number, number> | null>(null);
+ const [retencaoPct, setRetencaoPct] = useState<number | null>(null);
+ const comissaoDa = (p: any) => (planoCom && planoCom[Number(p.numero)] != null ? planoCom[Number(p.numero)] : (comissaoN && Number(p.numero) > comissaoN ? 0 : comissaoParcela));
  // Recebimento parcial: parcela com o campo de valor aberto.
  const [parcial, setParcial] = useState<{ id: number; valor: string } | null>(null);
  const [busy, setBusy] = useState<number | null>(null);
@@ -3648,6 +3666,9 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const nParcelas = Math.max(pags.length, ...pags.map((p: any) => Number(p.total) || 0));
  const nCom = Number(v?.comissaoParcelas) > 0 && Number(v?.comissaoParcelas) < nParcelas ? Number(v.comissaoParcelas) : 0;
  setComissaoN(nCom);
+ const plano = v?.comissaoPlano?.parcelas;
+ setPlanoCom(Array.isArray(plano) && plano.length ? Object.fromEntries(plano.map((x: any) => [Number(x.numero), Number(x.comissao) || 0])) : null);
+ setRetencaoPct(Number(v?.retencaoInicialPctVgv) > 0 ? Number(v.retencaoInicialPctVgv) : null);
  setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / (nCom || nParcelas)) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
  const venc = String(v?.arrasVencimento || '');
@@ -3728,9 +3749,9 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  {nPagos}/{nItens} pagas · {moeda(totalPago)} de {moeda(totalEntrada)}{arrasConta ? ' (com arras)' : ''}
  </div>
  </div>
- {podeConfirmar && comissaoParcela > 0 && (
+ {podeConfirmar && (comissaoParcela > 0 || !!retencaoPct) && (
  <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
- Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela ({moeda(comissaoParcela)}{comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''}); o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
+ Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela{retencaoPct ? ` (a construtora fica primeiro com ${String(retencaoPct).replace('.', ',')}% do VGV; depois a comissão entra até completar)` : ` (${moeda(comissaoParcela)}${comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''})`}; o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
  </div>
  )}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>

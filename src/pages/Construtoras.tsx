@@ -280,6 +280,21 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
                 </div>
               </div>
 
+              {savedId && (
+                <div className="field" style={{ marginTop: 12 }}>
+                  <label className="field__label">Construtora fica com quanto do VGV antes da comissão (%)</label>
+                  <div className="flex gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input className="field__input" type="number" step="0.01" min="0" max="100" style={{ maxWidth: 140 }} value={c.retencaoInicialPctVgv ?? ''} onChange={(ev) => set('retencaoInicialPctVgv', ev.target.value)} placeholder="Ex.: 1" />
+                    <button type="button" className="btn btn--secondary btn--sm" disabled={saving} onClick={async () => {
+                      const v = c.retencaoInicialPctVgv === '' || c.retencaoInicialPctVgv == null ? null : Number(c.retencaoInicialPctVgv);
+                      try { await Api.construtoraRetencao(savedId, v); toast.success('Retenção salva. As vendas desta construtora recalculam a comissão de cada parcela.'); }
+                      catch (err: any) { toast.error(err?.message || 'Não consegui salvar.'); }
+                    }}>Salvar retenção</button>
+                  </div>
+                  <div className="field__hint">Ex.: Tetto 1%. O cliente paga as parcelas em ordem; a construtora fica primeiro com essa parte do VGV e o restante vira a comissão da imobiliária até completá-la. Em branco: comissão dividida pelas parcelas.</div>
+                </div>
+              )}
+
               <div className="cons-actions">
                 <button className="btn btn--primary btn--sm" disabled={saving} onClick={() => salvarAba('Identidade')}>{saving ? 'Salvando…' : savedId ? 'Salvar Identidade' : 'Criar construtora'}</button>
               </div>

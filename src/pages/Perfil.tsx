@@ -82,6 +82,8 @@ export default function Perfil() {
         dataNascimento: fd.get('dataNascimento') ? String(fd.get('dataNascimento')) : null,
         avatarUrl: avatar,
         creci: fd.get('creci') ? String(fd.get('creci')) : null,
+        // Só o corretor tem o campo "Emito minha própria nota fiscal" (03/11).
+        ...(user.corretor ? { emiteNotaFiscal: fd.get('emiteNotaFiscal') === 'on' } : {}),
       });
       setUser({ ...user, ...u });
       await reload();
@@ -217,6 +219,16 @@ export default function Perfil() {
                 />
                 <div className="field__hint">Seu registro no CRECI — necessário pra contratos e protocolos</div>
               </div>
+              {user.corretor && (
+                <div className="field">
+                  <label className="field__label">Nota fiscal</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer', minHeight: 40 }}>
+                    <input type="checkbox" name="emiteNotaFiscal" defaultChecked={!!user.corretor?.emiteNotaFiscal} style={{ width: 'auto' }} />
+                    Emito minha própria nota fiscal
+                  </label>
+                  <div className="field__hint">Marque quando você tiver empresa e emitir a nota da sua comissão. As vendas lançadas a partir daí já saem com a nota da imobiliária só sobre a parte dela.</div>
+                </div>
+              )}
               <div className="field">
                 <label className="field__label">Chave PIX (para receber comissão)</label>
                 <input className="field__input" value={user.pix || user.corretor?.pixKey || ''} placeholder="Nenhuma chave cadastrada" disabled readOnly />

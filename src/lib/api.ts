@@ -515,6 +515,9 @@ export const Api = {
     request<any>(`/empreendimentos/${id}/unidades/${unidadeId}`, { method: 'DELETE' }),
   construtoras: () => request<any[]>('/empreendimentos/construtoras'),
   construtora: (id: number) => request<any>(`/empreendimentos/construtoras/${id}`),
+  // Construtora fica com X% do VGV antes de repassar a comissão (Tetto: 1%, 03/11).
+  construtoraRetencao: (id: number, retencaoInicialPctVgv: number | null) =>
+    request<any>(`/empreendimentos/construtoras/${id}/retencao`, { method: 'PATCH', body: { retencaoInicialPctVgv } }),
   // Cadastro rápido de construtora no próprio formulário de empreendimento
   // (idempotente por nome; mesma permissão de quem cadastra empreendimento).
   construtoraQuickCreate: (nome: string) =>
@@ -828,7 +831,7 @@ export const Api = {
   // Users
   users: () => request<any[]>('/users'),
   meProfile: () => request<import('./auth').User & { aniversarioHoje?: boolean }>('/users/me'),
-  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null; creci?: string | null }) =>
+  meUpdate: (data: { name?: string; phone?: string | null; dataNascimento?: string | null; avatarUrl?: string | null; creci?: string | null; emiteNotaFiscal?: boolean }) =>
     request<any>('/users/me', { method: 'PATCH', body: data }),
   mePassword: (senhaAtual: string, novaSenha: string) =>
     request<{ ok: boolean }>('/users/me/password', { method: 'POST', body: { senhaAtual, novaSenha } }),

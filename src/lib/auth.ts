@@ -46,6 +46,7 @@ export interface User {
     scoreAno?: number;
     lidera?: boolean; // é líder formal de alguma equipe (libera tela Equipes pro corretor)
     envioWhatsappBloqueado?: boolean; // marketing bloqueou o envio de WhatsApp pelo sistema (19/10)
+    emiteNotaFiscal?: boolean; // corretor emite a própria nota fiscal (03/11)
   } | null;
 }
 

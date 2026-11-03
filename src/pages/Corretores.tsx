@@ -697,6 +697,7 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
     if (dt) payload.dataAdmissao = dt;
     const pct = String(fd.get('percentualComissaoAtual') || '');
     payload.percentualComissaoAtual = pct ? Number(pct) : null;
+    payload.emiteNotaFiscal = fd.get('emiteNotaFiscal') === 'on';
     setSaving(true);
     try {
       await Api.corretorUpdate(id, payload);
@@ -743,6 +744,14 @@ function CorretorPainelDrawer({ id, onClose, onSaved }: { id: number; onClose: (
                 <label className="field__label">Rateio de comissão atual (%)</label>
                 <input name="percentualComissaoAtual" type="number" step="0.01" min="0" max="100" className="field__input" defaultValue={c.percentualComissaoAtual ?? ''} placeholder="ex.: 55" />
                 <div className="field__hint">Negociação Pons × corretor. Vale nas vendas NOVAS — não altera as antigas.</div>
+              </div>
+              <div className="field">
+                <label className="field__label">Nota fiscal</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer', minHeight: 40 }}>
+                  <input type="checkbox" name="emiteNotaFiscal" defaultChecked={!!c.emiteNotaFiscal} style={{ width: 'auto' }} />
+                  Emite a própria nota fiscal
+                </label>
+                <div className="field__hint">O próprio corretor também marca no Perfil. Vale nas vendas novas.</div>
               </div>
             </div>
             <div className="flex gap-2" style={{ justifyContent: 'flex-end', marginTop: 8 }}>

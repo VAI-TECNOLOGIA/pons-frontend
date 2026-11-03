@@ -1,7 +1,16 @@
 {
-  "versao": "2026.11.02.2",
+  "versao": "2026.11.03.1",
   "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Nota fiscal do corretor e retenção da construtora",
+      "itens": [
+        "Perfil do corretor: \"Emito minha própria nota fiscal\". As vendas novas dele saem com a nota da imobiliária só sobre a parte dela.",
+        "Editar negociação: a nota fiscal tem 3 opções: a imobiliária emite (padrão), o corretor emite a própria nota ou sem nota fiscal.",
+        "O rateio da tela usa a alíquota da nota da venda (padrão 16,83%), a mesma do cálculo do administrativo.",
+        "Construtoras: \"Construtora fica com quanto do VGV antes da comissão\". Ex.: Tetto 1%: a comissão de cada parcela segue o que o cliente paga, depois da parte da construtora."
+      ]
+    },
     {
       "titulo": "Vendas sem nota fiscal",
       "itens": [
