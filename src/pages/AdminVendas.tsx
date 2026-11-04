@@ -15,6 +15,7 @@ import { Auth } from '../lib/auth';
 import { STATUS_MAP, FormularioGpi, VendaDocumentos, VendaParcelas, VendaHistorico, VendaNotas, EditarDadosVendaModal, EditarNegociacaoModal } from './Vendas';
 import { EmptyState } from '../components/EmptyState';
 import { useConfirm } from '../lib/confirm';
+import { BotaoVendasSemNf } from '../components/BotaoVendasSemNf';
 
 // Fases na ordem do processo — a fila mostra por fase.
 // Fluxo novo (Glaucia 29/07): confecção → conferência → alteração → jurídica →
@@ -462,6 +463,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           title="Administrativo de Vendas"
           subtitle="Auditoria dos contratos: confira a venda, gere o protocolo pra construtora e acompanhe cada fase até o pagamento"
         />
+        <div className="flex" style={{ justifyContent: 'flex-end', marginBottom: 8 }}><BotaoVendasSemNf /></div>
         {children}
       </div>
     </>

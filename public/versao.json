@@ -1,7 +1,15 @@
 {
-  "versao": "2026.11.03.2",
+  "versao": "2026.11.04.1",
   "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Avisos na frente das janelas e planilha no Administrativo",
+      "itens": [
+        "Os avisos do sistema (salvo, erro, sem permissão) aparecem na frente de qualquer janela aberta, sem ficar atrás do fundo escuro.",
+        "Administrativo de Vendas: botão \"Vendas sem nota fiscal (Excel)\" no topo da tela.",
+        "Construtoras: o administrativo salva só a retenção da comissão (digite 1 para 1%)."
+      ]
+    },
     {
       "titulo": "Comissão de cada parcela editável",
       "itens": [

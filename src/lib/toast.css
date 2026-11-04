@@ -41,3 +41,17 @@
   .toast-stack { left: 16px; right: 16px; bottom: 16px; }
   .toast { width: 100%; max-width: none; }
 }
+
+/* Aviso como popover (camada de cima): sem o estilo padrão do navegador, no mesmo lugar de antes. */
+.toast-stack[popover] {
+  inset: auto 24px 24px auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  color: inherit;
+}
+@media (max-width: 640px) {
+  .toast-stack[popover] { inset: auto 16px 16px 16px; }
+}

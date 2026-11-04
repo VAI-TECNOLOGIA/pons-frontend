@@ -6,6 +6,7 @@ import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { Auth } from '../lib/auth';
 import './construtoras.css';
 import { EmptyState } from '../components/EmptyState';
 
@@ -131,7 +132,11 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
     return out;
   };
 
+  // Quem edita a construtora (o servidor recusa os demais). Administrativo e financeiro
+  // só salvam a retenção da comissão (Gláucia 04/11: o "sem permissão" era o Salvar Identidade).
+  const podeEditar = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'SOCIO_UNIDADE', 'GESTOR'].includes(Auth.user?.role || '');
   const salvarAba = async (aba: Tab) => {
+    if (!podeEditar) { toast.info('Os dados da construtora são alterados pelo comercial. Aqui você salva só a retenção da comissão.'); return; }
     const campos = CAMPOS[aba];
     // A aba Identidade cria a construtora quando ainda não existe.
     if (aba === 'Identidade') {
@@ -282,11 +287,12 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
 
               {savedId && (
                 <div className="field" style={{ marginTop: 12 }}>
-                  <label className="field__label">Construtora fica com quanto do VGV antes da comissão (%)</label>
+                  <label className="field__label">Construtora fica com quanto do VGV antes da comissão (em %, digite 1 para 1%)</label>
                   <div className="flex gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
                     <input className="field__input" type="number" step="0.01" min="0" max="100" style={{ maxWidth: 140 }} value={c.retencaoInicialPctVgv ?? ''} onChange={(ev) => set('retencaoInicialPctVgv', ev.target.value)} placeholder="Ex.: 1" />
                     <button type="button" className="btn btn--secondary btn--sm" disabled={saving} onClick={async () => {
-                      const v = c.retencaoInicialPctVgv === '' || c.retencaoInicialPctVgv == null ? null : Number(c.retencaoInicialPctVgv);
+                      const v = c.retencaoInicialPctVgv === '' || c.retencaoInicialPctVgv == null ? null : Number(String(c.retencaoInicialPctVgv).replace(',', '.'));
+                      if (v != null && v > 0 && v < 0.1) { toast.error('Digite a porcentagem inteira: 1 para 1% do VGV (não 0,01).'); return; }
                       try { await Api.construtoraRetencao(savedId, v); toast.success('Retenção salva. As vendas desta construtora recalculam a comissão de cada parcela.'); }
                       catch (err: any) { toast.error(err?.message || 'Não consegui salvar.'); }
                     }}>Salvar retenção</button>
@@ -295,7 +301,7 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
                 </div>
               )}
 
-              <div className="cons-actions">
+              <div className="cons-actions" style={podeEditar ? undefined : { display: 'none' }}>
                 <button className="btn btn--primary btn--sm" disabled={saving} onClick={() => salvarAba('Identidade')}>{saving ? 'Salvando…' : savedId ? 'Salvar Identidade' : 'Criar construtora'}</button>
               </div>
             </div>
