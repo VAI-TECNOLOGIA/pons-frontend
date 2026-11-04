@@ -964,7 +964,7 @@ function ComissoesTab() {
   const [view, setView] = useState<'contrato' | 'corretor' | 'plano'>('contrato');
   const toast = useToast();
   const [baixandoNf, setBaixandoNf] = useState(false);
-  // Vendas gravadas sem nota fiscal por engano (14/07 a 31/10): planilha para conferir
+  // Vendas gravadas sem nota fiscal por engano (13/07 a 31/10): planilha para conferir
   // e corrigir uma a uma no Editar negociação. Só lê, não altera nada (02/11).
   const baixarSemNf = async () => {
     setBaixandoNf(true);
@@ -986,7 +986,7 @@ function ComissoesTab() {
   return (
     <>
       <div className="flex" style={{ justifyContent: 'flex-end', marginBottom: 8 }}>
-        <button className="btn btn--secondary btn--sm" disabled={baixandoNf} onClick={baixarSemNf} title="Vendas lançadas de 14/07 a 31/10 que ficaram sem o desconto da nota fiscal">
+        <button className="btn btn--secondary btn--sm" disabled={baixandoNf} onClick={baixarSemNf} title="Vendas lançadas desde 13/07 que ficaram sem o desconto da nota fiscal">
           {baixandoNf ? 'Gerando…' : 'Vendas sem nota fiscal (Excel)'}
         </button>
       </div>
