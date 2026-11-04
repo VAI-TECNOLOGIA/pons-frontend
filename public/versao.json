@@ -1,7 +1,14 @@
 {
-  "versao": "2026.11.04.1",
+  "versao": "2026.11.04.2",
   "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Rateio e Construtoras",
+      "itens": [
+        "Rateio: os 6,5% do gestor de tráfego na parte da imobiliária saem depois de gestor e direção (conta do administrativo).",
+        "Construtoras: o administrativo também edita os dados da construtora."
+      ]
+    },
     {
       "titulo": "Avisos na frente das janelas e planilha no Administrativo",
       "itens": [

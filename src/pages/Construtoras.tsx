@@ -132,9 +132,9 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
     return out;
   };
 
-  // Quem edita a construtora (o servidor recusa os demais). Administrativo e financeiro
-  // só salvam a retenção da comissão (Gláucia 04/11: o "sem permissão" era o Salvar Identidade).
-  const podeEditar = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'SOCIO_UNIDADE', 'GESTOR'].includes(Auth.user?.role || '');
+  // Quem edita a construtora (o servidor recusa os demais). Administrativo liberado em 04/11;
+  // o financeiro só salva a retenção da comissão.
+  const podeEditar = ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'SOCIO_UNIDADE', 'ADMINISTRATIVO', 'GESTOR'].includes(Auth.user?.role || '');
   const salvarAba = async (aba: Tab) => {
     if (!podeEditar) { toast.info('Os dados da construtora são alterados pelo comercial. Aqui você salva só a retenção da comissão.'); return; }
     const campos = CAMPOS[aba];
