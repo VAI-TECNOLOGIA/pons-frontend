@@ -296,7 +296,10 @@ export default function Leads() {
  : undefined,
  });
  if (r?.jaExistia) {
- toast.info(`Este telefone já está cadastrado no lead "${r.nome}" — nenhum lead novo foi criado.`, 8000);
+ toast.info(`Você já tem este telefone no lead "${r.nome}" — nenhum lead novo foi criado.`, 8000);
+ } else if (Array.isArray(r?.duplicadoDe) && r.duplicadoDe.length) {
+ // Lead manual pode duplicar (04/11): cria e só avisa onde mais o telefone está.
+ toast.success(`Lead criado. Este telefone também está em: ${r.duplicadoDe.map((x: any) => x.nome).join(', ')}.`, 8000);
  } else {
  toast.success('Lead criado com sucesso');
  }

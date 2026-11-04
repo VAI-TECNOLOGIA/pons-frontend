@@ -1,7 +1,13 @@
 {
-  "versao": "2026.11.04.2",
+  "versao": "2026.11.04.3",
   "data": "31/10/2026",
   "novidades": [
+    {
+      "titulo": "Lead cadastrado à mão pode duplicar",
+      "itens": [
+        "Cadastrar lead à mão com um telefone que já existe em outro lead agora cria o lead e só avisa onde mais o telefone está. Só não duplica quando é o mesmo corretor cadastrando o mesmo telefone de novo."
+      ]
+    },
     {
       "titulo": "Rateio e Construtoras",
       "itens": [
