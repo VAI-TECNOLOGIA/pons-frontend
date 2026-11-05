@@ -1,7 +1,16 @@
 {
-  "versao": "2026.11.04.3",
-  "data": "31/10/2026",
+  "versao": "2026.11.05.1",
+  "data": "05/11/2026",
   "novidades": [
+    {
+      "titulo": "Venda: origem do cliente, total da imobiliária e plano atualizado",
+      "itens": [
+        "Editar negociação: campo \"Origem do cliente\" (tráfego pago 6,5%, Lead Lázaro 3% ou Network). Trocar refaz a comissão.",
+        "Rateio por parcela: coluna \"Total imobiliária\" com a parte da imobiliária antes dos descontos, logo depois do corretor.",
+        "Depois de salvar o Editar negociação, o plano de recebimento já mostra a comissão nas parcelas novas, sem precisar fechar a venda.",
+        "Leads: a regra de duplicados ficou desligada para lead de campanha, importação e cadastro manual."
+      ]
+    },
     {
       "titulo": "Lead cadastrado à mão pode duplicar",
       "itens": [

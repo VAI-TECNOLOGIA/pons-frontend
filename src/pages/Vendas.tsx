@@ -269,6 +269,9 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   const [comValor, setComValor] = useState('');
   const [comParcelas, setComParcelas] = useState('');
   const [comParcelasOrig, setComParcelasOrig] = useState('');
+  // Origem do cliente para a comissão (Gláucia 05/11, venda 00710): tráfego 6,5%, Lázaro 3% ou network.
+  const [origemCom, setOrigemCom] = useState('');
+  const [origemComOrig, setOrigemComOrig] = useState('');
   const lerPct = (t: string) => { const n = Number(String(t).replace(/\s|%/g, '').replace(',', '.')); return t.trim() && Number.isFinite(n) ? n : null; };
 
   // Abre com as parcelas como estão gravadas (valor e vencimento). Antes a tela
@@ -289,6 +292,9 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         setNfPorOrig(v.nfEmitidaPor === 'CORRETOR' ? 'CORRETOR' : 'IMOBILIARIA');
         setComParcelas(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
         setComParcelasOrig(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
+        const og = v.origemComissao || (v.isLead ? (v.lazaroEstrategia === 'LAZARO' ? 'BASE' : 'LEAD') : 'ORGANICA');
+        setOrigemCom(og);
+        setOrigemComOrig(og);
       }
       const pags = [...(v?.pagamentos || [])].sort((a: any, b: any) => (a.numero || 0) - (b.numero || 0));
       if (!vivo || !pags.length || pags.length !== Number(venda.entradaParcelas ?? pags.length)) return;
@@ -420,8 +426,10 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
       if (comParcelas !== comParcelasOrig) {
         const n = comParcelas.trim() ? Number(comParcelas) : null;
         if (n != null && !(Number.isInteger(n) && n >= 1)) { toast.error('Informe em quantas parcelas a comissão entra (ex.: 3) ou deixe em branco.'); return; }
+        if (n != null && n > (Number(parcelas) || 1)) { toast.error(`A comissão entra em no máximo ${Number(parcelas) || 1} parcelas (as parcelas da entrada). Deixe em branco para uma por parcela.`); return; }
         pctExtra.comissaoParcelas = n;
       }
+      if (origemCom && origemCom !== origemComOrig) pctExtra.origemComissao = origemCom;
     }
     const payload: any = {
       ...pctExtra,
@@ -510,6 +518,15 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
                 : nfPor === 'CORRETOR'
                   ? 'A divisão é sobre a comissão cheia; a nota da imobiliária (alíquota da venda, padrão 16,83%) sai só da parte dela. O corretor emite a nota da parte dele.'
                   : 'A alíquota da nota (padrão 16,83%) sai da comissão antes da divisão entre corretor, gestor e imobiliária.'}</div>
+            </div>
+            <div className="field field--span-2">
+              <label className="field__label">Origem do cliente (desconto de campanha)</label>
+              <select className="field__select" disabled={comissaoPaga} value={origemCom} onChange={(e) => setOrigemCom(e.target.value)}>
+                <option value="LEAD">Lead de tráfego pago (6,5%)</option>
+                <option value="BASE">Lead Lázaro (3% corretor e 1% imobiliária)</option>
+                <option value="ORGANICA">Network, sem desconto de campanha</option>
+              </select>
+              <div className="field__hint">Trocar a origem refaz a comissão: o desconto de campanha sai do corretor e da imobiliária e vai para o gestor de tráfego.</div>
             </div>
             <div className="field field--span-2"><div className="field__hint">{comissaoPaga
               ? 'Esta venda já tem comissão paga, então as porcentagens e a nota fiscal não mudam aqui. Ajuste com o financeiro.'
@@ -2220,7 +2237,7 @@ export default function Vendas() {
 
  <FormularioGpi f={sel.formulario} />
 
- <VendaParcelas vendaId={sel.id} podeConfirmar={podeMarcarPago} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
+ <VendaParcelas key={sel.id + ':' + histVersao} vendaId={sel.id} podeConfirmar={podeMarcarPago} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
  <VendaNotas vendaId={sel.id} />
@@ -3955,20 +3972,21 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  {nParc > 1 && (() => {
  // Rateio POR PARCELA (Gláucia 30/10): quanto cada um recebe em cada parcela da comissão.
  const ps: any[] = rateioMotor.parcelas;
- const papeis = linhas.map((l) => l.papel);
+ // Total da imobiliária antes dos descontos (gestor, direção, campanha), logo depois do corretor (Gláucia 05/11).
+ const colunasParc = linhas.flatMap((l) => (l.papel === 'CORRETOR' ? [l, { papel: 'TOTAL_IMOB', nome: 'Total imobiliária' }] : [l]));
  const valorDe = (p: any, papel: string) => (p.beneficiarios || []).filter((b: any) => b.papel === papel).reduce((t: number, b: any) => t + (Number(b.valor) || 0), 0);
  const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
  return (
  <div style={{ marginTop: 12, overflowX: 'auto' }}>
  <div className="uppercase-tag" style={{ marginBottom: 6 }}>Rateio por parcela</div>
  <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 520 }}>
- <thead><tr><th>Parcela</th><th className="numeric">Comissão</th>{linhas.map((l) => <th key={l.papel} className="numeric">{l.nome}</th>)}</tr></thead>
+ <thead><tr><th>Parcela</th><th className="numeric">Comissão</th>{colunasParc.map((c) => <th key={c.papel} className="numeric">{c.nome}</th>)}</tr></thead>
  <tbody>
  {ps.map((p: any, i: number) => (
  <tr key={i}>
  <td>{i + 1}/{ps.length}</td>
  <td className="numeric">{brl(Number(p.valorComissaoBruta) || 0)}</td>
- {papeis.map((papel) => <td key={papel} className="numeric">{brl(valorDe(p, papel))}</td>)}
+ {colunasParc.map((c) => <td key={c.papel} className="numeric" style={c.papel === 'TOTAL_IMOB' ? { fontWeight: 600 } : undefined}>{brl(c.papel === 'TOTAL_IMOB' ? (Number(p.imobiliaria?.valorBruto) || 0) : valorDe(p, c.papel))}</td>)}
  </tr>
  ))}
  </tbody>

@@ -335,7 +335,7 @@ export default function AdminVendas() {
           {/* Documentos anexados pelo corretor + anexar contrato da construtora */}
           <VendaDocumentos vendaId={sel.id} podeRemover />
           {/* Comissão parcelada: auditar parcela a parcela — "marcar pago" por parcela (Marcelo 08/09). */}
-          <VendaParcelas vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} rateioCompleto={['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} />
+          <VendaParcelas key={sel.id + ':' + histVersao} vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} rateioCompleto={['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} />
           <VendaNotas vendaId={sel.id} />
           <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
 
