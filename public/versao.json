@@ -1,7 +1,15 @@
 {
-  "versao": "2026.11.05.1",
-  "data": "05/11/2026",
+  "versao": "2026.11.06.1",
+  "data": "06/11/2026",
   "novidades": [
+    {
+      "titulo": "Rateio por parcela na ordem dos descontos",
+      "itens": [
+        "Parte do corretor: corretor titular, nota fiscal (quando a nota é da imobiliária), marketing (R$ 199) e gestor de tráfego.",
+        "Parte da imobiliária: total imobiliária (sem tirar a nota), nota fiscal, gestor, direção, gestor de tráfego e Grupo Pons já com todos os descontos.",
+        "Comissão em N parcelas: as parcelas fora das N ficam zeradas mesmo com valor digitado nas outras."
+      ]
+    },
     {
       "titulo": "Venda: origem do cliente, total da imobiliária e plano atualizado",
       "itens": [

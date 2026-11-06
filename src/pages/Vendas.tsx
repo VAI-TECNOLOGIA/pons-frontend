@@ -3972,21 +3972,47 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  {nParc > 1 && (() => {
  // Rateio POR PARCELA (Gláucia 30/10): quanto cada um recebe em cada parcela da comissão.
  const ps: any[] = rateioMotor.parcelas;
- // Total da imobiliária antes dos descontos (gestor, direção, campanha), logo depois do corretor (Gláucia 05/11).
- const colunasParc = linhas.flatMap((l) => (l.papel === 'CORRETOR' ? [l, { papel: 'TOTAL_IMOB', nome: 'Total imobiliária' }] : [l]));
- const valorDe = (p: any, papel: string) => (p.beneficiarios || []).filter((b: any) => b.papel === papel).reduce((t: number, b: any) => t + (Number(b.valor) || 0), 0);
+ // Colunas na ordem dos descontos (Gláucia 06/11): parte do corretor (líquido, nota, marketing,
+ // tráfego) e parte da imobiliária (total sem a nota, nota, gestor, direção, tráfego, Grupo Pons).
+ const n2 = (v: any) => Number(v) || 0;
+ const nfInfo = (p: any) => {
+ const nf = n2(p.valorNF);
+ const soImob = nf > 0 && Math.abs(n2(p.baseLiquida) - n2(p.valorComissaoBruta)) < 0.01; // corretor emite a própria nota
+ const doCorretor = soImob ? 0 : nf * (n2(p.splitCorretorPct) / 100);
+ return { doCorretor, daImob: nf - doCorretor };
+ };
+ const cols: { k: string; nome: string; grupo: 'C' | 'I'; forte?: boolean; v: (p: any) => number }[] = [
+ { k: 'cor', nome: 'Corretor titular', grupo: 'C', forte: true, v: (p) => n2(p.corretor?.valorLiquido) },
+ { k: 'cnf', nome: 'Nota fiscal (imposto)', grupo: 'C', v: (p) => nfInfo(p).doCorretor },
+ { k: 'mkt', nome: 'Marketing (R$ 199)', grupo: 'C', v: (p) => n2(p.corretor?.descontoMarketing) },
+ { k: 'ctr', nome: 'Gestor de tráfego', grupo: 'C', v: (p) => n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) },
+ { k: 'imo', nome: 'Total imobiliária', grupo: 'I', forte: true, v: (p) => n2(p.valorComissaoBruta) * (n2(p.splitImobPct) / 100) },
+ { k: 'inf', nome: 'Nota fiscal (imposto)', grupo: 'I', v: (p) => nfInfo(p).daImob },
+ { k: 'ges', nome: 'Gestor', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoGestor) },
+ { k: 'dir', nome: 'Direção Adm/Financeira', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoDirecao) },
+ { k: 'itr', nome: 'Gestor de tráfego', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoCampanha) + n2(p.imobiliaria?.descontoLazaro) },
+ { k: 'cas', nome: 'Grupo Pons (Imobiliária)', grupo: 'I', forte: true, v: (p) => n2((p.beneficiarios || []).find((b: any) => b.papel === 'CASA')?.valor ?? p.imobiliaria?.valorLiquido) },
+ ];
  const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+ const divisa = { borderLeft: '2px solid var(--border, #ddd)' };
  return (
  <div style={{ marginTop: 12, overflowX: 'auto' }}>
  <div className="uppercase-tag" style={{ marginBottom: 6 }}>Rateio por parcela</div>
- <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 520 }}>
- <thead><tr><th>Parcela</th><th className="numeric">Comissão</th>{colunasParc.map((c) => <th key={c.papel} className="numeric">{c.nome}</th>)}</tr></thead>
+ <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 980 }}>
+ <thead>
+ <tr>
+ <th colSpan={2}></th>
+ <th colSpan={4} style={{ textAlign: 'center', ...divisa }}>Parte do corretor</th>
+ <th colSpan={6} style={{ textAlign: 'center', ...divisa }}>Parte da imobiliária</th>
+ </tr>
+ <tr><th>Parcela</th><th className="numeric">Comissão</th>{cols.map((c) => <th key={c.k} className="numeric" style={c.k === 'cor' || c.k === 'imo' ? divisa : undefined}>{c.nome}</th>)}</tr>
+ </thead>
  <tbody>
  {ps.map((p: any, i: number) => (
  <tr key={i}>
  <td>{i + 1}/{ps.length}</td>
- <td className="numeric">{brl(Number(p.valorComissaoBruta) || 0)}</td>
- {colunasParc.map((c) => <td key={c.papel} className="numeric" style={c.papel === 'TOTAL_IMOB' ? { fontWeight: 600 } : undefined}>{brl(c.papel === 'TOTAL_IMOB' ? (Number(p.imobiliaria?.valorBruto) || 0) : valorDe(p, c.papel))}</td>)}
+ <td className="numeric">{brl(n2(p.valorComissaoBruta))}</td>
+ {cols.map((c) => <td key={c.k} className="numeric" style={{ ...(c.forte ? { fontWeight: 600 } : {}), ...(c.k === 'cor' || c.k === 'imo' ? divisa : {}) }}>{brl(Math.round(c.v(p) * 100) / 100)}</td>)}
  </tr>
  ))}
  </tbody>
