@@ -1,7 +1,14 @@
 {
-  "versao": "2026.11.06.1",
+  "versao": "2026.11.06.2",
   "data": "06/11/2026",
   "novidades": [
+    {
+      "titulo": "Nota fiscal por parcela e solicitação de nota em PDF",
+      "itens": [
+        "Plano de recebimento: em cada parcela, \"Nota\" escolhe quem emite a nota naquela parcela (imobiliária ou corretor). O rateio da parcela e os totais da venda são refeitos.",
+        "Rateio por parcela: botão \"Solicitar NF\" em cada parcela gera o PDF de solicitação de nota da imobiliária e, quando a nota da parcela é do corretor, a do corretor. O arquivo já sai com a unidade e o empreendimento no nome."
+      ]
+    },
     {
       "titulo": "Rateio por parcela na ordem dos descontos",
       "itens": [

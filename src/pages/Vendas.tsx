@@ -3672,6 +3672,25 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const [editCom, setEditCom] = useState<{ id: number; valor: string } | null>(null);
  const [comManual, setComManual] = useState<Record<number, boolean>>({});
  const [comTotal, setComTotal] = useState(0);
+ // Nota da venda (para o "como a venda" da nota por parcela — Gláucia 06/11).
+ const [nfVenda, setNfVenda] = useState<string>('');
+ const mudarNfParcela = async (pagamentoId: number, valor: string) => {
+ setBusy(pagamentoId);
+ try {
+ await Api.vendaParcelaNf(vendaId, pagamentoId, valor === 'IMOBILIARIA' || valor === 'CORRETOR' ? valor : null);
+ toast.success('Nota da parcela salva. O rateio da parcela foi refeito.');
+ await load();
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setBusy(null);
+ }
+ };
+ const [gerandoNf, setGerandoNf] = useState<number | null>(null);
+ const solicitarNf = async (pagamentoId: number) => {
+ setGerandoNf(pagamentoId);
+ try { await Api.vendaSolicitacaoNf(vendaId, pagamentoId); } catch (err: any) { toast.error(err?.message || 'Falha ao gerar a solicitação de nota.'); } finally { setGerandoNf(null); }
+ };
  const salvarComValor = async (pagamentoId: number, valor: number | null) => {
  setBusy(pagamentoId);
  try {
@@ -3704,6 +3723,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  setPlanoCom(Array.isArray(plano) && plano.length ? Object.fromEntries(plano.map((x: any) => [Number(x.numero), Number(x.comissao) || 0])) : null);
  setComManual(Array.isArray(plano) ? Object.fromEntries(plano.filter((x: any) => x.manual).map((x: any) => [Number(x.numero), true])) : {});
  setComTotal(Number(v?.comissaoPlano?.total) || 0);
+ setNfVenda(!v?.temNotaFiscal ? 'sem nota' : v?.nfEmitidaPor === 'CORRETOR' ? 'corretor' : 'imobiliária');
  setRetencaoPct(Number(v?.retencaoInicialPctVgv) > 0 ? Number(v.retencaoInicialPctVgv) : null);
  setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / (nCom || nParcelas)) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
@@ -3849,6 +3869,15 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <div className="text-xs text-secondary" style={{ minWidth: 0 }}>
  Comissão: <strong>{moeda(comissaoDa(p))}</strong>{comManual[Number(p.numero)] ? ' (digitada)' : ''}
  {' '}<button type="button" className="btn btn--ghost btn--sm" style={{ padding: '0 6px', fontSize: 12 }} disabled={busy === p.id} onClick={() => setEditCom(editCom?.id === p.id ? null : { id: p.id, valor: formatMoedaBR(comissaoDa(p)) })}>Editar</button>
+ {!p.rateioPlanilha && (
+ <> · Nota:{' '}
+ <select className="field__select" style={{ display: 'inline-block', width: 'auto', padding: '1px 6px', fontSize: 12, height: 'auto' }} disabled={busy === p.id} value={p.nfEmitidaPor || ''} onChange={(e) => mudarNfParcela(p.id, e.target.value)} title="Quem emite a nota desta parcela">
+ <option value="">como a venda ({nfVenda || '…'})</option>
+ <option value="IMOBILIARIA">imobiliária</option>
+ <option value="CORRETOR">corretor</option>
+ </select>
+ </>
+ )}
  {p.comissaoRecebidaEm && p.comissaoRecebidaValor != null && Number(p.comissaoRecebidaValor) < comissaoDa(p) - 0.005 ? <> · recebido {moeda(p.comissaoRecebidaValor)}, falta {moeda(comissaoDa(p) - Number(p.comissaoRecebidaValor))}</> : null}
  </div>
  <div className="flex gap-2" style={{ alignItems: 'center', flexShrink: 0 }}>
@@ -4003,9 +4032,9 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <tr>
  <th colSpan={2}></th>
  <th colSpan={4} style={{ textAlign: 'center', ...divisa }}>Parte do corretor</th>
- <th colSpan={6} style={{ textAlign: 'center', ...divisa }}>Parte da imobiliária</th>
+ <th colSpan={6} style={{ textAlign: 'center', ...divisa }}>Parte da imobiliária</th>{podeConfirmar && <th></th>}
  </tr>
- <tr><th>Parcela</th><th className="numeric">Comissão</th>{cols.map((c) => <th key={c.k} className="numeric" style={c.k === 'cor' || c.k === 'imo' ? divisa : undefined}>{c.nome}</th>)}</tr>
+ <tr><th>Parcela</th><th className="numeric">Comissão</th>{cols.map((c) => <th key={c.k} className="numeric" style={c.k === 'cor' || c.k === 'imo' ? divisa : undefined}>{c.nome}</th>)}{podeConfirmar && <th></th>}</tr>
  </thead>
  <tbody>
  {ps.map((p: any, i: number) => (
@@ -4013,6 +4042,10 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <td>{i + 1}/{ps.length}</td>
  <td className="numeric">{brl(n2(p.valorComissaoBruta))}</td>
  {cols.map((c) => <td key={c.k} className="numeric" style={{ ...(c.forte ? { fontWeight: 600 } : {}), ...(c.k === 'cor' || c.k === 'imo' ? divisa : {}) }}>{brl(Math.round(c.v(p) * 100) / 100)}</td>)}
+ {podeConfirmar && (() => {
+ const pg = parcelas.find((x: any) => Number(x.numero) === Number(p.numero ?? i + 1));
+ return <td>{pg && n2(p.valorComissaoBruta) > 0 && <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '2px 8px', fontSize: 12, whiteSpace: 'nowrap' }} disabled={gerandoNf === pg.id} onClick={() => solicitarNf(pg.id)}>{gerandoNf === pg.id ? 'Gerando…' : 'Solicitar NF'}</button>}</td>;
+ })()}
  </tr>
  ))}
  </tbody>

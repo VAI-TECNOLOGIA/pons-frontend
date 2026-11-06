@@ -599,6 +599,22 @@ export const Api = {
   // Comissão digitada na parcela (Gláucia 03/11); null volta ao cálculo automático.
   vendaComissaoValor: (vendaId: number, pagamentoId: number, valor: number | null) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/comissao-valor`, { method: 'PATCH', body: { valor } }),
+  // Quem emite a nota NESTA parcela (Gláucia 06/11); null segue a venda.
+  vendaParcelaNf: (vendaId: number, pagamentoId: number, nfEmitidaPor: 'IMOBILIARIA' | 'CORRETOR' | null) =>
+    request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/nf`, { method: 'PATCH', body: { nfEmitidaPor } }),
+  // PDF de solicitação de nota fiscal da parcela (imobiliária e, se for o caso, corretor).
+  vendaSolicitacaoNf: async (vendaId: number, pagamentoId: number) => {
+    const r = await fetch(`${BASE}/vendas/${vendaId}/pagamentos/${pagamentoId}/solicitacao-nf`, { headers: { Authorization: `Bearer ${Auth.token || ''}` } });
+    if (!r.ok) throw new Error(`Falha ao gerar a solicitação de nota (HTTP ${r.status})`);
+    const cd = r.headers.get('content-disposition') || '';
+    const m = /filename\*=UTF-8''([^;]+)/.exec(cd);
+    const nome = m ? decodeURIComponent(m[1]) : `solicitacao-nf-${vendaId}.pdf`;
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
   vendaNotas: (vendaId: number) => request<Array<{ id: number; texto: string; autorNome: string; autorPapel: string | null; createdAt: string }>>(`/vendas/${vendaId}/notas`),
   vendaNotaCriar: (vendaId: number, texto: string) => request<any>(`/vendas/${vendaId}/notas`, { method: 'POST', body: { texto } }),
   // Tour guiado das novidades — registra cada "confirmei" e lê o progresso (gestão).
