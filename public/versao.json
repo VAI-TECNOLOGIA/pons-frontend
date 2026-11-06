@@ -1,12 +1,13 @@
 {
-  "versao": "2026.11.06.2",
+  "versao": "2026.11.06.3",
   "data": "06/11/2026",
   "novidades": [
     {
-      "titulo": "Nota fiscal por parcela e solicitação de nota em PDF",
+      "titulo": "Nota fiscal por parcela e solicitação de nota",
       "itens": [
         "Plano de recebimento: em cada parcela, \"Nota\" escolhe quem emite a nota naquela parcela (imobiliária ou corretor). O rateio da parcela e os totais da venda são refeitos.",
-        "Rateio por parcela: botão \"Solicitar NF\" em cada parcela gera o PDF de solicitação de nota da imobiliária e, quando a nota da parcela é do corretor, a do corretor. O arquivo já sai com a unidade e o empreendimento no nome."
+        "Rateio por parcela: na coluna NF, marque a parcela cuja nota já foi solicitada (fica a data). Clicando no número da parcela abre o PDF da solicitação de nota para copiar e colar.",
+        "Construtoras > Financeiro: CNPJ da construtora e de cada empreendimento (SPE). A solicitação de nota usa o do empreendimento e, em branco, o da construtora."
       ]
     },
     {

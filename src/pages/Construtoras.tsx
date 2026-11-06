@@ -347,6 +347,34 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
             </div>
           )}
 
+          {/* ---------- CNPJ PARA NOTA FISCAL (Gláucia 06/11) ---------- */}
+          {tab === 'Financeiro' && !bloqueado && savedId && (
+            <div className="cons-pane" style={{ marginTop: 14 }}>
+              <p className="cons-sec" style={{ marginBottom: 8 }}>CNPJ para a nota fiscal</p>
+              <p className="text-xs text-secondary" style={{ marginTop: 0 }}>Vai na solicitação de nota fiscal das vendas. Empreendimento que é SPE tem o próprio CNPJ: preencha nele. Em branco, a solicitação usa o CNPJ da construtora.</p>
+              <div className="form-grid">
+                <div className="field field--span-2"><label className="field__label">CNPJ da construtora</label>
+                  <input className="field__input" inputMode="numeric" style={{ maxWidth: 260, fontSize: 16 }} value={c.cnpj || ''} onChange={(ev) => set('cnpj', ev.target.value)} placeholder="00.000.000/0000-00" />
+                </div>
+                {(c.empreendimentos || []).map((e: any, i: number) => (
+                  <div className="field" key={e.id}><label className="field__label">CNPJ do empreendimento {e.nome} (SPE)</label>
+                    <input className="field__input" inputMode="numeric" style={{ fontSize: 16 }} value={e.cnpj || ''} placeholder="Em branco = CNPJ da construtora"
+                      onChange={(ev) => { const val = ev.target.value; setC((cur: any) => ({ ...cur, empreendimentos: (cur.empreendimentos || []).map((x: any, j: number) => (j === i ? { ...x, cnpj: val } : x)) })); }} />
+                  </div>
+                ))}
+              </div>
+              <div className="cons-actions">
+                <button type="button" className="btn btn--primary btn--sm" disabled={saving} onClick={async () => {
+                  try {
+                    const r = await Api.construtoraCnpjs(savedId, { cnpj: c.cnpj || null, empreendimentos: (c.empreendimentos || []).map((e: any) => ({ id: e.id, cnpj: e.cnpj || null })) });
+                    setC((cur: any) => ({ ...cur, cnpj: r?.cnpj ?? cur.cnpj, empreendimentos: (cur.empreendimentos || []).map((x: any) => ({ ...x, cnpj: (r?.empreendimentos || []).find((y: any) => y.id === x.id)?.cnpj ?? x.cnpj })) }));
+                    toast.success('CNPJs salvos.');
+                  } catch (err: any) { toast.error(err?.message || 'Não consegui salvar os CNPJs.'); }
+                }}>Salvar CNPJs</button>
+              </div>
+            </div>
+          )}
+
           {/* ---------- LOTES À VENDA ---------- */}
           {tab === 'Lotes à venda' && !bloqueado && (
             <div className="cons-pane">

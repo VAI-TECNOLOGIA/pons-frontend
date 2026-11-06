@@ -3689,7 +3689,18 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  const [gerandoNf, setGerandoNf] = useState<number | null>(null);
  const solicitarNf = async (pagamentoId: number) => {
  setGerandoNf(pagamentoId);
- try { await Api.vendaSolicitacaoNf(vendaId, pagamentoId); } catch (err: any) { toast.error(err?.message || 'Falha ao gerar a solicitação de nota.'); } finally { setGerandoNf(null); }
+ try { await Api.vendaSolicitacaoNfAbrir(vendaId, pagamentoId); } catch (err: any) { toast.error(err?.message || 'Falha ao gerar a solicitação de nota.'); } finally { setGerandoNf(null); }
+ };
+ const marcarNfSolicitada = async (pagamentoId: number, solicitada: boolean) => {
+ setBusy(pagamentoId);
+ try {
+ await Api.vendaNfSolicitada(vendaId, pagamentoId, solicitada);
+ setParcelas((cur) => cur.map((x: any) => (x.id === pagamentoId ? { ...x, nfSolicitadaEm: solicitada ? new Date().toISOString() : null } : x)));
+ } catch (err: any) {
+ toast.error('Erro: ' + (err?.message || 'falha'));
+ } finally {
+ setBusy(null);
+ }
  };
  const salvarComValor = async (pagamentoId: number, valor: number | null) => {
  setBusy(pagamentoId);
@@ -4030,22 +4041,32 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 980 }}>
  <thead>
  <tr>
- <th colSpan={2}></th>
+ <th colSpan={podeConfirmar ? 3 : 2}></th>
  <th colSpan={4} style={{ textAlign: 'center', ...divisa }}>Parte do corretor</th>
- <th colSpan={6} style={{ textAlign: 'center', ...divisa }}>Parte da imobiliária</th>{podeConfirmar && <th></th>}
+ <th colSpan={6} style={{ textAlign: 'center', ...divisa }}>Parte da imobiliária</th>
  </tr>
- <tr><th>Parcela</th><th className="numeric">Comissão</th>{cols.map((c) => <th key={c.k} className="numeric" style={c.k === 'cor' || c.k === 'imo' ? divisa : undefined}>{c.nome}</th>)}{podeConfirmar && <th></th>}</tr>
+ <tr>{podeConfirmar && <th title="Solicitação de nota fiscal já feita">NF</th>}<th>Parcela</th><th className="numeric">Comissão</th>{cols.map((c) => <th key={c.k} className="numeric" style={c.k === 'cor' || c.k === 'imo' ? divisa : undefined}>{c.nome}</th>)}</tr>
  </thead>
  <tbody>
  {ps.map((p: any, i: number) => (
  <tr key={i}>
- <td>{i + 1}/{ps.length}</td>
+ {(() => {
+ const pg = parcelas.find((x: any) => Number(x.numero) === Number(p.numero ?? i + 1));
+ const temCom = !!pg && n2(p.valorComissaoBruta) > 0;
+ const quando = pg?.nfSolicitadaEm ? new Date(pg.nfSolicitadaEm).toLocaleDateString('pt-BR') : '';
+ return (
+ <>
+ {podeConfirmar && <td>{temCom && <input type="checkbox" style={{ width: 18, height: 18, cursor: 'pointer' }} checked={!!pg.nfSolicitadaEm} disabled={busy === pg.id} title={pg.nfSolicitadaEm ? `Nota solicitada em ${quando}` : 'Marcar: nota fiscal desta parcela já solicitada'} onChange={(e) => marcarNfSolicitada(pg.id, e.target.checked)} />}</td>}
+ <td>{podeConfirmar && temCom
+ ? <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '0 4px', fontSize: 12, textDecoration: 'underline' }} disabled={gerandoNf === pg.id} title="Abrir a solicitação de nota fiscal (PDF)" onClick={() => solicitarNf(pg.id)}>{gerandoNf === pg.id ? '…' : `${i + 1}/${ps.length}`}</button>
+ : `${i + 1}/${ps.length}`}
+ {quando && <div className="text-xs text-secondary" style={{ whiteSpace: 'nowrap' }}>NF {quando}</div>}
+ </td>
+ </>
+ );
+ })()}
  <td className="numeric">{brl(n2(p.valorComissaoBruta))}</td>
  {cols.map((c) => <td key={c.k} className="numeric" style={{ ...(c.forte ? { fontWeight: 600 } : {}), ...(c.k === 'cor' || c.k === 'imo' ? divisa : {}) }}>{brl(Math.round(c.v(p) * 100) / 100)}</td>)}
- {podeConfirmar && (() => {
- const pg = parcelas.find((x: any) => Number(x.numero) === Number(p.numero ?? i + 1));
- return <td>{pg && n2(p.valorComissaoBruta) > 0 && <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '2px 8px', fontSize: 12, whiteSpace: 'nowrap' }} disabled={gerandoNf === pg.id} onClick={() => solicitarNf(pg.id)}>{gerandoNf === pg.id ? 'Gerando…' : 'Solicitar NF'}</button>}</td>;
- })()}
  </tr>
  ))}
  </tbody>

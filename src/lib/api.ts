@@ -518,6 +518,9 @@ export const Api = {
   // Construtora fica com X% do VGV antes de repassar a comissão (Tetto: 1%, 03/11).
   construtoraRetencao: (id: number, retencaoInicialPctVgv: number | null) =>
     request<any>(`/empreendimentos/construtoras/${id}/retencao`, { method: 'PATCH', body: { retencaoInicialPctVgv } }),
+  // CNPJ da construtora e de cada empreendimento (SPE) para a nota fiscal (Gláucia 06/11).
+  construtoraCnpjs: (id: number, body: { cnpj?: string | null; empreendimentos?: Array<{ id: number; cnpj: string | null }> }) =>
+    request<any>(`/empreendimentos/construtoras/${id}/cnpjs`, { method: 'PATCH', body }),
   // Cadastro rápido de construtora no próprio formulário de empreendimento
   // (idempotente por nome; mesma permissão de quem cadastra empreendimento).
   construtoraQuickCreate: (nome: string) =>
@@ -602,18 +605,16 @@ export const Api = {
   // Quem emite a nota NESTA parcela (Gláucia 06/11); null segue a venda.
   vendaParcelaNf: (vendaId: number, pagamentoId: number, nfEmitidaPor: 'IMOBILIARIA' | 'CORRETOR' | null) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/nf`, { method: 'PATCH', body: { nfEmitidaPor } }),
-  // PDF de solicitação de nota fiscal da parcela (imobiliária e, se for o caso, corretor).
-  vendaSolicitacaoNf: async (vendaId: number, pagamentoId: number) => {
+  vendaNfSolicitada: (vendaId: number, pagamentoId: number, solicitada: boolean) =>
+    request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/nf-solicitada`, { method: 'PATCH', body: { solicitada } }),
+  // Abre o PDF de solicitação de nota numa aba nova, para copiar e colar.
+  vendaSolicitacaoNfAbrir: async (vendaId: number, pagamentoId: number) => {
+    const aba = window.open('', '_blank');
     const r = await fetch(`${BASE}/vendas/${vendaId}/pagamentos/${pagamentoId}/solicitacao-nf`, { headers: { Authorization: `Bearer ${Auth.token || ''}` } });
-    if (!r.ok) throw new Error(`Falha ao gerar a solicitação de nota (HTTP ${r.status})`);
-    const cd = r.headers.get('content-disposition') || '';
-    const m = /filename\*=UTF-8''([^;]+)/.exec(cd);
-    const nome = m ? decodeURIComponent(m[1]) : `solicitacao-nf-${vendaId}.pdf`;
-    const blob = await r.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    if (!r.ok) { aba?.close(); throw new Error(`Falha ao gerar a solicitação de nota (HTTP ${r.status})`); }
+    const url = URL.createObjectURL(await r.blob());
+    if (aba) aba.location.href = url; else window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 120_000);
   },
   vendaNotas: (vendaId: number) => request<Array<{ id: number; texto: string; autorNome: string; autorPapel: string | null; createdAt: string }>>(`/vendas/${vendaId}/notas`),
   vendaNotaCriar: (vendaId: number, texto: string) => request<any>(`/vendas/${vendaId}/notas`, { method: 'POST', body: { texto } }),
