@@ -3986,7 +3986,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  { k: 'cnf', nome: 'Nota fiscal (imposto)', grupo: 'C', v: (p) => nfInfo(p).doCorretor },
  { k: 'mkt', nome: 'Marketing (R$ 199)', grupo: 'C', v: (p) => n2(p.corretor?.descontoMarketing) },
  { k: 'ctr', nome: 'Gestor de tráfego', grupo: 'C', v: (p) => n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) },
- { k: 'imo', nome: 'Total imobiliária', grupo: 'I', forte: true, v: (p) => n2(p.valorComissaoBruta) * (n2(p.splitImobPct) / 100) },
+ { k: 'imo', nome: 'Total imobiliária', grupo: 'I', forte: true, v: (p) => n2(p.valorComissaoBruta) - (n2(p.corretor?.valorLiquido) + nfInfo(p).doCorretor + n2(p.corretor?.descontoMarketing) + n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) - n2(p.corretor?.extraIndicacoes)) },
  { k: 'inf', nome: 'Nota fiscal (imposto)', grupo: 'I', v: (p) => nfInfo(p).daImob },
  { k: 'ges', nome: 'Gestor', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoGestor) },
  { k: 'dir', nome: 'Direção Adm/Financeira', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoDirecao) },
