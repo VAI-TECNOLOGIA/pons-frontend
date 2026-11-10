@@ -1,7 +1,19 @@
 {
-  "versao": "2026.11.06.3",
-  "data": "06/11/2026",
+  "versao": "2026.11.10.1",
+  "data": "10/11/2026",
   "novidades": [
+    {
+      "titulo": "Ajustes do administrativo",
+      "itens": [
+        "Venda: confirmar parcela, comissão recebida ou nota da parcela atualiza a janela toda (lista e histórico) sem precisar recarregar a página.",
+        "Nota da parcela: a opção do corretor agora se chama \"corretor + imob\".",
+        "Solicitação de nota: cliente estrangeiro sem CPF/CNPJ sai com o RG (passaporte).",
+        "Protocolo enviado pelo WhatsApp: com Unidade GPI, gestor e data da venda, sem o arras.",
+        "Protocolo em PDF de venda para empresa (CNPJ): lista de documentos de pessoa jurídica.",
+        "Construtoras: o administrativo inclui empreendimento na aba Financeiro.",
+        "Perfil do corretor: ele mesmo atualiza a chave PIX da comissão; o financeiro é avisado."
+      ]
+    },
     {
       "titulo": "Nota fiscal por parcela e solicitação de nota",
       "itens": [

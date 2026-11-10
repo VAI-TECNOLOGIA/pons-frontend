@@ -84,6 +84,8 @@ export default function Perfil() {
         creci: fd.get('creci') ? String(fd.get('creci')) : null,
         // Só o corretor tem o campo "Emito minha própria nota fiscal" (03/11).
         ...(user.corretor ? { emiteNotaFiscal: fd.get('emiteNotaFiscal') === 'on' } : {}),
+        // Chave PIX da comissão: o próprio corretor mantém (Gláucia 10/11).
+        ...(user.corretor && String(fd.get('pix') || '').trim().length >= 3 ? { pix: String(fd.get('pix')).trim() } : {}),
       });
       setUser({ ...user, ...u });
       await reload();
@@ -231,8 +233,12 @@ export default function Perfil() {
               )}
               <div className="field">
                 <label className="field__label">Chave PIX (para receber comissão)</label>
-                <input className="field__input" value={user.pix || user.corretor?.pixKey || ''} placeholder="Nenhuma chave cadastrada" disabled readOnly />
-                <div className="field__hint">O financeiro paga sua comissão nesta chave. Para trocar, envie a chave nova ao financeiro — ele confere com um PIX de teste e atualiza.</div>
+                {user.corretor ? (
+                  <input className="field__input" name="pix" style={{ fontSize: 16 }} defaultValue={user.pix || user.corretor?.pixKey || ''} placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória" />
+                ) : (
+                  <input className="field__input" value={user.pix || ''} placeholder="Nenhuma chave cadastrada" disabled readOnly />
+                )}
+                <div className="field__hint">O financeiro paga sua comissão nesta chave. Mantenha sempre atualizada: ao salvar uma chave nova, o financeiro é avisado.</div>
               </div>
             </div>
 

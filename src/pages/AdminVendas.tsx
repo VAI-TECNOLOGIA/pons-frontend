@@ -52,6 +52,7 @@ export default function AdminVendas() {
   const [editDados, setEditDados] = useState<number | null>(null);
   const [editNeg, setEditNeg] = useState<any>(null);
   const [histVersao, setHistVersao] = useState(0);
+  const [histParc, setHistParc] = useState(0); // parcela confirmada/editada: recarrega lista e histórico
   const podeEditarVenda = ['ADMINISTRATIVO', 'CEO', 'DIRETOR_FINANCEIRO', 'DIRETOR_COMERCIAL', 'GERENTE_EQUIPE', 'SOCIO_UNIDADE', 'GESTOR'].includes(Auth.user?.role || '');
   // Trava o botão "Confirmar venda" enquanto envia (protocolo leva alguns segundos).
   // PRECISA ficar aqui, ANTES dos returns condicionais abaixo — senão o nº de hooks
@@ -335,9 +336,9 @@ export default function AdminVendas() {
           {/* Documentos anexados pelo corretor + anexar contrato da construtora */}
           <VendaDocumentos vendaId={sel.id} podeRemover />
           {/* Comissão parcelada: auditar parcela a parcela — "marcar pago" por parcela (Marcelo 08/09). */}
-          <VendaParcelas key={sel.id + ':' + histVersao} vendaId={sel.id} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} rateioCompleto={['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} />
+          <VendaParcelas key={sel.id + ':' + histVersao} vendaId={sel.id} onAlterou={() => { reload(); setHistParc((x) => x + 1); }} podeConfirmar={['CEO', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} rateioCompleto={['CEO', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '')} />
           <VendaNotas vendaId={sel.id} />
-          <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
+          <VendaHistorico key={sel.id + ':' + histVersao + ':' + histParc} vendaId={sel.id} />
 
           <div className="flex" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
             <div className="flex gap-2">

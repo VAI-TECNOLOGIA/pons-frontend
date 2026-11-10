@@ -1055,6 +1055,7 @@ export default function Vendas() {
  const [editNeg, setEditNeg] = useState<any>(null);
  const [editDados, setEditDados] = useState<number | null>(null);
  const [histVersao, setHistVersao] = useState(0); // recarrega o histórico após editar
+ const [histParc, setHistParc] = useState(0); // parcela confirmada/editada: recarrega lista e histórico sem remontar o plano
  // Define a origem: TRAFEGO (paga comissão do gestor) ou NETWORK (orgânica, sem comissão de tráfego).
  const decidirTrafego = async (vid: number, decisao: 'TRAFEGO' | 'NETWORK') => {
    try {
@@ -2237,11 +2238,11 @@ export default function Vendas() {
 
  <FormularioGpi f={sel.formulario} />
 
- <VendaParcelas key={sel.id + ':' + histVersao} vendaId={sel.id} podeConfirmar={podeMarcarPago} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
+ <VendaParcelas key={sel.id + ':' + histVersao} vendaId={sel.id} onAlterou={() => { reload(); setHistParc((x) => x + 1); }} podeConfirmar={podeMarcarPago} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
 
  <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
  <VendaNotas vendaId={sel.id} />
- <VendaHistorico key={sel.id + ':' + histVersao} vendaId={sel.id} />
+ <VendaHistorico key={sel.id + ':' + histVersao + ':' + histParc} vendaId={sel.id} />
  </Modal>
  )}
 
@@ -3654,7 +3655,7 @@ const RATEIO_LABELS: Record<string, string> = {
  nf: 'NF', custoVenda: 'Custo Venda', sitComissoes: 'Sit. Comissões', ctrAssinado: 'CTR Assinado',
 };
 
-export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vendaId: number; podeConfirmar?: boolean; rateioCompleto?: boolean }) {
+export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAlterou }: { vendaId: number; podeConfirmar?: boolean; rateioCompleto?: boolean; onAlterou?: () => void }) {
  const toast = useToast();
  const [parcelas, setParcelas] = useState<any[]>([]);
  // Comissão da imobiliária por parcela = comissão da venda ÷ nº de parcelas (mesma conta
@@ -3680,6 +3681,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  await Api.vendaParcelaNf(vendaId, pagamentoId, valor === 'IMOBILIARIA' || valor === 'CORRETOR' ? valor : null);
  toast.success('Nota da parcela salva. O rateio da parcela foi refeito.');
  await load();
+ onAlterou?.();
  } catch (err: any) {
  toast.error('Erro: ' + (err?.message || 'falha'));
  } finally {
@@ -3696,6 +3698,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  try {
  await Api.vendaNfSolicitada(vendaId, pagamentoId, solicitada);
  setParcelas((cur) => cur.map((x: any) => (x.id === pagamentoId ? { ...x, nfSolicitadaEm: solicitada ? new Date().toISOString() : null } : x)));
+ onAlterou?.();
  } catch (err: any) {
  toast.error('Erro: ' + (err?.message || 'falha'));
  } finally {
@@ -3709,6 +3712,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  setEditCom(null);
  toast.success(valor == null ? 'Comissão da parcela voltou ao cálculo automático.' : 'Comissão da parcela salva. As outras parcelas mostram o que falta.');
  await load();
+ onAlterou?.();
  } catch (err: any) {
  toast.error('Erro: ' + (err?.message || 'falha'));
  } finally {
@@ -3734,7 +3738,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  setPlanoCom(Array.isArray(plano) && plano.length ? Object.fromEntries(plano.map((x: any) => [Number(x.numero), Number(x.comissao) || 0])) : null);
  setComManual(Array.isArray(plano) ? Object.fromEntries(plano.filter((x: any) => x.manual).map((x: any) => [Number(x.numero), true])) : {});
  setComTotal(Number(v?.comissaoPlano?.total) || 0);
- setNfVenda(!v?.temNotaFiscal ? 'sem nota' : v?.nfEmitidaPor === 'CORRETOR' ? 'corretor' : 'imobiliária');
+ setNfVenda(!v?.temNotaFiscal ? 'sem nota' : v?.nfEmitidaPor === 'CORRETOR' ? 'corretor + imob' : 'imobiliária');
  setRetencaoPct(Number(v?.retencaoInicialPctVgv) > 0 ? Number(v.retencaoInicialPctVgv) : null);
  setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / (nCom || nParcelas)) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
@@ -3757,6 +3761,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  await Api.vendaParcelaStatus(vendaId, pagamentoId, status);
  toast.success(status === 'PAGO' ? 'Pagamento confirmado.' : 'Parcela atualizada.');
  await load();
+ onAlterou?.();
  } catch (err: any) {
  toast.error('Erro: ' + (err?.message || 'falha'));
  } finally {
@@ -3771,6 +3776,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  setParcial(null);
  toast.success(recebida ? 'Comissão recebida registrada.' : 'Comissão voltou para a receber.');
  await load();
+ onAlterou?.();
  } catch (err: any) {
  toast.error('Erro: ' + (err?.message || 'falha'));
  } finally {
@@ -3784,6 +3790,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  await Api.vendaArras(vendaId, pago);
  toast.success(pago ? 'Arras confirmado.' : 'Confirmação do arras desfeita.');
  await load();
+ onAlterou?.();
  } catch (err: any) {
  toast.error('Erro: ' + (err?.message || 'falha'));
  } finally {
@@ -3885,7 +3892,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto }: { vend
  <select className="field__select" style={{ display: 'inline-block', width: 'auto', padding: '1px 6px', fontSize: 12, height: 'auto' }} disabled={busy === p.id} value={p.nfEmitidaPor || ''} onChange={(e) => mudarNfParcela(p.id, e.target.value)} title="Quem emite a nota desta parcela">
  <option value="">como a venda ({nfVenda || '…'})</option>
  <option value="IMOBILIARIA">imobiliária</option>
- <option value="CORRETOR">corretor</option>
+ <option value="CORRETOR">corretor + imob</option>
  </select>
  </>
  )}
