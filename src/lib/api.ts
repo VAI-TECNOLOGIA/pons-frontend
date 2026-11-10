@@ -1419,6 +1419,36 @@ export const Api = {
   campanhaAudienciaPreview: (data: any) =>
     request<{ total: number; amostra: string[] }>('/campanhas/audiencia/preview', { method: 'POST', body: data }),
   campanhaCreate: (data: any) => request<any>('/campanhas', { method: 'POST', body: data }),
+  // ─── Central de Campanhas (Pons 10/11) ───
+  centralPainel: () => request<any>('/central-campanhas/painel'),
+  centralOpcoes: () => request<any>('/central-campanhas/publico/opcoes'),
+  centralPublicoPreview: (filtro: any) => request<any>('/central-campanhas/publico/preview', { method: 'POST', body: { filtro } }),
+  centralPublicoMarcar: (body: any) => request<any>('/central-campanhas/publico/marcar', { method: 'POST', body }),
+  centralTags: () => request<any[]>('/central-campanhas/tags'),
+  centralTagCriar: (nome: string, cor?: string) => request<any>('/central-campanhas/tags', { method: 'POST', body: { nome, cor } }),
+  centralTagApagar: (id: number) => request<any>(`/central-campanhas/tags/${id}`, { method: 'DELETE' }),
+  centralListas: () => request<any[]>('/central-campanhas/listas'),
+  centralListaDoFiltro: (nome: string, filtro: any) => request<any>('/central-campanhas/listas/do-filtro', { method: 'POST', body: { nome, filtro } }),
+  centralLerPlanilha: async (file: File) => {
+    const form = new FormData();
+    form.append('arquivo', file);
+    const r = await fetch(`${BASE}/central-campanhas/listas/ler`, { method: 'POST', headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined, body: form });
+    if (!r.ok) { const details = await r.json().catch(() => ({})); throw new ApiError(mensagemDeErro(r.status, details), r.status, details); }
+    return r.json() as Promise<{ total: number; cabecalhos: string[]; mapa: Record<string, string | null>; linhas: any[] }>;
+  },
+  centralListaImportar: (body: any) => request<any>('/central-campanhas/listas/importar', { method: 'POST', body }),
+  centralListaApagar: (id: number) => request<any>(`/central-campanhas/listas/${id}`, { method: 'DELETE' }),
+  centralFollowups: () => request<any[]>('/central-campanhas/followups'),
+  centralFollowupModelo: () => request<any>('/central-campanhas/followups/modelo'),
+  centralFollowupSalvar: (id: number | null, body: any) => request<any>(id ? `/central-campanhas/followups/${id}` : '/central-campanhas/followups', { method: id ? 'PUT' : 'POST', body }),
+  centralFollowupApagar: (id: number) => request<any>(`/central-campanhas/followups/${id}`, { method: 'DELETE' }),
+  centralEtapas: () => request<any[]>('/central-campanhas/etapas'),
+  centralEtapasSalvar: (etapas: any[]) => request<any[]>('/central-campanhas/etapas', { method: 'PUT', body: { etapas } }),
+  centralKanban: (params: { campanhaId?: number | ''; busca?: string } = {}) => request<any>(`/central-campanhas/kanban?campanhaId=${params.campanhaId || ''}&busca=${encodeURIComponent(params.busca || '')}`),
+  centralKanbanMover: (destId: number, etapaId: number) => request<any>(`/central-campanhas/kanban/${destId}`, { method: 'PATCH', body: { etapaId } }),
+  centralRelatorio: (params: { campanhaId?: number | ''; de?: string; ate?: string } = {}) => request<any>(`/central-campanhas/relatorio?campanhaId=${params.campanhaId || ''}&de=${params.de || ''}&ate=${params.ate || ''}`),
+  centralRelatorioLeads: (campanhaId: number) => request<any[]>(`/central-campanhas/relatorio/${campanhaId}/leads`),
+  centralJornada: (destId: number) => request<any>(`/central-campanhas/jornada/${destId}`),
   campanhaEditar: (id: number, data: any) => request<any>(`/campanhas/${id}`, { method: 'PATCH', body: data }),
   campanhaEnviar: (id: number) => request<any>(`/campanhas/${id}/enviar`, { method: 'POST' }),
   campanhaDelete: (id: number) => request<{ ok: boolean }>(`/campanhas/${id}`, { method: 'DELETE' }),

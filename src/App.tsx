@@ -85,6 +85,7 @@ const Distribuicao    = lazyRetry(() => import('./pages/Distribuicao'));
 const InteligenciaLeads = lazyRetry(() => import('./pages/InteligenciaLeads'));
 const Remarketing     = lazyRetry(() => import('./pages/Remarketing'));
 const Campanhas       = lazyRetry(() => import('./pages/Campanhas'));
+const CentralCampanhas = lazyRetry(() => import('./pages/CentralCampanhas'));
 const MetaCustos      = lazyRetry(() => import('./pages/MetaCustos'));
 const PainelExecutivo = lazyRetry(() => import('./pages/PainelExecutivo'));
 const ImportarLeads   = lazyRetry(() => import('./pages/ImportarLeads'));
@@ -201,6 +202,7 @@ export default function App() {
           <Route path="/inteligencia-leads" element={<InteligenciaLeads />} />
           <Route path="/remarketing" element={<Remarketing />} />
           <Route path="/campanhas" element={<Campanhas />} />
+          <Route path="/central-campanhas" element={<CentralCampanhas />} />
           <Route path="/meta-custos" element={<MetaCustos />} />
           <Route path="/painel-executivo" element={<PainelExecutivo />} />
           <Route path="/importar" element={<ImportarLeads />} />

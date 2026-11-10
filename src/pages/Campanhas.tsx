@@ -13,6 +13,12 @@ const STATUS_LABEL: Record<string, string> = {
 // Normaliza um número solto para E.164 BR (+55 + DDD + 8/9 dígitos) ou null.
 // Mesma lógica do backend (lib/phone.toE164) — só p/ contar/validar ao vivo.
 function normNumeroBR(raw: string): string | null {
+  // Número com +DDI de outro país (Central de Campanhas 10/11): aceita como veio.
+  const bruto = (raw || '').trim();
+  if (bruto.startsWith('+') && !bruto.replace(/\D/g, '').startsWith('55')) {
+    const x = bruto.replace(/\D/g, '');
+    return x.length >= 8 && x.length <= 15 ? '+' + x : null;
+  }
   let d = (raw || '').replace(/\D/g, '');
   if (!d) return null;
   if (!d.startsWith('55') && (d.length === 10 || d.length === 11)) d = '55' + d;
@@ -53,7 +59,7 @@ function motivoAmigavel(erro?: string | null): string {
   return (code && MAP[code]) || String(erro);
 }
 
-export default function Campanhas() {
+export default function Campanhas({ embutido = false }: { embutido?: boolean } = {}) {
   const [campanhas, setCampanhas] = useState<any[]>([]);
   const [kpis, setKpis] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -121,11 +127,11 @@ export default function Campanhas() {
   }
 
   return (
-    <div className="main__content campanhas">
+    <div className={embutido ? 'campanhas' : 'main__content campanhas'}>
       <header className="page-head">
         <div>
-          <h1 className="page-title">Campanhas</h1>
-          <p className="page-sub">Disparo em massa via WhatsApp oficial — audiência, template aprovado e acompanhamento.</p>
+          {!embutido && <h1 className="page-title">Campanhas</h1>}
+          <p className="page-sub">Disparo em massa via WhatsApp oficial: público, modelo aprovado, follow-up e acompanhamento.</p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button
@@ -373,6 +379,13 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
   const [fOrigem, setFOrigem] = useState<string>(ed?.audienciaFiltro?.origem || '');
   const [fCorretorId, setFCorretorId] = useState<string>(ed?.audienciaFiltro?.corretorId || '');
   const [fSemResposta, setFSemResposta] = useState(!!ed?.audienciaFiltro?.semResposta);
+  // Central de Campanhas (10/11): lista salva/importada, etiqueta, exterior e follow-up.
+  const [fListaId, setFListaId] = useState<string>(ed?.audienciaFiltro?.listaId ? String(ed.audienciaFiltro.listaId) : '');
+  const [fEtiqueta, setFEtiqueta] = useState<string>(ed?.audienciaFiltro?.classificacao || '');
+  const [fExterior, setFExterior] = useState<string>(ed?.audienciaFiltro?.exterior || '');
+  const [listasCentral, setListasCentral] = useState<any[]>([]);
+  const [followUps, setFollowUps] = useState<any[]>([]);
+  const [followUpId, setFollowUpId] = useState<number | ''>(ed?.followUpId || '');
   const [corretores, setCorretores] = useState<any[]>([]);
   const [audCount, setAudCount] = useState<number | null>(null);
   const [audAmostra, setAudAmostra] = useState<string[]>([]);
@@ -393,6 +406,8 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
     Api.corretores().then((r) => setCorretores((r || []).filter((c: any) => c.user?.name))).catch(() => {});
     Api.whatsappTemplates().then((r) => setTemplates(r.items || [])).catch(() => {});
     Api.roletas('DISPARO').then((r) => setFilasDisparo(r || [])).catch(() => {});
+    Api.centralListas().then((r) => setListasCentral(r || [])).catch(() => {});
+    Api.centralFollowups().then((r) => setFollowUps((r || []).filter((f: any) => f.ativo))).catch(() => {});
   }, []);
 
   const filtro = useMemo(() => ({
@@ -400,7 +415,10 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
     origem: fOrigem || undefined,
     corretorId: fCorretorId || undefined,
     semResposta: fSemResposta || undefined,
-  }), [fStatus, fOrigem, fCorretorId, fSemResposta]);
+    listaId: fListaId || undefined,
+    classificacao: fEtiqueta || undefined,
+    exterior: fExterior || undefined,
+  }), [fStatus, fOrigem, fCorretorId, fSemResposta, fListaId, fEtiqueta, fExterior]);
 
   // Números válidos/únicos extraídos da lista colada (LISTA).
   const listaNumeros = useMemo(() => parseListaNumeros(listaRaw), [listaRaw]);
@@ -455,6 +473,7 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
         audienciaFiltro: filtro,
         audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
         roletaId: roletaId || null,
+        followUpId: followUpId || null,
       };
       // Editando rascunho → PATCH na mesma campanha (não cria duplicada); senão cria nova.
       const c = ed?.id ? await Api.campanhaEditar(ed.id, payload) : await Api.campanhaCreate(payload);
@@ -484,6 +503,7 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
         templateName: templateName || null, templateLang: tpl?.language || 'pt_BR', templateVars: vars,
         audienciaTipo, audienciaFiltro: filtro, audienciaLista: audienciaTipo === 'LISTA' ? listaNumeros : undefined,
         roletaId: roletaId || null,
+        followUpId: followUpId || null,
       };
       if (ed?.id) await Api.campanhaEditar(ed.id, payload); // edita o rascunho existente
       else await Api.campanhaCreate(payload);
@@ -532,6 +552,14 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
                   </select>
                   <small className="camp-hint">Quando o lead responder (levantar a mão), cai pro próximo corretor da fila escolhida. Crie as filas em “Filas de Disparo”.</small>
                 </div>
+                <div className="field">
+                  <label className="field__label">Follow-up (se o lead não responder)</label>
+                  <select className="field__select" value={followUpId} onChange={(e) => setFollowUpId(e.target.value ? Number(e.target.value) : '')}>
+                    <option value="">Sem follow-up</option>
+                    {followUps.map((f: any) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                  </select>
+                  <small className="camp-hint">As próximas abordagens e os caminhos pela resposta. Monte em Central de Campanhas, aba Follow-up.</small>
+                </div>
               </>
             )}
 
@@ -571,6 +599,28 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
                         {corretores.map((c) => <option key={c.id} value={c.id}>{c.user?.name}</option>)}
                       </select>
                     </div>
+                    <div className="field">
+                      <label className="field__label">Lista da Central (base importada ou filtro salvo)</label>
+                      <select className="field__select" value={fListaId} onChange={(e) => setFListaId(e.target.value)}>
+                        <option value="">Nenhuma</option>
+                        {listasCentral.map((l: any) => <option key={l.id} value={l.id}>{l.nome} ({l.total})</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label className="field__label">Etiqueta</label>
+                      <select className="field__select" value={fEtiqueta} onChange={(e) => setFEtiqueta(e.target.value)}>
+                        <option value="">Qualquer</option>
+                        {['NOVO', 'FRIO', 'MORNO', 'QUENTE'].map((x) => <option key={x} value={x}>{x[0] + x.slice(1).toLowerCase()}</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label className="field__label">Exterior</label>
+                      <select className="field__select" value={fExterior} onChange={(e) => setFExterior(e.target.value)}>
+                        <option value="">Todos</option>
+                        <option value="SIM">Só exterior (DDI de fora ou mora fora)</option>
+                        <option value="NAO">Só Brasil</option>
+                      </select>
+                    </div>
                     <div className="field camp-check">
                       <label><input type="checkbox" checked={fSemResposta} onChange={(e) => setFSemResposta(e.target.checked)} /> Só quem <strong>não respondeu</strong> (funil remarketing)</label>
                     </div>
@@ -587,7 +637,7 @@ function Wizard({ onClose, editCampanha }: { onClose: () => void; editCampanha?:
                       placeholder={'Cole aqui. Ex.:\n47 99159-8050\n(47) 9201-7377\n5547918590029'}
                     />
                     <small className="camp-hint">
-                      Aceita um único número ou uma lista colada. DDD/DDI detectados automaticamente (BR).
+                      Aceita um único número ou uma lista colada. Número do Brasil com ou sem DDI; do exterior, com + e o DDI (ex.: +351 912 345 678).
                       {listaRaw.trim() && (() => {
                         const brutas = listaRaw.split(/[\n,;\t]+/).filter((s) => s.trim()).length;
                         const inval = brutas - listaNumeros.length;

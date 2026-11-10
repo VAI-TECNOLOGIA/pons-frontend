@@ -1,7 +1,17 @@
 {
-  "versao": "2026.11.10.1",
+  "versao": "2026.11.10.2",
   "data": "10/11/2026",
   "novidades": [
+    {
+      "titulo": "Central de Campanhas de WhatsApp",
+      "itens": [
+        "Menu \"Central de Campanhas\" com abas: Painel, Campanhas, Público e bases, Follow-up, Kanban e Relatório.",
+        "Público: filtros por tag, etiqueta, etapa, corretor, equipe, filial, base, bolsão, empreendimento, datas, sem interação e exterior. Salve como lista ou importe uma planilha de clientes.",
+        "Follow-up: monte as próximas abordagens para quem não responde, com horários fixos e caminhos pela resposta (respondeu, com interesse, sem interesse).",
+        "Kanban da campanha com as etapas da metodologia (blocos) e a jornada de cada lead; relatório do envio até a venda, por campanha e por corretor.",
+        "Campanha agendada agora dispara sozinha na hora marcada."
+      ]
+    },
     {
       "titulo": "Ajustes do administrativo",
       "itens": [

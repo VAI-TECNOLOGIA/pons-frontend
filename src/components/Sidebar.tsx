@@ -119,7 +119,7 @@ const GROUPS: NavGroup[] = [
       { to: '/inteligencia-leads', label: 'Inteligência de Leads', icon: 'chart', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'DIRETOR_FINANCEIRO'] },
       { to: '/bm', label: 'Business Managers', icon: 'facebook', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'GERENTE_EQUIPE'] },
       { to: '/remarketing', label: 'Remarketing', icon: 'megafone', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
-      { to: '/campanhas', label: 'Campanhas', icon: 'chat', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
+      { to: '/central-campanhas', label: 'Central de Campanhas', icon: 'chat', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/templates', label: 'Templates WhatsApp', icon: 'whatsapp', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'MARKETING'] },
       { to: '/distribuicao', label: 'Distribuição', icon: 'clock', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
       { to: '/bases-leads', label: 'Bases de Leads', icon: 'layers', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING'] },
