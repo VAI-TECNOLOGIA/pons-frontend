@@ -87,10 +87,10 @@ export function IATab() {
               <div key={i} style={{ borderTop: i ? '1px solid var(--border-light, #e5e7eb)' : 0, paddingTop: i ? 10 : 0, marginTop: i ? 10 : 0 }}>
                 <div className="cc-row" style={{ flexWrap: 'nowrap' }}>
                   <strong style={{ whiteSpace: 'nowrap' }}>Bloco {i + 1}</strong>
-                  <input className="field__input" style={{ fontSize: 16 }} value={b.nome} onChange={(e) => setBlocos(blocos.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))} placeholder="Nome do bloco" />
+                  <input className="field__input" style={{ fontSize: 16, flex: 1, minWidth: 0 }} value={b.nome} onChange={(e) => setBlocos(blocos.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))} placeholder="Nome do bloco" />
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => setBlocos(blocos.filter((_, j) => j !== i))}>Tirar</button>
                 </div>
-                <textarea className="field__input" rows={3} style={{ fontSize: 16, marginTop: 6 }} value={b.texto} onChange={(e) => setBlocos(blocos.map((x, j) => (j === i ? { ...x, texto: e.target.value } : x)))} placeholder="O que a IA faz neste bloco. Ex.: apresenta o corretor, a Pons e o produto em poucas linhas." />
+                <textarea className="field__input" rows={3} style={{ fontSize: 16, marginTop: 6, width: '100%', boxSizing: 'border-box' }} value={b.texto} onChange={(e) => setBlocos(blocos.map((x, j) => (j === i ? { ...x, texto: e.target.value } : x)))} placeholder="O que a IA faz neste bloco. Ex.: apresenta o corretor, a Pons e o produto em poucas linhas." />
               </div>
             ))}
             <div className="cc-hint">Os blocos 1, 2, 3... ligam com as etapas comuns do Kanban na mesma ordem (aba Kanban, Editar etapas).</div>
@@ -152,7 +152,7 @@ export function IATab() {
             <div ref={fim} />
           </div>
           <div className="cc-row" style={{ flexWrap: 'nowrap', marginTop: 8 }}>
-            <textarea className="field__input" rows={2} style={{ fontSize: 16, resize: 'none' }} value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }} placeholder="Mensagem do cliente" aria-label="Mensagem do cliente" />
+            <textarea className="field__input" rows={2} style={{ fontSize: 16, resize: 'none', flex: 1, width: '100%', minWidth: 0 }} value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }} placeholder="Mensagem do cliente" aria-label="Mensagem do cliente" />
             <button type="button" className="btn btn--primary" disabled={pensando || !texto.trim()} onClick={enviar}>Enviar</button>
           </div>
         </div>
@@ -163,7 +163,7 @@ export function IATab() {
           <div className="cc-muted" style={{ marginBottom: 6 }}>Resposta da IA:</div>
           <div style={{ background: 'var(--bg-card-hover)', borderRadius: 10, padding: 10, fontSize: 14, marginBottom: 12, whiteSpace: 'pre-wrap' }}>{msgs[ajustando]?.texto}</div>
           <div className="field"><label className="field__label">Como deveria responder</label>
-            <textarea className="field__input" rows={5} style={{ fontSize: 16 }} value={certa} onChange={(e) => setCerta(e.target.value)} autoFocus />
+            <textarea className="field__input" rows={5} style={{ fontSize: 16, width: '100%', boxSizing: 'border-box' }} value={certa} onChange={(e) => setCerta(e.target.value)} autoFocus />
           </div>
           <div className="cc-row" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
             <button type="button" className="btn btn--ghost" onClick={() => setAjustando(null)}>Cancelar</button>
