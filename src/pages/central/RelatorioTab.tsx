@@ -8,6 +8,7 @@ const n = (v: any) => (Number(v) || 0).toLocaleString('pt-BR');
 const pct = (a: number, b: number) => (b ? `${(Math.round((a / b) * 1000) / 10).toLocaleString('pt-BR')}%` : '—');
 const brl = (v: any) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 const STATUS: Record<string, string> = { RASCUNHO: 'Rascunho', AGENDADA: 'Agendada', ENVIANDO: 'Enviando', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada' };
+const MOTIVO: Record<string, string> = { '131042': 'Pagamento da conta do WhatsApp na Meta', '131026': 'Número não recebe (sem WhatsApp ou bloqueou)', '131049': 'Meta segurou para não saturar o cliente', '131047': 'Janela de 24h fechada', '131056': 'Muitas mensagens para o mesmo número', outro: 'Outro motivo' };
 const ENVIO: Record<string, string> = { PENDENTE: 'Na fila', ENVIADO: 'Enviado', ENTREGUE: 'Entregue', LIDO: 'Lido', RESPONDIDO: 'Respondeu', FALHOU: 'Falhou' };
 
 export function RelatorioTab() {
@@ -67,6 +68,7 @@ export function RelatorioTab() {
             <div className="cc-kpi"><div className="cc-kpi__l">Enviadas</div><div className="cc-kpi__v">{n(g.enviados)}</div><div className="cc-kpi__s">{pct(g.entregues, g.enviados)} entregues</div></div>
             <div className="cc-kpi"><div className="cc-kpi__l">Lidas</div><div className="cc-kpi__v">{n(g.lidos)}</div><div className="cc-kpi__s">{pct(g.lidos, g.entregues)} das entregues</div></div>
             <div className="cc-kpi"><div className="cc-kpi__l">Responderam</div><div className="cc-kpi__v">{n(g.responderam)}</div><div className="cc-kpi__s">{pct(g.responderam, g.enviados)} de resposta</div></div>
+            <div className="cc-kpi"><div className="cc-kpi__l">Falharam</div><div className="cc-kpi__v">{n(g.falharam)}</div><div className="cc-kpi__s">{Object.entries(g.motivosFalha || {}).sort((a: any, b: any) => b[1] - a[1]).slice(0, 1).map(([k, v]) => `${n(v)}: ${MOTIVO[k] || k}`)[0] || 'sem falhas'}</div></div>
             <div className="cc-kpi"><div className="cc-kpi__l">Sem interesse</div><div className="cc-kpi__v">{n(g.semInteresse)}</div><div className="cc-kpi__s">{n(g.naoResponderam)} não responderam</div></div>
             <div className="cc-kpi"><div className="cc-kpi__l">Vendas</div><div className="cc-kpi__v">{n(g.vendas)}</div><div className="cc-kpi__s">{brl(g.vgv)} em VGV</div></div>
           </div>
@@ -105,13 +107,14 @@ export function RelatorioTab() {
             <h3>Por campanha</h3>
             <div className="cc-scroll">
               <table className="cc-table">
-                <thead><tr><th>Campanha</th><th>Situação</th><th className="num">Público</th><th className="num">Enviadas</th><th className="num">Lidas</th><th className="num">Responderam</th><th className="num">Taxa</th><th className="num">Vendas</th><th className="num">VGV</th><th></th></tr></thead>
+                <thead><tr><th>Campanha</th><th>Situação</th><th className="num">Público</th><th className="num">Enviadas</th><th className="num">Lidas</th><th className="num">Responderam</th><th className="num">Taxa</th><th className="num">Falharam</th><th className="num">Vendas</th><th className="num">VGV</th><th></th></tr></thead>
                 <tbody>{d.porCampanha.map((c: any) => (
                   <tr key={c.id}>
                     <td><strong>{c.nome}</strong><div className="cc-muted">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</div></td>
                     <td>{STATUS[c.status] || c.status}</td>
                     <td className="num">{n(c.resumo.destinatarios)}</td><td className="num">{n(c.resumo.enviados)}</td><td className="num">{n(c.resumo.lidos)}</td>
                     <td className="num">{n(c.resumo.responderam)}</td><td className="num">{pct(c.resumo.responderam, c.resumo.enviados)}</td>
+                    <td className="num" title={Object.entries(c.resumo.motivosFalha || {}).map(([k, v]) => `${MOTIVO[k] || k}: ${v}`).join('\n')}>{n(c.resumo.falharam)}</td>
                     <td className="num">{n(c.resumo.vendas)}</td><td className="num">{brl(c.resumo.vgv)}</td>
                     <td><button type="button" className="btn btn--ghost btn--sm" onClick={() => abrirLeads(c)}>Leads</button></td>
                   </tr>

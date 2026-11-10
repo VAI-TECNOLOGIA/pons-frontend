@@ -157,7 +157,7 @@ export function FollowUpTab() {
       <div className="cc-card" style={{ marginBottom: 14 }}>
         <div className="cc-row" style={{ justifyContent: 'space-between' }}>
           <div className="cc-row" style={{ flex: 1, minWidth: 260 }}>
-            <input className="field__input" style={{ fontSize: 16, fontWeight: 700, maxWidth: 360 }} value={atual.nome} onChange={(e) => setAtual({ ...atual, nome: e.target.value })} aria-label="Nome do follow-up" />
+            <input className="field__input" style={{ fontSize: 16, fontWeight: 700, width: '100%', maxWidth: 420, minWidth: 0, flex: 1 }} value={atual.nome} onChange={(e) => setAtual({ ...atual, nome: e.target.value })} aria-label="Nome do follow-up" />
             <label className="cc-row" style={{ fontSize: 14 }}><input type="checkbox" checked={atual.ativo} onChange={(e) => setAtual({ ...atual, ativo: e.target.checked })} /> Ativo</label>
           </div>
           <div className="cc-row">

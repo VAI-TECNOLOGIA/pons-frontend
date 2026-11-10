@@ -1445,6 +1445,7 @@ export const Api = {
   centralEtapas: () => request<any[]>('/central-campanhas/etapas'),
   centralEtapasSalvar: (etapas: any[]) => request<any[]>('/central-campanhas/etapas', { method: 'PUT', body: { etapas } }),
   centralKanban: (params: { campanhaId?: number | ''; busca?: string } = {}) => request<any>(`/central-campanhas/kanban?campanhaId=${params.campanhaId || ''}&busca=${encodeURIComponent(params.busca || '')}`),
+  centralKanbanAnteriores: () => request<any>('/central-campanhas/kanban/importar-anteriores', { method: 'POST' }),
   centralKanbanMover: (destId: number, etapaId: number) => request<any>(`/central-campanhas/kanban/${destId}`, { method: 'PATCH', body: { etapaId } }),
   centralRelatorio: (params: { campanhaId?: number | ''; de?: string; ate?: string } = {}) => request<any>(`/central-campanhas/relatorio?campanhaId=${params.campanhaId || ''}&de=${params.de || ''}&ate=${params.ate || ''}`),
   centralRelatorioLeads: (campanhaId: number) => request<any[]>(`/central-campanhas/relatorio/${campanhaId}/leads`),

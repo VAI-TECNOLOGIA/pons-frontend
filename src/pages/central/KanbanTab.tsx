@@ -36,7 +36,15 @@ export function KanbanTab() {
           </select>
           <input className="field__input" style={{ maxWidth: 220, fontSize: 16 }} value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar lead" aria-label="Buscar lead" />
         </div>
-        <button type="button" className="btn btn--secondary btn--sm" onClick={() => setEditEtapas(true)}>Editar etapas</button>
+        <div className="cc-row">
+          {d && !d.cards.length && (
+            <button type="button" className="btn btn--ghost btn--sm" onClick={async () => {
+              try { const r = await Api.centralKanbanAnteriores(); toast.success(`${r.respondeu} que responderam e ${r.disparado} que receberam entraram no Kanban.`); carregar(); }
+              catch (e: any) { toast.error(e?.message || 'Falha.'); }
+            }}>Trazer campanhas anteriores</button>
+          )}
+          <button type="button" className="btn btn--secondary btn--sm" onClick={() => setEditEtapas(true)}>Editar etapas</button>
+        </div>
       </div>
       {!d ? <p className="cc-muted">Carregando…</p> : (
         <div className="cc-kanban">
