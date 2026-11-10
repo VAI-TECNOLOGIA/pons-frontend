@@ -61,3 +61,4 @@
 .cc-ev { position: relative; margin-bottom: 10px; font-size: 13px; }
 .cc-ev::before { content: ''; position: absolute; left: -17px; top: 5px; width: 10px; height: 10px; border-radius: 99px; background: var(--pons-blue); }
 .cc-ev small { color: var(--text-secondary, #64748b); display: block; }
+.cc-funil__l > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

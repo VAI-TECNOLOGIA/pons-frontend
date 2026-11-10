@@ -1449,6 +1449,16 @@ export const Api = {
   centralKanbanMover: (destId: number, etapaId: number) => request<any>(`/central-campanhas/kanban/${destId}`, { method: 'PATCH', body: { etapaId } }),
   centralRelatorio: (params: { campanhaId?: number | ''; de?: string; ate?: string } = {}) => request<any>(`/central-campanhas/relatorio?campanhaId=${params.campanhaId || ''}&de=${params.de || ''}&ate=${params.ate || ''}`),
   centralRelatorioLeads: (campanhaId: number) => request<any[]>(`/central-campanhas/relatorio/${campanhaId}/leads`),
+  centralIaConfig: () => request<any>('/central-campanhas/ia/config'),
+  centralIaSalvar: (body: any) => request<any>('/central-campanhas/ia/config', { method: 'PUT', body }),
+  centralIaTestar: (body: any) => request<any>('/central-campanhas/ia/testar', { method: 'POST', body }),
+  centralIaAjuste: (body: any) => request<any>('/central-campanhas/ia/ajustes', { method: 'POST', body }),
+  centralIaAjusteApagar: (i: number) => request<any>(`/central-campanhas/ia/ajustes/${i}`, { method: 'DELETE' }),
+  centralIaVozTestar: async () => {
+    const r = await fetch(`${BASE}/central-campanhas/ia/voz/testar`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(Auth.token ? { Authorization: `Bearer ${Auth.token}` } : {}) }, body: '{}' });
+    if (!r.ok) { const details = await r.json().catch(() => ({})); throw new ApiError(mensagemDeErro(r.status, details), r.status, details); }
+    return URL.createObjectURL(await r.blob());
+  },
   centralJornada: (destId: number) => request<any>(`/central-campanhas/jornada/${destId}`),
   campanhaEditar: (id: number, data: any) => request<any>(`/campanhas/${id}`, { method: 'PATCH', body: data }),
   campanhaEnviar: (id: number) => request<any>(`/campanhas/${id}/enviar`, { method: 'POST' }),

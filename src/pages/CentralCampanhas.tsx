@@ -1,5 +1,5 @@
 // Central de Campanhas de WhatsApp (Pons, 10/11/2026): uma tela só, com abas.
-// Painel · Campanhas · Público e bases · Follow-up · Kanban · Relatório.
+// Painel · Campanhas · Público e bases · Follow-up · Treinar IA · Kanban · Relatório.
 import { useState } from 'react';
 import { Topbar } from '../components/PageHeader';
 import Campanhas from './Campanhas';
@@ -8,6 +8,7 @@ import { PublicoTab } from './central/PublicoTab';
 import { FollowUpTab } from './central/FollowUpTab';
 import { KanbanTab } from './central/KanbanTab';
 import { RelatorioTab } from './central/RelatorioTab';
+import { IATab } from './central/IATab';
 import './central/central.css';
 
 const ABAS = [
@@ -15,6 +16,7 @@ const ABAS = [
   { k: 'campanhas', l: 'Campanhas' },
   { k: 'publico', l: 'Público e bases' },
   { k: 'followup', l: 'Follow-up' },
+  { k: 'ia', l: 'Treinar IA' },
   { k: 'kanban', l: 'Kanban' },
   { k: 'relatorio', l: 'Relatório' },
 ] as const;
@@ -49,6 +51,7 @@ export default function CentralCampanhas() {
         {aba === 'campanhas' && <Campanhas embutido />}
         {aba === 'publico' && <PublicoTab />}
         {aba === 'followup' && <FollowUpTab />}
+        {aba === 'ia' && <IATab />}
         {aba === 'kanban' && <KanbanTab />}
         {aba === 'relatorio' && <RelatorioTab />}
       </div>

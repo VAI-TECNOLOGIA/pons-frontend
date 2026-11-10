@@ -1,5 +1,5 @@
 {
-  "versao": "2026.11.10.3",
+  "versao": "2026.11.10.4",
   "data": "10/11/2026",
   "novidades": [
     {
@@ -8,6 +8,8 @@
         "Menu \"Central de Campanhas\" com abas: Painel, Campanhas, Público e bases, Follow-up, Kanban e Relatório.",
         "Público: filtros por tag, etiqueta, etapa, corretor, equipe, filial, base, bolsão, empreendimento, datas, sem interação e exterior. Salve como lista ou importe uma planilha de clientes.",
         "Follow-up: monte as próximas abordagens para quem não responde, com horários fixos e caminhos pela resposta (respondeu, com interesse, sem interesse).",
+        "Treinar IA: metodologia em blocos, chat de teste com \"Ajustar\" em cada resposta (vira regra da IA), resposta no mesmo formato do cliente e voz pela ElevenLabs.",
+        "A IA preenche o CRM sozinha a cada mensagem: bloco em que o cliente está, etiqueta, tags e card no Kanban.",
         "Kanban da campanha com as etapas da metodologia (blocos) e a jornada de cada lead; relatório do envio até a venda, por campanha e por corretor.",
         "Campanha agendada agora dispara sozinha na hora marcada."
       ]
