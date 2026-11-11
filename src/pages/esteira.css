@@ -24,7 +24,7 @@
 .esteira-aba span { margin-left: 6px; font-size: 12px; opacity: .7; }
 .esteira-aba.is-on { background: var(--gray-900, #292A2D); color: #fff; border-color: transparent; }
 
-.esteira-quadro { display: grid; grid-template-columns: repeat(5, minmax(200px, 1fr)); gap: 12px; align-items: start; overflow-x: auto; padding-bottom: 8px; }
+.esteira-quadro { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 12px; align-items: start; overflow-x: auto; padding-bottom: 8px; }
 .esteira-col { background: var(--bg-app, var(--gray-50)); border: 1px solid var(--border-light); border-radius: var(--est-raio); padding: 10px; min-height: 120px; }
 .esteira-col__topo { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 4px 4px 10px; }
 .esteira-col__topo strong { font-size: 14px; }

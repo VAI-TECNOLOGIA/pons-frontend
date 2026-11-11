@@ -12,17 +12,32 @@ import { Api } from '../lib/api';
 import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
+import { FUNIL_DEFAULT, parseFunil, type Fase } from '../lib/funil';
 import './esteira.css';
 
 type Coluna = { key: string; titulo: string; dica: string; cor: string; statuses: string[] };
-// 5 colunas (decisão 21/10). As etapas extras do funil caem na mais próxima.
-const COLUNAS: Coluna[] = [
-  { key: 'NOVO', titulo: 'Novo', dica: 'Chame o lead', cor: '#0E7C9B', statuses: ['NOVO', 'SDR', 'NAO_RESPONDE'] },
-  { key: 'EM_ATENDIMENTO', titulo: 'Em atendimento', dica: 'Conversando', cor: '#7A5AF8', statuses: ['EM_ATENDIMENTO', 'QUALIFICANDO', 'LISTA_VIP', 'FLUXO', 'PAROU_RESPONDER', 'POS_FLUXO'] },
-  { key: 'VISITA', titulo: 'Visita', dica: 'Vídeo ou visita', cor: '#F2B544', statuses: ['VISITA'] },
-  { key: 'NEGOCIANDO', titulo: 'Negociando', dica: 'Proposta na mesa', cor: '#E8743B', statuses: ['NEGOCIANDO', 'PROPOSTA', 'CONTATO'] },
-  { key: 'FECHADO', titulo: 'Venda', dica: 'Parabéns', cor: '#2E9E5B', statuses: ['FECHADO', 'VENDIDO', 'GANHO'] },
-];
+// As colunas são as MESMAS etapas do Funil (Andréia 11/11: "a esteira não conversa com o
+// funil"): antes eram 5 colunas que juntavam etapas, e mover no Funil entre etapas da mesma
+// coluna não mudava nada aqui. Os nomes seguem o que a Pons editou em Configurações → Funil.
+const ESTILO: Record<string, { cor: string; dica: string }> = {
+  NOVO: { cor: '#0E7C9B', dica: 'Chame o lead' },
+  NAO_RESPONDE: { cor: '#64748B', dica: 'Tente de novo' },
+  LISTA_VIP: { cor: '#C026D3', dica: 'Prioridade' },
+  EM_ATENDIMENTO: { cor: '#7A5AF8', dica: 'Conversando' },
+  FLUXO: { cor: '#0891B2', dica: 'No fluxo' },
+  PAROU_RESPONDER: { cor: '#DC2626', dica: 'Retome a conversa' },
+  POS_FLUXO: { cor: '#4F46E5', dica: 'Depois do fluxo' },
+  VISITA: { cor: '#F2B544', dica: 'Vídeo ou visita' },
+  NEGOCIANDO: { cor: '#E8743B', dica: 'Proposta na mesa' },
+  FECHADO: { cor: '#2E9E5B', dica: 'Parabéns' },
+};
+function montarColunas(fases: Fase[]): Coluna[] {
+  return fases.filter((f) => f.key !== 'PERDIDO').map((f) => ({
+    key: f.key, titulo: f.label, statuses: [f.key, ...(f.aliases || [])],
+    cor: ESTILO[f.key]?.cor || '#0E7C9B', dica: ESTILO[f.key]?.dica || '',
+  }));
+}
+let COLUNAS: Coluna[] = montarColunas(FUNIL_DEFAULT);
 const FORA = ['PERDIDO', 'DESCARTADO'];
 const MOTIVOS_PERDA = ['Sem condições financeiras', 'Não responde', 'Comprou com outro', 'Sem perfil / só curiosidade', 'Outro'];
 const DIAS_ALERTA = 5;
@@ -71,6 +86,8 @@ export default function MinhaEsteira() {
     return out;
   }, [meuCorretorId]);
 
+  const { data: settings } = useApi<Record<string, string>>(() => Api.settings());
+  COLUNAS = montarColunas(parseFunil(settings));
   const [aba, setAba] = useState('NOVO');
   const [soParados, setSoParados] = useState(false);
   const [aberto, setAberto] = useState<any | null>(null);

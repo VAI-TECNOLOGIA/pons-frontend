@@ -1,7 +1,13 @@
 {
-  "versao": "2026.11.10.4",
-  "data": "10/11/2026",
+  "versao": "2026.11.11.1",
+  "data": "11/11/2026",
   "novidades": [
+    {
+      "titulo": "Minha esteira com as mesmas etapas do Funil",
+      "itens": [
+        "A Minha esteira agora tem todas as etapas do Funil (Tentando contato, Não responde, Lista VIP, Em atendimento, Fluxo, Parou de responder, Pós fluxo, Vídeo/Visita, Em negociação e Venda), com os mesmos nomes. Mudou a etapa no Funil, muda na esteira, e vice-versa."
+      ]
+    },
     {
       "titulo": "Central de Campanhas de WhatsApp",
       "itens": [
