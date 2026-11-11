@@ -293,10 +293,14 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
                     <button type="button" className="btn btn--secondary btn--sm" disabled={saving} onClick={async () => {
                       const v = c.retencaoInicialPctVgv === '' || c.retencaoInicialPctVgv == null ? null : Number(String(c.retencaoInicialPctVgv).replace(',', '.'));
                       if (v != null && v > 0 && v < 0.1) { toast.error('Digite a porcentagem inteira: 1 para 1% do VGV (não 0,01).'); return; }
-                      try { await Api.construtoraRetencao(savedId, v); toast.success('Retenção salva. As vendas desta construtora recalculam a comissão de cada parcela.'); }
+                      try { await Api.construtoraRetencao(savedId, v, !!c.comissaoProporcional); toast.success('Retenção salva. As vendas desta construtora recalculam a comissão de cada parcela.'); }
                       catch (err: any) { toast.error(err?.message || 'Não consegui salvar.'); }
                     }}>Salvar retenção</button>
                   </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginTop: 10, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={!!c.comissaoProporcional} onChange={(ev) => set('comissaoProporcional', ev.target.checked)} style={{ width: 'auto' }} />
+                    Comissão de cada parcela proporcional ao valor da parcela (ex.: Maxces, parcela ÷ 7 × 6). Marque e clique em Salvar retenção.
+                  </label>
                   <div className="field__hint">Ex.: Tetto 1%. O cliente paga as parcelas em ordem; a construtora fica primeiro com essa parte do VGV e o restante vira a comissão da imobiliária até completá-la. Em branco: comissão dividida pelas parcelas.</div>
                 </div>
               )}

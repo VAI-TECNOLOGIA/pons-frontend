@@ -516,8 +516,8 @@ export const Api = {
   construtoras: () => request<any[]>('/empreendimentos/construtoras'),
   construtora: (id: number) => request<any>(`/empreendimentos/construtoras/${id}`),
   // Construtora fica com X% do VGV antes de repassar a comissão (Tetto: 1%, 03/11).
-  construtoraRetencao: (id: number, retencaoInicialPctVgv: number | null) =>
-    request<any>(`/empreendimentos/construtoras/${id}/retencao`, { method: 'PATCH', body: { retencaoInicialPctVgv } }),
+  construtoraRetencao: (id: number, retencaoInicialPctVgv: number | null, comissaoProporcional?: boolean) =>
+    request<any>(`/empreendimentos/construtoras/${id}/retencao`, { method: 'PATCH', body: { retencaoInicialPctVgv, ...(typeof comissaoProporcional === 'boolean' ? { comissaoProporcional } : {}) } }),
   // CNPJ da construtora e de cada empreendimento (SPE) para a nota fiscal (Gláucia 06/11).
   construtoraCnpjs: (id: number, body: { cnpj?: string | null; empreendimentos?: Array<{ id: number; cnpj: string | null }> }) =>
     request<any>(`/empreendimentos/construtoras/${id}/cnpjs`, { method: 'PATCH', body }),

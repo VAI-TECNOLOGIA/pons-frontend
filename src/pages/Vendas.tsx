@@ -83,8 +83,14 @@ const MOSTRA_CONJUGE = new Set([
 // Estados civis (reusado no select do 2º comprador/sociedade).
 const ESTADOS_CIVIS = ['Solteiro(a)', 'Casado(a)', 'Casado(a) — comunhão total de bens', 'Casado(a) — separação total de bens', 'União estável', 'Divorciado(a)', 'Viúvo(a)'];
 // Um titular adicional (comprador em sociedade) — mesmos dados de qualificação do contrato.
-type SocioCompra = { nome: string; cpf: string; rg: string; nascimento: string; profissao: string; estadoCivil: string; endereco: string; participacao: string };
-const socioCompraVazio = (): SocioCompra => ({ nome: '', cpf: '', rg: '', nascimento: '', profissao: '', estadoCivil: '', endereco: '', participacao: '' });
+// Os demais titulares têm os mesmos campos e obrigatoriedade do 1º (Gláucia 11/11).
+type SocioCompra = { nome: string; cpf: string; rg: string; nascimento: string; profissao: string; estadoCivil: string; endereco: string; participacao: string;
+ email: string; telefone: string; internacional: boolean; cep: string; logradouro: string; numero: string; complemento: string; bairro: string; cidade: string; uf: string };
+const socioCompraVazio = (): SocioCompra => ({ nome: '', cpf: '', rg: '', nascimento: '', profissao: '', estadoCivil: '', endereco: '', participacao: '',
+ email: '', telefone: '', internacional: false, cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
+const enderecoSocio = (s: SocioCompra) => (s.logradouro
+ ? [`${s.logradouro}${s.numero ? `, ${s.numero}` : ''}${s.complemento ? ` - ${s.complemento}` : ''}`, s.bairro, `${s.cidade}${s.uf ? `/${s.uf}` : ''}`, s.cep ? `CEP ${s.cep}` : ''].filter(Boolean).join(', ')
+ : s.endereco);
 
 // Origem gravada no lead → rótulo humano + classificação de comissão.
 // Tráfego pago/portais = LEAD (desconto campanha); campanha WhatsApp/base = BASE; resto = orgânica.
@@ -100,7 +106,9 @@ const ORIGEM_LEAD_INFO: Record<string, { rotulo: string; comissao: 'LEAD' | 'BAS
  CAMPANHA: { rotulo: 'Campanha (base)', comissao: 'BASE' },
  IMPORTACAO: { rotulo: 'Base importada', comissao: 'BASE' },
  BASE: { rotulo: 'Base da casa', comissao: 'BASE' },
+ MANUAL: { rotulo: 'Network', comissao: 'ORGANICA' }, // lead cadastrado à mão pelo corretor (Gláucia 11/11)
 };
+const rotuloOrigemVenda = (o?: string | null) => (o === 'MANUAL' ? 'Network' : o);
 function origemDoLead(origem?: string | null) {
  if (!origem) return null;
  return ORIGEM_LEAD_INFO[origem] || { rotulo: origem, comissao: 'ORGANICA' as const };
@@ -654,7 +662,7 @@ const GRUPOS_DADOS_VENDA: Array<{ titulo: string; campos: Array<[string, string,
   { titulo: 'Sócio / 2º comprador', campos: [['socioNome', 'Nome'], ['socioCpf', 'CPF', 'cpf'], ['socioRg', 'RG'], ['socioNascimento', 'Nascimento'], ['socioProfissao', 'Profissão'], ['socioEstadoCivil', 'Estado civil'], ['socioEmail', 'E-mail'], ['socioTelefone', 'Telefone', 'tel'], ['socioEndereco', 'Endereço']] },
 ];
 
-export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: number; onClose: () => void; onSaved: () => void }) {
+export function EditarDadosVendaModal({ vendaId, onClose, onSaved, soCliente = false }: { vendaId: number; onClose: () => void; onSaved: () => void; soCliente?: boolean }) {
   const toast = useToast();
   const { data: venda } = useApi<any>(() => Api.venda(vendaId), [vendaId]);
   const { data: emps } = useApi<any[]>(() => Api.empreendimentos());
@@ -672,11 +680,12 @@ export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: 
   const salvar = async () => {
     if (!form || salvando) return;
     if (!String(form.clienteNome || '').trim()) { toast.error('Informe o nome do cliente.'); return; }
-    if (!String(form.unidade || '').trim()) { toast.error('Informe a unidade.'); return; }
+    if (!soCliente && !String(form.unidade || '').trim()) { toast.error('Informe a unidade.'); return; }
     // Manda só o que mudou (o histórico registra campo a campo).
     const payload: Record<string, any> = {};
     Object.entries(form).forEach(([k, v]) => {
       const atual = venda?.[k] ?? '';
+      if (soCliente && !/^(cliente|conjuge|socio)/.test(k)) return; // corretor: só os dados do cliente (11/11)
       if (String(atual) !== String(v ?? '')) payload[k] = k === 'empreendimentoId' ? Number(v) : (String(v ?? '').trim() || null);
     });
     if (!Object.keys(payload).length) { toast.info('Nada foi alterado.'); return; }
@@ -694,7 +703,7 @@ export function EditarDadosVendaModal({ vendaId, onClose, onSaved }: { vendaId: 
     <Modal open onClose={onClose} title="Editar dados da venda" subtitle={`${venda?.clienteNome || 'Venda'} · toda alteração fica no histórico da venda, com quem fez`} size="lg">
       {!form ? <LoadingBlock /> : (
         <>
-          {GRUPOS_DADOS_VENDA.map((g) => (
+          {GRUPOS_DADOS_VENDA.filter((g) => !soCliente || g.titulo !== 'Imóvel').map((g) => (
             <div key={g.titulo} style={{ marginBottom: 16 }}>
               <div className="uppercase-tag" style={{ marginBottom: 8 }}>{g.titulo}</div>
               <div className="form-grid">
@@ -1040,7 +1049,7 @@ export default function Vendas() {
      const valor = Number(v.valorVenda ?? v.valor ?? 0); const pct = Number(v.percentualComissao ?? 0);
      return [v.codigo || v.id, dt(v.createdAt), v.clienteNome || v.cliente || '', empNomeDe(v), v.unidade || '', typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome || '',
        v.corretor?.nome || '', equipeDoCorretor.get(v.corretor?.id) || '', gestorDoCorretor.get(v.corretor?.id) || '', valor, pct, Math.round(valor * pct) / 100,
-       (STATUS_MAP[v.status] || [null, v.status])[1], v.origemLead || '', v.salaGpi || '', dt(v.assinadoEm)];
+       (STATUS_MAP[v.status] || [null, v.status])[1], rotuloOrigemVenda(v.origemLead) || '', v.salaGpi || '', dt(v.assinadoEm)];
    });
    const hoje = new Date().toISOString().slice(0, 10);
    exportarXlsx(`vendas-${hoje}.xlsx`, ['Código', 'Data', 'Cliente', 'Empreendimento', 'Unidade', 'Construtora', 'Corretor', 'Equipe', 'Gestor', 'VGV', '% Comissão', 'Comissão', 'Status', 'Origem do lead', 'Sala GPI', 'Assinado em'], linhas, 'Vendas');
@@ -1154,7 +1163,14 @@ export default function Vendas() {
  const [sociedadeAtiva, setSociedadeAtiva] = useState(false);
  const [participacaoTitular, setParticipacaoTitular] = useState('');
  const [sociosCompra, setSociosCompra] = useState<SocioCompra[]>([]);
- const updSocio = (i: number, campo: keyof SocioCompra, valor: string) => setSociosCompra((cur) => cur.map((x, j) => (j === i ? { ...x, [campo]: valor } : x)));
+ const updSocio = (i: number, campo: keyof SocioCompra, valor: any) => setSociosCompra((cur) => cur.map((x, j) => (j === i ? { ...x, [campo]: valor } : x)));
+ const buscarCepSocio = async (i: number) => {
+ const s = sociosCompra[i];
+ if (!s || s.internacional || s.cep.replace(/\D/g, '').length !== 8) return;
+ const r = await buscaCEP(s.cep);
+ if (!r) { toast.error('CEP não encontrado.'); return; }
+ setSociosCompra((cur) => cur.map((x, j) => (j === i ? { ...x, logradouro: r.logradouro, bairro: r.bairro, cidade: r.cidade, uf: r.uf } : x)));
+ };
  const somaParticipacao = (Number(String(participacaoTitular).replace(',', '.')) || 0) + sociosCompra.reduce((a, s) => a + (Number(String(s.participacao).replace(',', '.')) || 0), 0);
 
  // Busca automática do lead na base enquanto o corretor preenche nome/telefone/email.
@@ -1591,7 +1607,7 @@ export default function Vendas() {
  setEmpSelId(s.empSelId || ''); setUnidadeSelId(s.unidadeSelId || ''); setUnidadeLivre(s.unidadeLivre || '');
  setComEspecial(!!s.comEspecial); setTemNf(s.temNf !== false); setNfAliquota(s.nfAliquota || String(nfAliquotaGlobal));
  if (s.endPF) setEndPF(s.endPF);
- setSociedadeAtiva(!!s.sociedadeAtiva); setParticipacaoTitular(s.participacaoTitular || ''); setSociosCompra(Array.isArray(s.sociosCompra) ? s.sociosCompra : []);
+ setSociedadeAtiva(!!s.sociedadeAtiva); setParticipacaoTitular(s.participacaoTitular || ''); setSociosCompra(Array.isArray(s.sociosCompra) ? s.sociosCompra.map((x: any) => ({ ...socioCompraVazio(), ...x })) : []);
  setStep(typeof s.step === 'number' ? s.step : 0);
  // inputs não-controlados: aplica no DOM depois que os campos condicionais renderizam
  const form = d.form || {};
@@ -1896,8 +1912,8 @@ export default function Vendas() {
  ...(sociedadeAtiva && participacaoTitular ? { participacaoTitular: Number(String(participacaoTitular).replace(',', '.')) || undefined } : {}),
  ...(sociedadeAtiva && sociosCompra.some((s) => s.nome.trim()) ? {
  compradoresSociedade: sociosCompra.filter((s) => s.nome.trim()).map((s) => ({
- nome: s.nome, cpf: s.cpf, rg: s.rg, nascimento: s.nascimento, profissao: s.profissao,
- estadoCivil: s.estadoCivil, endereco: s.endereco,
+ nome: s.nome, cpf: s.internacional ? '' : s.cpf, rg: s.rg, nascimento: s.nascimento, profissao: s.profissao,
+ estadoCivil: s.estadoCivil, endereco: enderecoSocio(s), email: s.email || undefined, telefone: s.telefone || undefined,
  participacao: s.participacao ? Number(String(s.participacao).replace(',', '.')) : undefined,
  })),
  } : {}),
@@ -2098,8 +2114,8 @@ export default function Vendas() {
  <td>
  <div><span className={`badge badge--${k}`}>{lbl}</span></div>
  {v.origemLead && (
- <div className="text-xs text-secondary" style={{ marginTop: 3, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.origemLead}>
- {String(v.origemLead).replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase())}
+ <div className="text-xs text-secondary" style={{ marginTop: 3, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rotuloOrigemVenda(v.origemLead) || ''}>
+ {String(rotuloOrigemVenda(v.origemLead)).replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase())}
  </div>
  )}
  </td>
@@ -2125,8 +2141,8 @@ export default function Vendas() {
  <strong style={{ fontSize: 18, color: 'var(--color-success, #4C9A2A)' }}>{formatCurrencyExact(sel.valorVenda ?? sel.valor)}</strong>
  <span className="text-xs text-secondary">Comissão estimada: <strong>{formatCurrencyExact(sel.comissao ?? ((sel.valorVenda ?? sel.valor ?? 0) * (sel.percentualComissao ?? 6)) / 100)}</strong></span>
  </div>
- {podeEditarNegociacao && (
- <button className="btn btn--secondary" onClick={() => setEditDados(sel.id)}>Editar dados</button>
+ {(podeEditarNegociacao || (role === 'CORRETOR' && sel.status !== 'CANCELADO')) && (
+ <button className="btn btn--secondary" onClick={() => setEditDados(sel.id)}>{podeEditarNegociacao ? 'Editar dados' : 'Editar dados do cliente'}</button>
  )}
  {podeEditarNegociacao && sel.status !== 'CANCELADO' && (
  <button className="btn btn--secondary" onClick={() => setEditNeg(sel)}>Editar negociação</button>
@@ -2224,7 +2240,7 @@ export default function Vendas() {
  <div><div className="text-xs text-secondary">Construtora</div><strong>{typeof sel.construtora === 'string' ? sel.construtora : sel.construtora?.nome || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Unidade</div><strong>{sel.unidade || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Sala GPI</div><strong>{sel.salaGpi || '—'}</strong></div>
- <div><div className="text-xs text-secondary">Origem do lead</div><strong>{sel.origemLead || '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Origem do lead</div><strong>{rotuloOrigemVenda(sel.origemLead) || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Corretor</div><strong>{sel.corretor?.nome || sel.corretorTitular?.user?.name || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Contrato assinado</div><strong>{sel.assinadoEm ? `Sim · ${new Date(sel.assinadoEm).toLocaleDateString('pt-BR')}` : 'Não'}</strong></div>
  </div>
@@ -2250,7 +2266,7 @@ export default function Vendas() {
  <EditarNegociacaoModal venda={editNeg} onClose={() => setEditNeg(null)} onSaved={() => { setEditNeg(null); setHistVersao((v) => v + 1); reload(); }} />
  )}
  {editDados && (
- <EditarDadosVendaModal vendaId={editDados} onClose={() => setEditDados(null)} onSaved={() => { setEditDados(null); setHistVersao((v) => v + 1); reload(); }} />
+ <EditarDadosVendaModal vendaId={editDados} soCliente={!podeEditarNegociacao} onClose={() => setEditDados(null)} onSaved={() => { setEditDados(null); setHistVersao((v) => v + 1); reload(); }} />
  )}
 
  <Modal open={openNew} onClose={() => setOpenNew(false)} title="Nova Venda" subtitle="Formulário oficial GPI — preencha etapa por etapa" size="lg">
@@ -2505,14 +2521,25 @@ export default function Vendas() {
  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setSociosCompra((cur) => cur.filter((_, j) => j !== i))}>✕ remover</button>
  </div>
  <div className="form-grid" style={{ marginBottom: 4 }}>
- <div className="field field--span-2"><label className="field__label">Nome completo</label><input className="field__input" value={s.nome} onChange={(e) => updSocio(i, 'nome', e.target.value)} /></div>
- <div className="field"><label className="field__label">CPF</label><input className="field__input" inputMode="numeric" placeholder="000.000.000-00" value={s.cpf} onChange={(e) => updSocio(i, 'cpf', e.target.value)} /></div>
- <div className="field"><label className="field__label">RG (c/ órgão expedidor)</label><input className="field__input" placeholder="1234567 SSP/SC" value={s.rg} onChange={(e) => updSocio(i, 'rg', e.target.value)} /></div>
- <div className="field"><label className="field__label">Data de nascimento</label><CampoData className="field__input" value={s.nascimento} onChange={(e) => updSocio(i, 'nascimento', e)} /></div>
- <div className="field"><label className="field__label">Profissão</label><input className="field__input" value={s.profissao} onChange={(e) => updSocio(i, 'profissao', e.target.value)} /></div>
- <div className="field"><label className="field__label">Estado civil</label><select className="field__select" value={s.estadoCivil} onChange={(e) => updSocio(i, 'estadoCivil', e.target.value)}><option value="">— Selecionar —</option>{ESTADOS_CIVIS.map((ec) => <option key={ec} value={ec}>{ec}</option>)}</select></div>
- <div className="field"><label className="field__label">Participação (%)</label><input className="field__input" inputMode="numeric" placeholder="50" value={s.participacao} onChange={(e) => updSocio(i, 'participacao', e.target.value.replace(/[^0-9.,]/g, ''))} /></div>
- <div className="field field--span-2"><label className="field__label">Endereço completo (c/ CEP)</label><input className="field__input" value={s.endereco} onChange={(e) => updSocio(i, 'endereco', e.target.value)} /></div>
+ <div className="field field--span-2"><label className="field__label">Nome completo <span className="field__required">*</span></label><input className="field__input" required value={s.nome} onChange={(e) => updSocio(i, 'nome', e.target.value)} /></div>
+ <div className="field"><label className="field__label">CPF {!s.internacional && <span className="field__required">*</span>}</label><input className="field__input" inputMode="numeric" placeholder="000.000.000-00" required={!s.internacional} disabled={s.internacional} value={s.internacional ? '' : s.cpf} onChange={(e) => updSocio(i, 'cpf', maskCPF(e.target.value))} />
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: 'pointer' }}><input type="checkbox" checked={s.internacional} onChange={(e) => updSocio(i, 'internacional', e.target.checked)} style={{ width: 'auto' }} /> Titular internacional (ainda sem CPF)</label></div>
+ <div className="field"><label className="field__label">{s.internacional ? 'Passaporte / documento' : 'RG (c/ órgão expedidor)'} <span className="field__required">*</span></label><input className="field__input" required placeholder={s.internacional ? 'Nº do passaporte ou documento' : '1234567 SSP/SC'} value={s.rg} onChange={(e) => updSocio(i, 'rg', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Data de nascimento <span className="field__required">*</span></label><CampoData className="field__input" required value={s.nascimento} onChange={(e) => updSocio(i, 'nascimento', e)} /></div>
+ <div className="field"><label className="field__label">Profissão <span className="field__required">*</span></label><input className="field__input" required value={s.profissao} onChange={(e) => updSocio(i, 'profissao', e.target.value)} /></div>
+ <div className="field"><label className="field__label">E-mail <span className="field__required">*</span></label><input type="email" className="field__input" required value={s.email} onChange={(e) => updSocio(i, 'email', e.target.value.trim())} /></div>
+ <div className="field"><label className="field__label">Telefone <span className="field__required">*</span></label><input className="field__input" inputMode="tel" required placeholder="(47) 99999-9999" value={s.telefone} onChange={(e) => updSocio(i, 'telefone', s.internacional ? e.target.value : maskTelefone(e.target.value))} /></div>
+ <div className="field"><label className="field__label">Estado civil <span className="field__required">*</span></label><select className="field__select" required value={s.estadoCivil} onChange={(e) => updSocio(i, 'estadoCivil', e.target.value)}><option value="">— Selecionar —</option>{ESTADOS_CIVIS.map((ec) => <option key={ec} value={ec}>{ec}</option>)}</select></div>
+ <div className="field"><label className="field__label">Participação (%) <span className="field__required">*</span></label><input className="field__input" inputMode="numeric" required placeholder="50" value={s.participacao} onChange={(e) => updSocio(i, 'participacao', e.target.value.replace(/[^0-9.,]/g, ''))} /></div>
+ <div className="field"><label className="field__label">{s.internacional ? 'Código postal' : 'CEP'} <span className="field__required">*</span></label>
+ <div style={{ display: 'flex', gap: 6 }}><input className="field__input" inputMode={s.internacional ? 'text' : 'numeric'} required placeholder={s.internacional ? 'Ex.: SW1A 1AA' : '00000-000'} value={s.cep} onChange={(e) => updSocio(i, 'cep', s.internacional ? e.target.value.toUpperCase() : maskCEP(e.target.value))} onBlur={() => { if (!s.logradouro) buscarCepSocio(i); }} />
+ {!s.internacional && <button type="button" className="btn btn--secondary btn--sm" onClick={() => buscarCepSocio(i)}>Buscar</button>}</div></div>
+ <div className="field"><label className="field__label">Logradouro <span className="field__required">*</span></label><input className="field__input" required value={s.logradouro} onChange={(e) => updSocio(i, 'logradouro', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Número <span className="field__required">*</span></label><input className="field__input" required value={s.numero} onChange={(e) => updSocio(i, 'numero', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Complemento</label><input className="field__input" value={s.complemento} onChange={(e) => updSocio(i, 'complemento', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Bairro <span className="field__required">*</span></label><input className="field__input" required value={s.bairro} onChange={(e) => updSocio(i, 'bairro', e.target.value)} /></div>
+ <div className="field"><label className="field__label">Cidade <span className="field__required">*</span></label><input className="field__input" required value={s.cidade} onChange={(e) => updSocio(i, 'cidade', e.target.value)} /></div>
+ <div className="field"><label className="field__label">{s.internacional ? 'Estado / Província' : 'UF'} <span className="field__required">*</span></label><input className="field__input" required maxLength={s.internacional ? 40 : 2} value={s.uf} onChange={(e) => updSocio(i, 'uf', s.internacional ? e.target.value : e.target.value.toUpperCase())} /></div>
  </div>
  </div>
  ))}
@@ -3347,7 +3374,7 @@ export function FormularioGpi({ f }: { f: any }) {
  ['RG do cônjuge', f.conjugeRg],
  ['Sócio-administrador', f.socioNome],
  ['CPF do sócio', f.socioCpf],
- ['Origem do lead', f.origemLead],
+ ['Origem do lead', rotuloOrigemVenda(f.origemLead)],
  ['Construtora (form)', f.construtora],
  ['Arras', f.arrasValor ? `${brl(f.arrasValor)} · venc. ${f.arrasVencimento || '—'}` : null],
  ['Mensais', resumoMensaisGpi(f, brl)],
@@ -3666,6 +3693,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  // Plano da comissão calculado no servidor (inclui a retenção inicial da construtora — Tetto, 03/11).
  const [planoCom, setPlanoCom] = useState<Record<number, number> | null>(null);
  const [retencaoPct, setRetencaoPct] = useState<number | null>(null);
+ const [proporcional, setProporcional] = useState(false);
  const comissaoDa = (p: any) => (planoCom && planoCom[Number(p.numero)] != null ? planoCom[Number(p.numero)] : (comissaoN && Number(p.numero) > comissaoN ? 0 : comissaoParcela));
  // Recebimento parcial: parcela com o campo de valor aberto.
  const [parcial, setParcial] = useState<{ id: number; valor: string } | null>(null);
@@ -3740,6 +3768,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  setComTotal(Number(v?.comissaoPlano?.total) || 0);
  setNfVenda(!v?.temNotaFiscal ? 'sem nota' : v?.nfEmitidaPor === 'CORRETOR' ? 'corretor + imob' : 'imobiliária');
  setRetencaoPct(Number(v?.retencaoInicialPctVgv) > 0 ? Number(v.retencaoInicialPctVgv) : null);
+ setProporcional(!!v?.comissaoProporcional);
  setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / (nCom || nParcelas)) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
  const venc = String(v?.arrasVencimento || '');
@@ -3832,9 +3861,9 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  </div>
  );
  })()}
- {podeConfirmar && (comissaoParcela > 0 || !!retencaoPct) && (
+ {podeConfirmar && (comissaoParcela > 0 || !!retencaoPct || proporcional) && (
  <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
- Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela{retencaoPct ? ` (a construtora fica primeiro com ${String(retencaoPct).replace('.', ',')}% do VGV; depois a comissão entra até completar)` : ` (${moeda(comissaoParcela)}${comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''})`}; o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
+ Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela{retencaoPct ? ` (a construtora fica primeiro com ${String(retencaoPct).replace('.', ',')}% do VGV; depois a comissão entra até completar)` : proporcional ? ' (proporcional ao valor de cada parcela, regra da construtora)' : ` (${moeda(comissaoParcela)}${comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''})`}; o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
  </div>
  )}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
@@ -4028,7 +4057,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  const doCorretor = soImob ? 0 : nf * (n2(p.splitCorretorPct) / 100);
  return { doCorretor, daImob: nf - doCorretor };
  };
- const cols: { k: string; nome: string; grupo: 'C' | 'I'; forte?: boolean; v: (p: any) => number }[] = [
+ const cols: { k: string; nome: string; grupo: 'C' | 'I' | 'T'; forte?: boolean; v: (p: any) => number }[] = [
  { k: 'cor', nome: 'Corretor titular', grupo: 'C', forte: true, v: (p) => n2(p.corretor?.valorLiquido) },
  { k: 'cnf', nome: 'Nota fiscal (imposto)', grupo: 'C', v: (p) => nfInfo(p).doCorretor },
  { k: 'mkt', nome: 'Marketing (R$ 199)', grupo: 'C', v: (p) => n2(p.corretor?.descontoMarketing) },
@@ -4039,20 +4068,23 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  { k: 'dir', nome: 'Direção Adm/Financeira', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoDirecao) },
  { k: 'itr', nome: 'Gestor de tráfego', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoCampanha) + n2(p.imobiliaria?.descontoLazaro) },
  { k: 'cas', nome: 'Grupo Pons (Imobiliária)', grupo: 'I', forte: true, v: (p) => n2((p.beneficiarios || []).find((b: any) => b.papel === 'CASA')?.valor ?? p.imobiliaria?.valorLiquido) },
+ // Total do gestor de tráfego = parte do corretor + parte da imobiliária (Gláucia 11/11).
+ { k: 'tgt', nome: 'Total gestor de tráfego', grupo: 'T' as any, forte: true, v: (p) => n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) + n2(p.imobiliaria?.descontoCampanha) + n2(p.imobiliaria?.descontoLazaro) },
  ];
  const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
  const divisa = { borderLeft: '2px solid var(--border, #ddd)' };
  return (
  <div style={{ marginTop: 12, overflowX: 'auto' }}>
  <div className="uppercase-tag" style={{ marginBottom: 6 }}>Rateio por parcela</div>
- <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 980 }}>
+ <table className="table tabela-compacta" style={{ fontSize: 12, minWidth: 1100 }}>
  <thead>
  <tr>
  <th colSpan={podeConfirmar ? 3 : 2}></th>
  <th colSpan={4} style={{ textAlign: 'center', ...divisa }}>Parte do corretor</th>
  <th colSpan={6} style={{ textAlign: 'center', ...divisa }}>Parte da imobiliária</th>
+ <th style={{ textAlign: 'center', ...divisa }}>Total</th>
  </tr>
- <tr>{podeConfirmar && <th title="Solicitação de nota fiscal já feita">NF</th>}<th>Parcela</th><th className="numeric">Comissão</th>{cols.map((c) => <th key={c.k} className="numeric" style={c.k === 'cor' || c.k === 'imo' ? divisa : undefined}>{c.nome}</th>)}</tr>
+ <tr>{podeConfirmar && <th title="Solicitação de nota fiscal já feita">NF</th>}<th>Parcela</th><th className="numeric">Comissão</th>{cols.map((c) => <th key={c.k} className="numeric" style={c.k === 'cor' || c.k === 'imo' || c.k === 'tgt' ? divisa : undefined}>{c.nome}</th>)}</tr>
  </thead>
  <tbody>
  {ps.map((p: any, i: number) => (
@@ -4073,7 +4105,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  );
  })()}
  <td className="numeric">{brl(n2(p.valorComissaoBruta))}</td>
- {cols.map((c) => <td key={c.k} className="numeric" style={{ ...(c.forte ? { fontWeight: 600 } : {}), ...(c.k === 'cor' || c.k === 'imo' ? divisa : {}) }}>{brl(Math.round(c.v(p) * 100) / 100)}</td>)}
+ {cols.map((c) => <td key={c.k} className="numeric" style={{ ...(c.forte ? { fontWeight: 600 } : {}), ...(c.k === 'cor' || c.k === 'imo' || c.k === 'tgt' ? divisa : {}) }}>{brl(Math.round(c.v(p) * 100) / 100)}</td>)}
  </tr>
  ))}
  </tbody>

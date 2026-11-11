@@ -1,7 +1,17 @@
 {
-  "versao": "2026.11.11.1",
+  "versao": "2026.11.11.2",
   "data": "11/11/2026",
   "novidades": [
+    {
+      "titulo": "Pedidos do administrativo (11/11)",
+      "itens": [
+        "Comprado em sociedade: os demais titulares têm os mesmos campos e a mesma obrigatoriedade do 1º titular (CPF ou passaporte, RG, nascimento, profissão, e-mail, telefone, estado civil e endereço completo com CEP).",
+        "Construtoras: opção de comissão proporcional ao valor de cada parcela (ex.: Maxces, parcela ÷ 7 × 6).",
+        "Rateio por parcela: coluna Total gestor de tráfego (parte do corretor + parte da imobiliária).",
+        "Origem \"MANUAL\" passa a aparecer como Network.",
+        "O corretor altera os dados do cliente nas vendas dele (Editar dados do cliente); imóvel, sala e origem seguem com a gestão."
+      ]
+    },
     {
       "titulo": "Minha esteira com as mesmas etapas do Funil",
       "itens": [
