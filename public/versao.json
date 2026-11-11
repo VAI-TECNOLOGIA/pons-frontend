@@ -1,5 +1,5 @@
 {
-  "versao": "2026.11.11.2",
+  "versao": "2026.11.11.3",
   "data": "11/11/2026",
   "novidades": [
     {
@@ -9,7 +9,8 @@
         "Construtoras: opção de comissão proporcional ao valor de cada parcela (ex.: Maxces, parcela ÷ 7 × 6).",
         "Rateio por parcela: coluna Total gestor de tráfego (parte do corretor + parte da imobiliária).",
         "Origem \"MANUAL\" passa a aparecer como Network.",
-        "O corretor altera os dados do cliente nas vendas dele (Editar dados do cliente); imóvel, sala e origem seguem com a gestão."
+        "O corretor altera os dados do cliente nas vendas dele (Editar dados do cliente); imóvel, sala e origem seguem com a gestão.",
+        "Nova venda: opção \"Endereço no exterior\" para cliente com CPF que mora fora (ex.: Itália). O código postal e o estado/país ficam livres, sem busca de CEP, e o bairro deixa de ser obrigatório."
       ]
     },
     {

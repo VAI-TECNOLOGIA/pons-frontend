@@ -1193,6 +1193,10 @@ export default function Vendas() {
  // num input oculto clienteEndereco pro submit (que lê via FormData).
  const [endPF, setEndPF] = useState({ cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' });
  const [buscandoCep, setBuscandoCep] = useState(false);
+ // Endereço fora do Brasil com CPF brasileiro (Pons 11/11: cliente na Itália): CEP e
+ // estado livres, sem busca de CEP. Cliente internacional (sem CPF) já liga isso.
+ const [enderecoExterior, setEnderecoExterior] = useState(false);
+ const endExterior = clienteInternacional || enderecoExterior;
  const enderecoPFStr = [
  [endPF.logradouro, endPF.numero].filter(Boolean).join(', '),
  endPF.complemento, endPF.bairro,
@@ -2423,13 +2427,17 @@ export default function Vendas() {
  <div className="field__hint">Define os documentos exigidos e os dados do cônjuge.</div>
  </div>
  <div className="field">
- <label className="field__label">{clienteInternacional ? 'Código postal (CEP internacional)' : 'CEP'} <span className="field__required">*</span></label>
+ <label className="field__label">{endExterior ? 'Código postal' : 'CEP'} <span className="field__required">*</span></label>
  <div style={{ display: 'flex', gap: 6 }}>
- <input className="field__input" inputMode={clienteInternacional ? 'text' : 'numeric'} placeholder={clienteInternacional ? 'Ex.: SW1A 1AA' : '00000-000'} required value={endPF.cep}
- onChange={(e) => setEndPF((c) => ({ ...c, cep: clienteInternacional ? e.target.value.toUpperCase() : maskCEP(e.target.value) }))}
- onBlur={() => { if (!clienteInternacional && endPF.cep.replace(/\D/g, '').length === 8 && !endPF.logradouro) onBuscarCep(); }} />
- {!clienteInternacional && <button type="button" className="btn btn--secondary btn--sm" onClick={onBuscarCep} disabled={buscandoCep}>{buscandoCep ? '...' : 'Buscar'}</button>}
+ <input className="field__input" inputMode={endExterior ? 'text' : 'numeric'} placeholder={endExterior ? 'Ex.: 00124' : '00000-000'} required value={endPF.cep}
+ onChange={(e) => setEndPF((c) => ({ ...c, cep: endExterior ? e.target.value.toUpperCase() : maskCEP(e.target.value) }))}
+ onBlur={() => { if (!endExterior && endPF.cep.replace(/\D/g, '').length === 8 && !endPF.logradouro) onBuscarCep(); }} />
+ {!endExterior && <button type="button" className="btn btn--secondary btn--sm" onClick={onBuscarCep} disabled={buscandoCep}>{buscandoCep ? '...' : 'Buscar'}</button>}
  </div>
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 6, cursor: clienteInternacional ? 'default' : 'pointer' }}>
+ <input type="checkbox" checked={endExterior} disabled={clienteInternacional} onChange={(e) => setEnderecoExterior(e.target.checked)} style={{ width: 'auto' }} />
+ Endereço no exterior (cliente com CPF que mora fora)
+ </label>
  </div>
  <div className="field">
  <label className="field__label">Logradouro <span className="field__required">*</span></label>
@@ -2444,16 +2452,16 @@ export default function Vendas() {
  <input className="field__input" value={endPF.complemento} onChange={(e) => setEndPF((c) => ({ ...c, complemento: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">Bairro <span className="field__required">*</span></label>
- <input className="field__input" required value={endPF.bairro} onChange={(e) => setEndPF((c) => ({ ...c, bairro: e.target.value }))} />
+ <label className="field__label">Bairro {!endExterior && <span className="field__required">*</span>}</label>
+ <input className="field__input" required={!endExterior} value={endPF.bairro} onChange={(e) => setEndPF((c) => ({ ...c, bairro: e.target.value }))} />
  </div>
  <div className="field">
  <label className="field__label">Cidade <span className="field__required">*</span></label>
  <input className="field__input" required value={endPF.cidade} onChange={(e) => setEndPF((c) => ({ ...c, cidade: e.target.value }))} />
  </div>
  <div className="field">
- <label className="field__label">{clienteInternacional ? 'Estado / Província' : 'UF'} <span className="field__required">*</span></label>
- <input className="field__input" maxLength={clienteInternacional ? 40 : 2} placeholder={clienteInternacional ? 'Ex.: Florida' : ''} required value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: clienteInternacional ? e.target.value : e.target.value.toUpperCase() }))} />
+ <label className="field__label">{endExterior ? 'Estado / província e país' : 'UF'} <span className="field__required">*</span></label>
+ <input className="field__input" maxLength={endExterior ? 60 : 2} placeholder={endExterior ? 'Ex.: Roma, Itália' : ''} required value={endPF.uf} onChange={(e) => setEndPF((c) => ({ ...c, uf: endExterior ? e.target.value : e.target.value.toUpperCase() }))} />
  </div>
  <input type="hidden" name="clienteEndereco" value={enderecoPFStr} />
  </div>
