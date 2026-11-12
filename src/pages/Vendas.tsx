@@ -108,7 +108,27 @@ const ORIGEM_LEAD_INFO: Record<string, { rotulo: string; comissao: 'LEAD' | 'BAS
  BASE: { rotulo: 'Base da casa', comissao: 'BASE' },
  MANUAL: { rotulo: 'Network', comissao: 'ORGANICA' }, // lead cadastrado à mão pelo corretor (Gláucia 11/11)
 };
-const rotuloOrigemVenda = (o?: string | null) => (o === 'MANUAL' ? 'Network' : o);
+// Nomenclatura da origem na venda (Gláucia 12/11): quatro opções; códigos crus e nomes antigos viram uma delas.
+const ORIGEM_TRAFEGO = 'Gestor de Tráfego da imobiliária (Vinicius)';
+const ORIGEM_BASE = 'Lázaro - Base da Imobiliária';
+const ORIGEM_NETWORK = 'Network';
+const ORIGEM_INDIVIDUAL = 'Campanha Individual';
+const ROTULOS_ORIGEM = [ORIGEM_TRAFEGO, ORIGEM_BASE, ORIGEM_NETWORK, ORIGEM_INDIVIDUAL];
+const COMISSAO_DO_ROTULO: Record<string, 'LEAD' | 'BASE' | 'ORGANICA'> = { [ORIGEM_TRAFEGO]: 'LEAD', [ORIGEM_BASE]: 'BASE', [ORIGEM_NETWORK]: 'ORGANICA', [ORIGEM_INDIVIDUAL]: 'ORGANICA' };
+const ORIGEM_ANTIGA: Record<string, string> = {
+ 'tráfego pago': ORIGEM_TRAFEGO, 'gestor de tráfego da imobiliária (vinícius)': ORIGEM_TRAFEGO,
+ 'lead lázaro': ORIGEM_BASE, 'base da imobiliária': ORIGEM_BASE,
+ 'tráfego pago sem o gestor da imobiliária': ORIGEM_INDIVIDUAL, manual: ORIGEM_NETWORK,
+};
+const ROTULO_DA_COMISSAO: Record<string, string> = { LEAD: ORIGEM_TRAFEGO, BASE: ORIGEM_BASE, ORGANICA: ORIGEM_NETWORK };
+const rotuloOrigemVenda = (o?: string | null, comissao?: string | null): string | null => {
+ const s = String(o || '').trim();
+ const achado = ROTULOS_ORIGEM.find((r) => r.toLowerCase() === s.toLowerCase());
+ if (achado) return achado;
+ if (ORIGEM_ANTIGA[s.toLowerCase()]) return ORIGEM_ANTIGA[s.toLowerCase()];
+ if (comissao && ROTULO_DA_COMISSAO[comissao]) return ROTULO_DA_COMISSAO[comissao];
+ return s || null;
+};
 function origemDoLead(origem?: string | null) {
  if (!origem) return null;
  return ORIGEM_LEAD_INFO[origem] || { rotulo: origem, comissao: 'ORGANICA' as const };
@@ -118,10 +138,10 @@ function origemDoLead(origem?: string | null) {
 // LEAD → Gestor de Tráfego (Vinícius) recebe a campanha 6,5%+6,5%; BASE → lázaro
 // 3%/1%; ORGANICA → sem desconto, o Gestor de Tráfego NÃO participa.
 const ORIGENS_MANUAIS: { rotulo: string; comissao: 'LEAD' | 'BASE' | 'ORGANICA' }[] = [
- { rotulo: 'Gestor de Tráfego da imobiliária (Vinícius)', comissao: 'LEAD' },
- { rotulo: 'Base da imobiliária', comissao: 'BASE' },
- { rotulo: 'Network', comissao: 'ORGANICA' },
- { rotulo: 'Tráfego pago sem o gestor da imobiliária', comissao: 'ORGANICA' },
+ { rotulo: ORIGEM_TRAFEGO, comissao: 'LEAD' },
+ { rotulo: ORIGEM_BASE, comissao: 'BASE' },
+ { rotulo: ORIGEM_NETWORK, comissao: 'ORGANICA' },
+ { rotulo: ORIGEM_INDIVIDUAL, comissao: 'ORGANICA' },
 ];
 
 // Documentos exigidos — padrão imobiliária, por tipo de comprador e estado civil.
@@ -301,8 +321,10 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         setComParcelas(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
         setComParcelasOrig(v.comissaoParcelas ? String(v.comissaoParcelas) : '');
         const og = v.origemComissao || (v.isLead ? (v.lazaroEstrategia === 'LAZARO' ? 'BASE' : 'LEAD') : 'ORGANICA');
-        setOrigemCom(og);
-        setOrigemComOrig(og);
+        const rot = rotuloOrigemVenda(v.origemLead, og) || ROTULO_DA_COMISSAO[og];
+        const rotOk = COMISSAO_DO_ROTULO[rot] === og ? rot : ROTULO_DA_COMISSAO[og];
+        setOrigemCom(rotOk);
+        setOrigemComOrig(rotOk);
       }
       const pags = [...(v?.pagamentos || [])].sort((a: any, b: any) => (a.numero || 0) - (b.numero || 0));
       if (!vivo || !pags.length || pags.length !== Number(venda.entradaParcelas ?? pags.length)) return;
@@ -437,7 +459,10 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         if (n != null && n > (Number(parcelas) || 1)) { toast.error(`A comissão entra em no máximo ${Number(parcelas) || 1} parcelas (as parcelas da entrada). Deixe em branco para uma por parcela.`); return; }
         pctExtra.comissaoParcelas = n;
       }
-      if (origemCom && origemCom !== origemComOrig) pctExtra.origemComissao = origemCom;
+      if (origemCom && origemCom !== origemComOrig) {
+        pctExtra.origemLead = origemCom;
+        if (COMISSAO_DO_ROTULO[origemCom] !== COMISSAO_DO_ROTULO[origemComOrig]) pctExtra.origemComissao = COMISSAO_DO_ROTULO[origemCom];
+      }
     }
     const payload: any = {
       ...pctExtra,
@@ -528,11 +553,12 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
                   : 'A alíquota da nota (padrão 16,83%) sai da comissão antes da divisão entre corretor, gestor e imobiliária.'}</div>
             </div>
             <div className="field field--span-2">
-              <label className="field__label">Origem do cliente (desconto de campanha)</label>
+              <label className="field__label">Origem do lead (desconto de campanha)</label>
               <select className="field__select" disabled={comissaoPaga} value={origemCom} onChange={(e) => setOrigemCom(e.target.value)}>
-                <option value="LEAD">Lead de tráfego pago (6,5%)</option>
-                <option value="BASE">Lead Lázaro (3% corretor e 1% imobiliária)</option>
-                <option value="ORGANICA">Network, sem desconto de campanha</option>
+                <option value={ORIGEM_TRAFEGO}>{ORIGEM_TRAFEGO} (6,5%)</option>
+                <option value={ORIGEM_BASE}>{ORIGEM_BASE} (3% corretor e 1% imobiliária)</option>
+                <option value={ORIGEM_NETWORK}>Network, sem desconto de campanha</option>
+                <option value={ORIGEM_INDIVIDUAL}>Campanha Individual, sem desconto de campanha</option>
               </select>
               <div className="field__hint">Trocar a origem refaz a comissão: o desconto de campanha sai do corretor e da imobiliária e vai para o gestor de tráfego.</div>
             </div>
@@ -1049,7 +1075,7 @@ export default function Vendas() {
      const valor = Number(v.valorVenda ?? v.valor ?? 0); const pct = Number(v.percentualComissao ?? 0);
      return [v.codigo || v.id, dt(v.createdAt), v.clienteNome || v.cliente || '', empNomeDe(v), v.unidade || '', typeof v.construtora === 'string' ? v.construtora : v.construtora?.nome || '',
        v.corretor?.nome || '', equipeDoCorretor.get(v.corretor?.id) || '', gestorDoCorretor.get(v.corretor?.id) || '', valor, pct, Math.round(valor * pct) / 100,
-       (STATUS_MAP[v.status] || [null, v.status])[1], rotuloOrigemVenda(v.origemLead) || '', v.salaGpi || '', dt(v.assinadoEm)];
+       (STATUS_MAP[v.status] || [null, v.status])[1], rotuloOrigemVenda(v.origemLead, v.origemComissao) || '', v.salaGpi || '', dt(v.assinadoEm)];
    });
    const hoje = new Date().toISOString().slice(0, 10);
    exportarXlsx(`vendas-${hoje}.xlsx`, ['Código', 'Data', 'Cliente', 'Empreendimento', 'Unidade', 'Construtora', 'Corretor', 'Equipe', 'Gestor', 'VGV', '% Comissão', 'Comissão', 'Status', 'Origem do lead', 'Sala GPI', 'Assinado em'], linhas, 'Vendas');
@@ -2118,8 +2144,8 @@ export default function Vendas() {
  <td>
  <div><span className={`badge badge--${k}`}>{lbl}</span></div>
  {v.origemLead && (
- <div className="text-xs text-secondary" style={{ marginTop: 3, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rotuloOrigemVenda(v.origemLead) || ''}>
- {String(rotuloOrigemVenda(v.origemLead)).replace(/_/g, ' ').toLowerCase().replace(/^./, (c: string) => c.toUpperCase())}
+ <div className="text-xs text-secondary" style={{ marginTop: 3, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rotuloOrigemVenda(v.origemLead, v.origemComissao) || ''}>
+ {rotuloOrigemVenda(v.origemLead, v.origemComissao) || '—'}
  </div>
  )}
  </td>
@@ -2244,7 +2270,7 @@ export default function Vendas() {
  <div><div className="text-xs text-secondary">Construtora</div><strong>{typeof sel.construtora === 'string' ? sel.construtora : sel.construtora?.nome || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Unidade</div><strong>{sel.unidade || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Sala GPI</div><strong>{sel.salaGpi || '—'}</strong></div>
- <div><div className="text-xs text-secondary">Origem do lead</div><strong>{rotuloOrigemVenda(sel.origemLead) || '—'}</strong></div>
+ <div><div className="text-xs text-secondary">Origem do lead</div><strong>{rotuloOrigemVenda(sel.origemLead, sel.origemComissao) || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Corretor</div><strong>{sel.corretor?.nome || sel.corretorTitular?.user?.name || '—'}</strong></div>
  <div><div className="text-xs text-secondary">Contrato assinado</div><strong>{sel.assinadoEm ? `Sim · ${new Date(sel.assinadoEm).toLocaleDateString('pt-BR')}` : 'Não'}</strong></div>
  </div>
@@ -3382,7 +3408,7 @@ export function FormularioGpi({ f }: { f: any }) {
  ['RG do cônjuge', f.conjugeRg],
  ['Sócio-administrador', f.socioNome],
  ['CPF do sócio', f.socioCpf],
- ['Origem do lead', rotuloOrigemVenda(f.origemLead)],
+ ['Origem do lead', rotuloOrigemVenda(f.origemLead, f.origemComissao)],
  ['Construtora (form)', f.construtora],
  ['Arras', f.arrasValor ? `${brl(f.arrasValor)} · venc. ${f.arrasVencimento || '—'}` : null],
  ['Mensais', resumoMensaisGpi(f, brl)],
