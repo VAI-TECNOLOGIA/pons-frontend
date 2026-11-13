@@ -127,7 +127,9 @@ export default function Corretores() {
  if (!corretores) return null;
  const eqs = equipes || [];
 
- const ativos = corretores.filter((c: any) => c.status === 'ATIVO' || c.ativo).length;
+ // Ativo = cadastro ATIVO e acesso liberado (13/11: Leonardo com acesso desligado seguia em "ativos").
+ const ehAtivo = (c: any) => (c.status === 'ATIVO' || c.ativo) && c.userActive !== false;
+ const ativos = corretores.filter(ehAtivo).length;
 
  const ts = (d: any) => (d ? new Date(d).getTime() : 0);
  const sortFns: Record<string, (a: any, b: any) => number> = {
@@ -140,7 +142,7 @@ export default function Corretores() {
  };
  const filtered = corretores
  .filter((c: any) => !filtroEquipe.length || filtroEquipe.includes(c.equipe?.nome || c.equipe))
- .filter((c: any) => !filtroStatus || (filtroStatus === 'ATIVO' ? (c.status === 'ATIVO' || c.ativo) : !(c.status === 'ATIVO' || c.ativo)))
+ .filter((c: any) => !filtroStatus || (filtroStatus === 'ATIVO' ? ehAtivo(c) : !ehAtivo(c)))
  .filter((c: any) => {
  if (!search.trim()) return true;
  // Busca ampla: nome, CRECI, e-mail, telefone (só dígitos) e equipe
@@ -186,7 +188,7 @@ export default function Corretores() {
  }
  subtitle={
  (filtroEquipe.length || search.trim() || filtroStatus !== 'ATIVO')
- ? `${filtered.filter((c: any) => c.status === 'ATIVO' || c.ativo).length} ativos no recorte`
+ ? `${filtered.filter(ehAtivo).length} ativos no recorte`
  : `${corretores.length - ativos} inativo(s) fora da lista — use o filtro de status pra vê-los`
  }
  />
@@ -269,7 +271,7 @@ export default function Corretores() {
  filtered.map((c: any) => {
  const eqNome = c.equipe?.nome || c.equipe;
  const eqColor = c.equipe?.cor || eqs.find((e: any) => e.nome === eqNome)?.cor || '#0E7C9B';
- const isAtivo = (c.status === 'ATIVO' || c.ativo) && c.userActive !== false;
+ const isAtivo = ehAtivo(c);
  return (
  <tr key={c.id}>
  <td>
