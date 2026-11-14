@@ -84,7 +84,7 @@ export default function MeusLeads() {
                   </td>
                   <td><span className="badge badge--neutral">{l.origem}</span></td>
                   <td className="text-xs">{l.interesse || '—'}</td>
-                  <td><span className={`badge badge--${k}`}>{lab}</span></td>
+                  <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span className={`badge badge--${k}`}>{lab}</span>{l.novo && <span title="Você ainda não abriu este lead" style={{ background: '#F5B800', color: '#3a2a00', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, lineHeight: '16px' }}>Novo!</span>}</span></td>
                   <td className="text-xs text-secondary">{timeAgo(l.distribuidoEm || l.createdAt)}</td>
                   <td>
                     {podeAbrir ? (

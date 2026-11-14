@@ -57,6 +57,11 @@ const COLS_ORDENAVEIS = new Set(['telefone', 'status', 'entrada', 'email', 'data
 const COLS_LEAD_DEFAULT = ['telefone', 'produto', 'interesse', 'corretor', 'convertido', 'status', 'entrada', 'whatsapp'];
 const COLS_LEAD_VERSAO = '2'; // subir quando mudar o default pra reaplicar pra quem já tem config salva
 
+// Selo "Novo!" (Vinicius 13/11): o corretor atual ainda não abriu o lead.
+function SeloNovo() {
+  return <span title="O corretor ainda não abriu este lead" style={{ background: '#F5B800', color: '#3a2a00', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, lineHeight: '16px', whiteSpace: 'nowrap' }}>Novo!</span>;
+}
+
 function celulaLead(key: string, l: any) {
   switch (key) {
     case 'telefone': return <span className="text-xs">{l.telefone || '—'}</span>;
@@ -67,7 +72,7 @@ function celulaLead(key: string, l: any) {
     case 'convertido': return l.status === 'FECHADO'
       ? <span className="badge badge--success" style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3 }}><Icon name="check" size={11} /> Convertido</span>
       : <span className="text-xs text-secondary">—</span>;
-    case 'status': { const [k, lab] = STATUS_MAP[l.status] || ['neutral', l.status]; return <span className={`badge badge--${k}`}>{lab}</span>; }
+    case 'status': { const [k, lab] = STATUS_MAP[l.status] || ['neutral', l.status]; return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span className={`badge badge--${k}`}>{lab}</span>{l.novo && <SeloNovo />}</span>; }
     case 'entrada': return <span className="text-xs">{timeAgo(l.distribuidoEm || l.createdAt)}</span>;
     case 'whatsapp': {
       const digits = String(l.telefone || '').replace(/\D/g, '');
@@ -112,6 +117,7 @@ export default function Leads() {
  const [dataFinal, setDataFinal] = useState('');
  const [semFollowup, setSemFollowup] = useState(false); // KPI "Sem follow-up"
  const [novosHoje, setNovosHoje] = useState(false); // KPI "Novos hoje"
+ const [nuncaAberto, setNuncaAberto] = useState(false); // selo "Novo!": corretor nunca abriu
  const [kpiAtivo, setKpiAtivo] = useState<'' | 'novos' | 'negociacao' | 'semfollowup'>(''); // qual card está selecionado
  const [busca, setBusca] = useState('');
  const [buscaDeb, setBuscaDeb] = useState('');
@@ -168,6 +174,7 @@ export default function Leads() {
  if (dataFinal) params.dataFinal = dataFinal;
  if (semFollowup) params.semFollowup = 'true';
  if (novosHoje) params.novosHoje = 'true';
+ if (nuncaAberto) params.nuncaAberto = 'true';
  if (buscaDeb) params.q = buscaDeb;
  const paramsKey = JSON.stringify(params);
 
@@ -251,10 +258,10 @@ export default function Leads() {
  const leads = resp.leads || [];
  const total = resp.total ?? leads.length;
  const filtered = leads;
- const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length || semFollowup || novosHoje);
+ const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length || semFollowup || novosHoje || nuncaAberto);
  const limparFiltros = () => {
  setFilterStatus([]); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
- setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setNovosHoje(false); setKpiAtivo(''); setBusca(''); setBuscaDeb(''); setPage(1);
+ setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setNovosHoje(false); setNuncaAberto(false); setKpiAtivo(''); setBusca(''); setBuscaDeb(''); setPage(1);
  };
  // Clicar num KPI (card) aplica o filtro correspondente. Toggle: clicar de novo limpa.
  const NEGOCIACAO_STATUS = ['NEGOCIANDO', 'PROPOSTA', 'EM_ATENDIMENTO', 'FLUXO', 'POS_FLUXO', 'VISITA'];
@@ -345,6 +352,13 @@ export default function Leads() {
  onClick={() => { setFilterStatus([]); setPage(1); }}
  >
  Todos
+ </span>
+ <span
+ className={'filter-chip ' + (nuncaAberto ? 'filter-chip--active' : '')}
+ onClick={() => { setNuncaAberto((v) => !v); setPage(1); }}
+ title="Leads que o corretor ainda não abriu (selo Novo!)"
+ >
+ Nunca abertos
  </span>
  {STATUSES.map((s) => (
  <span
