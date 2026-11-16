@@ -5,7 +5,7 @@ import { Auth } from './auth';
 // (vite.config.ts) cuida do /api → :3030 quando rodando em localhost.
 //
 // Override via env: VITE_API_BASE_URL pra apontar pra outro backend.
-const PROD_API = 'https://web-production-e420b.up.railway.app';
+const PROD_API = 'https://pons-api.vai-sistema.com';
 const envBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
 const isLocalDev =
   typeof window !== 'undefined' &&
@@ -14,7 +14,7 @@ const BASE = envBase
   ? `${envBase}/api`
   : isLocalDev
     ? '/api'         // dev: Vite proxy /api → :3030
-    : `${PROD_API}/api`; // prod: vai direto na Railway (skip Vercel rewrite)
+    : `${PROD_API}/api`; // prod: direto no servidor da VAI (skip Vercel rewrite)
 
 // Recursos que o servidor publicado já aceita (/api/version.recursos). Serve para
 // o front só mostrar uma opção nova depois que o servidor dela estiver no ar.

@@ -18,7 +18,7 @@ export default function ExcluirConta() {
     setMsg('');
     try {
       const r = await fetch(
-        'https://web-production-e420b.up.railway.app/api/auth/delete-account',
+        'https://pons-api.vai-sistema.com/api/auth/delete-account',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

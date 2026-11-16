@@ -36,7 +36,7 @@ export default function ExcluirDados() {
     setMsg('');
     try {
       const r = await fetch(
-        'https://web-production-e420b.up.railway.app/api/auth/delete-data',
+        'https://pons-api.vai-sistema.com/api/auth/delete-data',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

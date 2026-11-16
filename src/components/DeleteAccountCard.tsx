@@ -36,7 +36,7 @@ export function DeleteAccountCard() {
     setBusy(true);
     try {
       await fetch(
-        (import.meta.env.VITE_API_BASE_URL || 'https://web-production-e420b.up.railway.app') +
+        (import.meta.env.VITE_API_BASE_URL || 'https://pons-api.vai-sistema.com') +
           '/api/auth/delete-account',
         {
           method: 'POST',

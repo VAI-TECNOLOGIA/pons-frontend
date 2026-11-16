@@ -12,7 +12,7 @@ const API_BASE =
   (typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? ''
-    : 'https://web-production-e420b.up.railway.app');
+    : 'https://pons-api.vai-sistema.com');
 
 const FUNCOES = ['CEO', 'Corretor', 'Gestor Unidade', 'Sócio', 'Marketing', 'Gestor Tráfego', 'Administrativo', 'Financeiro'];
 const EQUIPES = ['GPI DELAS BC', 'GPI BC', 'GPI 2ª AVENIDA', 'GPI DALLO 703', 'GPI DALLO 803', 'GPI CAPÃO DA CANOA', 'GPI TRAMANDAÍ', 'GPI DELAS ITAJAÍ', 'GPI ITAJAÍ', 'Financeiro', 'Administrativo', 'CEO', 'Assessoria'];
