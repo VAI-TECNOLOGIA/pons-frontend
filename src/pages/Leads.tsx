@@ -237,6 +237,7 @@ export default function Leads() {
  }
  };
  const [liberandoTel, setLiberandoTel] = useState(false);
+ const [exportando, setExportando] = useState(false); // antes dos return: hook depois de return quebrava a tela (React #310)
  const liberarTelefoneSelecionados = async () => {
  if (!sel.size) return;
  setLiberandoTel(true);
@@ -261,7 +262,6 @@ export default function Leads() {
  const filtered = leads;
  const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length || semFollowup || novosHoje || nuncaAberto);
  // Exportar em Excel (Vinicius 14/11): os leads do filtro atual, só os que o usuário pode ver.
- const [exportando, setExportando] = useState(false);
  const exportarLeads = async () => {
  if (exportando) return;
  setExportando(true);
