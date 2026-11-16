@@ -113,8 +113,11 @@ const ORIGEM_TRAFEGO = 'Gestor de Tráfego da imobiliária (Vinicius)';
 const ORIGEM_BASE = 'Lázaro - Base da Imobiliária';
 const ORIGEM_NETWORK = 'Network';
 const ORIGEM_INDIVIDUAL = 'Campanha Individual';
-const ROTULOS_ORIGEM = [ORIGEM_TRAFEGO, ORIGEM_BASE, ORIGEM_NETWORK, ORIGEM_INDIVIDUAL];
-const COMISSAO_DO_ROTULO: Record<string, 'LEAD' | 'BASE' | 'ORGANICA'> = { [ORIGEM_TRAFEGO]: 'LEAD', [ORIGEM_BASE]: 'BASE', [ORIGEM_NETWORK]: 'ORGANICA', [ORIGEM_INDIVIDUAL]: 'ORGANICA' };
+// Gláucia 12/11: Orgânico (redes sociais, sem desconto) e Indicação (% de quem indicou sai depois da nota).
+const ORIGEM_ORGANICO = 'Orgânico';
+const ORIGEM_INDICACAO = 'Indicação';
+const ROTULOS_ORIGEM = [ORIGEM_TRAFEGO, ORIGEM_BASE, ORIGEM_NETWORK, ORIGEM_INDIVIDUAL, ORIGEM_ORGANICO, ORIGEM_INDICACAO];
+const COMISSAO_DO_ROTULO: Record<string, 'LEAD' | 'BASE' | 'ORGANICA'> = { [ORIGEM_TRAFEGO]: 'LEAD', [ORIGEM_BASE]: 'BASE', [ORIGEM_NETWORK]: 'ORGANICA', [ORIGEM_INDIVIDUAL]: 'ORGANICA', [ORIGEM_ORGANICO]: 'ORGANICA', [ORIGEM_INDICACAO]: 'ORGANICA' };
 const ORIGEM_ANTIGA: Record<string, string> = {
  'tráfego pago': ORIGEM_TRAFEGO, 'gestor de tráfego da imobiliária (vinícius)': ORIGEM_TRAFEGO,
  'lead lázaro': ORIGEM_BASE, 'base da imobiliária': ORIGEM_BASE,
@@ -142,6 +145,8 @@ const ORIGENS_MANUAIS: { rotulo: string; comissao: 'LEAD' | 'BASE' | 'ORGANICA' 
  { rotulo: ORIGEM_BASE, comissao: 'BASE' },
  { rotulo: ORIGEM_NETWORK, comissao: 'ORGANICA' },
  { rotulo: ORIGEM_INDIVIDUAL, comissao: 'ORGANICA' },
+ { rotulo: ORIGEM_ORGANICO, comissao: 'ORGANICA' },
+ { rotulo: ORIGEM_INDICACAO, comissao: 'ORGANICA' },
 ];
 
 // Documentos exigidos — padrão imobiliária, por tipo de comprador e estado civil.
@@ -300,6 +305,10 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
   // Origem do cliente para a comissão (Gláucia 05/11, venda 00710): tráfego 6,5%, Lázaro 3% ou network.
   const [origemCom, setOrigemCom] = useState('');
   const [origemComOrig, setOrigemComOrig] = useState('');
+  // Indicação (Gláucia 12/11): % de quem indicou e o nome.
+  const [indPct, setIndPct] = useState('');
+  const [indNome, setIndNome] = useState('');
+  const [indOrig, setIndOrig] = useState({ pct: '', nome: '' });
   const lerPct = (t: string) => { const n = Number(String(t).replace(/\s|%/g, '').replace(',', '.')); return t.trim() && Number.isFinite(n) ? n : null; };
 
   // Abre com as parcelas como estão gravadas (valor e vencimento). Antes a tela
@@ -325,6 +334,9 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         const rotOk = COMISSAO_DO_ROTULO[rot] === og ? rot : ROTULO_DA_COMISSAO[og];
         setOrigemCom(rotOk);
         setOrigemComOrig(rotOk);
+        setIndPct(pctTxt(v.percentualIndicacao));
+        setIndNome(v.indicadorNome || '');
+        setIndOrig({ pct: pctTxt(v.percentualIndicacao), nome: v.indicadorNome || '' });
       }
       const pags = [...(v?.pagamentos || [])].sort((a: any, b: any) => (a.numero || 0) - (b.numero || 0));
       if (!vivo || !pags.length || pags.length !== Number(venda.entradaParcelas ?? pags.length)) return;
@@ -463,6 +475,13 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
         pctExtra.origemLead = origemCom;
         if (COMISSAO_DO_ROTULO[origemCom] !== COMISSAO_DO_ROTULO[origemComOrig]) pctExtra.origemComissao = COMISSAO_DO_ROTULO[origemCom];
       }
+      if (origemCom === ORIGEM_INDICACAO && (indPct !== indOrig.pct || indNome !== indOrig.nome || origemCom !== origemComOrig)) {
+        const n = indPct.trim() ? lerPct(indPct) : null;
+        if (n == null || n <= 0 || n >= 100) { toast.error('Informe a % da indicação (ex.: 10).'); return; }
+        pctExtra.origemLead = ORIGEM_INDICACAO;
+        pctExtra.percentualIndicacao = n;
+        pctExtra.indicadorNome = indNome.trim() || null;
+      }
     }
     const payload: any = {
       ...pctExtra,
@@ -559,9 +578,24 @@ export function EditarNegociacaoModal({ venda, onClose, onSaved }: { venda: any;
                 <option value={ORIGEM_BASE}>{ORIGEM_BASE} (3% corretor e 1% imobiliária)</option>
                 <option value={ORIGEM_NETWORK}>Network, sem desconto de campanha</option>
                 <option value={ORIGEM_INDIVIDUAL}>Campanha Individual, sem desconto de campanha</option>
+                <option value={ORIGEM_ORGANICO}>Orgânico (redes sociais), sem desconto</option>
+                <option value={ORIGEM_INDICACAO}>Indicação, com a % de quem indicou</option>
               </select>
               <div className="field__hint">Trocar a origem refaz a comissão: o desconto de campanha sai do corretor e da imobiliária e vai para o gestor de tráfego.</div>
             </div>
+            {origemCom === ORIGEM_INDICACAO && (
+              <>
+                <div className="field">
+                  <label className="field__label">% da indicação</label>
+                  <input className="field__input" inputMode="decimal" disabled={comissaoPaga} value={indPct} onChange={(e) => setIndPct(e.target.value)} placeholder="Ex.: 10" />
+                  <div className="field__hint">Sai da comissão depois do desconto da nota e antes da divisão entre corretor e imobiliária.</div>
+                </div>
+                <div className="field">
+                  <label className="field__label">Quem indicou</label>
+                  <input className="field__input" disabled={comissaoPaga} value={indNome} onChange={(e) => setIndNome(e.target.value)} placeholder="Nome de quem indicou" maxLength={120} />
+                </div>
+              </>
+            )}
             <div className="field field--span-2"><div className="field__hint">{comissaoPaga
               ? 'Esta venda já tem comissão paga, então as porcentagens e a nota fiscal não mudam aqui. Ajuste com o financeiro.'
               : <>A venda guarda as porcentagens e a nota fiscal do dia em que foi lançada. Mudar o cadastro do corretor ou do empreendimento <strong>não muda esta venda</strong>: ajuste aqui e salve para refazer a comissão.</>}</div></div>
@@ -1149,6 +1183,8 @@ export default function Vendas() {
  const [contestarOpen, setContestarOpen] = useState(false);
  const [contestacao, setContestacao] = useState('');
  const [origemManualIdx, setOrigemManualIdx] = useState(0);
+ const [indicPct, setIndicPct] = useState('');
+ const [indicNome, setIndicNome] = useState('');
  // Busca automática de lead na base (por nome/telefone/email) enquanto preenche o comprador.
  const [leadAutoSug, setLeadAutoSug] = useState<any[]>([]);
  const [leadSugDispensada, setLeadSugDispensada] = useState(false);
@@ -1848,6 +1884,10 @@ export default function Vendas() {
  ? String(fd.get('origemComissao'))
  : origemInfo?.comissao ?? ORIGENS_MANUAIS[origemManualIdx].comissao;
  const origemLeadTexto = origemInfo?.rotulo ?? ORIGENS_MANUAIS[origemManualIdx].rotulo;
+ if (origemLeadTexto === ORIGEM_INDICACAO) {
+ const n = Number(String(indicPct).replace(',', '.'));
+ if (!(n > 0 && n < 100)) { toast.error('Informe a % da indicação (ex.: 10).'); return; }
+ }
  const r = await Api.vendaCreate({
  clienteNome: String(fd.get('clienteNome') || ''),
  clienteCpf: fd.get('clienteCpf') ? String(fd.get('clienteCpf')) : undefined,
@@ -1877,6 +1917,7 @@ export default function Vendas() {
  ...(podeEditarRateio && comEspecial && temNf && Number(nfAliquota) > 0 ? { percentualNotaFiscal: Number(nfAliquota) } : {}),
  origemComissao: origemComissaoFinal,
  origemLead: origemLeadTexto,
+ ...(origemLeadTexto === ORIGEM_INDICACAO ? { percentualIndicacao: Number(String(indicPct).replace(',', '.')) || 0, indicadorNome: indicNome.trim() || null } : {}),
  ...(contestacao.trim() ? { origemLeadContestacao: contestacao.trim() } : {}),
  extraIndicacoes: podeEditarRateio && comEspecial ? num(fd.get('extraIndicacoes')) : 0,
  // splitVariante só na negociação especial — sem ela o motor usa o rateio do
@@ -2832,6 +2873,19 @@ export default function Vendas() {
  {ORIGENS_MANUAIS.map((o, i) => <option key={o.rotulo} value={i}>{o.rotulo}</option>)}
  </select>
  <div className="field__hint">Sem lead vinculado — informe a origem manualmente (vincule o lead na etapa 1 pra origem automática).</div>
+ {ORIGENS_MANUAIS[origemManualIdx].rotulo === ORIGEM_INDICACAO && (
+ <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 10, marginTop: 10 }}>
+ <div className="field" style={{ marginBottom: 0 }}>
+ <label className="field__label">% da indicação</label>
+ <input className="field__input" inputMode="decimal" value={indicPct} onChange={(e) => setIndicPct(e.target.value)} placeholder="Ex.: 10" />
+ </div>
+ <div className="field" style={{ marginBottom: 0 }}>
+ <label className="field__label">Quem indicou</label>
+ <input className="field__input" value={indicNome} onChange={(e) => setIndicNome(e.target.value)} placeholder="Nome de quem indicou" maxLength={120} />
+ </div>
+ <div className="field__hint" style={{ gridColumn: '1 / -1' }}>A % sai da comissão depois do desconto da nota e antes da divisão entre corretor e imobiliária.</div>
+ </div>
+ )}
  </div>
  )}
  </div>
@@ -4089,7 +4143,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  const n2 = (v: any) => Number(v) || 0;
  const nfInfo = (p: any) => {
  const nf = n2(p.valorNF);
- const soImob = nf > 0 && Math.abs(n2(p.baseLiquida) - n2(p.valorComissaoBruta)) < 0.01; // corretor emite a própria nota
+ const soImob = nf > 0 && Math.abs(n2(p.baseLiquida) + n2(p.valorIndicacao) - n2(p.valorComissaoBruta)) < 0.01; // corretor emite a própria nota
  const doCorretor = soImob ? 0 : nf * (n2(p.splitCorretorPct) / 100);
  return { doCorretor, daImob: nf - doCorretor };
  };
@@ -4098,7 +4152,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  { k: 'cnf', nome: 'Nota fiscal (imposto)', grupo: 'C', v: (p) => nfInfo(p).doCorretor },
  { k: 'mkt', nome: 'Marketing (R$ 199)', grupo: 'C', v: (p) => n2(p.corretor?.descontoMarketing) },
  { k: 'ctr', nome: 'Gestor de tráfego', grupo: 'C', v: (p) => n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) },
- { k: 'imo', nome: 'Total imobiliária', grupo: 'I', forte: true, v: (p) => n2(p.valorComissaoBruta) - (n2(p.corretor?.valorLiquido) + nfInfo(p).doCorretor + n2(p.corretor?.descontoMarketing) + n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) - n2(p.corretor?.extraIndicacoes)) },
+ { k: 'imo', nome: 'Total imobiliária', grupo: 'I', forte: true, v: (p) => n2(p.valorComissaoBruta) - (n2(p.corretor?.valorLiquido) + nfInfo(p).doCorretor + n2(p.corretor?.descontoMarketing) + n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) - n2(p.corretor?.extraIndicacoes) + n2(p.valorIndicacao)) },
  { k: 'inf', nome: 'Nota fiscal (imposto)', grupo: 'I', v: (p) => nfInfo(p).daImob },
  { k: 'ges', nome: 'Gestor', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoGestor) },
  { k: 'dir', nome: 'Direção Adm/Financeira', grupo: 'I', v: (p) => n2(p.imobiliaria?.descontoDirecao) },
@@ -4106,6 +4160,8 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  { k: 'cas', nome: 'Grupo Pons (Imobiliária)', grupo: 'I', forte: true, v: (p) => n2((p.beneficiarios || []).find((b: any) => b.papel === 'CASA')?.valor ?? p.imobiliaria?.valorLiquido) },
  // Total do gestor de tráfego = parte do corretor + parte da imobiliária (Gláucia 11/11).
  { k: 'tgt', nome: 'Total gestor de tráfego', grupo: 'T' as any, forte: true, v: (p) => n2(p.corretor?.descontoCampanha) + n2(p.corretor?.descontoLazaro) + n2(p.imobiliaria?.descontoCampanha) + n2(p.imobiliaria?.descontoLazaro) },
+ // Indicação (Gláucia 12/11): só aparece quando a venda tem.
+ ...(ps.some((p: any) => n2(p.valorIndicacao) > 0) ? [{ k: 'ind', nome: 'Indicação', grupo: 'T' as any, forte: true, v: (p: any) => n2(p.valorIndicacao) }] : []),
  ];
  const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
  const divisa = { borderLeft: '2px solid var(--border, #ddd)' };
