@@ -285,25 +285,62 @@ function ConstrutoraEditor({ construtoraId, onClose }: { construtoraId: number |
                 </div>
               </div>
 
-              {savedId && (
-                <div className="field" style={{ marginTop: 12 }}>
-                  <label className="field__label">Construtora fica com quanto do VGV antes da comissão (em %, digite 1 para 1%)</label>
-                  <div className="flex gap-2" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                    <input className="field__input" type="number" step="0.01" min="0" max="100" style={{ maxWidth: 140 }} value={c.retencaoInicialPctVgv ?? ''} onChange={(ev) => set('retencaoInicialPctVgv', ev.target.value)} placeholder="Ex.: 1" />
-                    <button type="button" className="btn btn--secondary btn--sm" disabled={saving} onClick={async () => {
-                      const v = c.retencaoInicialPctVgv === '' || c.retencaoInicialPctVgv == null ? null : Number(String(c.retencaoInicialPctVgv).replace(',', '.'));
-                      if (v != null && v > 0 && v < 0.1) { toast.error('Digite a porcentagem inteira: 1 para 1% do VGV (não 0,01).'); return; }
-                      try { await Api.construtoraRetencao(savedId, v, !!c.comissaoProporcional); toast.success('Retenção salva. As vendas desta construtora recalculam a comissão de cada parcela.'); }
-                      catch (err: any) { toast.error(err?.message || 'Não consegui salvar.'); }
-                    }}>Salvar retenção</button>
+              {savedId && (() => {
+                // Como a construtora paga a comissão (Gláucia 16/11): a financeira escolhe aqui,
+                // sem precisar pedir ajuste a cada construtora nova.
+                const modo = Number(c.retencaoInicialPctVgv) > 0 ? 'retencao' : c.comissaoProporcional ? 'acordo' : 'padrao';
+                const num = (x: any) => (x === '' || x == null ? null : Number(String(x).replace(',', '.')));
+                const salvarRegra = async () => {
+                  const ret = modo === 'retencao' ? num(c.retencaoInicialPctVgv) : null;
+                  if (ret != null && ret > 0 && ret < 0.1) { toast.error('Digite a porcentagem inteira: 1 para 1% do VGV (não 0,01).'); return; }
+                  const entrada = modo === 'acordo' ? num(c.comissaoEntradaPct) : null;
+                  const acordo = modo === 'acordo' ? num(c.comissaoAcordoPct) : null;
+                  if (modo === 'acordo' && !(entrada && entrada > 0)) { toast.error('Informe a % de entrada do acordo (ex.: 7).'); return; }
+                  try {
+                    await Api.construtoraRetencao(savedId, ret, modo === 'acordo', { comissaoEntradaPct: entrada, comissaoAcordoPct: acordo });
+                    toast.success('Regra salva. As vendas desta construtora recalculam a comissão de cada parcela.');
+                  } catch (err: any) { toast.error(err?.message || 'Não consegui salvar.'); }
+                };
+                const escolher = (m: string) => {
+                  if (m === 'padrao') { set('retencaoInicialPctVgv', ''); set('comissaoProporcional', false); }
+                  if (m === 'retencao') { set('comissaoProporcional', false); if (!(Number(c.retencaoInicialPctVgv) > 0)) set('retencaoInicialPctVgv', 1); }
+                  if (m === 'acordo') { set('retencaoInicialPctVgv', ''); set('comissaoProporcional', true); if (!c.comissaoEntradaPct) set('comissaoEntradaPct', 7); if (!c.comissaoAcordoPct) set('comissaoAcordoPct', 6); }
+                };
+                const e = num(c.comissaoEntradaPct); const a = num(c.comissaoAcordoPct);
+                const podeRegra = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'ADMINISTRATIVO'].includes(Auth.user?.role || '');
+                return (
+                  <div className="field" style={{ marginTop: 12 }}>
+                    <label className="field__label">Como a construtora paga a comissão</label>
+                    <select className="field__input" style={{ maxWidth: 420 }} value={modo} disabled={!podeRegra} onChange={(ev) => escolher(ev.target.value)}>
+                      <option value="padrao">Padrão: comissão dividida pelas parcelas</option>
+                      <option value="retencao">Construtora fica primeiro com uma parte do VGV (ex.: Tetto 1%)</option>
+                      <option value="acordo">Proporcional à parcela: parcela ÷ entrada × comissão (ex.: Maxces e Fascon, ÷ 7 × 6)</option>
+                    </select>
+                    {modo === 'retencao' && (
+                      <div className="flex gap-2" style={{ alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+                        <span style={{ fontSize: 14 }}>Construtora fica com</span>
+                        <input className="field__input" type="number" step="0.01" min="0" max="100" style={{ maxWidth: 110 }} value={c.retencaoInicialPctVgv ?? ''} onChange={(ev) => set('retencaoInicialPctVgv', ev.target.value)} placeholder="1" />
+                        <span style={{ fontSize: 14 }}>% do VGV antes da comissão</span>
+                      </div>
+                    )}
+                    {modo === 'acordo' && (
+                      <div className="flex gap-2" style={{ alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+                        <span style={{ fontSize: 14 }}>Entrada mínima</span>
+                        <input className="field__input" type="number" step="0.01" min="0" max="100" style={{ maxWidth: 90 }} value={c.comissaoEntradaPct ?? ''} onChange={(ev) => set('comissaoEntradaPct', ev.target.value)} placeholder="7" />
+                        <span style={{ fontSize: 14 }}>% e comissão</span>
+                        <input className="field__input" type="number" step="0.01" min="0" max="100" style={{ maxWidth: 90 }} value={c.comissaoAcordoPct ?? ''} onChange={(ev) => set('comissaoAcordoPct', ev.target.value)} placeholder="6" />
+                        <span style={{ fontSize: 14 }}>%</span>
+                      </div>
+                    )}
+                    {podeRegra && <div style={{ marginTop: 10 }}><button type="button" className="btn btn--secondary btn--sm" disabled={saving} onClick={salvarRegra}>Salvar regra da comissão</button></div>}
+                    <div className="field__hint">
+                      {modo === 'padrao' && 'A comissão da venda é dividida em partes iguais pelas parcelas da entrada (ou pelas parcelas da comissão, quando informado na venda).'}
+                      {modo === 'retencao' && 'O cliente paga as parcelas em ordem; a construtora fica primeiro com essa parte do VGV e o restante vira a comissão da imobiliária até completá-la.'}
+                      {modo === 'acordo' && `Comissão de cada parcela = valor que o cliente paga na parcela ÷ ${e || '?'} × ${a || 'comissão da venda'}, em ordem, até completar a comissão da venda. Sem a % de comissão, vale a % da venda.`}
+                    </div>
                   </div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginTop: 10, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={!!c.comissaoProporcional} onChange={(ev) => set('comissaoProporcional', ev.target.checked)} style={{ width: 'auto' }} />
-                    Comissão de cada parcela proporcional ao valor da parcela (ex.: Maxces, parcela ÷ 7 × 6). Marque e clique em Salvar retenção.
-                  </label>
-                  <div className="field__hint">Ex.: Tetto 1%. O cliente paga as parcelas em ordem; a construtora fica primeiro com essa parte do VGV e o restante vira a comissão da imobiliária até completá-la. Em branco: comissão dividida pelas parcelas.</div>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="cons-actions" style={podeEditar ? undefined : { display: 'none' }}>
                 <button className="btn btn--primary btn--sm" disabled={saving} onClick={() => salvarAba('Identidade')}>{saving ? 'Salvando…' : savedId ? 'Salvar Identidade' : 'Criar construtora'}</button>

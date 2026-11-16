@@ -3728,6 +3728,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  const [planoCom, setPlanoCom] = useState<Record<number, number> | null>(null);
  const [retencaoPct, setRetencaoPct] = useState<number | null>(null);
  const [proporcional, setProporcional] = useState(false);
+ const [acordoTxt, setAcordoTxt] = useState('');
  const comissaoDa = (p: any) => (planoCom && planoCom[Number(p.numero)] != null ? planoCom[Number(p.numero)] : (comissaoN && Number(p.numero) > comissaoN ? 0 : comissaoParcela));
  // Recebimento parcial: parcela com o campo de valor aberto.
  const [parcial, setParcial] = useState<{ id: number; valor: string } | null>(null);
@@ -3803,6 +3804,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  setNfVenda(!v?.temNotaFiscal ? 'sem nota' : v?.nfEmitidaPor === 'CORRETOR' ? 'corretor + imob' : 'imobiliária');
  setRetencaoPct(Number(v?.retencaoInicialPctVgv) > 0 ? Number(v.retencaoInicialPctVgv) : null);
  setProporcional(!!v?.comissaoProporcional);
+ setAcordoTxt(Number(v?.comissaoEntradaPct) > 0 ? `÷ ${String(v.comissaoEntradaPct).replace('.', ',')} × ${String(Number(v?.comissaoAcordoPct) > 0 ? v.comissaoAcordoPct : (v?.percentualComissao ?? 5)).replace('.', ',')}` : '');
  setComissaoParcela(nParcelas ? Math.round(((Number(v?.valorVenda) || 0) * ((v?.percentualComissao ?? 5) / 100) / (nCom || nParcelas)) * 100) / 100 : 0);
  const av = Number(v?.arrasValor) || 0;
  const venc = String(v?.arrasVencimento || '');
@@ -3897,7 +3899,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  })()}
  {podeConfirmar && (comissaoParcela > 0 || !!retencaoPct || proporcional) && (
  <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>
- Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela{retencaoPct ? ` (a construtora fica primeiro com ${String(retencaoPct).replace('.', ',')}% do VGV; depois a comissão entra até completar)` : proporcional ? ' (proporcional ao valor de cada parcela, regra da construtora)' : ` (${moeda(comissaoParcela)}${comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''})`}; o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
+ Confirmar = o cliente pagou a parcela à construtora. Comissão = o que a imobiliária recebe nessa parcela{retencaoPct ? ` (a construtora fica primeiro com ${String(retencaoPct).replace('.', ',')}% do VGV; depois a comissão entra até completar)` : proporcional ? (acordoTxt ? ` (regra da construtora: parcela ${acordoTxt})` : ' (proporcional ao valor de cada parcela, regra da construtora)') : ` (${moeda(comissaoParcela)}${comissaoN ? `, nas ${comissaoN} primeiras parcelas` : ''})`}; o rateio é feito sobre ela. Se a construtora pagou só uma parte, use Recebida em parte.
  </div>
  )}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 6 }}>
