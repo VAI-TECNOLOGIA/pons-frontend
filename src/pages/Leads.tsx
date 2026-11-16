@@ -16,6 +16,7 @@ import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
 import { Auth } from '../lib/auth';
+import { exportarXlsx } from '../lib/xlsx-simple';
 
 const STATUS_MAP: Record<string, [string, string]> = {
  NOVO: ['neutral', 'Tentando Contato'],
@@ -259,6 +260,33 @@ export default function Leads() {
  const total = resp.total ?? leads.length;
  const filtered = leads;
  const temFiltro = !!(filtroOrigem.length || filtroCorretor || filtroEquipe.length || filtroCampanha.length || filtroFormulario.length || filtroEmp.length || filtroBase.length || dataInicial || dataFinal || buscaDeb || filterStatus.length || semFollowup || novosHoje || nuncaAberto);
+ // Exportar em Excel (Vinicius 14/11): os leads do filtro atual, só os que o usuário pode ver.
+ const [exportando, setExportando] = useState(false);
+ const exportarLeads = async () => {
+ if (exportando) return;
+ setExportando(true);
+ try {
+ const { page: _p, limit: _l, ...filtros } = params;
+ const r: any = await Api.leadsPaginado({ ...filtros, exportar: '1' });
+ const lista: any[] = r?.leads || [];
+ if (!lista.length) { toast.error('Nenhum lead para exportar com esses filtros.'); return; }
+ const ehCorretor = Auth.user?.role === 'CORRETOR';
+ const dt = (d: any) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '');
+ const cab = ['Nome', 'Telefone', 'E-mail', 'Cidade', 'Produto (formulário)', 'Empreendimento', 'Status', 'Corretor', 'Equipe', 'Gestor', 'Entrada', 'Última interação', 'Observação do corretor', ...(ehCorretor ? [] : ['Origem', 'Campanha'])];
+ const linhas = lista.map((l) => [
+ l.nome, l.telefone || '', l.email || '', l.cidade || '', l.produto || '', l.interesse || '',
+ STATUS_MAP[l.status]?.[1] || l.status, l.corretor?.nome || '', l.equipe || '', l.gestor || '',
+ dt(l.distribuidoEm || l.createdAt), dt(l.ultimaInteracao), l.observacaoCorretor || '',
+ ...(ehCorretor ? [] : [l.origem || '', l.campanha || '']),
+ ]);
+ const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+ exportarXlsx(`leads-${hoje}.xlsx`, cab, linhas, 'Leads');
+ const ocultos = lista.filter((l) => l.telefoneOculto).length;
+ toast.success(`${lista.length.toLocaleString('pt-BR')} leads exportados.` + (ocultos ? ` ${ocultos} com telefone oculto (contato ainda não liberado).` : '') + (lista.length >= 20000 ? ' Limite de 20 mil por arquivo: use os filtros para dividir.' : ''));
+ } catch (e: any) {
+ toast.error(e?.message || 'Não foi possível exportar agora.');
+ } finally { setExportando(false); }
+ };
  const limparFiltros = () => {
  setFilterStatus([]); setFiltroOrigem([]); setFiltroCorretor(''); setFiltroEquipe([]); setFiltroCampanha([]); setFiltroFormulario([]);
  setFiltroEmp([]); setFiltroBase([]); setDataInicial(''); setDataFinal(''); setSemFollowup(false); setNovosHoje(false); setNuncaAberto(false); setKpiAtivo(''); setBusca(''); setBuscaDeb(''); setPage(1);
@@ -371,6 +399,9 @@ export default function Leads() {
  </span>
  ))}
  <input className="field__input leads-filtros__busca" placeholder="Pesquisar nome/telefone…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+ <button className="btn btn--sm btn--secondary" onClick={exportarLeads} disabled={exportando} title="Baixa em Excel os leads do filtro atual">
+ <Icon name="sheet" size={13} /> {exportando ? 'Exportando…' : 'Exportar Excel'}
+ </button>
  <button className={'btn btn--sm ' + (mostrarFiltros ? 'btn--primary' : 'btn--secondary')} onClick={() => setMostrarFiltros((v) => !v)}>
  <Icon name="settings" size={13} /> {mostrarFiltros ? 'Fechar Filtros' : 'Filtros'}
  </button>
