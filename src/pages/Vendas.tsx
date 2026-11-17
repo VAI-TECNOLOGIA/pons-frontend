@@ -735,7 +735,8 @@ export function EditarDadosVendaModal({ vendaId, onClose, onSaved, soCliente = f
     setForm(f);
   }, [venda, form]);
 
-  const set = (k: string, v: string, tipo?: string) => setForm((f) => ({ ...(f || {}), [k]: tipo === 'cpf' ? maskCPF(v) : tipo === 'tel' ? maskTelefone(v) : v }));
+  // Telefone começando com + é internacional (Carol 17/11): sem a máscara do Brasil.
+  const set = (k: string, v: string, tipo?: string) => setForm((f) => ({ ...(f || {}), [k]: tipo === 'cpf' ? maskCPF(v) : tipo === 'tel' ? (v.trim().startsWith('+') ? v.replace(/[^\d+()\- ]/g, '') : maskTelefone(v)) : v }));
 
   const salvar = async () => {
     if (!form || salvando) return;
@@ -1318,8 +1319,14 @@ export default function Vendas() {
  el.value = maskTelefone(el.value);
  el.setCustomValidity(el.value && !validaTelefone(el.value) ? 'Telefone incompleto (DDD + número).' : '');
  };
+ // Cônjuge e sócio: se começar com +, é número de fora do Brasil (Carol 17/11) e fica sem a máscara BR.
  const onTelefone = (e: React.FormEvent<HTMLInputElement>) => {
  const el = e.currentTarget;
+ if (el.value.trim().startsWith('+')) {
+ el.value = el.value.replace(/[^\d+()\- ]/g, '');
+ el.setCustomValidity(el.value.replace(/\D/g, '').length < 7 ? 'Número internacional muito curto.' : '');
+ return;
+ }
  el.value = maskTelefone(el.value);
  el.setCustomValidity(el.value && !validaTelefone(el.value) ? 'Telefone incompleto (DDD + número).' : '');
  };
@@ -2570,7 +2577,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="conjugeTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" onInput={onTelefone} />
+ <input name="conjugeTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999 ou +1 305 555 0100" onInput={onTelefone} />
  </div>
  </div>
  </div>
@@ -2683,7 +2690,7 @@ export default function Vendas() {
  </div>
  <div className="field">
  <label className="field__label">Telefone</label>
- <input name="socioTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999" onInput={onTelefone} />
+ <input name="socioTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999 ou +1 305 555 0100" onInput={onTelefone} />
  </div>
  <div className="field">
  <label className="field__label">Estado civil</label>
