@@ -2264,6 +2264,9 @@ export default function Vendas() {
  )}
  </div>
 
+ {/* Documentos logo abaixo do status (Rafael Veiga 17/11: no fim da ficha ninguém achava). */}
+ <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
+
  {sel.aguardandoAprovacao && sel.status !== 'CANCELADO' && (
  <div style={{ margin: '16px 0', padding: '14px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10 }}>
  <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-warning-fg)', marginBottom: 4 }}>
@@ -2334,7 +2337,6 @@ export default function Vendas() {
 
  <VendaParcelas key={sel.id + ':' + histVersao} vendaId={sel.id} onAlterou={() => { reload(); setHistParc((x) => x + 1); }} podeConfirmar={podeMarcarPago} rateioCompleto={podeEditarRateio || role === 'DIRETOR_COMERCIAL'} />
 
- <VendaDocumentos vendaId={sel.id} podeRemover={podeEditarStatus} />
  <VendaNotas vendaId={sel.id} />
  <VendaHistorico key={sel.id + ':' + histVersao + ':' + histParc} vendaId={sel.id} />
  </Modal>
