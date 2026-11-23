@@ -4152,6 +4152,19 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  </label>
  )}
  {!podeConfirmar && abriuMao && <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>O corretor abriu mão da comissão nesta venda.</div>}
+ {abriuMao && rateioMotor.corretorAbriuMao && (() => {
+ const a = rateioMotor.corretorAbriuMao;
+ const br = (n: number) => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+ const pct = (n: number) => (Number(n) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+ return (
+ <div style={{ border: '1px solid var(--border, #e5e7eb)', borderRadius: 10, padding: '10px 12px', marginBottom: 12, fontSize: 13 }}>
+ <div style={{ fontWeight: 600, marginBottom: 4 }}>Valor que o corretor deixa de receber: {br(a.deixaDeReceber)}</div>
+ <div className="text-xs text-secondary">
+ Comissão cheia {br(a.comissaoCheia)} ({pct(a.percentualCheio)}%) − nota fiscal {br(a.valorNF)} = {br(a.baseLiquida)} × {pct(a.splitCorretorPct)}% do corretor = {br(a.parteCorretor)}{a.descontoMarketing > 0 ? ` − marketing ${br(a.descontoMarketing)}` : ''} = {br(a.deixaDeReceber)}. Como ele abriu mão, nada é descontado dele nesta venda.
+ </div>
+ </div>
+ );
+ })()}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '10px 16px' }}>
  {linhas.map((b) => (
  <div key={b.papel}>
