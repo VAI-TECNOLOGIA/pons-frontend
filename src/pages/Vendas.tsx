@@ -3819,6 +3819,20 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  setGerandoNf(pagamentoId);
  try { await Api.vendaSolicitacaoNfAbrir(vendaId, pagamentoId); } catch (err: any) { toast.error(err?.message || 'Falha ao gerar a solicitação de nota.'); } finally { setGerandoNf(null); }
  };
+ const trocarAbriuMao = async (valor: boolean) => {
+ if (valor && !window.confirm('Confirmar que o corretor abriu mão da comissão? A parte dele passa para o Grupo Pons e ele não recebe nesta venda.')) return;
+ setBusy(-1);
+ try {
+ await Api.vendaCorretorAbriuMao(vendaId, valor);
+ toast.success(valor ? 'Corretor sem comissão nesta venda. A parte dele foi para o Grupo Pons.' : 'Comissão do corretor voltou ao cálculo normal.');
+ await load();
+ onAlterou?.();
+ } catch (err: any) {
+ toast.error(err?.message || 'Falha ao salvar.');
+ } finally {
+ setBusy(null);
+ }
+ };
  const marcarNfSolicitada = async (pagamentoId: number, solicitada: boolean) => {
  setBusy(pagamentoId);
  try {
@@ -3846,6 +3860,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  }
  };
  const [busy, setBusy] = useState<number | null>(null);
+ const [abriuMao, setAbriuMao] = useState(false); // corretor abriu mão da comissão (Gláucia 18/11)
  const [rateioMotor, setRateioMotor] = useState<any>(null); // vendas do sistema (sem planilha): rateio calculado
  // Arras faz parte da entrada mas não é parcela — entra como linha própria para
  // o plano de recebimento fechar com a entrada (pedido Marcelo 16/10).
@@ -3856,6 +3871,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  const v = await Api.venda(vendaId);
  const pags = v?.pagamentos || [];
  setParcelas(pags);
+ setAbriuMao(!!v?.corretorAbriuMao);
  // Divide pelo total de parcelas da venda, não pelas linhas gravadas: venda importada com a 4/4 faltando dividia por 3 (Gláucia 28/10).
  const nParcelas = Math.max(pags.length, ...pags.map((p: any) => Number(p.total) || 0));
  const nCom = Number(v?.comissaoParcelas) > 0 && Number(v?.comissaoParcelas) < nParcelas ? Number(v.comissaoParcelas) : 0;
@@ -4129,6 +4145,13 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  return (
  <div style={{ marginTop: 14 }}>
  <div className="uppercase-tag" style={{ marginBottom: 8 }}>Rateio da comissão</div>
+ {podeConfirmar && (
+ <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 10, cursor: 'pointer' }}>
+ <input type="checkbox" style={{ width: 18, height: 18 }} checked={abriuMao} disabled={busy === -1} onChange={(e) => trocarAbriuMao(e.target.checked)} />
+ Corretor abriu mão da comissão (a parte dele vai para o Grupo Pons)
+ </label>
+ )}
+ {!podeConfirmar && abriuMao && <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>O corretor abriu mão da comissão nesta venda.</div>}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '10px 16px' }}>
  {linhas.map((b) => (
  <div key={b.papel}>
@@ -4144,9 +4167,11 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  Comissão parcelada em {nParc}x — valores somados de todas as parcelas; a taxa de marketing entra só na 1ª.
  </div>
  )}
- {nParc > 1 && (() => {
+ {nParc >= 1 && (() => {
  // Rateio POR PARCELA (Gláucia 30/10): quanto cada um recebe em cada parcela da comissão.
- const ps: any[] = rateioMotor.parcelas;
+ // Comissão em parcela única (Gláucia 18/11, Kansas City 901): o motor devolve o rateio
+ // direto, sem lista de parcelas; vira uma linha 1/1 para a tabela e a marca de NF.
+ const ps: any[] = Array.isArray(rateioMotor.parcelas) ? rateioMotor.parcelas : [{ numero: 1, ...rateioMotor }];
  // Colunas na ordem dos descontos (Gláucia 06/11): parte do corretor (líquido, nota, marketing,
  // tráfego) e parte da imobiliária (total sem a nota, nota, gestor, direção, tráfego, Grupo Pons).
  const n2 = (v: any) => Number(v) || 0;

@@ -605,6 +605,9 @@ export const Api = {
   // Quem emite a nota NESTA parcela (Gláucia 06/11); null segue a venda.
   vendaParcelaNf: (vendaId: number, pagamentoId: number, nfEmitidaPor: 'IMOBILIARIA' | 'CORRETOR' | null) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/nf`, { method: 'PATCH', body: { nfEmitidaPor } }),
+  // Corretor abriu mão da comissão (Gláucia 18/11): a parte dele vai para o Grupo Pons.
+  vendaCorretorAbriuMao: (vendaId: number, abriuMao: boolean) =>
+    request<any>(`/vendas/${vendaId}/corretor-abriu-mao`, { method: 'PATCH', body: { abriuMao } }),
   vendaNfSolicitada: (vendaId: number, pagamentoId: number, solicitada: boolean) =>
     request<any>(`/vendas/${vendaId}/pagamentos/${pagamentoId}/nf-solicitada`, { method: 'PATCH', body: { solicitada } }),
   // Abre o PDF de solicitação de nota numa aba nova, para copiar e colar.
