@@ -2574,12 +2574,12 @@ export default function Vendas() {
  <input name="conjugeProfissao" className="field__input" required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">E-mail</label>
- <input name="conjugeEmail" type="email" className="field__input" onInput={onEmail} />
+ <label className="field__label">E-mail {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeEmail" type="email" className="field__input" onInput={onEmail} required={temConjuge} />
  </div>
  <div className="field">
- <label className="field__label">Telefone</label>
- <input name="conjugeTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999 ou +1 305 555 0100" onInput={onTelefone} />
+ <label className="field__label">Telefone {temConjuge && <span className="field__required">*</span>}</label>
+ <input name="conjugeTelefone" className="field__input" inputMode="tel" placeholder="(47) 99999-9999 ou +1 305 555 0100" onInput={onTelefone} required={temConjuge} />
  </div>
  </div>
  </div>
