@@ -3820,7 +3820,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  try { await Api.vendaSolicitacaoNfAbrir(vendaId, pagamentoId); } catch (err: any) { toast.error(err?.message || 'Falha ao gerar a solicitação de nota.'); } finally { setGerandoNf(null); }
  };
  const trocarAbriuMao = async (valor: boolean) => {
- if (valor && !window.confirm('Confirmar que o corretor abriu mão da comissão? A parte dele passa para o Grupo Pons e ele não recebe nesta venda.')) return;
+ if (valor && !window.confirm('Confirmar que o corretor abriu mão da comissão? Ele não recebe nesta venda.')) return;
  setBusy(-1);
  try {
  await Api.vendaCorretorAbriuMao(vendaId, valor);
@@ -4148,7 +4148,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  {podeConfirmar && (
  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 10, cursor: 'pointer' }}>
  <input type="checkbox" style={{ width: 18, height: 18 }} checked={abriuMao} disabled={busy === -1} onChange={(e) => trocarAbriuMao(e.target.checked)} />
- Corretor abriu mão da comissão (a parte dele vai para o Grupo Pons)
+ Corretor abriu mão da comissão
  </label>
  )}
  {!podeConfirmar && abriuMao && <div className="text-xs text-secondary" style={{ marginBottom: 8 }}>O corretor abriu mão da comissão nesta venda.</div>}
@@ -4160,7 +4160,7 @@ export function VendaParcelas({ vendaId, podeConfirmar, rateioCompleto, onAltero
  <div style={{ border: '1px solid var(--border, #e5e7eb)', borderRadius: 10, padding: '10px 12px', marginBottom: 12, fontSize: 13 }}>
  <div style={{ fontWeight: 600, marginBottom: 4 }}>Valor que o corretor deixa de receber: {br(a.deixaDeReceber)}</div>
  <div className="text-xs text-secondary">
- Comissão cheia {br(a.comissaoCheia)} ({pct(a.percentualCheio)}%) − nota fiscal {br(a.valorNF)} = {br(a.baseLiquida)} × {pct(a.splitCorretorPct)}% do corretor = {br(a.parteCorretor)}{a.descontoMarketing > 0 ? ` − marketing ${br(a.descontoMarketing)}` : ''} = {br(a.deixaDeReceber)}. Como ele abriu mão, nada é descontado dele nesta venda.
+ Comissão cheia {br(a.comissaoCheia)} ({pct(a.percentualCheio)}%) − nota fiscal {br(a.valorNF)} = {br(a.baseLiquida)} × {pct(a.splitCorretorPct)}% do corretor = {br(a.parteCorretor)}{a.descontoMarketing > 0 ? ` − marketing ${br(a.descontoMarketing)}` : ''} = {br(a.deixaDeReceber)}.
  </div>
  </div>
  );
