@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Auth } from '../lib/auth';
+import { Auth, SEM_SESSAO } from '../lib/auth';
 import { formatCurrency, formatCurrencyShort, timeAgo } from '../lib/format';
 import { Icon } from '../components/Icon';
 import { Topbar, getGreeting } from '../components/PageHeader';
@@ -37,7 +37,7 @@ const ALERT_COLOR: Record<string, [string, string, string]> = {
 // (DashboardGestao, dados de /dashboard/gestao). O corretor segue com o pessoal.
 // Se o servidor ainda não tiver o endpoint novo, a gestão cai no legado abaixo.
 export default function Dashboard() {
- const user = Auth.user!;
+ const user = Auth.user ?? SEM_SESSAO;
  if (user.role !== 'CORRETOR') {
  return (
  <>
@@ -57,7 +57,7 @@ function DashboardLegadoConteudo() {
 }
 
 function DashboardLegado({ semTopbar = false }: { semTopbar?: boolean }) {
- const user = Auth.user!;
+ const user = Auth.user ?? SEM_SESSAO;
  const isExec = ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO'].includes(user.role);
  const isCorretor = user.role === 'CORRETOR';
 

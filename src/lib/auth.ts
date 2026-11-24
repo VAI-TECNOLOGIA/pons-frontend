@@ -134,3 +134,7 @@ export function formatRole(role: Role | string): string {
   };
   return map[role] || role;
 }
+
+// Usuário vazio para o instante entre a sessão expirar (401 limpa o Auth) e o
+// redirecionamento ao /login: evita a tela quebrar lendo "role" de null.
+export const SEM_SESSAO: User = { id: 0, name: '', role: '' as Role };

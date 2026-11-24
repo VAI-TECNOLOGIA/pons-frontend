@@ -7,7 +7,7 @@ import { GoogleCalendarIcon } from '../components/GoogleCalendarIcon';
 import { GOOGLE_CALENDAR_ENABLED } from '../lib/featureFlags';
 import { CalendarView, type CalendarEvent } from '../components/CalendarView';
 import { AgendaKpisBar } from '../components/AgendaKpisBar';
-import { Auth } from '../lib/auth';
+import { Auth, SEM_SESSAO } from '../lib/auth';
 import { Api } from '../lib/api';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
@@ -16,7 +16,7 @@ import { useConfirm } from '../lib/confirm';
 import './executivo.css';
 
 export default function Executivo() {
-  const user = Auth.user!;
+  const user = Auth.user ?? SEM_SESSAO;
   const today = new Date();
   const dateLabel = today.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 

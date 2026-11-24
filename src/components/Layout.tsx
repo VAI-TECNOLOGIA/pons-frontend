@@ -29,8 +29,13 @@ export function AppLayout() {
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
     const on = () => setIsMobile(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
+    // Safari até a 13 (Mac antigo) só tem addListener/removeListener.
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', on);
+      return () => mq.removeEventListener('change', on);
+    }
+    mq.addListener(on);
+    return () => mq.removeListener(on);
   }, []);
   const loc = useLocation();
   const navigate = useNavigate();
