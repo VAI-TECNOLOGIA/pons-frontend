@@ -7,6 +7,7 @@ import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { EmptyState } from '../components/EmptyState';
 import { Api } from '../lib/api';
+import { Auth } from '../lib/auth';
 import { useApi, ErrorBlock, LoadingBlock } from '../lib/useApi';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
@@ -80,7 +81,8 @@ function resumoNumeros(i: Imovel) {
   const partes: string[] = [];
   if (i.dormitorios != null) partes.push(`${i.dormitorios} dorm.`);
   if (i.suites) partes.push(`${i.suites} suíte${i.suites > 1 ? 's' : ''}`);
-  if (i.vagas != null) partes.push(`${i.vagas} vaga${i.vagas === 1 ? '' : 's'}${i.vagas && i.vagaCoberta ? ' coberta' + (i.vagas > 1 ? 's' : '') : ''}`);
+  if (i.vagas === 0) partes.push('Sem vaga');
+  else if (i.vagas != null) partes.push(`${i.vagas} vaga${i.vagas === 1 ? '' : 's'}${i.vagaCoberta ? ' coberta' + (i.vagas > 1 ? 's' : '') : ''}`);
   if (i.areaPrivativa) partes.push(`${i.areaPrivativa.toLocaleString('pt-BR')} m²`);
   return partes;
 }
@@ -117,7 +119,7 @@ export default function ImoveisProntos() {
       <Topbar
         title="Imóveis prontos"
         right={
-          <button className="btn btn--primary btn--sm" onClick={() => setForm({ imovel: null })}>
+          <button className="btn btn--primary btn--sm ip-cadastrar--topo" onClick={() => setForm({ imovel: null })}>
             <Icon name="plus" size={14} /> Cadastrar imóvel
           </button>
         }
@@ -128,6 +130,10 @@ export default function ImoveisProntos() {
           title="Imóveis prontos da equipe"
           subtitle="Imóveis agenciados pelos corretores do Grupo Pons. Procure com os filtros e fale direto com quem agenciou."
         />
+
+        <button className="btn btn--primary ip-cadastrar--celular" onClick={() => setForm({ imovel: null })}>
+          <Icon name="plus" size={16} /> Cadastrar imóvel
+        </button>
 
         <div className="ip-busca">
           <div className="ip-busca__linha">
@@ -147,15 +153,15 @@ export default function ImoveisProntos() {
 
           <div className={`ip-filtros${filtrosAbertos ? ' ip-filtros--aberto' : ''}`}>
             <select className="field__select" value={filtro.cidade} onChange={(e) => set('cidade', e.target.value)} aria-label="Cidade">
-              <option value="">Todas as cidades</option>
+              <option value="">Cidade</option>
               {opcoes?.cidades.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <select className="field__select" value={filtro.bairro} onChange={(e) => set('bairro', e.target.value)} aria-label="Bairro">
-              <option value="">Todos os bairros</option>
+              <option value="">Bairro</option>
               {opcoes?.bairros.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <select className="field__select" value={filtro.tipo} onChange={(e) => set('tipo', e.target.value)} aria-label="Tipo">
-              <option value="">Todos os tipos</option>
+              <option value="">Tipo</option>
               {Object.entries(TIPOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <select className="field__select" value={filtro.dormMin} onChange={(e) => set('dormMin', e.target.value)} aria-label="Dormitórios">
@@ -177,12 +183,12 @@ export default function ImoveisProntos() {
               {Object.entries(MOBILIAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <select className="field__select" value={filtro.agenciadorId} onChange={(e) => set('agenciadorId', e.target.value)} aria-label="Agenciador">
-              <option value="">Todos os agenciadores</option>
+              <option value="">Agenciador</option>
               {opcoes?.agenciadores.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
             <select className="field__select" value={filtro.status} onChange={(e) => set('status', e.target.value)} aria-label="Situação">
-              <option value="">Disponíveis e reservados</option>
-              <option value="DISPONIVEL">Só disponíveis</option>
+              <option value="">À venda</option>
+              <option value="DISPONIVEL">Disponíveis</option>
               <option value="VENDIDO">Vendidos</option>
               <option value="TODOS">Todos</option>
             </select>
@@ -368,7 +374,9 @@ function DetalheModal({ imovel: i, onClose, onEditar, onMudou }: {
               <div className="ip-det__rotulo">Agenciador</div>
               <div className="ip-det__nome">{i.agenciador?.name}</div>
             </div>
-            {wa ? (
+            {i.agenciadorId === Auth.user?.id ? (
+              <span className="text-secondary text-sm">Você agenciou este imóvel</span>
+            ) : wa ? (
               <a className="btn btn--primary btn--sm" href={wa} target="_blank" rel="noopener noreferrer">
                 <Icon name="whatsapp" size={14} /> Falar com o agenciador
               </a>
