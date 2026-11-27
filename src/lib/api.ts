@@ -430,6 +430,33 @@ export const Api = {
     request<any>(`/empreendimentos/${id}`, { method: 'PATCH', body: data }),
   empreendimentoDelete: (id: number) =>
     request<any>(`/empreendimentos/${id}`, { method: 'DELETE' }),
+  // ── Imóveis prontos (Jú Beal 27/11) ──
+  imoveisProntos: (params: Record<string, string>) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
+    return request<any[]>(`/imoveis-prontos${qs ? `?${qs}` : ''}`);
+  },
+  imoveisProntosOpcoes: () =>
+    request<{ cidades: string[]; bairros: string[]; agenciadores: { id: number; name: string }[] }>('/imoveis-prontos/opcoes'),
+  imovelPronto: (id: number) => request<any>(`/imoveis-prontos/${id}`),
+  imovelProntoCreate: (data: any) => request<any>('/imoveis-prontos', { method: 'POST', body: data }),
+  imovelProntoUpdate: (id: number, data: any) => request<any>(`/imoveis-prontos/${id}`, { method: 'PATCH', body: data }),
+  imovelProntoDelete: (id: number) => request<any>(`/imoveis-prontos/${id}`, { method: 'DELETE' }),
+  imovelProntoFotoDelete: (id: number, fotoId: number) =>
+    request<any>(`/imoveis-prontos/${id}/fotos/${fotoId}`, { method: 'DELETE' }),
+  imovelProntoFotoCapa: (id: number, fotoId: number) =>
+    request<any>(`/imoveis-prontos/${id}/fotos/${fotoId}/capa`, { method: 'POST' }),
+  imovelProntoFotoUpload: async (id: number, files: File[]) => {
+    const form = new FormData();
+    for (const f of files) form.append('files', f);
+    const r = await fetch(`${BASE}/imoveis-prontos/${id}/fotos`, {
+      method: 'POST',
+      headers: Auth.token ? { Authorization: `Bearer ${Auth.token}` } : undefined,
+      body: form,
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error === 'limite_fotos' ? 'Limite de 20 fotos por imóvel.' : 'Não foi possível enviar as fotos. Tente de novo.');
+    return j as { ok: boolean; fotos: any[]; ignoradas: number };
+  },
   empreendimentoFotoUpload: async (id: number, files: File[]) => {
     // Sem teto de fotos: envia em lotes de 40 (limite por requisição do backend).
     const todas: any[] = [];

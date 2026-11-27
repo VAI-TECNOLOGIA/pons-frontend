@@ -51,6 +51,7 @@ const MinhaEsteira    = lazyRetry(() => import('./pages/MinhaEsteira'));
 const Pipeline        = lazyRetry(() => import('./pages/Pipeline'));
 const BasesLeads      = lazyRetry(() => import('./pages/BasesLeads'));
 const Empreendimentos = lazyRetry(() => import('./pages/Empreendimentos'));
+const ImoveisProntos = lazyRetry(() => import('./pages/ImoveisProntos'));
 const Construtoras    = lazyRetry(() => import('./pages/Construtoras'));
 const Vendas          = lazyRetry(() => import('./pages/Vendas'));
 const MinhasComissoes = lazyRetry(() => import('./pages/MinhasComissoes'));
@@ -166,6 +167,7 @@ export default function App() {
           <Route path="/pipeline" element={<Pipeline />} />
           <Route path="/bases-leads" element={<BasesLeads />} />
           <Route path="/empreendimentos" element={<Empreendimentos />} />
+          <Route path="/imoveis-prontos" element={<ImoveisProntos />} />
           <Route path="/construtoras" element={<Construtoras />} />
           <Route path="/vendas" element={<Vendas />} />
           <Route path="/minhas-comissoes" element={<MinhasComissoes />} />

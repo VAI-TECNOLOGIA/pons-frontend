@@ -57,6 +57,7 @@ const TOP_ITEMS: NavItem[] = [
   { to: '/minhas-comissoes', label: 'Minhas Comissões', icon: 'wallet', roles: ['CORRETOR', 'GERENTE_EQUIPE', 'CEO', 'GESTOR_MARKETING'] },
   { to: '/analise-vendas', label: 'Análise de Vendas', icon: 'chart', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO'] },
   { to: '/empreendimentos', label: 'Empreendimentos', icon: 'building' },
+  { to: '/imoveis-prontos', label: 'Imóveis prontos', icon: 'building' }, // agenciados pelos corretores (Jú Beal 27/11)
   { to: '/construtoras', label: 'Construtoras', icon: 'building', roles: ['CEO', 'DIRETOR_COMERCIAL', 'MARKETING', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'ADMINISTRATIVO', SOCIO] },
   { to: '/ranking', label: 'Ranking', icon: 'trophy' },
   { to: '/executivo', label: 'Agenda', icon: 'calendar', roles: ['CEO', 'DIRETOR_COMERCIAL', 'DIRETOR_FINANCEIRO', 'FINANCEIRO', 'DIRETOR_JURIDICO', 'MARKETING', 'ASSESSORA', 'ADMINISTRATIVO'] },

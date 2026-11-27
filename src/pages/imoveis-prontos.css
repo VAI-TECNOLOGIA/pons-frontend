@@ -1,0 +1,118 @@
+/* Imóveis prontos (Jú Beal 27/11) */
+.ip-busca { margin-bottom: 20px; }
+.ip-busca__linha { display: flex; gap: 10px; align-items: center; }
+.ip-busca__campo { position: relative; flex: 1; min-width: 0; }
+.ip-busca__campo > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; }
+.ip-busca__campo .field__input { padding-left: 36px; width: 100%; }
+.ip-busca__toggle { display: none; white-space: nowrap; }
+
+.ip-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  align-items: center;
+}
+.ip-filtros .field__select, .ip-filtros .field__input { width: 100%; min-width: 0; }
+
+.ip-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-primary); cursor: pointer; user-select: none; }
+.ip-check input { width: 16px; height: 16px; accent-color: var(--pons-blue); }
+.ip-check--campo { margin-top: 8px; font-size: 13px; }
+
+.ip-total { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+
+.ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+.ip-card {
+  display: flex; flex-direction: column; text-align: left; padding: 0; font: inherit; color: inherit;
+  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg);
+  overflow: hidden; cursor: pointer;
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+.ip-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.ip-card:focus-visible { outline: 2px solid var(--pons-blue); outline-offset: 2px; }
+.ip-card__capa {
+  position: relative; width: 100%; aspect-ratio: 4 / 3;
+  background: var(--gray-100) center / cover no-repeat;
+  display: flex; align-items: center; justify-content: center; color: var(--text-secondary);
+}
+.ip-card__status { position: absolute; top: 10px; left: 10px; }
+.ip-card__nfotos {
+  position: absolute; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.6); color: #fff;
+  font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
+}
+.ip-card__corpo { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.ip-card__tipo { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--pons-blue); }
+.ip-card__titulo { font-size: 16px; font-weight: 700; line-height: 1.25; color: var(--text-primary); overflow-wrap: anywhere; }
+.ip-card__local { font-size: 13px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.ip-card__numeros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ip-card__numeros span { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--gray-100); color: var(--text-primary); }
+.ip-card__rodape { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-top: auto; padding-top: 12px; }
+.ip-card__valor { font-size: 18px; font-weight: 800; color: var(--text-primary); }
+.ip-card__proposta { font-size: 12px; color: var(--pons-blue); font-weight: 600; }
+.ip-card__agenciador { font-size: 12px; color: var(--text-secondary); text-align: right; max-width: 45%; overflow-wrap: anywhere; }
+
+/* Detalhe */
+.ip-det { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; }
+.ip-det__foto { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius-md); background: var(--gray-100); display: block; }
+.ip-det__semfoto {
+  aspect-ratio: 4 / 3; border-radius: var(--radius-md); background: var(--gray-100); color: var(--text-secondary);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+}
+.ip-det__miniaturas { display: flex; gap: 8px; overflow-x: auto; margin-top: 8px; padding-bottom: 4px; }
+.ip-det__mini { flex: 0 0 64px; height: 48px; padding: 0; border: 2px solid transparent; border-radius: 6px; overflow: hidden; cursor: pointer; background: none; }
+.ip-det__mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ip-det__mini--ativa { border-color: var(--pons-blue); }
+.ip-det__info { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ip-det__valor { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 24px; font-weight: 800; color: var(--text-primary); }
+.ip-det__lista { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 14px; }
+.ip-det__lista dt { color: var(--text-secondary); }
+.ip-det__lista dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.ip-det__rotulo { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.ip-det__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.ip-tag { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--gray-100); color: var(--text-primary); }
+.ip-det__descricao { margin: 0; font-size: 14px; line-height: 1.5; white-space: pre-wrap; color: var(--text-primary); overflow-wrap: anywhere; }
+.ip-det__agenciador {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border: 1px solid var(--border-light); border-radius: var(--radius-md);
+}
+.ip-det__nome { font-weight: 700; color: var(--text-primary); }
+.ip-det__acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ip-det__acoes .field__select { width: auto; min-width: 150px; }
+.ip-det__excluir { color: var(--color-danger-fg, #b42318); }
+
+/* Formulário */
+.ip-lazer { display: flex; flex-wrap: wrap; gap: 8px; }
+.ip-lazer__item {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 6px 12px;
+  border: 1px solid var(--border-light); border-radius: 999px; cursor: pointer; user-select: none; color: var(--text-primary);
+}
+.ip-lazer__item input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.ip-lazer__item--on { border-color: var(--pons-blue); background: color-mix(in srgb, var(--pons-blue) 12%, transparent); color: var(--pons-blue); font-weight: 600; }
+.ip-lazer__item:focus-within { outline: 2px solid var(--pons-blue); outline-offset: 1px; }
+
+.ip-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.ip-fotos__item { position: relative; aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; background: var(--gray-100); }
+.ip-fotos__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ip-fotos__capa {
+  position: absolute; left: 6px; bottom: 6px; font-size: 11px; font-weight: 700; color: #fff;
+  background: var(--pons-blue); padding: 2px 8px; border-radius: 999px;
+}
+.ip-fotos__btn { position: absolute; border: 0; cursor: pointer; color: #fff; background: rgba(0, 0, 0, 0.6); }
+.ip-fotos__btn--x { top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.ip-fotos__btn--capa { left: 6px; bottom: 6px; font-size: 11px; padding: 3px 8px; border-radius: 999px; }
+.ip-fotos__add {
+  aspect-ratio: 1; border: 2px dashed var(--border-light); border-radius: var(--radius-md); background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text-secondary); font-size: 12px;
+}
+.ip-fotos__add:hover { border-color: var(--pons-blue); color: var(--pons-blue); }
+
+@media (max-width: 767px) {
+  .ip-busca__toggle { display: inline-flex; }
+  .ip-filtros { display: none; grid-template-columns: 1fr 1fr; }
+  .ip-filtros--aberto { display: grid; }
+  .ip-grid { grid-template-columns: 1fr; gap: 14px; }
+  .ip-det { grid-template-columns: 1fr; gap: 16px; }
+  .ip-det__valor { font-size: 20px; }
+  .ip-fotos { grid-template-columns: repeat(3, 1fr); }
+}
